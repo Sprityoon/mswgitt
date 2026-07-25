@@ -87503,7 +87503,7 @@
       {
         "id": "38a7705f-601b-46e1-a7de-640a86315eaa",
         "path": "/maps/town/Merchant",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.RigidbodyComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.MerchantInteract,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.MerchantInteract,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Merchant",
           "path": "/maps/town/Merchant",
@@ -87561,18 +87561,6 @@
                 "g": 1,
                 "b": 1,
                 "a": 1
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.RigidbodyComponent",
-              "MoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "RealMoveVelocity": {
-                "x": 0,
-                "y": 0
               },
               "Enable": true
             },
@@ -87902,7 +87890,7 @@
       {
         "id": "3da9c0e9-4fff-417a-bbcb-20be8967a354",
         "path": "/maps/town/Villager_Elder",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.RigidbodyComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Villager_Elder",
           "path": "/maps/town/Villager_Elder",
@@ -87964,18 +87952,6 @@
               "Enable": true
             },
             {
-              "@type": "MOD.Core.RigidbodyComponent",
-              "MoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "RealMoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "Enable": true
-            },
-            {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
               "ChatModeEnabled": true,
@@ -88028,7 +88004,7 @@
       {
         "id": "3d8597a0-834e-47ae-8b95-8c345db6c043",
         "path": "/maps/town/Villager_Fisher",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.RigidbodyComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Villager_Fisher",
           "path": "/maps/town/Villager_Fisher",
@@ -88086,18 +88062,6 @@
                 "g": 1,
                 "b": 1,
                 "a": 1
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.RigidbodyComponent",
-              "MoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "RealMoveVelocity": {
-                "x": 0,
-                "y": 0
               },
               "Enable": true
             },
@@ -88935,7 +88899,7 @@
       {
         "id": "aa2169f0-2365-4fcb-a29f-9f1fe8d88518",
         "path": "/maps/town/Villager_ResidentA",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.RigidbodyComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Villager_ResidentA",
           "path": "/maps/town/Villager_ResidentA",
@@ -88997,18 +88961,6 @@
               "Enable": true
             },
             {
-              "@type": "MOD.Core.RigidbodyComponent",
-              "MoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "RealMoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "Enable": true
-            },
-            {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
               "ChatModeEnabled": true,
@@ -89061,7 +89013,7 @@
       {
         "id": "7629389a-a672-40ae-a13e-86e917499af3",
         "path": "/maps/town/Villager_ResidentB",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.RigidbodyComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Villager_ResidentB",
           "path": "/maps/town/Villager_ResidentB",
@@ -89123,18 +89075,6 @@
               "Enable": true
             },
             {
-              "@type": "MOD.Core.RigidbodyComponent",
-              "MoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "RealMoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "Enable": true
-            },
-            {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
               "ChatModeEnabled": true,
@@ -89187,7 +89127,7 @@
       {
         "id": "051d9cb3-1830-41c5-bcdf-5aa1ea44de6b",
         "path": "/maps/town/Villager_ResidentC",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.RigidbodyComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Villager_ResidentC",
           "path": "/maps/town/Villager_ResidentC",
@@ -89249,18 +89189,6 @@
               "Enable": true
             },
             {
-              "@type": "MOD.Core.RigidbodyComponent",
-              "MoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "RealMoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "Enable": true
-            },
-            {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
               "ChatModeEnabled": true,
@@ -89313,7 +89241,7 @@
       {
         "id": "f089fba0-7d43-4814-a664-01f711dd65e5",
         "path": "/maps/town/Villager_ResidentD",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.RigidbodyComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.ChatBalloonComponent,MOD.Core.NameTagComponent,script.VillagerDialog,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Villager_ResidentD",
           "path": "/maps/town/Villager_ResidentD",
@@ -89377,18 +89305,6 @@
                 "g": 1,
                 "b": 1,
                 "a": 1
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.RigidbodyComponent",
-              "MoveVelocity": {
-                "x": 0,
-                "y": 0
-              },
-              "RealMoveVelocity": {
-                "x": 0,
-                "y": 0
               },
               "Enable": true
             },

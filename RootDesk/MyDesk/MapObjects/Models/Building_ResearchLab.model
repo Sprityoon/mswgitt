@@ -90,6 +90,70 @@
             },
             "Property": "SpriteRUID"
           }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "CoveredAlpha",
+          "DisplayName": "CoveredAlpha",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "script.WalkBehindFade"
+            },
+            "Property": "CoveredAlpha"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "SortRadius",
+          "DisplayName": "SortRadius",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "script.WalkBehindFade"
+            },
+            "Property": "SortRadius"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "CoverNorthExtent",
+          "DisplayName": "CoverNorthExtent",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "script.WalkBehindFade"
+            },
+            "Property": "CoverNorthExtent"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "CoverWidthScale",
+          "DisplayName": "CoverWidthScale",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "script.WalkBehindFade"
+            },
+            "Property": "CoverWidthScale"
+          }
         }
       ],
       "Values": [
@@ -276,7 +340,7 @@
           "Name": "CoveredAlpha",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 0.4
         },
@@ -285,7 +349,7 @@
           "Name": "SortRadius",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 100
         },
@@ -303,7 +367,7 @@
           "Name": "CoverNorthExtent",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 1.2
         },
@@ -312,7 +376,7 @@
           "Name": "CoverWidthScale",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 0.85
         }

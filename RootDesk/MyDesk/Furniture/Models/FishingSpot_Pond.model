@@ -98,7 +98,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "ecb83722d7fa4a3ab425302401032701"
+          "Value": "68496b170fe1406a88f43437f0847801"
         },
         {
           "TargetType": "MOD.Core.TransformComponent",
@@ -109,9 +109,9 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 0,
-            "y": 0,
-            "z": 0
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
           }
         },
         {
@@ -172,8 +172,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 0,
-            "y": 0
+            "x": 0.0,
+            "y": 0.0
           }
         },
         {
@@ -193,6 +193,15 @@
             "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": true
+        },
+        {
+          "TargetType": null,
+          "Name": "renderguid",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "68496b170fe1406a88f43437f0847801"
         }
       ],
       "EventLinks": [],

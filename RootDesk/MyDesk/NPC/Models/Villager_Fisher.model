@@ -20,7 +20,6 @@
       "Components": [
         "MOD.Core.TransformComponent",
         "MOD.Core.SpriteRendererComponent",
-        "MOD.Core.RigidbodyComponent",
         "MOD.Core.ChatBalloonComponent",
         "MOD.Core.NameTagComponent",
         "script.VillagerDialog",
@@ -123,6 +122,70 @@
             },
             "Property": "RenderSetting"
           }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "InteractRange",
+          "DisplayName": "InteractRange",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "script.VillagerDialog"
+            },
+            "Property": "InteractRange"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "BalloonDuration",
+          "DisplayName": "BalloonDuration",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "script.VillagerDialog"
+            },
+            "Property": "BalloonDuration"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "AutoTalkInterval",
+          "DisplayName": "AutoTalkInterval",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "script.VillagerDialog"
+            },
+            "Property": "AutoTalkInterval"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "AutoTalkRange",
+          "DisplayName": "AutoTalkRange",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "script.VillagerDialog"
+            },
+            "Property": "AutoTalkRange"
+          }
         }
       ],
       "Values": [
@@ -167,7 +230,7 @@
           "Name": "InteractRange",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 3
         },
@@ -176,7 +239,7 @@
           "Name": "BalloonDuration",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 4
         },
@@ -185,7 +248,7 @@
           "Name": "AutoTalkInterval",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 15
         },
@@ -194,7 +257,7 @@
           "Name": "AutoTalkRange",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 6
         },

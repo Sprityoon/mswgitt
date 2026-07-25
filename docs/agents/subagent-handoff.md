@@ -30,6 +30,7 @@
 9. **세이브 경로 Yield 금지 (2026-07-11 신설 — T37 인벤토리 전량 유실 사고 재발 방지)**: `SavePlayerData` 등 영속 저장 루틴 안에서 필수 `GetAndWait`/`SetAndWait` 외의 **추가 Yield 호출(다른 GetAndWait, 타이머 대기 등)을 절대 넣지 않는다**. Yield 사이에 플레이어 엔티티가 파괴되면 이후 읽는 컴포넌트 값이 nil → 기본값 폴백으로 **세이브가 빈 데이터로 덮인다**. 저장에 필요한 컴포넌트 값은 루틴 진입 직후 전부 지역 변수로 선캡처하고, 외부 조회가 필요하면 세션 캐시를 쓴다.
 10. **UI stretch 앵커 미신뢰 — RectSize 명시 (2026-07-14 신설 — T48 '정체불명 박스' 실증)**: 이 프로젝트 런타임(CoreVersion 26.5.0.0)에서 `.ui` 자식의 stretch 앵커(AnchorsMin≠AnchorsMax)+Offset 0 조합은 **부모 크기로 늘어나지 않고 `RectSize` 값 그대로 렌더**된다(지휘자 Play 캡처 실증). 새/수정 `.ui` 자식은 **명시 anchor+rect_size로 작성**하고, 부모 크기를 바꾸면 stretch 자식의 RectSize 동기화 여부를 반드시 함께 확인한다.
 11. **Maker 스테일 저장이 빌더 산출 `.ui`를 되돌린다 (2026-07-15 신설 — 실사고)**: Maker 에디터는 저장 시 **에디터 메모리 상태로 워크스페이스 파일을 통째로 재직렬화**한다. 에디터가 구버전 상태(git pull·빌더 편집을 refresh로 반영하기 전)를 들고 있으면 무관한 저장에도 `ui/*.ui`가 구버전으로 덮인다 — 2026-07-15 실사고(T47·T48·T50 산출물 소실 → 지휘자 HEAD 복구). **규칙**: ① git pull 또는 빌더로 `.map`/`.model`/`.ui`를 바꾼 뒤에는 Maker에서 어떤 저장이든 하기 전에 반드시 `refresh` 먼저 ② 에이전트는 Maker 저장 흔적(git status에 의도치 않은 `.ui`/`.csv` 변경)이 보이면 **덮어쓰기 여부부터 대조**하고 작업을 시작한다(핵심 산출물 존재 검사 — `scratch/inspect_stale_save_check.cjs` 선례) ③ CSV의 BOM 재직렬화는 무해(클린 필터 처리). `.ui` 전량 재직렬화 diff도 **내용이 전수 실존하면 무해** — 되돌리지 말고 커밋에 포함(2026-07-16 판정 선례. 되돌리면 다음 에디터 저장에서 재발).
+> 🔴 **3차 사고 (2026-07-25, 지휘자 실측) — "재직렬화는 무해" 판정을 오용하지 말 것**: `maker_refresh_workspace` 직후 `ui/PopupGroup.ui`가 전량 재직렬화(+16,685 −16,683)되면서 **T79의 L029 수정(FurnacePopup 중첩 `UIGroupComponent` 제거)이 원복**됐다. HEAD=`false` / 워킹트리=`있음`, 엔티티 수는 341로 동일. **2026-07-16 판정의 전제는 "내용이 전수 실존"이며, 산출물이 하나라도 사라졌으면 그 판정은 적용되지 않는다** — 그때는 복구가 정답이다(→ T88). **재직렬화 diff를 봤을 때의 필수 절차: 무해 판정 전에 반드시 "그 커밋이 만든 핵심 산출물이 지금도 실존하는가"를 빌더로 1건씩 대조**할 것(엔티티 수 일치는 근거가 아니다 — 이번 건도 수는 같았다). 또한 **`refresh` 호출 자체가 Maker의 스테일 상태를 디스크로 밀어낼 수 있다**는 점이 이번에 처음 실증됐다 — 빌더로 `.ui`/`.map`/`.model`을 바꾼 세션에서는 refresh 전후로 `git status`를 확인한다.
 12. **`_EffectService`/`_ParticleService` instigator에 nil 금지 (2026-07-18 신설 — T71 런타임 실측)**: `PlayEffect`/`PlayBasicParticle` 등의 instigator 인자에 `nil`을 넘기면 **클라이언트에서 생성이 에러 없이 조용히 실패(serial=0)** 한다 — 서버는 nil을 통과시켜 serial>0을 반환하므로 "서버 로그만 성공"으로 오진하기 쉽다. 반드시 유효 엔티티(시전자·대상 등)를 넘기고, 재생 직후 반환 serial을 로그로 남겨 0 여부를 확인한다. `SpawnByModelId` parent nil 금지(핵심 규칙 4)와 동계열 함정.
 
 ### 1.3 ⚖️ 현행 타일 스킴 (2026-07-08 밀착 페어 확정 — 이 문서의 최우선 배경지식)
@@ -92,7 +93,7 @@
 ## 3. 작업 큐 (하위 에이전트 위임 대상)
 
 > 상태: `[대기]` / `[진행]` / `[완료]` / `[보류]`
-> 각 항목은 **Target(파일) / Change(변경) / Acceptance(완료 기준)** 3요소를 반드시 채운다. **T번호는 단조 증가·재사용 금지 — 현재 최대 = T83.**
+> 각 항목은 **Target(파일) / Change(변경) / Acceptance(완료 기준)** 3요소를 반드시 채운다. **T번호는 단조 증가·재사용 금지 — 현재 최대 = T89.**
 
 > 🧭 **현황판 (지휘자 2026-07-21 — 버그픽스)**
 > - **Play PASS 확정**: T50까지의 전 완료분 + T56(주민 대화 말풍선 버그픽스 검증) + T51 · T58 · T59 · T60 · **T62**(⚖️ 2026-07-16 확정) · **T63**(낚시 랭킹 수정 — 핫픽스 포함 확인). 체크포인트 커밋 = 이 갱신과 동시.
@@ -103,6 +104,13 @@
 > - **⚖️ 2026-07-23 보스 지시 → 배치 L (T79→T80) 코드 완료**: ① T79 FurnacePopup 중첩 UIGroup 제거(ui_lint error=0) ② T80 마을 NPC 7기 legacy/TouchReceive 청산 + ResidentA~D 이름표(미나/유나/다은/토리). **Maker MCP 미연결 — refresh·Play 보류(제작자)**. 보고서 = `T79-furnace-nested-uigroup.md` · `T80-town-npc-legacy-cleanup.md`.
 > - **⚖️ 2026-07-23 보스 결정 → 배치 M (T81→T82) 코드 완료**: ① T81 마을 건물·구조물·NPC·연못 Trigger+OccupiedArea 등록 ② T82 IsAimTarget Trigger AABB footprint. **Maker MCP 미연결 — refresh·Play 보류(제작자)**. 보고서 = `T81-town-movement-blocking.md` · `T82-aim-trigger-aabb.md`.
 > - **⚖️ 2026-07-23 보스 지시 → T83 코드 완료**: 건물 walk-behind — MapObject식 반투명+Y정렬(`WalkBehindFade`, 11종). **refresh·Play 보류(제작자, 신규 mlua 등록 필수)**. 보고서 = `T83-building-walkbehind-fade.md`.
+> - **✅ 2026-07-25 지휘자 refresh 검증 — T79~T83 빌드 게이트 일괄 통과**: Maker MCP 재연결 후 `maker_refresh_workspace` 실행 → **Error=0** (total 587 / Warning 85 / Info 502). 문서상 "MCP 미연결 보류"였던 T79·T80·T81·T82·T83의 **코드 게이트 확정 통과**. 잔여는 Play 체감(제작자)뿐. ⚠️ Warning이 baseline 25 → 85로 증가(전량 `LWA-4012` 프로퍼티 기본값 미명시 — WalkBehindFade 44 / VillagerDialog 24) → **T86**으로 청소.
+> - **⚖️ 2026-07-25 보스 결정 → 배치 N (위생·정합, T84→T85→T86→T87)**: T75/T76(town.map 아트 배치) **착수 전 선행**. 근거 = 지휘자 실사에서 8대 핵심규칙 위반 1건·설계 회귀 1건·문서 미동기 다수 확인. 상세는 각 티켓.
+>   - ⚖️ **T81 Trigger 박스 3역할 겸임(차단·상호작용·페이드)은 현행 유지 확정**(2026-07-25 보스) — 단일 데이터 소스 이점 우선. Play에서 실제 불편이 나오면 그때 분리 티켓.
+> - **🧭 2026-07-25 지휘자 직접 — 무티켓 커밋 소급 기록**: 커밋 `38ae03c`(2026-07-22 "top-down pixel artwork rework")는 T번호·보고서 없이 머지됨. 실사 결과 = ① `Building_Fountain`·`FishingSpot_Pond`·`GrownGrass` 모델 스프라이트 리스킨(커스텀 픽셀 아트) ② `.sprite` 3종 신규(fishing_board/fishing_pond/quest_board) ③ `town.map` 265행 변경 ④ **`map/map01.map`의 `FishingSpot` 엔티티 삭제(85행)** — ④가 설계 회귀라 **T85로 복구**. ①~③은 산출물 실존 확인 완료로 소급 승인(별도 재작업 불요). **부수 확정 2건**: `artwork-spec` B12 상점 리스킨은 커스텀 아트(`cfa2990a…`)로 이미 해결 / **T78의 낚시터 리스킨분은 이미 완료**(`FishingSpot_Pond`=`ecb83722…` = spec F9) → T78 범위에서 제외.
+> - **✅ 2026-07-25 제작자 Play 확인 — T79·T80·T81·T82·T83 전량 [완료]**: 제작자 일괄 확인("전부 확인됐어"). 배치 L·M + walk-behind 종결. `game_design.md` Phase 20에 반영 완료.
+> - **🔴 2026-07-25 규칙 11 사고 3차 발생 → T88 긴급 발행**: `maker_refresh_workspace` 직후 `ui/PopupGroup.ui`가 전량 재직렬화되며 **T79 산출물이 원복**됨(HEAD=`UIGroupComponent false` / 워킹트리=`있음`, 엔티티 수 341 동일). **"재직렬화 diff는 무해" 판정을 근거 없이 적용하면 안 된다**는 교훈을 §1.2 규칙 11에 3차 사례로 추가. **커밋 전 반드시 T88 선처리** — 안 하면 T79가 되돌아간 채로 이력에 박힌다.
+> - **⚠️ 2026-07-25 병렬 워커 진행 중 (지휘자 실측)**: 워킹 트리에서 **T84 완료 반영 확인**(`town.map` `RigidbodyComponent` 14→**0**, NPC 모델 7종 각 −1행) + **T85 완료 반영 확인**(`map/map01.map`에 `FishingSpot` 재배치 — 새 UUID `e3c374da…`, `TriggerComponent`+`script.FishingSpot`+`script.ResourceOccupiedArea`, 제작자 커스텀 연못 아트 `68496b17…` 적용). 미커밋 상태이므로 **다른 세션이 같은 파일을 만지지 말 것**. 🧭 부수 확인: `FishingSpot_Pond.model`의 `SpriteRUID`가 `ecb83722…`(공식 F9) → **`68496b17…`(제작자 커스텀 톱다운 연못, `msw_topdown_fishing_pond_256.sprite`)** 로 교체됨 — 상위 품질이므로 승인, `artwork-spec` 정정 반영 완료.
 > - **병렬 규약(요지)**: ① 상대 레인 소유 파일은 읽기만 ② 이 문서 갱신은 자기 T블록 라인만 ③ 티켓 완료마다 refresh 1회+빌드 Error 수를 보고서 §4에 기재 ④ 무보고 종료 = 반려(§5 조항 11).
 
 ### T4. [대기] 경계 테라스/절벽 아트 정리
@@ -279,10 +287,11 @@
 ### T78. [대기] 필드 및 영지 바이옴 오브젝트 변주 (P1)
 - **배경**: 단조로운 필드의 나무, 바위 등 변주. `docs/design/artwork-spec.md` §7.
 - **Target**: `RootDesk/MyDesk/MapObjects/Models/` (신규 .model), `map/template_field.map`, `map/town.map` (낚시터)
-- **Change**: F1~F3, F5, F7~F9 아트 확보 및 `.model` 작성. 변주된 자연물을 사냥터에 배치. 마을 낚시터 리스킨 반영.
-- **Acceptance**: 낚시터 리스킨 적용 및 사냥터 시각적 다양성 증가. refresh Error=0.
+- **Change**: F1~F3, F5, F7~F9 아트 확보 및 `.model` 작성. 변주된 자연물을 사냥터에 배치. ~~마을 낚시터 리스킨 반영~~ → **🧭 2026-07-25 지휘자: 낚시터 리스킨(F9)은 무티켓 커밋 `38ae03c`에서 이미 완료**(`FishingSpot_Pond.model` `SpriteRUID=ecb83722d7fa4a3ab425302401032701`) — **이 티켓 범위에서 제외**.
+- **Acceptance**: 사냥터 시각적 다양성 증가(F1~F3·F5·F7~F8). refresh Error=0. ※ 낚시터는 범위 밖.
+- **충돌 주의**: `template_field.map` 레인 — town.map 레인(T84/T86/T75/T76)과 겹침 없음.
 
-### T79. [코드 완료 — 2026-07-23 | ui_lint error=0 (L029 소멸) | Maker MCP 미연결 — refresh·런타임 검증 보류(제작자 수행)] PopupGroup.ui 중첩 UIGroup 제거 — 신규 린트 L029 ERROR 해소 (배치 L ①)
+### T79. [✅ 완료 — Play 확인 2026-07-25(제작자 일괄) | ui_lint error=0 (L029 소멸) | refresh Error=0] PopupGroup.ui 중첩 UIGroup 제거 — 신규 린트 L029 ERROR 해소 (배치 L ①)
 
 - **배경**: 2026-07-23 벤더 스킬 v0.6.0 동기화로 `ui_lint`에 L029(중첩 UIGroup 금지 — `UIGroupComponent`는 `.ui` 루트 전용, 중첩 시 렌더 이상 가능) 신설. 지휘자 실측: `node .claude/skills/msw-ui-system/scripts/ui_lint.cjs ui/PopupGroup.ui` → **ERROR 1건 `L029 /ui/PopupGroup/FurnacePopup`** (HUDGroup.ui는 error 0). 코드 실사(확정): 화로 팝업 여닫기는 이미 **entity `Enable` 구동**(`UIInventoryController.mlua` 651~·908~행 등 `furnacePopup.Enable` 판독) — 중첩 UIGroupComponent는 기능 잔재. 방치 시 다음 `PopupGroup.ui`에 대한 `b.write()`가 strict 린트에서 실패한다.
 - **Target**: `ui/PopupGroup.ui`(UIBuilder 경유 단독), (확인만 — 수정 금지) `UI/Scripts/UIFurnaceController.mlua`·`UIInventoryController.mlua`
@@ -290,9 +299,9 @@
 - **Acceptance**: ① `ui/PopupGroup.ui` 린트 error 0 (L029 소멸 — 린트 출력 발췌를 보고서에) ② 화로 F 상호작용 → 팝업 열림/닫힘, input/fuel 슬롯 드래그, 제련 동작 회귀 0 ③ WarpPopup·ChestPopup 등 타 팝업 무영향 ④ refresh Error=0 + 보고 3종. Play 확인은 제작자.
 - **충돌 주의**: `ui/PopupGroup.ui` 레인 단독. `.mlua` 수정 없음(①에서 의존 발견 시에만 예외 — 그 경우 보고 필수).
 - **구현 요약 (2026-07-23)**: UIGroup 의존 grep 0건 · `removeComponent(FurnacePopup, UIGroupComponent)` · lint `0 error, 89 warning`. `.mlua` 무수정. 보고서: `docs/agents/reports/T79-furnace-nested-uigroup.md`.
-- **검증**: ui_lint **error=0**. Maker refresh·Play **보류(MCP 미연결 / 제작자 수행)**.
+- **검증**: ui_lint **error=0**. **Maker refresh Error=0 확인 (2026-07-25 지휘자 — total 587 / W85 / I502)**. Play **보류(제작자 수행)**.
 
-### T80. [코드 완료 — 2026-07-23 | town.map IsLegacy=true 0건 | Maker MCP 미연결 — refresh·런타임 검증 보류(제작자 수행)] 마을 NPC legacy 설정 청산 + 이름표 버그 수정 (배치 L ②)
+### T80. [✅ 완료 — Play 확인 2026-07-25(제작자 일괄) | town.map IsLegacy=true 0건 | refresh Error=0] 마을 NPC legacy 설정 청산 + 이름표 버그 수정 (배치 L ②)
 
 - **배경(⚖️ 2026-07-23 보스 지시 "마을 legacy 설정 오브젝트 수정")**: 지휘자 전수 스캔(맵 4종 raw 파싱 + 전 모델 ModelBuilder 스냅샷) 결과 `IsLegacy=true`는 **`map/town.map`의 NPC 배치 7건이 전부** — `/maps/town/{Merchant, Villager_Elder, Villager_Fisher, Villager_ResidentA~D}`의 `StateComponent.IsLegacy=true` (map01/template_field는 false만, 모델 파일들도 전부 false/미설정). 동일 실사 추가 발견: ⓐ 이 NPC들의 `StateComponent`+`StateAnimationComponent`는 상태·시트 값이 전무한 **미사용 잔재**(정적 스프라이트 NPC — 모델 18개 값 중 State 계열 0) ⓑ `TouchReceiveComponent` 잔재 — ⚖️ 클릭 상호작용 금지 정책(§1.5, T59)과 상충 ⓒ **이름표 버그: ResidentA~D 4명 전원 NameTag가 "촌장"**(T77 미러링 잔재 — 마을에 촌장 5명 표시. Fisher만 "낚시꾼"으로 정상). NPC 스크립트(`MerchantInteract`/`VillagerDialog`)는 State/StateAnimation/TouchReceive/ActionSheet를 참조하지 않음(지휘자 grep 0건 — 제거 안전 추정, 착수 시 재확인).
 - **Target**: `map/town.map`(MapBuilder), `RootDesk/MyDesk/NPC/Models/{Merchant, Villager_Elder, Villager_Fisher, Villager_ResidentA, Villager_ResidentB, Villager_ResidentC, Villager_ResidentD}.model`(ModelBuilder), (확인만 — 수정 금지) `NPC/Scripts/{MerchantInteract, VillagerDialog}.mlua`
@@ -305,9 +314,9 @@
 - **Acceptance**: ① `map/*.map`+`RootDesk/**/*.model` 재스캔에서 `"IsLegacy": true` 0건(스캔 출력 발췌를 보고서에) ② 주민/상인 F 대화·상점 열기·말풍선·자동수다(AutoTalk) 회귀 0 ③ ResidentA~D 이름이 각자 표기되고 "촌장"은 Elder 1명뿐 ④ 고양이(Animal_Cat — Kinematicbody, 정상 구성 확인 완료) 배회 회귀 0 ⑤ refresh Error=0 + 보고 3종. Play 육안 확인은 제작자.
 - **충돌 주의**: NPC 레인(town.map NPC 엔티티 + NPC 모델) 단독. `town.map`은 T75/T76(대기 — 노점/랜드마크 배치)과 파일을 공유하므로 **T80을 T75/T76보다 먼저 완료**(또는 엄격 순차). NPC `.mlua` 수정 금지.
 - **구현 요약 (2026-07-23)**: Scripts 참조 0건 재확인 · 7모델+town.map에서 State/StateAnimation/TouchReceive 제거 · NameTag A미나/B유나/C다은/D토리 · IsLegacy=true 0건. Rigidbody 유지(소견 §5). 보고서: `docs/agents/reports/T80-town-npc-legacy-cleanup.md`.
-- **검증**: 맵/모델 재스캔 통과. Maker refresh·Play **보류(MCP 미연결 / 제작자 수행)**.
+- **검증**: 맵/모델 재스캔 통과. **Maker refresh Error=0 확인 (2026-07-25 지휘자)**. Play **보류(제작자 수행)**. ※ §5 소견의 정적 NPC `RigidbodyComponent`는 **T84로 청산 발행**(2026-07-25).
 
-### T81. [코드 완료 — 2026-07-23 | Maker MCP 미연결 — refresh·Play 보류(제작자)] 마을 오브젝트 통행 차단 — T36 인프라 등록 (배치 M ①)
+### T81. [✅ 완료 — Play 확인 2026-07-25(제작자 일괄) | refresh Error=0] 마을 오브젝트 통행 차단 — T36 인프라 등록 (배치 M ①)
 
 - **배경(⚖️ 2026-07-23 보스 결정)**: 마을 오브젝트 전면 관통. 원인(지휘자 실측 — town.map 최상위 엔티티 전수 + 모델 스냅샷): 통행 차단은 `PlayerController`의 자체 AABB 시스템(T36)인데, 차단 자격 = **`TriggerComponent`(차단 박스, `GetColliderAABB` 소스) + `script.ResourceOccupiedArea`/`script.PlaceableFurniture`(`IsBlockingOverlapEntity` 멤버십)**. 마을 건물 8동(`Building_{Shop,Fountain,Well,Blacksmith}`, `House_{MushroomA,MushroomOrange,MushroomYellow,WoodTower}`)은 Transform+SpriteRenderer뿐, 상호작용 구조물(`ResearchLab`/`BulletinBoard`/`FishingRankBoard`)도 Trigger·멤버십 없음, NPC 7기(Rigidbody만)와 연못(`FishingSpot` — Trigger는 있으나 멤버십 없음)도 미등록. T73/T74의 "Building_Shop 미러" 전제는 Shop 자체가 무차단이라 무효였음.
 - **Target**: `map/town.map`(MapBuilder — 배치 엔티티에 컴포넌트 추가), `RootDesk/MyDesk/MapObjects/Models/{Building_Shop, Building_Fountain, Building_Well, Building_Blacksmith, House_MushroomA, House_MushroomOrange, House_MushroomYellow, House_WoodTower, Building_ResearchLab, BulletinBoard}.model`, `RootDesk/MyDesk/NPC/Models/{Merchant, Villager_Elder, Villager_Fisher, Villager_ResidentA~D, FishingRankBoard}.model`, `RootDesk/MyDesk/Furniture/Models/FishingSpot_Pond.model`(ModelBuilder — 모델·맵 양쪽 동기, T80 선례)
@@ -321,9 +330,9 @@
 - **충돌 주의**: town.map + 모델 레인. **T75/T76(town.map 공유) 착수 전 완료**. `PlayerController.mlua` 수정 금지(그건 T82).
 - **참고**: T74는 "주택 5동 배치"로 보고했으나 실배치는 4동 — `House_ThatchHut`은 모델만 존재, town.map 미배치(지휘자 실측 2026-07-23). 배치 보완은 T75/T76 소관으로 이관(이 티켓 범위 밖).
 - **구현 요약 (2026-07-23)**: 건물 8+구조물 3+NPC 7+연못에 Trigger(IsPassive)+ResourceOccupiedArea(BlocksMovement=true) 모델·맵 동기. BoxSize=디자인 목표 폭×(높이−지붕밴드). 연못 7.5×4.5. PortalToHome `BlocksMovement=false` 맵 명시. Cat 무변경. 보고서: `docs/agents/reports/T81-town-movement-blocking.md`.
-- **검증**: 맵 컴포넌트 스캔 통과. Maker refresh·Play **보류(MCP 미연결 / 제작자 수행)**.
+- **검증**: 맵 컴포넌트 스캔 통과. **Maker refresh Error=0 확인 (2026-07-25 지휘자)**. Play **보류(제작자 수행)**.
 
-### T82. [코드 완료 — 2026-07-23 | Maker MCP 미연결 — refresh·Play 보류(제작자)] 상호작용 판정 개선 — Trigger AABB 기반 footprint 자동 정합 (배치 M ②, T81 후 착수)
+### T82. [✅ 완료 — Play 확인 2026-07-25(제작자 일괄) | refresh Error=0] 상호작용 판정 개선 — Trigger AABB 기반 footprint 자동 정합 (배치 M ②, T81 후 착수)
 
 - **배경(⚖️ 2026-07-23 보스 결정)**: 상호작용이 오브젝트 **중심 셀** 인접에서만 성립해 "건물 한가운데까지 가야" 하는 불편(T67 조준선 게이트의 footprint가 실물 대비 협소: 연못 1×1, 연구소/게시판 2×2). T81 차단 도입 후에는 중심 접근 자체가 불가능해지므로 **이 티켓 없이 T81만 반영되면 상호작용 불능** — 결합 필수. 보스 선택 = A안: Trigger 박스에서 상호작용 범위 자동 산출(차단·상호작용 단일 데이터).
 - **Target**: `RootDesk/MyDesk/Player/Scripts/PlayerController.mlua` 단독 (`IsAimTarget`/`ReadAimFootprint` 1155~1206행 일대)
@@ -335,9 +344,9 @@
 - **Acceptance**: ① 연구소·게시판·랭킹보드·연못·상인·주민 — 실물 테두리 인접 어느 방향에서든 F 성립(중심 접근 불요) ② 화로/상자/침대/보물상자/포탈/동물 상호작용 회귀 0(T67 Acceptance 재통과) ③ 낚시 캐스팅~릴링(T64) 회귀 0 ④ 모바일 BtnInteract 동일 동작 ⑤ refresh Error=0 + 보고 3종. Play 체감 = 제작자.
 - **충돌 주의**: `PlayerController.mlua` 단독 레인. **T81 완료 후 착수**(Trigger 없이는 신규 분기가 공회전). 낚시 릴링 홀드(T64)·조준 리티클(`UpdateMineReticle` — 채굴용)·`IsObstacle`/`ResolveOverlaps`(T36) 무수정.
 - **구현 요약 (2026-07-23)**: `IsAimTarget`에 Trigger AABB∩조준셀 분기 + footprint 폴백 + `[T82][AIM]` 로그. TreasureChest 서버도 IsAimTarget 공유·FishingSpot ServerOpenDistance 없음 → 프로퍼티 조정 불요. 보고서: `docs/agents/reports/T82-aim-trigger-aabb.md`.
-- **검증**: 정적 코드 검토 통과. Maker refresh·Play **보류(MCP 미연결 / 제작자 수행)**.
+- **검증**: 정적 코드 검토 통과. **Maker refresh Error=0 확인 (2026-07-25 지휘자)**. Play **보류(제작자 수행)**.
 
-### T83. [코드 완료 — 2026-07-23 | Maker MCP 미연결 — refresh·Play 보류(제작자)] 건물 walk-behind — MapObject식 반투명 + Y정렬
+### T83. [✅ 완료 — Play 확인 2026-07-25(제작자 일괄) | refresh Error=0] 건물 walk-behind — MapObject식 반투명 + Y정렬
 
 - **배경(⚖️ 2026-07-23 보스 지시)**: 박스 수치는 제작자가 직접 튜닝. 대신 건물 뒤로 통과할 때 캐릭터가 건물 **위**로 올라간 것처럼 보이지 않고 **뒤**로 들어가며, MapObject(`ResourceReaction` Alternative D)처럼 건물이 반투명해지길 원함. 원인: 일부 town 배치가 `MapLayer2`/고정 낮은 OrderInLayer라 플레이어가 항상 위에 그려짐 + 알파 오클루전 스크립트 없음.
 - **Target**: 신규 `RootDesk/MyDesk/MapObjects/Scripts/WalkBehindFade.mlua` · 건물/구조물 모델 11종 + `map/town.map` 동기 (Shop/Fountain/Well/Blacksmith/House×4/ResearchLab/BulletinBoard/FishingRankBoard). NPC·연못·포탈 제외. `PlayerController` 무수정.
@@ -348,7 +357,104 @@
 - **Acceptance**: ① 건물 앞(남)에서는 캐릭터가 건물 앞에 보임(또는 발치 겹침만) ② 지붕 밴드(북) 통과 시 건물이 반투명 + 캐릭터가 건물 뒤 ③ MapObject 나무/돌 회귀 0 ④ refresh Error=0(신규 mlua codeblock 생성) + 보고 3종. Play=제작자.
 - **충돌 주의**: town.map + MapObjects 레인. T75/T76 전 완료 권장. 박스 수치 변경은 제작자(T81 Trigger) — 이 티켓은 연출만.
 - **구현 요약 (2026-07-23)**: WalkBehindFade 신설 + 11모델/맵 적용. 보고서: `docs/agents/reports/T83-building-walkbehind-fade.md`.
-- **검증**: 맵 SL/컴포넌트 스캔 통과. Maker refresh·Play **보류(MCP 미연결 / 제작자 수행)**.
+- **검증**: 맵 SL/컴포넌트 스캔 통과. **Maker refresh Error=0 확인 (2026-07-25 지휘자 — `WalkBehindFade.codeblock` 정상 생성)**. Play **보류(제작자 수행)**. ※ 이 티켓이 유발한 `LWA-4012` Warning 44건은 **T86**에서 청소.
+
+### T84. [완료 — 2026-07-25 | refresh Error=0 | 런타임 검증 보류(제작자 수행)] 정적 NPC `RigidbodyComponent` 청산 — RectTile Body 매핑 정합 (배치 N ①)
+
+- **배경(🔴 8대 핵심규칙 1 위반 — 지휘자 실측 2026-07-25)**: `map/town.map`은 `RectTile`(TileMapMode=1)인데 정적 NPC 7기(`Merchant`, `Villager_Elder`, `Villager_Fisher`, `Villager_ResidentA~D`)가 **MapleTile(모드 0)용 `RigidbodyComponent`**를 달고 있다. 실측 = town.map 14건(componentNames 7 + @components 7) + NPC 모델 7종. `msw-general/references/platform.md` §4 매핑표(모드1 → `KinematicbodyComponent`) 및 **§8.5 "정적 데코·트리거 영역은 Body 불요"** 양쪽에 어긋난다. T80 §5에서 "확인만, 교체는 별도 승인"으로 보류된 항목 — **⚖️ 2026-07-25 보스 승인으로 착수**.
+- **🧭 지휘자 설계 확정 — 교체가 아니라 제거**: 이 NPC들은 `MovementComponent`가 없는 완전 정적 엔티티다. 따라서 `Kinematicbody`로 **교체하지 말고 Body를 제거**한다(§8.5). 통행 차단은 **T81의 `TriggerComponent`+`script.ResourceOccupiedArea`(BlocksMovement=true)** 가, 상호작용 판정은 **T82의 Trigger AABB**가 이미 담당하므로 Rigidbody는 현재 아무 기능도 없는 데드웨이트다.
+- **Target**: `map/town.map`(MapBuilder — 배치 엔티티 7기), `RootDesk/MyDesk/NPC/Models/{Merchant, Villager_Elder, Villager_Fisher, Villager_ResidentA, Villager_ResidentB, Villager_ResidentC, Villager_ResidentD}.model`(ModelBuilder — 모델·맵 양쪽 동기, T80/T81 선례)
+- **Change**:
+  ① **선행 grep 재확인**: `NPC/Scripts/{MerchantInteract, VillagerDialog}.mlua` 및 전 워크스페이스에서 이 NPC들의 `RigidbodyComponent`·`MovementComponent` 참조 0건 확인(규칙 8). 참조 발견 시 그 항목만 [보류]+질문.
+  ② `removeComponent(..., "MOD.Core.RigidbodyComponent")` — **모델 7종 + town.map 배치 7기 양쪽**. `componentNames` 동기는 빌더가 처리(직접 JSON 편집 금지).
+  ③ **`Animal_Cat`은 무수정** — 이동형이라 `KinematicbodyComponent`가 정답이고 이미 정상 구성.
+  ④ 다른 맵(`map01`/`template_field`/`template_boss`)은 `RigidbodyComponent` 0건(지휘자 전수 스캔 완료) — **범위 밖, 손대지 말 것**.
+- **Acceptance**: ① `map/*.map` + `RootDesk/**/*.model` 재스캔에서 `MOD.Core.RigidbodyComponent` **0건**(스캔 출력 발췌를 보고서에) ② 주민/상인 F 대화·상점 열기·말풍선·AutoTalk 회귀 0 ③ **NPC 통행 차단이 그대로 유지**(T81 Trigger가 담당 — 코드 근거 + 제작자 Play 확인 항목) ④ 고양이 배회 회귀 0 ⑤ `[LEA-3004]` 로그 0건 ⑥ refresh Error=0 + 보고 3종. Play 육안은 제작자.
+- **충돌 주의**: `town.map` + NPC 모델 레인. **T86과 NPC 모델 7종을 공유 → 배치 내 순차 엄수(T84 먼저)**. T75/T76(town.map 공유)보다 선행. NPC `.mlua` 수정 금지.
+
+### T85. [완료 — 2026-07-25 | refresh Error=0 | 런타임 검증 보류(제작자 수행)] 영지(map01) 낚시터 복구 — 무티켓 삭제 회귀 (배치 N ②)
+
+- **배경(🔴 설계 회귀 — 지휘자 실측 2026-07-25)**: 무티켓 커밋 `38ae03c`(2026-07-22)가 `map/map01.map`에서 `FishingSpot` 엔티티(85행, `modelId=fishingspot_pond`, id `a5c966c2-fd5c-406c-b596-d8580d8aa517`, Position `(2.916275, 1.81077909, 0)`)를 **삭제**했다. `game_design.md` §15-C는 낚시터를 **"영지 연못 / 마을 / 사냥터 물가" 3곳**으로 명시하며, 현재 `map01`의 FishingSpot은 0건(town·template_field에만 존재 — 지휘자 전수 스캔). 결과로 **`FishDataSet.csv`의 `SpotType=estate` 2행(Carp/Shrimp)이 도달 불가 데드 데이터**가 됐다. ⚖️ **2026-07-25 보스 결정: 복구(설계대로 3곳 유지).**
+- **Target**: `map/map01.map`(MapBuilder — `placeModel`) 단독
+- **Change**:
+  ① 삭제 전 원문을 `git show 38ae03c -- map/map01.map`에서 확인해 **동일 좌표·동일 modelId(`fishingspot_pond`)로 재배치**. 엔티티 id는 새 UUID 발급(구 UUID 재사용 금지).
+  ② 삭제 시점 이후 `FishingSpot_Pond.model`이 리스킨(`SpriteRUID=ecb83722d7fa4a3ab425302401032701`)되고 T81에서 `ResourceOccupiedArea`가 붙었으므로, **`placeModel`로 모델 현행 구성을 그대로 미러**한다(구 배치의 컴포넌트 오버라이드를 복사하지 말 것 — 구 `@components`는 리스킨 이전 값).
+  ③ **map01 지형 확인**: 복구 좌표가 현재 map01의 물가/연못 타일과 맞는지 육안 근거를 남긴다. 어긋나면 임의 이동하지 말고 **좌표 후보를 보고서 §5에 제시하고 [보류]+질문**(지형은 T51 이후 변경 이력 있음).
+  ④ `FishDataSet.csv`는 **무수정** — estate 2행은 복구로 자동 유효화된다.
+- **Acceptance**: ① `map/map01.map`에 `FishingSpot` 1기 존재(스캔 출력 발췌) ② 영지에서 낚싯대 장착 후 F → 캐스팅~릴링(T64) 정상, `SpotType=estate` 어종(Carp/Shrimp) 출현 ③ 마을·사냥터 낚시터 회귀 0 ④ 주간 낚시왕 랭킹(T63) 적립 경로 회귀 0 ⑤ refresh Error=0 + 보고 3종. Play 최종 확인은 제작자.
+- **충돌 주의**: `map01.map` 단독 레인 — town.map 레인(T84/T86)과 파일 겹침 없음. `FishingSpot.mlua`·`FishingSpot_Pond.model` 수정 금지(배치만).
+
+### T86. [완료 — 2026-07-25 | refresh Error=0 | 런타임 검증 보류(제작자 수행)] 빌드 Warning 청소 — `LWA-4012` 프로퍼티 기본값 명시 (배치 N ③)
+
+- **배경(빌드 위생 — 지휘자 refresh 실측 2026-07-25)**: refresh Error=0이지만 **Warning이 baseline 25 → 85로 3.4배 증가**. 전수 분류 결과 `LWA-4012`(스크립트 프로퍼티에 모델 기본값 미명시) 79건이 원인이며, 소유자별 내역은 **`WalkBehindFade` 44건**(11 엔티티 × 4 프로퍼티 — T83 유발) + **`VillagerDialog` 24건**(6 NPC × 4 프로퍼티 — T77이 ResidentA~D 추가하며 증가) + Furnace 3 / MonsterMeleeAttack 3 / MonsterAI 2 / Monster 2 / SpriteRendererComponent 1. 방치하면 실제 Error가 Warning 노이즈에 묻힌다.
+- **Target**: `RootDesk/MyDesk/MapObjects/Models/{Building_Shop, Building_Fountain, Building_Well, Building_Blacksmith, House_MushroomA, House_MushroomOrange, House_MushroomYellow, House_WoodTower, Building_ResearchLab, BulletinBoard}.model` + `RootDesk/MyDesk/NPC/Models/{FishingRankBoard, Merchant, Villager_Elder, Villager_Fisher, Villager_ResidentA~D}.model` (ModelBuilder 단독)
+- **Change**:
+  ① `WalkBehindFade`가 붙은 **11개 모델 전부**에 `CoveredAlpha` / `SortRadius` / `CoverNorthExtent` / `CoverWidthScale` 4개 프로퍼티의 **기본값을 Values에 명시**. 값은 **`WalkBehindFade.mlua`의 현행 프로퍼티 선언 기본값을 그대로 읽어 반영**(임의 수치 발명 금지 — T83 핫픽스로 `CoverNorthExtent=1.2`/`CoverWidthScale=0.85`가 이미 튜닝된 값이므로 **연출 변경 0이 절대 조건**).
+  ② `VillagerDialog`가 붙은 **NPC 6종**에 `InteractRange` / `BalloonDuration` / `AutoTalkInterval` / `AutoTalkRange` 동일 방식으로 명시(현행 스크립트 기본값 그대로).
+  ③ Furnace / MonsterMeleeAttack / MonsterAI / Monster / SpriteRendererComponent 잔여 11건은 **범위 밖**(별개 레인·모델) — 손대지 말고 보고서 §5에 후속 후보로만 기록.
+  ④ **`.mlua` 무수정** — 이 티켓은 모델 Values 명시만이다. 스크립트 기본값을 바꾸는 것이 아니다.
+- **Acceptance**: ① refresh 후 `LWA-4012` Warning이 **79 → 11 이하**(WalkBehindFade 0 / VillagerDialog 0), 총 Warning ~25 수준 복귀 — **refresh 로그의 Warning 분류 집계를 보고서 §4에 표로 첨부** ② **Error=0 유지** ③ 건물 반투명 농도·가림 범위(T83) 육안 무변화 — 값이 스크립트 기본값과 1:1 동일함을 보고서에 표로 대조 ④ 주민 대화·AutoTalk 동작 무변화 ⑤ 보고 3종.
+- **충돌 주의**: NPC 모델 7종을 **T84와 공유 → 반드시 T84 완료 후 착수**. `town.map` 무수정(모델만). `WalkBehindFade.mlua`·`VillagerDialog.mlua` 무수정.
+
+### T87. [완료 — 2026-07-25 | refresh Error=0 | 런타임 검증 보류(제작자 수행)] 워크스페이스 위생 — `RootDesk/MyDesk/` 최상위 자산 정리 (배치 N ④)
+
+- **배경(디렉터리 규칙 위반 — 지휘자 실측 2026-07-25)**: `docs/agents/directory-structure.md`는 `RootDesk/MyDesk/` 하위를 **카테고리 → 자산 종류 2단계**로 강제하고, `msw-general` 절대원칙 12도 최상위 직접 배치를 금지한다. 현재 최상위에 **자산 9개가 방치**돼 있다:
+  - `.sprite` 4종 — `msw_topdown_fishing_board_256.sprite` · `msw_topdown_fishing_pond_256.sprite` · `msw_topdown_quest_board_256.sprite`(무티켓 커밋 `38ae03c` 산출) · `shop.sprite` · `_reticle.sprite`
+  - **MSW 자산 타입이 아닌 작업 원본 4종** — `shop.png` / `shop.pxg` / `lacheln_house_topdown.png` / `lacheln_house_topdown.pxg` / `lacheln_house_front_topdown.png` / `lacheln_house_front_topdown.pxg` (Maker 스캔 대상 폴더에 원본 이미지가 들어가 있음)
+  - ※ `.directory` 파일과 `tile1.tileset` / `wall.tileset`은 **현행 유지**(Maker 생성물 / 타일셋은 기존 참조 경로 고정 — 손대지 말 것)
+- **Target**: `RootDesk/MyDesk/` 최상위 위 9개 파일 + 이동 대상 폴더(`MapObjects/`, `UI/`, `scratch/`)
+- **Change**:
+  ① **작업 원본(`.png`/`.pxg`) 6개는 `scratch/artwork_rework/source/` 로 이동** — MSW 자산이 아니므로 Maker 스캔 경로에서 제거. 삭제가 아니라 이동(원본 보존).
+  ② **`.sprite` 5종은 소속 카테고리로 이동** — `msw_topdown_fishing_board_256` / `msw_topdown_fishing_pond_256` / `msw_topdown_quest_board_256` / `shop` → `MapObjects/Sprites/`, `_reticle` → `UI/Sprites/`(폴더 신규 생성, `.directory`는 refresh가 생성 — 손으로 만들지 말 것).
+  ③ ⚠️ **안전 절차 필수**: 이동은 **①→refresh→logs 확인 → ②→refresh→logs 확인** 2단계로 나눠 수행한다. 모델은 `SpriteRUID` 문자열로 참조하므로 폴더 이동이 참조를 깨지 않는 것이 원칙(directory-structure.md "이동/리네임 안전성")이나, **`.sprite`는 그 문서에 명시된 쌍이 아니므로 실증이 필요**하다. refresh 로그에 신규 Error가 1건이라도 뜨거나 스프라이트 미표시가 의심되면 **즉시 이동을 되돌리고 [보류]+질문**으로 전환한다(임의 강행 금지).
+  ④ **삭제는 하지 않는다** — 참조되지 않아 보이는 자산도 이 티켓에서는 이동만. 삭제는 별도 승인 사항.
+- **Acceptance**: ① `RootDesk/MyDesk/` 최상위에 `.directory` / `tile1.tileset` / `wall.tileset` 외 파일 **0개**(Glob 출력 발췌를 보고서에) ② refresh **Error=0**, 이동 전 대비 **신규 Warning 0** ③ 상점 건물·낚시 게시판·의뢰 게시판·연못·조준 리티클이 **전부 정상 렌더**(SpriteRUID 미해결 0 — 규칙 3) ④ 보고 3종. Play 육안은 제작자.
+- **충돌 주의**: 파일 이동 레인 단독. `.model`/`.map`/`.ui` 내용 수정 금지(이동만으로 해결돼야 한다 — 수정이 필요해지면 그 자체가 ③의 롤백 신호다). **배치 N 마지막**(T84~T86 완료 후) 착수.
+
+### T88. [대기 — 🔴 긴급] T79 L029 수정 원복 — Maker 스테일 저장 3차 사고 복구 (규칙 11)
+
+- **배경(🔴 지휘자 실측 2026-07-25 — 규칙 11 사고 3번째 발생)**: `maker_refresh_workspace` 직후 워킹 트리를 대조한 결과 **`ui/PopupGroup.ui`가 전량 재직렬화**(diff 33,123행 / +16,685 −16,683)되면서 **T79의 산출물이 되돌아갔다**.
+  - 근거(UIBuilder 대조): **HEAD** → `FurnacePopup has UIGroupComponent: false` ✅ / **현재 워킹 트리** → `UIGroup 있음` ❌. 엔티티 수는 341개로 양쪽 동일 → **전량 재직렬화 + 해당 컴포넌트만 복원**된 전형적 스테일 저장 패턴.
+  - 즉 Maker 에디터가 **T79 이전 상태를 메모리에 들고 있다가** 워크스페이스 파일을 자기 상태로 재직렬화했다. 규칙 11이 예고한 정확한 시나리오(2026-07-15 T47·T48·T50 소실 / 2026-07-16 판정에 이은 3차).
+  - ⚠️ **규칙 11의 "전량 재직렬화 diff는 무해" 판정은 이 건에 적용되지 않는다** — 그 판정의 전제는 "**내용이 전수 실존**"이고, 여기서는 핵심 산출물이 실제로 소실됐다. **되돌리지 말 것이 아니라 복구할 것.**
+- **Target**: `ui/PopupGroup.ui`(UIBuilder 경유 단독)
+- **Change**:
+  ① 착수 전 **다시 한 번 현재 상태를 UIBuilder로 대조**한다(그 사이 제작자가 Maker에서 refresh를 돌렸다면 이미 정상일 수 있음 — 정상이면 이 티켓은 [완료-불요]로 닫고 사유만 보고).
+  ② 비정상이면 T79와 동일하게 `removeComponent("FurnacePopup", "MOD.Core.UIGroupComponent")` 후 `write()`. 다른 팝업 엔티티 구조는 일절 건드리지 말 것.
+  ③ **작업 직전 Maker에서 `refresh`가 선행됐는지 제작자에게 확인**하고 시작한다(선행 없이 쓰면 다음 저장에 또 덮인다 — 규칙 11 ①).
+  ④ `ui_lint`로 L029=0 재확인, 출력 발췌를 보고서에.
+- **Acceptance**: ① `FurnacePopup`에 `UIGroupComponent` 없음(UIBuilder 대조 출력을 보고서에) ② `ui_lint` error=0 ③ 화로 팝업 여닫기·슬롯 드래그·제련 회귀 0 ④ 타 팝업(Warp/Chest/SkillTree) 무영향 — 엔티티 수 341 유지 ⑤ refresh Error=0 + 보고 3종.
+- **충돌 주의**: `ui/PopupGroup.ui` 레인 단독. **배치 N(T84~T87)과 파일 겹침 없음 — 병렬 가능**. `.mlua` 수정 금지.
+
+### T89. [대기] 마을 Y축 렌더 정렬 정합 — 플레이어·NPC가 Y정렬 대상에서 누락 (⚖️ 2026-07-25 제작자 Play 버그)
+
+- **배경(제작자)**: "마을에서 레이어 정렬이 잘 안 됨. **y축 위치에 따라 정렬되어야 하는 원칙**인데 적용이 안 된 것 같다. **유저뿐 아니라 마을 주민도** 제대로 정렬 안 된 채 렌더링."
+- **🔴 지휘자 실사 — 원인 확정(코드·맵 실측 2026-07-25)**: Y정렬은 **일부 시스템에만** 적용돼 있고, 플레이어와 NPC는 **고정 OrderInLayer**라 y와 무관하게 항상 같은 앞뒤 관계로 그려진다.
+
+  | 대상 | 현행 OrderInLayer | Y정렬 |
+  |---|---|---|
+  | 자원 (`ResourceSpawner`) | `(MapRadius − y) × 100` | ✅ |
+  | 스포너 몬스터 (`MonsterSpawner`) | `(radius − ry) × 100` | ✅ |
+  | 설치 가구 (`PlayerInventory`) | `(MapRadius − y) × 100` | ✅ |
+  | 건물·구조물 11종 (`WalkBehindFade`, T83) | `(SortRadius − y) × 100` → 런타임 **약 8,500~11,500** | ✅ |
+  | **플레이어 아바타** | **엔진 기본값(≈4)** — 어떤 스크립트도 `AvatarRendererComponent.OrderInLayer`를 쓰지 않음(전 워크스페이스 grep: alpha 용도 3곳뿐) | ❌ |
+  | **NPC 7기** (Merchant/Elder/Fisher/ResidentA~D) | **12 고정** (town.map 실측) | ❌ |
+  | `Animal_Cat` | **2 고정** | ❌ |
+  | `FishingSpot` | OIL 2, **`SortingLayer` 미설정(None)** | ❌ |
+
+  → 귀결: ⓐ 건물 OIL(8,500~11,500) ≫ 플레이어(4) → **플레이어가 항상 모든 건물 뒤** ⓑ NPC(12) > 플레이어(4) → **NPC가 항상 플레이어 앞** ⓒ NPC끼리는 전원 12 동률이라 **주민 간 앞뒤가 y와 무관** ⓓ `FishingSpot`은 `SortingLayer`가 달라 OIL 비교 이전 단계에서 갈린다(우선순위 ① SortingLayer → ② OrderInLayer → ③ Z — `platform.md` §6).
+  ※ T83 보고서 §5가 이 항목을 "후속 티켓 후보"로 예고했고, 그것이 실제 버그로 확정된 것.
+- **🧭 지휘자 설계 확정 — 단일 Y정렬 규약으로 일원화**:
+  ① **`Util/RenderLayers.mlua`에 단일 기준 신설** — `property number SortRadius`(전 맵 공통 기준) + `method integer ComputeYOrder(number worldY)`(= `math.max(MinEntityOrder, math.floor((SortRadius − worldY) * 100))`). **공식 리터럴을 개별 스크립트에 복제 금지**(R3·directory-structure.md "공통 속성 모듈화").
+     - ⚠️ **기준값 불일치 해소가 이 티켓의 핵심 중 하나**: 현재 `WalkBehindFade.SortRadius=100` vs `ResourceSpawner.MapRadius=30`(홈)으로 **같은 y라도 OIL이 7,000 차이** → 두 시스템 산출물이 섞이면 정렬이 무너진다. 통일 기준값과 그 근거를 보고서에 기재하고, 기존 호출부를 `ComputeYOrder`로 교체한다(수치 변경으로 기존 자원↔가구↔몬스터 정렬이 깨지지 않는지 회귀 확인 필수).
+  ② **신규 `MapObjects/Scripts/YSortSprite.mlua`** — 연출 없이 정렬만 하는 최소 컴포넌트(`WalkBehindFade`의 정렬 절반을 분리 재사용). `property boolean Dynamic = false`: false면 `OnBeginPlay` 1회(정적 NPC·구조물), true면 이동체용 주기 갱신(`Animal_Cat`). **`WalkBehindFade`에 페이드가 필요 없는 대상에 그걸 붙이지 말 것**(T83이 의미 불일치를 이유로 분리한 선례 유지).
+  ③ **NPC 7기 + `Animal_Cat`(Dynamic=true) + `FishingSpot`에 `YSortSprite` 부착** — 모델·맵 동기(T80/T81 선례). `FishingSpot`은 `SortingLayer`도 `_RenderLayers.EntityLayer`로 명시.
+  ④ **플레이어 아바타 Y정렬** — `PlayerController`에서 `AvatarRendererComponent`의 `SortingLayer = _RenderLayers.EntityLayer` + `OrderInLayer = _RenderLayers:ComputeYOrder(worldY)` 갱신. **매 프레임 무조건 대입 금지** — y 변화가 임계값 이상일 때만 갱신(불필요 이벤트 억제).
+     - 🔴 **동기화 주의(착수 전 반드시 실확인)**: `AvatarRendererComponent.d.mlua` 기준 **`SortingLayer`는 `@Sync`이지만 `OrderInLayer`는 `@Sync`가 아니다**. 따라서 LocalPlayer만 자기 자신을 정렬하면 **다른 플레이어는 내 화면에서 정렬되지 않는다**. 각 클라이언트가 **화면상의 모든 플레이어 엔티티**에 대해 OIL을 계산하도록 실행 공간을 설계할 것(`PlayerController`의 해당 `OnUpdate` ExecSpace를 `.d.mlua`·기존 코드로 확인 후 결정 — 규칙 8). 구조상 불가하면 **[보류]+질문**으로 전환하고 임의 판단하지 말 것.
+  ⑤ **정렬 기준점**: 스프라이트 중심 y가 아니라 **발밑(접지선) y**가 톱다운 정렬의 올바른 기준이다. 현행 `WalkBehindFade`/자원은 엔티티 y를 쓰므로, 건물처럼 키가 큰 스프라이트는 플레이어와 동률·역전이 날 수 있다. **오프셋 프로퍼티(예: `SortYOffset`)로 보정 가능하게** 하고 리터럴 금지.
+- **Target**: `Util/RenderLayers.mlua`, 신규 `MapObjects/Scripts/YSortSprite.mlua`, `Player/Scripts/PlayerController.mlua`, `MapObjects/Scripts/WalkBehindFade.mlua`(공식 호출부 교체), `MapObjects/Scripts/ResourceSpawner.mlua`·`Monster/Scripts/MonsterSpawner.mlua`·`Player/Scripts/PlayerInventory.mlua`(공식 호출부 교체만 — 로직 변경 금지), `map/town.map` + `NPC/Models/{Merchant, Villager_Elder, Villager_Fisher, Villager_ResidentA~D}.model` + `MapObjects/Models/Animal_Cat.model` + `Furniture/Models/FishingSpot_Pond.model`
+- **Acceptance**: ① 플레이어가 건물·NPC보다 **y가 작으면(남쪽) 앞**, **크면(북쪽) 뒤**로 그려짐 ② **NPC끼리도 y 순서대로** 앞뒤가 갈림 ③ 플레이어↔NPC 앞뒤가 y로 결정됨(현행 "NPC가 항상 앞" 소멸) ④ 고양이 배회 중에도 정렬 유지 ⑤ 낚시터·자원·설치 가구·몬스터 정렬 **회귀 0**(기준값 통일로 인한 역전 없음 — 근거 기재) ⑥ T83 walk-behind 반투명 동작 회귀 0 ⑦ 공식 리터럴 중복 0(전부 `ComputeYOrder` 경유) ⑧ refresh Error=0 + 보고 3종. 최종 육안은 제작자 Play.
+- **충돌 주의**: `town.map`·NPC 모델을 **T84·T86과 공유** → **배치 N 완료 후 착수**. `PlayerController.mlua`는 단독. 신규 `.mlua`이므로 **refresh로 `.codeblock` 생성 확인 필수**(핵심 규칙 2). 착수 전 `msw-scripting` + `msw-general/references/platform.md §6`(3단 우선순위) 로드.
 
 ### (신규 작업 추가 템플릿)
 
