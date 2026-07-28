@@ -2,6 +2,7 @@
 script YSortSprite extends Component
 
 	property boolean Dynamic = false
+	property boolean IsUnit = false
 	property number SortYOffset = 0.0
 	property number _LastY = -999999
 

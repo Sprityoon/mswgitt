@@ -66,13 +66,8 @@ script RenderLayers extends Logic
 			isUnit = true
 		else
 			local ysort = entity:GetComponent("script.YSortSprite")
-			if isvalid(ysort) and ysort.Dynamic then
+			if isvalid(ysort) and ysort.IsUnit then
 				isUnit = true
-			else
-				local entName = entity.Name
-				if entName ~= nil and (string.find(entName, "Villager") or string.find(entName, "Merchant") or string.find(entName, "Elder") or string.find(entName, "Fisher")) then
-					isUnit = true
-				end
 			end
 		end
 

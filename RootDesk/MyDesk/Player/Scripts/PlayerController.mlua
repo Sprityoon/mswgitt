@@ -223,71 +223,13 @@ script PlayerController extends Component
 	end
 
 	method boolean IsWallAt(Vector2 checkPos)
-		-- description: True if checkPos sits on an impassable wall — any tile on Layer 4
-		-- (RectTileMap4 = the walls layer; Big Wall is IsCollidable). Tile-based, so it also blocks
-		-- the knockback teleport (SetWorldPosition) path, not just normal movement.
-		local map = self.Entity.CurrentMap
-		if not isvalid(map) then return false end
-		local mapName = map.Name
-		
-		-- Resolve & cache the Layer-4 wall tilemap for the current map (re-resolve while still nil,
-		-- e.g. before chunk loading creates RectTileMap4). The map has many entity children from
-		-- resource proximity loading, so GetChildByName every frame once cached would be costly.
-		if self._T.wallLayerMapName ~= mapName or not isvalid(self._T.wallLayer) then
-			self._T.wallLayerMapName = mapName
-			local l4 = map:GetChildByName("RectTileMap4")
-			self._T.wallLayer = (isvalid(l4) and l4.RectTileMapComponent) or nil
-		end
-		
-		local wallLayer = self._T.wallLayer
-		if isvalid(wallLayer) then
-			local cell = wallLayer:ToCellPosition(Vector3(checkPos.x, checkPos.y, 0))
-			if cell ~= nil and wallLayer:GetTile(cell) ~= nil then
-				return true
-			end
-		end
-		
-		return false
+		-- T99: 판정은 ObstacleQuery 공용 모듈. 시그니처·의미 불변(T36 회귀 0).
+		return _ObstacleQuery:IsWallAt(self.Entity, checkPos)
 	end
 
 	method boolean IsObstacle(Vector2 checkPos, number radius, any currentPos)
-		-- description: True if a move to checkPos should be blocked — a Layer-4 wall tile (IsWallAt),
-		-- or a blocking resource/furniture whose ResourceOccupiedArea AABB the player would penetrate
-		-- deeper than at currentPos. Uses the SAME AABB source as ResolveOverlaps (GetObstacleAABB) so
-		-- the preventive (stop-at-surface) and corrective (push-out) layers can never disagree: the thin
-		-- TriggerComponent band is only a candidate filter (kept wide via OverlapQueryRadius), never the
-		-- block geometry. Blocking membership is data-driven (IsBlockingOverlapEntity) — no name branches.
-		if self:IsWallAt(checkPos) then
-			return true
-		end
-		local simulator = _CollisionService:GetSimulator(self.Entity)
-		if not simulator then return false end
-		-- 후보 수집은 넓은 원으로: Trigger 밴드가 얇거나(예: Big Stone 3x0.5) 아래로 오프셋돼 있어도
-		-- Occupied AABB에 해당하는 후보를 놓치지 않도록 ResolveOverlaps와 동일한 질의 반경을 쓴다.
-		local queryR = self.OverlapQueryRadius
-		if queryR == nil or queryR < radius then queryR = 2.5 end
-		local overlaps = simulator:OverlapAll(CollisionGroups.TriggerBox, CircleShape(checkPos, queryR))
-		local box = { minX = 0, maxX = 0, minY = 0, maxY = 0 }
-		for _, comp in ipairs(overlaps) do
-			if isvalid(comp) and isvalid(comp.Entity) then
-				local entity = comp.Entity
-				if self:IsBlockingOverlapEntity(entity) and self:GetColliderAABB(entity, box) then
-					local penNew = self:CirclePenetration(checkPos, radius, box)
-					if penNew > 0 then
-						-- 밀착/탈출/평행 이동은 허용하고, currentPos보다 더 깊이 파고드는 이동만 차단.
-						-- (currentPos == nil인 워프 안전위치 검사에서는 겹침 자체를 장애물로 본다.)
-						local penCur = 0
-						if currentPos ~= nil then
-							penCur = self:CirclePenetration(currentPos, radius, box)
-						end
-						if penNew > penCur + 0.0001 then
-							return true
-						end
-					end
-				end
-			end
-		end
-		return false
+		-- T99: 판정은 ObstacleQuery 공용 모듈. 시그니처·의미 불변(T36·T41 회귀 0).
+		return _ObstacleQuery:IsObstacle(self.Entity, checkPos, radius, currentPos, self.OverlapQueryRadius)
 	end
 
 	@ExecSpace("Server")
@@ -1694,127 +1636,31 @@ script PlayerController extends Component
 	-- T36 재작업: 후보 수집 질의 반경 (해소 AABB와 분리 — 트리거 크기 의존 제거)
 	property number OverlapQueryRadius = 2.5
 
-	-- @ExecSpace 미지정: 클라 ResolveOverlaps와 서버 ExecuteDashSkill→IsObstacle 양쪽에서 호출되므로
-	-- 호출자 측에서 실행되도록 둔다(순수 컴포넌트 조회, side-effect 없음).
+	-- @ExecSpace 미지정: 클라 ResolveOverlaps와 서버 ExecuteDashSkill→IsObstacle 양쪽에서 호출.
+	-- T99: ObstacleQuery 래퍼 — 시그니처·의미 불변.
 	method boolean IsBlockingOverlapEntity(Entity entity)
-		-- 데이터 주도 필터: 이름 분기 금지.
-		-- 차단 = ResourceOccupiedArea 또는 PlaceableFurniture (각 BlocksMovement).
-		if not isvalid(entity) or entity == self.Entity then return false end
-		if isvalid(entity:GetComponent("script.itemreact")) then return false end
-		local occ = entity:GetComponent("script.ResourceOccupiedArea")
-		if isvalid(occ) then
-			return occ.BlocksMovement ~= false
-		end
-		local furn = entity:GetComponent("script.PlaceableFurniture")
-		if isvalid(furn) then
-			return furn.BlocksMovement ~= false
-		end
-		return false
+		-- 데이터 주도 필터 위임.
+		return _ObstacleQuery:IsBlockingOverlapEntity(self.Entity, entity)
 	end
 
-	-- @ExecSpace 미지정: IsObstacle(서버 대시 포함)/ResolveOverlaps 공용. 순수 조회+산식.
 	method boolean GetColliderAABB(Entity entity, table outBox)
-		-- 이동 충돌의 기준 = 각 모델에 손으로 튜닝해 둔 실제 충돌 박스(TriggerComponent, 없으면
-		-- PhysicsColliderComponent)를 월드 AABB로 변환한 것. ResourceOccupiedArea(스폰/채집 점유용,
-		-- 더 넓음)가 아니라 이 박스를 써야 "사용자가 세팅한 범위"만큼만 막힌다. 감지(IsObstacle)와
-		-- 밀어내기(ResolveOverlaps)가 동일 소스를 공유해 두 레이어가 어긋나지 않는다.
-		local transform = entity.TransformComponent
-		if not isvalid(transform) then return false end
-		local boxSize = nil
-		local offX, offY = 0, 0
-		local trigger = entity.TriggerComponent
-		if isvalid(trigger) then
-			boxSize = trigger.BoxSize
-			offX = trigger.ColliderOffset.x
-			offY = trigger.ColliderOffset.y
-		else
-			local collider = entity.PhysicsColliderComponent
-			if isvalid(collider) then
-				boxSize = collider.BoxSize
-				offX = collider.ColliderOffset.x
-				offY = collider.ColliderOffset.y
-			end
-		end
-		if boxSize == nil then return false end
-		local cx = transform.WorldPosition.x + offX
-		local cy = transform.WorldPosition.y + offY
-		local hx = boxSize.x * 0.5
-		local hy = boxSize.y * 0.5
-		outBox.minX = cx - hx
-		outBox.maxX = cx + hx
-		outBox.minY = cy - hy
-		outBox.maxY = cy + hy
-		return true
+		-- Trigger/PhysicsCollider AABB 위임 (T82 조준·T36 충돌 공용).
+		return _ObstacleQuery:GetColliderAABB(entity, outBox)
 	end
 
-	-- @ExecSpace 미지정: IsObstacle(서버 대시 포함)/기타 공용. 순수 산식.
 	method number CirclePenetration(Vector2 p, number radius, table box)
-		-- 원(중심 p, 반지름 radius)이 AABB(box)를 파고든 깊이. <=0 이면 겹치지 않음.
-		-- 중심이 AABB 내부면 radius + 가장 가까운 면까지의 거리를 반환해, 깊이가 단조 증가하도록 한다
-		-- (IsObstacle이 "더 깊어지는 이동만 차단" 비교에 쓴다).
-		local minX, maxX, minY, maxY = box.minX, box.maxX, box.minY, box.maxY
-		local closestX = p.x
-		if closestX < minX then closestX = minX elseif closestX > maxX then closestX = maxX end
-		local closestY = p.y
-		if closestY < minY then closestY = minY elseif closestY > maxY then closestY = maxY end
-		local dx = p.x - closestX
-		local dy = p.y - closestY
-		local distSq = dx * dx + dy * dy
-		if distSq < 0.0000001 then
-			-- 중심이 AABB 내부
-			local nearest = math.min(p.x - minX, maxX - p.x, p.y - minY, maxY - p.y)
-			return radius + nearest
-		end
-		return radius - math.sqrt(distSq)
+		-- 원-AABB 침투 깊이 위임.
+		return _ObstacleQuery:CirclePenetration(p, radius, box)
 	end
 
-	@ExecSpace("ClientOnly")
 	method Vector2 ResolveCircleAABB(number cx, number cy, number radius, table box, number startX, number startY)
-		-- 원-대-AABB MTV. 내부 침투 시 start 쪽 면을 우선해 방향 뒤집힘 방지.
-		local minX, maxX, minY, maxY = box.minX, box.maxX, box.minY, box.maxY
-		local closestX = cx
-		if closestX < minX then closestX = minX elseif closestX > maxX then closestX = maxX end
-		local closestY = cy
-		if closestY < minY then closestY = minY elseif closestY > maxY then closestY = maxY end
-
-		local dx = cx - closestX
-		local dy = cy - closestY
-		local distSq = dx * dx + dy * dy
-		local r2 = radius * radius
-
-		-- 중심이 AABB 내부 (closest == center)
-		if distSq < 0.0000001 then
-			local midX = (minX + maxX) * 0.5
-			local midY = (minY + maxY) * 0.5
-			-- start 위치에 따라 선호 축/방향 결정
-			local preferLeft = startX < midX
-			local preferDown = startY < midY
-			local pushLeft = (minX - radius) - cx
-			local pushRight = (maxX + radius) - cx
-			local pushDown = (minY - radius) - cy
-			local pushUp = (maxY + radius) - cy
-			local candX = preferLeft and pushLeft or pushRight
-			local candY = preferDown and pushDown or pushUp
-			if math.abs(candX) <= math.abs(candY) then
-				return Vector2(candX, 0)
-			end
-			return Vector2(0, candY)
-		end
-
-		if distSq >= r2 then
-			return Vector2.zero
-		end
-
-		local dist = math.sqrt(distSq)
-		local pen = radius - dist
-		local nx = dx / dist
-		local ny = dy / dist
-		return Vector2(nx * pen, ny * pen)
+		-- 원-AABB MTV 위임 (ExecSpace 미지정 — 순수 산식, 서버 몬스터 탈출과 공유).
+		return _ObstacleQuery:ResolveCircleAABB(cx, cy, radius, box, startX, startY)
 	end
 
 	@ExecSpace("ClientOnly")
 	method void ResolveOverlaps(number delta)
-		-- T36: 원(r=0.3) 대 AABB 전량 해소. 이름 분기 없음.
+		-- T36: 원(r=0.3) 대 AABB 전량 해소. T99: MTV 합산은 ObstacleQuery, 적용/SafePos는 여기 유지.
 		if self.IsDead then return end
 
 		local body = self.Entity.KinematicbodyComponent
@@ -1837,43 +1683,13 @@ script PlayerController extends Component
 		local startX = self.OverlapSafeX
 		local startY = self.OverlapSafeY
 
-		local simulator = _CollisionService:GetSimulator(self.Entity)
 		local r = 0.3
-		-- 후보 수집만 넓은 원 — 침투/밀어내기 판정은 GetColliderAABB(Trigger 박스) 전담 (재작업 ①)
-		local queryR = self.OverlapQueryRadius
-		if queryR == nil or queryR < r then queryR = 2.5 end
-		local checkShape = CircleShape(currentPos, queryR)
-		local overlaps = simulator:OverlapAll(CollisionGroups.TriggerBox, checkShape)
-
-		local pushX, pushY = 0.0, 0.0
-		local hit = false
-		local box = { minX = 0, maxX = 0, minY = 0, maxY = 0 }
-
-		for _, comp in ipairs(overlaps) do
-			if isvalid(comp) and isvalid(comp.Entity) then
-				local entity = comp.Entity
-				if self:IsBlockingOverlapEntity(entity) and self:GetColliderAABB(entity, box) then
-					local mtv = self:ResolveCircleAABB(currentPos.x, currentPos.y, r, box, startX, startY)
-					if mtv.x ~= 0 or mtv.y ~= 0 then
-						pushX = pushX + mtv.x
-						pushY = pushY + mtv.y
-						hit = true
-					end
-				end
-			end
-		end
+		local push = _ObstacleQuery:ComputeOverlapPush(self.Entity, currentPos, r, self.OverlapQueryRadius, startX, startY)
+		local hit = push.x ~= 0 or push.y ~= 0
 
 		if hit then
-			-- 당 프레임 전량 해소 + 클램프 0.5
-			local mag = math.sqrt(pushX * pushX + pushY * pushY)
-			local maxPush = 0.5
-			if mag > maxPush and mag > 0.0001 then
-				local s = maxPush / mag
-				pushX = pushX * s
-				pushY = pushY * s
-			end
-			local targetX = currentPos.x + pushX
-			local targetY = currentPos.y + pushY
+			local targetX = currentPos.x + push.x
+			local targetY = currentPos.y + push.y
 			-- currentPos를 body:GetWorldGroundPosition()에서 읽었으므로 쓰기도 body:SetWorldPosition으로
 			-- 대칭화한다. transform.WorldPosition에 직접 쓰면 (1) Kinematicbody가 물리 스텝에서 되돌리며
 			-- 싸우고 (2) 점프 중 transform.y에 실린 시각 오프셋을 지면 좌표로 덮어써 수직 스냅/순간이동이
@@ -1887,11 +1703,9 @@ script PlayerController extends Component
 					transform.WorldPosition = Vector3(targetX, targetY, transform.WorldPosition.z)
 				end
 			end
-			-- SafePos는 해소 후 위치만 갱신 (차단 AABB 내부 오염 방지 — 재작업 ②)
 			self.OverlapSafeX = targetX
 			self.OverlapSafeY = targetY
 		else
-			-- hit=false: 넓은 질의로 근처 차단 AABB 침투가 없음이 보장될 때만 갱신
 			self.OverlapSafeX = currentPos.x
 			self.OverlapSafeY = currentPos.y
 		end
@@ -3082,6 +2896,7 @@ script PlayerController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void UpdateAvatarYOrder(boolean force)
+		-- description: Updates AvatarRendererComponent OrderInLayer.
 		local transform = self.Entity.TransformComponent
 		if not isvalid(transform) then return end
 		local y = transform.WorldPosition.y
@@ -3090,7 +2905,10 @@ script PlayerController extends Component
 			local avatar = self.Entity.AvatarRendererComponent
 			if isvalid(avatar) and _RenderLayers then
 				avatar.SortingLayer = _RenderLayers.EntityLayer
-				avatar.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(self.Entity, 0)
+				-- 아바타 Transform은 이미 발밑 위치이므로 박스 보정을 타지 않고 ComputeYOrder를 직접 호출한다.
+				-- 단, 아바타도 유닛이므로 UnitTieBias(+1)를 추가 가산하여 유닛 우선 정렬을 보장한다.
+				local baseOrder = _RenderLayers:ComputeYOrder(y)
+				avatar.OrderInLayer = baseOrder + (_RenderLayers.UnitTieBias or 1)
 			end
 		end
 	end

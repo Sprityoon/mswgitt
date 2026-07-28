@@ -79,6 +79,18 @@ script MonsterAI extends Component
 	property number StandMin = 1.0
 	property number StandMax = 2.0
 
+	-- T99: 엔티티 장애물(자원·가구) — ObstacleQuery 공용. 임계값은 프로퍼티.
+	property number ObstacleRadius = 0.3
+	property number ObstacleQueryRadius = 2.5
+	property number ObstacleStuckSeconds = 1.5
+	property number ObstacleStuckCooldown = 4.0
+	property number ObstacleEscapeStep = 0.75
+	@HideFromInspector property number ObstacleStuckTimer = 0
+	@HideFromInspector property number ObstacleEscapeCooldownTimer = 0
+	@HideFromInspector property number ObstacleLastX = 0
+	@HideFromInspector property number ObstacleLastY = 0
+	@HideFromInspector property boolean ObstaclePosInit = false
+
 	-- T39: 원거리 투사체 설정. ProjectileModelId가 빈 값이면 근접 전용(현행 유지),
 	-- 모델명이 들어가면 윈드업 만료 시점에 근접 대신 투사체를 발사한다(모델 프로퍼티 = 데이터 주도, 이름 분기 금지).
 	property string ProjectileModelId = ""
@@ -127,6 +139,9 @@ script MonsterAI extends Component
 		-- Records the spawn anchor (for leashing) and starts in the idle STAND state.
 		local p = self:Pos2D()
 		self.SpawnPos = p
+		self.ObstacleLastX = p.x
+		self.ObstacleLastY = p.y
+		self.ObstaclePosInit = true
 		self.TelegraphOn = false
 		self.EngagementStarted = false
 		self.AttackCooldownTimer = 0
@@ -136,6 +151,8 @@ script MonsterAI extends Component
 			self.MinionSummonTimer = self.MinionSummonInterval
 		end
 		self:EnterState("STAND")
+		-- T99: 스폰 직후 자원 AABB 안에 끼면 즉시 밀어낸다.
+		self:TryPushOutOfObstacles()
 	end
 
 	@ExecSpace("ServerOnly")
@@ -953,10 +970,178 @@ script MonsterAI extends Component
 
 	@ExecSpace("ServerOnly")
 	method void MoveDirVec(Vector2 dir, number delta)
-		-- Applies movement via MovementComponent and flips the sprite to match facing.
+		-- Applies movement via MovementComponent with T99 entity-obstacle slide (player-equivalent).
+		-- 적용 순서: 호출부(TryFleeAvoidZone / CHASE / WANDER 등) → 여기 장애물 슬라이드 → MoveToDirection.
 		local mc = self.Entity.MovementComponent
-		if isvalid(mc) then mc:MoveToDirection(dir, delta) end
-		self:Face(dir.x)
+		if not isvalid(mc) then return end
+		local dx = dir.x
+		local dy = dir.y
+		local len = math.sqrt(dx * dx + dy * dy)
+		if len <= 0.0001 then
+			mc:Stop()
+			self:TickObstacleStuck(false, delta)
+			return
+		end
+		dx = dx / len
+		dy = dy / len
+		local currentPos = self:Pos2D()
+		local r = self.ObstacleRadius
+		if r == nil or r <= 0 then r = 0.3 end
+		local queryR = self.ObstacleQueryRadius
+		if queryR == nil or queryR < r then queryR = 2.5 end
+		local step = mc.InputSpeed * delta
+		local moved = false
+		local outDx = 0
+		local outDy = 0
+		if _ObstacleQuery ~= nil then
+			local testFull = Vector2(currentPos.x + dx * step, currentPos.y + dy * step)
+			if not _ObstacleQuery:IsObstacle(self.Entity, testFull, r, currentPos, queryR) then
+				outDx = dx
+				outDy = dy
+				moved = true
+			else
+				local canX = false
+				local canY = false
+				if math.abs(dx) > 0.0001 then
+					local testX = Vector2(currentPos.x + dx * step, currentPos.y)
+					canX = not _ObstacleQuery:IsObstacle(self.Entity, testX, r, currentPos, queryR)
+				end
+				if math.abs(dy) > 0.0001 then
+					local testY = Vector2(currentPos.x, currentPos.y + dy * step)
+					canY = not _ObstacleQuery:IsObstacle(self.Entity, testY, r, currentPos, queryR)
+				end
+				if canX and canY then
+					if math.abs(dx) >= math.abs(dy) then
+						outDx = dx
+						outDy = 0
+					else
+						outDx = 0
+						outDy = dy
+					end
+					moved = true
+				elseif canX then
+					outDx = dx
+					outDy = 0
+					moved = true
+				elseif canY then
+					outDx = 0
+					outDy = dy
+					moved = true
+				end
+			end
+		else
+			outDx = dx
+			outDy = dy
+			moved = true
+		end
+		if moved then
+			mc:MoveToDirection(Vector2(outDx, outDy), delta)
+			self:Face(outDx ~= 0 and outDx or dir.x)
+		else
+			mc:Stop()
+			self:Face(dir.x)
+		end
+		self:TickObstacleStuck(moved, delta)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void TickObstacleStuck(boolean movedIntent, number delta)
+		-- 이동 의인데 실제 변위가 없으면 갇힘 타이머를 쌓고, 임계 시 탈출한다.
+		if self.ObstacleEscapeCooldownTimer > 0 then
+			self.ObstacleEscapeCooldownTimer = self.ObstacleEscapeCooldownTimer - delta
+			return
+		end
+		local p = self:Pos2D()
+		if not self.ObstaclePosInit then
+			self.ObstacleLastX = p.x
+			self.ObstacleLastY = p.y
+			self.ObstaclePosInit = true
+			self.ObstacleStuckTimer = 0
+			return
+		end
+		local dx = p.x - self.ObstacleLastX
+		local dy = p.y - self.ObstacleLastY
+		local progressed = (dx * dx + dy * dy) > 0.0001
+		self.ObstacleLastX = p.x
+		self.ObstacleLastY = p.y
+		if movedIntent and progressed then
+			self.ObstacleStuckTimer = 0
+			return
+		end
+		if not movedIntent then
+			-- 의도적 정지(공격 등)는 갇힘으로 치지 않음 — MoveDirVec에서만 movedIntent=false+Stop
+			-- 장애물로 막혀 Stop된 경우 movedIntent=false 이므로 타이머를 올린다.
+			self.ObstacleStuckTimer = self.ObstacleStuckTimer + delta
+		else
+			-- 의도는 이동인데 변위 없음
+			self.ObstacleStuckTimer = self.ObstacleStuckTimer + delta
+		end
+		local limit = self.ObstacleStuckSeconds
+		if limit == nil or limit <= 0 then limit = 1.5 end
+		if self.ObstacleStuckTimer >= limit then
+			self:EscapeObstacleStuck()
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean TryPushOutOfObstacles()
+		-- ResolveOverlaps와 동일 MTV로 한 번 밀어낸다. 성공 시 true.
+		if _ObstacleQuery == nil then return false end
+		local p = self:Pos2D()
+		local r = self.ObstacleRadius
+		if r == nil or r <= 0 then r = 0.3 end
+		local queryR = self.ObstacleQueryRadius
+		if queryR == nil or queryR < r then queryR = 2.5 end
+		local push = _ObstacleQuery:ComputeOverlapPush(self.Entity, p, r, queryR, p.x, p.y)
+		if push.x == 0 and push.y == 0 then return false end
+		local target = Vector2(p.x + push.x, p.y + push.y)
+		local body = self.Entity.KinematicbodyComponent
+		if isvalid(body) then
+			body:SetWorldPosition(target)
+		else
+			local t = self.Entity.TransformComponent
+			if isvalid(t) then
+				t.WorldPosition = Vector3(target.x, target.y, t.WorldPosition.z)
+			end
+		end
+		self.ObstacleLastX = target.x
+		self.ObstacleLastY = target.y
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method void EscapeObstacleStuck()
+		-- 갇힘 폴백: MTV 밀어내기 → 실패 시 스폰 방향 스텝 → RETURN.
+		self.ObstacleStuckTimer = 0
+		local cd = self.ObstacleStuckCooldown
+		if cd == nil or cd < 0 then cd = 4.0 end
+		self.ObstacleEscapeCooldownTimer = cd
+		local ok = self:TryPushOutOfObstacles()
+		if not ok then
+			local p = self:Pos2D()
+			local dx = self.SpawnPos.x - p.x
+			local dy = self.SpawnPos.y - p.y
+			local len = math.sqrt(dx * dx + dy * dy)
+			local step = self.ObstacleEscapeStep
+			if step == nil or step <= 0 then step = 0.75 end
+			local target = self.SpawnPos
+			if len > step then
+				target = Vector2(p.x + dx / len * step, p.y + dy / len * step)
+			end
+			local body = self.Entity.KinematicbodyComponent
+			if isvalid(body) then
+				body:SetWorldPosition(target)
+			else
+				local t = self.Entity.TransformComponent
+				if isvalid(t) then
+					t.WorldPosition = Vector3(target.x, target.y, t.WorldPosition.z)
+				end
+			end
+			self.ObstacleLastX = target.x
+			self.ObstacleLastY = target.y
+		end
+		self:EnterState("RETURN")
+		log("[T99][OBS] stuck escape push=" .. tostring(ok) .. " entity=" .. tostring(self.Entity.Name))
 	end
 
 	@ExecSpace("ServerOnly")

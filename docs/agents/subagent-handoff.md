@@ -134,6 +134,14 @@
 >   - 🔴 **T90 반려**: "물이 배치가 안 돼 있어" → 지휘자 실측으로 **Change ⑥ 미이행** 확정(4개 맵 `Water` 0건 · `build_maps.cjs` 미수정) → **T98로 재작업 발행**. **T91·T92는 물이 없어 사냥터 경로가 미검증 상태** — T98 완료 후 재확인 필요(영지는 T92 파기로 자체 검증 가능).
 >   - 🔴 **T99 신규**: "몬스터가 자원을 통과" → **이번 배치 회귀 아님**. `IsObstacle`/`ResolveOverlaps`/`GetColliderAABB` 22건이 전부 `PlayerController.mlua`에만 존재(실측) = T36 차단은 **플레이어 전용**이고 몬스터는 타일 충돌만 따르는 **원래부터의 미구현**. T81 ②에 기록해 둔 사안이 표면화.
 >   - **후속 큐(권장 순서)**: **T98**(물 실배치 — Phase 21 완성 게이트) → **T97**(T95 검수 지적 3건) → **T99**(몬스터 장애물, 단독). T96(Trigger 확대)은 여전히 보스 결정 대기.
+> - **✅ 2026-07-28 지휘자 검수 — T97·T99 통과 (지적 0건)**
+>   - **빌드**: 지휘자 refresh 대행 → **Error=0 / Warning 17 / Info 533 (total 550)**. baseline(W17) 대비 경고 증가 0. T99의 신규 `@Logic` **`Util/ObstacleQuery.codeblock` 생성 확인**(핵심 규칙 2 충족 — 보고서상 "MCP 미연결로 보류"였던 항목을 지휘자가 대행 해소).
+>   - **T97 실물 대조**: ① `RenderLayers.mlua`에 **이름 문자열 분기 0건**, `YSortSprite.IsUnit` 기반으로 교체 확인(R3 해소) ② `UpdateAvatarYOrder`가 `ComputeYOrder(y) + UnitTieBias` 직접 호출 + 사유 주석 확인 ③ **유닛 모델 11종 전수 `YSortSprite`+`IsUnit=true` 충족(미충족 0건)**, 닭·양·개는 `Dynamic=true` 동반. 역방향 오분류 검사도 통과(`Building_Shop`·`Tree1`·`FishingSpot_Pond`에 `IsUnit` 미설정).
+>   - **T99 실물 대조**: `PlayerController`의 `IsWallAt`/`IsObstacle`/`IsBlockingOverlapEntity`/`GetColliderAABB`/`CirclePenetration`/`ResolveCircleAABB`가 **시그니처 보존 위임 래퍼**로 전환, `ResolveOverlaps`는 위치 적용·SafePos를 로컬 유지(보고 내용과 일치). `MonsterAI`에 `IsObstacle` + X/Y 축 슬라이드, `TickObstacleStuck`/`TryPushOutOfObstacles`/`EscapeObstacleStuck` 갇힘 폴백, 임계값 프로퍼티화 확인.
+>   - **🔀 레인 충돌 없음 확인**: 두 레인이 `PlayerController.mlua`를 공유했으나 **상호 덮어쓰기 0** — T97의 `UpdateAvatarYOrder` 수정과 T99의 장애물 추출이 모두 온전히 잔존(T99 추출로 행 번호만 3084→2898 이동).
+>   - **⚠️ Play에서 최우선 확인할 항목**: `ObstacleQuery`는 **플레이어=클라 / 몬스터=서버** 양쪽에서 호출된다. `CollisionService.d.mlua`에 ExecSpace 제약 표기는 없으나(지휘자 확인), **서버 경로에서 `GetSimulator(...):OverlapAll`이 실제로 동작하는지는 런타임에서만 판정 가능** — 몬스터가 여전히 자원을 통과하면 이 지점을 첫 번째로 의심할 것.
+> - **✅ 2026-07-28 제작자 Play — T97·T99 전 항목 PASS → [완료]**. 몬스터 엔티티 장애물 차단이 서버 경로에서 정상 동작함이 실증됨(`ObstacleQuery`의 client/server 양용 우려 해소). 플레이어 이동·채집 추출 회귀 0.
+>   - **남은 큐**: **T98**(물 실배치 — 제작자 페인팅 선행 후 프린지 보정) · **T75**(소품 P1~P11, 레인 A 완료 후) / **결정 대기**: T96(Trigger 확대) / **제작자 직접**: T76·T94 / **보류**: T4.
 > - **병렬 규약(요지)**: ① 상대 레인 소유 파일은 읽기만 ② 이 문서 갱신은 자기 T블록 라인만 ③ 티켓 완료마다 refresh 1회+빌드 Error 수를 보고서 §4에 기재 ④ 무보고 종료 = 반려(§5 조항 11).
 
 ### T4. [보류 유지 — 제작자 협업 전제 | 🔴 T90과 `wall.tileset` 충돌 주의] 경계 테라스/절벽 아트 정리
@@ -641,7 +649,7 @@
 - **🧭 지휘자 소견**: **(B) 또는 (C)** 를 권장한다. (A)는 T81·T82·T83이 모두 Play 확인을 마친 직후라 지금 전면 변경하면 방금 안정화한 3개 시스템을 동시에 흔든다. **T95 결과를 Play로 본 뒤**, 실제로 정렬이 어색한 대상만 좁혀서 부여하는 편이 안전하다.
 - **Target/Change/Acceptance**: **보스 결정 후 확정**. 결정 전 착수 금지 — 이 항목은 티켓이 아니라 결정 대기 항목이다.
 
-### T97. [대기] T95 검수 지적 3건 — 이름 분기 제거(R3) · 아바타 경로 · 가축/펫 Y정렬 누락
+### T97. [✅ 완료 — Play 확인 2026-07-28(제작자) | refresh Error=0 | 지휘자 검수 통과·지적 0건] T95 검수 지적 3건 — 이름 분기 제거(R3) · 아바타 경로 · 가축/펫 Y정렬 누락
 
 - **배경**: 지휘자 검수(2026-07-28, 코드 실측)에서 T95 구현의 결함 3건 확인. **T95를 반려하지는 않는다**(접지선 통일·`UnitTieBias`·refresh Error=0은 정상 이행) — 잔여 결함만 분리 발행.
 - **① 🔴 R3 위반 — 유닛 판정에 이름 문자열 분기**: `Util/RenderLayers.mlua` `ComputeYOrderForEntity` 72~75행이
@@ -684,7 +692,7 @@
 - **Acceptance**: ① 물가 잔디 테두리가 §1.3 문법대로 정확히 생성(전용 물가 타일 신설 0) ② **밀착 페어 길·광장·밭이 1셀도 변경되지 않음**(diff 범위 검사 근거를 보고서에) ③ L1 `Water` 셀에 L2 잔디 잔존 0 ④ 물 셀 자원 스폰 0 · 미니맵 물색 표시(T90 인정분 동작 확인) ⑤ **물가에서 F로 낚시 성립**(T91 연계 — Phase 21 완성 게이트) ⑥ 물 8방향 진입 불가 ⑦ refresh Error=0 + 보고 3종. Play 최종 확인은 제작자.
 - **충돌 주의**: 대상 `.map`의 L2 레이어 단독. **제작자의 물 페인팅 완료 + 커밋 후 착수**(미커밋 상태에서 스크립트를 돌리면 규칙 11 사고와 섞여 원인 추적이 불가능해진다). T97·T99와 파일 겹침 없음 — 병렬 가능.
 
-### T99. [대기] 몬스터가 자원·오브젝트를 통과하는 문제 — 엔티티 장애물 판정이 플레이어 전용 (⚖️ 2026-07-28 제작자 Play)
+### T99. [✅ 완료 — Play 확인 2026-07-28(제작자) | 지휘자 refresh 대행 Error=0 (total 550 / W17 / I533), `ObstacleQuery.codeblock` 생성 확인 | 검수 통과·지적 0건] 몬스터가 자원·오브젝트를 통과하는 문제 — 엔티티 장애물 판정이 플레이어 전용 (⚖️ 2026-07-28 제작자 Play)
 
 - **배경(제작자)**: "몬스터가 자원을 통과하며 움직이는 버그."
 - **🧭 지휘자 진단 — 회귀가 아니라 처음부터 미구현(실측 확정)**: 엔티티 장애물 판정 3종(`IsObstacle` / `ResolveOverlaps` / `GetColliderAABB`)이 **`PlayerController.mlua`에만 22건 존재하고 다른 스크립트에는 0건**이다. 즉 T36 차단 시스템은 **플레이어 전용**이며, 몬스터는 `KinematicbodyComponent`의 **타일 충돌(Movable)만** 따르므로 **엔티티인 자원·건물·설치물을 통과하는 것이 현재 설계상 정상 동작**이다. (T81 ②에서 "`ResolveOverlaps`는 플레이어 전용이라 이동 NPC 차단은 별개 주제"로 이미 기록해 둔 사안이 제작자 Play에서 표면화된 것.) **이번 배치(T89~T95)의 회귀가 아니다.**
@@ -697,6 +705,8 @@
   ⑤ **범위 한정**: 이 티켓은 **몬스터**만. NPC·동물·펫 이동체 차단은 범위 밖(필요하면 후속 티켓).
 - **Acceptance**: ① 몬스터가 나무·바위·광맥을 **통과하지 못함** ② 몬스터가 자원 사이에 **영구히 갇히지 않음**(탈출 폴백 로그 근거) ③ 추격·귀환·배회·돌진(T38~T41)·회피 장치(T93) 회귀 0 ④ **플레이어 이동·채집 체감 회귀 0**(추출 리팩터링 안전성) ⑤ 프레임 저하 없음(근거 기재) ⑥ refresh Error=0 + 보고 3종.
 - **충돌 주의**: `PlayerController.mlua`(레인 A 핵심 파일) + `MonsterAI.mlua`(T93 레인 B가 방금 수정) **양쪽을 동시에 만지는 유일한 티켓** → **단독 착수, 다른 티켓과 병행 금지**. 착수 전 `msw-combat-system` + `references/ai-bt.md` 로드.
+- **구현 요약 (2026-07-28)**: `Util/ObstacleQuery.mlua`(@Logic) 신설 · PC 래퍼 추출(YOrder 무수정) · `MonsterAI.MoveDirVec` 슬라이드+갇힘 탈출. T93 순서=회피→MoveDirVec 내 장애물. 성능=OverlapAll(queryR). 보고서: `docs/agents/reports/T99-monster-entity-obstacles.md`.
+- **검증**: LSP **errors=0**. **런타임 검증 보류(제작자 수행)**. refresh 측정 불가(MCP 미연결) — baseline Error=0 대비 제작자 refresh 필수.
 
 ### (신규 작업 추가 템플릿)
 
