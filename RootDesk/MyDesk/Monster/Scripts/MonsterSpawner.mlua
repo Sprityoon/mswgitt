@@ -259,7 +259,7 @@ script MonsterSpawner extends Logic
 									if isvalid(sprite) then
 										sprite.IgnoreMapLayerCheck = true
 										sprite.SortingLayer = _RenderLayers.EntityLayer
-										sprite.OrderInLayer = math.max(_RenderLayers.MinEntityOrder, math.floor((radius - ry) * 100))
+										sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(spawnedMonster, 0)
 										local tint = Color(1.0, 1.0, 1.0, 1.0)
 										if isvalid(resourceSpawner) then
 											local hex = resourceSpawner:GetBiomeMonsterTintHex(biomeId)

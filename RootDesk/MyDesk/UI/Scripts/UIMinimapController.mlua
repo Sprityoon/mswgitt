@@ -143,6 +143,8 @@ script UIMinimapController extends Component
 			return Color(0.76, 0.60, 0.42, 1.0)
 		elseif tileName == "Soil" then
 			return Color(0.76, 0.60, 0.42, 1.0)
+		elseif tileName == "Water" then
+			return Color(0.20, 0.45, 0.85, 1.0)
 		elseif string.sub(tileName, 1, 10) == "TerraceTop" then
 			return Color(0.30, 0.48, 0.12, 1.0)
 		elseif string.sub(tileName, 1, 9) == "CliffFace" then

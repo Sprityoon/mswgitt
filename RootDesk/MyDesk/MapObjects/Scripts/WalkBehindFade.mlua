@@ -28,28 +28,19 @@ script WalkBehindFade extends Component
 	end
 
 	method void ApplyYSort()
+		-- Applies Y-based sorting for building sprites.
 		if not self.EnableYSort then return end
 		local sprite = self.Entity.SpriteRendererComponent
 		local transform = self.Entity.TransformComponent
 		if not isvalid(sprite) or not isvalid(transform) then return end
+		local y = transform.WorldPosition.y
 		if _RenderLayers then
 			sprite.SortingLayer = _RenderLayers.EntityLayer
+			sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(self.Entity, 0)
 		else
 			sprite.SortingLayer = "MapLayer5"
+			sprite.OrderInLayer = math.max(2, math.floor(((self.SortRadius or 100) - y) * 100))
 		end
-		local radius = self.SortRadius
-		if _ResourceSpawner ~= nil then
-			local ok, r = pcall(function() return _ResourceSpawner.MapRadius end)
-			if ok and r ~= nil then
-				radius = tonumber(r) or radius
-			end
-		end
-		local y = transform.WorldPosition.y
-		local minOrder = 2
-		if _RenderLayers and _RenderLayers.MinEntityOrder ~= nil then
-			minOrder = _RenderLayers.MinEntityOrder
-		end
-		sprite.OrderInLayer = math.max(minOrder, math.floor((radius - y) * 100))
 	end
 
 	method void OnUpdate(number delta)

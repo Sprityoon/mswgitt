@@ -1774,7 +1774,7 @@ script PlayerInventory extends Component
 				if isvalid(sprite) then
 					sprite.IgnoreMapLayerCheck = true
 					sprite.SortingLayer = _RenderLayers.EntityLayer
-					sprite.OrderInLayer = math.max(_RenderLayers.MinEntityOrder, math.floor((resourceSpawner.MapRadius - cellPos.y) * 100))
+					sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(spawnedEntity, 0)
 				end
 				if isCropSeed then
 					-- 모델에 script.Crop이 등록돼 있어야 함. 미등록 시 서버 전용 AddComponent 폴백
@@ -1940,19 +1940,39 @@ script PlayerInventory extends Component
 				if isvalid(pc) then pc:ShowMineFeedback("여기는 팔 수 없습니다.") end
 				return
 			end
-		else
-			if resourceSpawner:IsGridOccupied(mapName, cellX, cellY) then
-				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
-				return
+		end
+
+		-- T92: Shovel 도구로 물 지형 파기 및 되메우기 (dig_water / fill_water)
+		local realAction = action
+		if action == "dig_water" or action == "fill_water" or action == "digPath" then
+			local l1Ent = currentMap:GetChildByName("RectTileMap")
+			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
+				local curTile = l1Ent.RectTileMapComponent:GetTile(Vector2Int(cellX, cellY))
+				if curTile ~= nil and curTile.Name == "Water" then
+					realAction = "fill_water"
+				else
+					if cellX == playerCell.x and cellY == playerCell.y then
+						if isvalid(pc) then pc:ShowMineFeedback("발 밑 셀에는 물을 갤 수 없습니다.") end
+						return
+					end
+					realAction = "dig_water"
+				end
 			end
 		end
 
+		if resourceSpawner:IsGridOccupied(mapName, cellX, cellY) then
+			if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
+			return
+		end
+
 		-- 지형 편집 적용 (서브셀 마스크 + 영속 델타).
-		local success = resourceSpawner:ApplyTerrainEdit(mapName, currentMap, action, cellX, cellY, axis, side, true)
+		local success = resourceSpawner:ApplyTerrainEdit(mapName, currentMap, realAction, cellX, cellY, axis, side, true)
 		if not success then
 			if isvalid(pc) then
-				if action == "digPath" then
-					pc:ShowMineFeedback("이미 길입니다.")
+				if realAction == "dig_water" then
+					pc:ShowMineFeedback("이미 물 지형입니다.")
+				elseif realAction == "fill_water" then
+					pc:ShowMineFeedback("이미 흙 지형입니다.")
 				elseif action == "digHole" then
 					pc:ShowMineFeedback("이미 파여 있습니다.")
 				else

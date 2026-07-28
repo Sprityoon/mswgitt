@@ -126,7 +126,9 @@ script PlayerController extends Component
 	-- T66: 시전 이펙트 전방 오프셋(월드 유닛)·스케일 (CSV EffectOffset/EffectScale 공란 시 폴백)
 	property number SkillEffectForwardOffset = 0.8
 
-	property number SkillEffectScale = 1.0
+	-- T89: 아바타 Y정렬 갱신용 이전 Y 위치 기록
+	@HideFromInspector
+	property number _LastAvatarY = -999999
 
 	method void OnBeginPlay()
 		-- description: Initialize key and screen touch event listeners on the client.
@@ -158,6 +160,8 @@ script PlayerController extends Component
 			if isvalid(movement) then
 				movement.InputSpeed = 3.6  -- Set top-down movement speed
 			end
+
+			self:UpdateAvatarYOrder(true)
 			
 			log("PlayerController initialized on client. Facing: " .. self.LastDirectionX .. ", " .. self.LastDirectionY)
 		else
@@ -291,9 +295,11 @@ script PlayerController extends Component
 		-- Client request to spawn initial stones (Disabled as per user request).
 	end
 
+
 	@ExecSpace("ClientOnly")
 	method void OnUpdate(number delta)
 		-- description: Handle updates per frame.
+		self:UpdateAvatarYOrder(false)
 		if self.IsSleeping then
 			local movement = self.Entity.MovementComponent
 			if isvalid(movement) then movement:Stop() end
@@ -1268,12 +1274,16 @@ script PlayerController extends Component
 	@ExecSpace("ClientOnly")
 	method boolean TryInteract()
 		-- T59: F/BtnInteract 공통 상호작용 본문 (KeyDown F에서 이동 — 로직 변경 금지).
-		if self.FishingState ~= "None" and isvalid(self.ActiveFishingSpot) then
+		if self.FishingState ~= "None" then
 			-- T64: 릴링 중 단발 F는 소비만 — 홀드는 OnUpdate 폴링(ServerSetReelHold)이 전담.
 			if self.FishingState == "Reeling" then
 				return true
 			end
-			self:ServerRequestFishingInteract(self.ActiveFishingSpot.Id)
+			if isvalid(self.ActiveFishingSpot) then
+				self:ServerRequestFishingInteract(self.ActiveFishingSpot.Id)
+			else
+				self:ServerRequestTileFishingInteract()
+			end
 			return true
 		end
 		-- 보물 상자: 포탈보다 우선 (홈 포탈 옆 스폰 시 F가 워프로만 먹히던 문제)
@@ -1338,6 +1348,11 @@ script PlayerController extends Component
 		local nearbyFishingSpot = self:FindNearbyFishingSpot()
 		if isvalid(nearbyFishingSpot) then
 			self:ServerRequestFishingInteract(nearbyFishingSpot.Id)
+			return true
+		end
+
+		if self:IsAimTileWater() then
+			self:ServerRequestTileFishingInteract()
 			return true
 		end
 		return false
@@ -2836,6 +2851,83 @@ script PlayerController extends Component
 		return closest
 	end
 
+	@ExecSpace("ClientOnly")
+	method boolean IsAimTileWater()
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) then return false end
+		local playerPos = self.Entity.TransformComponent.WorldPosition
+		local px = math.floor(playerPos.x)
+		local py = math.floor(playerPos.y)
+		local dx, dy = 0, -1
+		if self.LastDirection == "Left" or self.LastDirection == "left" then
+			dx = -1 dy = 0
+		elseif self.LastDirection == "Right" or self.LastDirection == "right" then
+			dx = 1 dy = 0
+		elseif self.LastDirection == "Up" or self.LastDirection == "up" then
+			dx = 0 dy = 1
+		elseif self.LastDirection == "Down" or self.LastDirection == "down" then
+			dx = 0 dy = -1
+		end
+		local aimX = px + dx
+		local aimY = py + dy
+		local l1 = currentMap:GetChildByName("RectTileMap")
+		if isvalid(l1) and isvalid(l1.RectTileMapComponent) then
+			local tile = l1.RectTileMapComponent:GetTile(Vector2Int(aimX, aimY))
+			if tile ~= nil and tile.Name == "Water" then
+				return true
+			end
+		end
+		return false
+	end
+
+	method string GetMapSpotType()
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) then return "field" end
+		local mapName = currentMap.Name
+		if string.sub(mapName, 1, 5) == "Home_" then
+			return "estate"
+		elseif mapName == "town" then
+			return "town"
+		elseif mapName == "template_boss" or mapName == "boss" then
+			return "boss"
+		else
+			return "field"
+		end
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestTileFishingInteract()
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		if self.IsDead or self.IsSleeping then return end
+		
+		if not self:IsEquippedFishingRod() then
+			self:ClientShowMineFeedback("낚싯대를 장착해야 합니다.")
+			return
+		end
+
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) then return end
+		
+		local spotComp = currentMap:GetFirstChildComponentByTypeName("script.FishingSpot", true)
+		if not isvalid(spotComp) then
+			spotComp = currentMap:GetComponent("script.FishingSpot")
+			if not isvalid(spotComp) then
+				currentMap:AddComponent("script.FishingSpot")
+				spotComp = currentMap:GetComponent("script.FishingSpot")
+			end
+		end
+
+		if isvalid(spotComp) then
+			local spotType = self:GetMapSpotType()
+			if self.FishingState == "None" then
+				spotComp:StartFishing(self.Entity, spotType)
+			elseif self.FishingState == "Casting" then
+				spotComp:PullRod(self.Entity)
+			end
+		end
+	end
+
 	method boolean IsEquippedFishingRod()
 		local inv = self.Entity:GetComponent("script.PlayerInventory")
 		if not isvalid(inv) then return false end
@@ -2984,6 +3076,21 @@ script PlayerController extends Component
 			local ctrl = gauge:GetComponent("script.UIFishingGaugeController")
 			if isvalid(ctrl) then
 				ctrl:Hide()
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateAvatarYOrder(boolean force)
+		local transform = self.Entity.TransformComponent
+		if not isvalid(transform) then return end
+		local y = transform.WorldPosition.y
+		if force or self._LastAvatarY == nil or math.abs(y - self._LastAvatarY) >= 0.05 then
+			self._LastAvatarY = y
+			local avatar = self.Entity.AvatarRendererComponent
+			if isvalid(avatar) and _RenderLayers then
+				avatar.SortingLayer = _RenderLayers.EntityLayer
+				avatar.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(self.Entity, 0)
 			end
 		end
 	end

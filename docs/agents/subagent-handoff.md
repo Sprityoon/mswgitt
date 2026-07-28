@@ -93,7 +93,7 @@
 ## 3. 작업 큐 (하위 에이전트 위임 대상)
 
 > 상태: `[대기]` / `[진행]` / `[완료]` / `[보류]`
-> 각 항목은 **Target(파일) / Change(변경) / Acceptance(완료 기준)** 3요소를 반드시 채운다. **T번호는 단조 증가·재사용 금지 — 현재 최대 = T89.**
+> 각 항목은 **Target(파일) / Change(변경) / Acceptance(완료 기준)** 3요소를 반드시 채운다. **T번호는 단조 증가·재사용 금지 — 현재 최대 = T99.**
 
 > 🧭 **현황판 (지휘자 2026-07-21 — 버그픽스)**
 > - **Play PASS 확정**: T50까지의 전 완료분 + T56(주민 대화 말풍선 버그픽스 검증) + T51 · T58 · T59 · T60 · **T62**(⚖️ 2026-07-16 확정) · **T63**(낚시 랭킹 수정 — 핫픽스 포함 확인). 체크포인트 커밋 = 이 갱신과 동시.
@@ -111,10 +111,35 @@
 > - **✅ 2026-07-25 제작자 Play 확인 — T79·T80·T81·T82·T83 전량 [완료]**: 제작자 일괄 확인("전부 확인됐어"). 배치 L·M + walk-behind 종결. `game_design.md` Phase 20에 반영 완료.
 > - **🔴 2026-07-25 규칙 11 사고 3차 발생 → T88 긴급 발행**: `maker_refresh_workspace` 직후 `ui/PopupGroup.ui`가 전량 재직렬화되며 **T79 산출물이 원복**됨(HEAD=`UIGroupComponent false` / 워킹트리=`있음`, 엔티티 수 341 동일). **"재직렬화 diff는 무해" 판정을 근거 없이 적용하면 안 된다**는 교훈을 §1.2 규칙 11에 3차 사례로 추가. **커밋 전 반드시 T88 선처리** — 안 하면 T79가 되돌아간 채로 이력에 박힌다.
 > - **⚠️ 2026-07-25 병렬 워커 진행 중 (지휘자 실측)**: 워킹 트리에서 **T84 완료 반영 확인**(`town.map` `RigidbodyComponent` 14→**0**, NPC 모델 7종 각 −1행) + **T85 완료 반영 확인**(`map/map01.map`에 `FishingSpot` 재배치 — 새 UUID `e3c374da…`, `TriggerComponent`+`script.FishingSpot`+`script.ResourceOccupiedArea`, 제작자 커스텀 연못 아트 `68496b17…` 적용). 미커밋 상태이므로 **다른 세션이 같은 파일을 만지지 말 것**. 🧭 부수 확인: `FishingSpot_Pond.model`의 `SpriteRUID`가 `ecb83722…`(공식 F9) → **`68496b17…`(제작자 커스텀 톱다운 연못, `msw_topdown_fishing_pond_256.sprite`)** 로 교체됨 — 상위 품질이므로 승인, `artwork-spec` 정정 반영 완료.
+> - **🧭 2026-07-25 지휘자 — 2레인 병렬 배치 정의 (에이전트 2인 위임)**
+>   - **레인 A (주력 — 물·낚시·정렬, 순차 강제)**: **T89 → T90 → T91 → T92**
+>     - 소유: `Util/RenderLayers.mlua` · 신규 `MapObjects/Scripts/YSortSprite.mlua` · `MapObjects/Scripts/{ResourceSpawner, WalkBehindFade}.mlua` · `Player/Scripts/{PlayerController, PlayerInventory}.mlua` · `Monster/Scripts/MonsterSpawner.mlua` · `Furniture/Scripts/FishingSpot.mlua` · `UI/Scripts/UIMinimapController.mlua` · `RootDesk/MyDesk/wall.tileset` · `scripts/build_maps.cjs` · `item/DataSets/FishDataSet.csv` · **`map/*.map` 전량** · `NPC/Models/*` · `MapObjects/Models/Animal_Cat.model` · `Furniture/Models/FishingSpot_Pond.model`
+>     - 순차가 강제되는 이유: `ResourceSpawner.mlua`(T89·T90·T92 공유) + `PlayerController.mlua`(T89·T91 공유) + T90의 물 타일이 T91·T92의 선행 조건.
+>   - **레인 B (독립 — UI 회귀·몬스터, 순차)**: **T88 → T93**
+>     - 소유: `ui/PopupGroup.ui` · `Monster/Scripts/MonsterAI.mlua` · 신규 `Furniture/Models/*`(차단 장치) · 신규 `Furniture/Scripts/*`(차단 장치) · **`item/DataSets/item_dataset.csv`** · 제작 레시피 데이터셋
+>     - 레인 A와 파일 교집합 0 — 완전 병렬 가능.
+>   - ⚖️ **교차 레인 조정 1건 — `item_dataset.csv`는 레인 B 전용**: T92(레인 A)의 물 파기 도구는 **기존 `Shovel` 재사용으로 CSV 행 추가 없이** 처리한다. 전용 신규 도구가 꼭 필요하다고 판단되면 임의 추가하지 말고 **[보류]+질문**(레인 충돌).
+>   - **레인 A 꼬리 추가 (⚖️ 2026-07-28)**: T92 다음에 **T95**(Y정렬 기준점을 접지선으로 통일 — T89 후속 보정). 레인 A 최종 순서 = **T89 → T90 → T91 → T92 → T95**.
+>     - 🧭 **T89 검수 소견**: T89는 refresh Error=0으로 코드 게이트를 통과했으나 **티켓 ⑤(발밑 기준 + `SortYOffset` 보정)을 실질 미이행**했다 — `SortYOffset` 프로퍼티만 신설되고 전 모델에서 값이 0이라 접지선 보정이 적용되지 않았다. 보고서 §5 "발견한 문제 없음"은 이 누락을 놓친 것. **T89를 반려하지는 않되**(방향 규칙·일원화는 정상 이행), 잔여분을 T95로 분리 발행한다.
+>   - **레인 A 완료 후 발행 (아트 배치)**: **T75(소품 P1~P11)만**. 🔴 **T90보다 먼저 착수 금지** — T90이 `build_maps.cjs`로 맵을 재생성하면 손배치가 전량 소실된다(아래 경고).
+>   - ⚖️ **2026-07-25 보스 결정 — 아트 큐 정리 4건**: ① **T75 = 소품 P1~P11로 축소**(에이전트 유지 — 공식 RUID 검증 완료분이라 가성비 최고) ② **노점 M1~M3 → T94 [제작자 직접]** (커스텀 리드로우 5종 중 취향 선택) ③ **T76 랜드마크 3동 → [제작자 직접]** (여관·시계탑은 리드로우 품질 판단 필요) ④ **T78 필드 변주 → [폐기]** (체감 최저 + Phase 21이 사냥터 지형을 재편해 중복 작업). **에이전트는 T76·T94·T78·T4를 큐에서 건너뛴다.**
+>   - 🔴 **T90 착수자 필독 — `build_maps.cjs --force` 위험**: `map/town.map`에는 T73·T74·T77·T81·T83의 **손배치 자산(건물 8동·NPC 7기·Trigger·WalkBehindFade·SortingLayer 패치)** 이 대량으로 들어 있고, `map01`에도 지형 편집·배치물이 있다. `--force` 재생성은 **이를 전량 덮어쓴다**. town의 수역은 재생성이 아니라 **MapBuilder 손배치로 넣고**, 생성기 재생성은 `template_field`에 한정할지를 **착수 전에 제작자에게 확인**하고 그 답을 보고서 §3에 기록할 것. 확인 없이 `--force` 실행 금지.
+> - **✅ 2026-07-28 지휘자 검수 — T88·T89·T90·T91·T92·T93·T95 보고 3종 전량 충족, 코드 게이트 통과**
+>   - **지휘자 직접 refresh 재검증**: **Error=0 / Warning 17 / Info 520 / total 537**. Warning이 배치 전 85 → **17**로 감소(T86 청소분 유지 + 신규 스크립트가 경고 무증가). 잔여 17건은 T86이 범위 밖으로 기록한 Furnace 3·MonsterMeleeAttack 3·MonsterAI 2·Monster 2·SpriteRenderer 1 + LWA-1111 6건.
+>   - **산출물 실물 대조(지휘자 코드 실측)**: T88 `FurnacePopup` `UIGroupComponent`=**false**(L029 복구 확인) · T90 `wall.tileset`에 `"Name": "Water"` 존재 · T91 `FishingSpot`이 **town.map 1건뿐**(map01·template_field 제거 확인) · T92 `dig_water`/`fill_water`/`IsWaterTileName` 구현 존재 · T93 신규 `.mlua` 2종 `.codeblock` 생성 확인.
+>   - **T93 참고**: 보고서상 "Maker MCP 미연결로 refresh 보류"였으나, 레인 A의 refresh로 `.codeblock`이 생성되었고 위 재검증에서 Error=0 확인 → **빌드 게이트 충족**. 단 와드 스프라이트는 Portal RUID placeholder(전용 아트는 후속).
+>   - **🔴 T95 검수 지적 3건 → T97 발행**: ① `RenderLayers.ComputeYOrderForEntity` 72~75행의 **엔티티 이름 문자열 분기(R3 위반)** ② 아바타가 Trigger 자동 산출 경로를 탐(T95 티켓 ④ 명시 지시 위반 — 현재는 DefaultPlayer에 Trigger/Collider가 없어 우연히 정상) ③ `Animal_Chicken`/`Animal_Sheep`/`Pet_Dog` **Y정렬 누락 + 유닛 오분류**. **T95는 반려하지 않음**(접지선 통일·바이어스·Error=0은 정상 이행), 잔여만 분리.
+> - **✅ 2026-07-28 제작자 Play 결과 (A·C·D PASS / B 미배치 / E 신규 버그)**
+>   - **PASS 확정**: **T88**(화로 팝업·LEA-3039 소멸) · **T89·T95**(Y정렬 — 접지선 전환·유닛 우선·깜박임 없음) · **T93**(몬스터 차단 장치 전 항목).
+>   - 🔴 **T90 반려**: "물이 배치가 안 돼 있어" → 지휘자 실측으로 **Change ⑥ 미이행** 확정(4개 맵 `Water` 0건 · `build_maps.cjs` 미수정) → **T98로 재작업 발행**. **T91·T92는 물이 없어 사냥터 경로가 미검증 상태** — T98 완료 후 재확인 필요(영지는 T92 파기로 자체 검증 가능).
+>   - 🔴 **T99 신규**: "몬스터가 자원을 통과" → **이번 배치 회귀 아님**. `IsObstacle`/`ResolveOverlaps`/`GetColliderAABB` 22건이 전부 `PlayerController.mlua`에만 존재(실측) = T36 차단은 **플레이어 전용**이고 몬스터는 타일 충돌만 따르는 **원래부터의 미구현**. T81 ②에 기록해 둔 사안이 표면화.
+>   - **후속 큐(권장 순서)**: **T98**(물 실배치 — Phase 21 완성 게이트) → **T97**(T95 검수 지적 3건) → **T99**(몬스터 장애물, 단독). T96(Trigger 확대)은 여전히 보스 결정 대기.
 > - **병렬 규약(요지)**: ① 상대 레인 소유 파일은 읽기만 ② 이 문서 갱신은 자기 T블록 라인만 ③ 티켓 완료마다 refresh 1회+빌드 Error 수를 보고서 §4에 기재 ④ 무보고 종료 = 반려(§5 조항 11).
 
-### T4. [대기] 경계 테라스/절벽 아트 정리
+### T4. [보류 유지 — 제작자 협업 전제 | 🔴 T90과 `wall.tileset` 충돌 주의] 경계 테라스/절벽 아트 정리
 
+- **⚖️ 2026-07-25 보스 결정**: P2 보류 유지. 아트 교체가 Maker에서의 제작자 협업 전제라 에이전트 단독 착수 대상이 아니다. **에이전트는 이 항목을 큐에서 건너뛴다.**
+- 🔴 **`wall.tileset` 동시 편집 금지 (신설 경고)**: **T90(물 타일 기반)이 같은 `wall.tileset`을 잡는다.** T90은 미사용 슬롯(`xx`/`x`/`Name15`/`Name16`/`Name23~Name25`/`Name28~Name32`)에 `Water` 타일을 추가하고, T4는 `TerraceTop`/`CliffFace`/`Big Wall` 슬롯을 리스킨한다 — **슬롯은 겹치지 않지만 같은 파일이라 동시 편집 시 한쪽이 통째로 소실된다**(규칙 11과 동계열: Maker 저장이 파일을 재직렬화한다). 제작자가 Maker에서 T4를 진행할 경우 **T90 착수 전에 끝내거나, T90 완료·커밋 후에 시작**할 것. 중간에 겹치지 말 것.
 - **배경**: `TerraceTop`/`CliffFace`/`Big Wall`은 이전 스킴의 임시 아트 그대로. 신규 grass 기준 아트와 톤 불일치 가능 + 테라스 타일 위 아바타 SortingLayer 최종 판정 미완(`docs/design/skill-tree-plan.md` §5 4번).
 - **Target**: `RootDesk/MyDesk/wall.tileset`(Maker에서 아트 교체 — 제작자 협업) + 필요 시 `scripts/build_maps.cjs` 밴드/데코 페인팅
 - **Change**: 신규 타일 아트 확정 후 테라스 링/절벽면 리스킨, 플레이어가 테라스 타일 아래로 숨는지 확인.
@@ -264,17 +289,33 @@
 - **구현 요약 (2026-07-21)**: House 5종 북서·남서·남동 배치. 보고서: `docs/agents/reports/T74-town-houses.md`.
 - **검증**: Maker refresh **Error=0** (total 527 / Warning 25 / Info 502). **런타임 검증 보류(제작자 수행)**.
 
-### T75. [대기] 상점거리 노점 및 생활 소품 배치 (P0-B, P0-C)
-- **배경**: 마을 생활감 증대를 위한 데코 소품 14종 배치. `docs/design/artwork-spec.md` §3, §4.
-- **Target**: `RootDesk/MyDesk/MapObjects/Models/` (신규 .model), `map/town.map`
-- **Change**: M1~M3(노점) 및 P1~P11(소품 11종) 아트 확보 및 `.model`화. 비충돌 데코는 Body 없이. 다중 배치를 위해 `modelId` 활용하여 곳곳에 배치.
-- **Acceptance**: 조명, 벤치, 울타리, 노점 등이 정상 렌더링 및 배치됨. refresh Error=0.
+### T75. [대기 — 🧭 2026-07-25 범위 축소: **소품 P1~P11 전용**] 마을 생활 소품 배치 (P0-C)
 
-### T76. [대기] 마을 랜드마크 건물 배치 (P0-A 파트 3)
-- **배경**: 마을 스카이라인을 형성하는 대형 랜드마크(여관, 시계탑, 헛간) 추가. `docs/design/artwork-spec.md` §2.
+- **⚖️ 2026-07-25 보스 결정 — 노점 M1~M3은 이 티켓에서 분리**: 노점은 제작자가 이미 커스텀 리드로우 5종을 만들어 둔 상태(변형 선택 = 취향 결정)라 **제작자 직접 처리(→ T94)**. 이 티켓은 **소품 P1~P11만** 수행한다. 노점 관련 파일·배치에 손대지 말 것.
+- **배경**: 마을 생활감 증대를 위한 데코 소품 11종 배치. `docs/design/artwork-spec.md` §4.
 - **Target**: `RootDesk/MyDesk/MapObjects/Models/` (신규 .model), `map/town.map`
-- **Change**: B6(여관), B10(시계탑), B11(헛간) 아트 확보 및 시점 압축 보정. 신규 `.model` 작성 후 외곽 및 모서리에 배치.
-- **Acceptance**: 대형 건물 3동 정상 배치. 캐릭터가 올바르게 앞/뒤로 가려짐. refresh Error=0.
+- **Change**: P1~P11(가로등·말뚝 울타리·흰 울타리·표지판·벤치·꽃밭 밴드·술통·궤짝 더미·항아리·수레·배너) 아트 확보 및 `.model`화 후 배치.
+  ① **RUID는 `artwork-spec` §4 표의 검증 완료분을 그대로 사용** — 재검색 불요(육안 검증까지 끝난 목록). 표에 변형 후보가 있는 항목은 하나를 골라 선정 근거를 보고서에.
+  ② **소품은 원본 직결 가능성이 높다** — 작아서 사이드뷰→톱다운 왜곡이 미미하다. `artwork-spec` §1-2의 리드로우(접지선 정리·높이 압축)는 **육안상 필요할 때만** 적용하고, 불필요하면 RUID 직접 바인딩으로 끝낼 것(과잉 작업 금지).
+  ③ **비충돌 데코는 Body·Trigger 없이** — 통행을 막을 이유가 없다. 울타리처럼 막아야 자연스러운 것만 T81 방식(`TriggerComponent`+`script.ResourceOccupiedArea`)으로 등록하고, 어느 것을 막았는지 보고서에 표로.
+  ④ 같은 소품 2개 이상은 **반드시 `.model` + `modelId` 인스턴스**(msw-general 절대원칙 11).
+  ⑤ **`WalkBehindFade` 부착 금지** — 소품은 키가 작아 walk-behind가 필요 없다. 대신 **T89의 `YSortSprite`를 붙여 Y정렬**에 편입할 것(T89 완료 후 착수이므로 컴포넌트가 이미 존재 — 규칙 8로 정의 확인).
+- **Acceptance**: ① 소품 11종이 마을 곳곳에 렌더·배치됨 ② 데코가 통행을 부당하게 막지 않음 ③ 2개 이상 배치된 소품이 전부 `modelId` 인스턴스 ④ 소품이 플레이어·NPC와 **y 순서대로 정렬**(T89 연계) ⑤ 기존 건물·NPC·연못 배치 회귀 0 ⑥ refresh Error=0 + 보고 3종.
+- **충돌 주의**: `town.map` — **레인 A(T89~T92) 전량 완료 후 착수**. 특히 **T90의 `build_maps.cjs` 재생성보다 반드시 뒤**(재생성이 손배치를 덮어쓴다).
+
+### T76. [제작자 직접 — ⚖️ 2026-07-25 보스 결정] 마을 랜드마크 건물 3동 (P0-A 파트 3)
+
+- **⛔ 에이전트 착수 금지.** 제작자가 직접 수행한다. 하위 에이전트는 이 항목을 큐에서 건너뛴다.
+- **사유**: B11 헛간은 리드로우 4종(`topdown_barn` / `_pure` / `_front` / `msw_topdown_barn`)이 이미 완성돼 **어느 것을 쓸지가 취향 결정**이고, B6 여관(968×640 벡터 카툰풍)·B10 시계탑(260×708 세로형)은 **도트 리드로우 + 시점 압축의 품질 판단**이 필요해 에이전트 위임 시 되돌릴 확률이 높다.
+- **참고(제작자용)**: 원본 = `scratch/artwork_rework/source/{inn, clocktower, barn}.png`. 명세 = `docs/design/artwork-spec.md` §2 B6·B10·B11.
+- **배치 시 참고**: 대형 건물이므로 T81 방식 통행 차단(`TriggerComponent`+`script.ResourceOccupiedArea`)과 T83 `WalkBehindFade` + T89 Y정렬 편입이 필요하다. 배치까지 에이전트에 넘기고 싶어지면 **아트 확정 후 별도 배치 티켓으로 재발행**할 것.
+- **미배치 잔여**: `House_ThatchHut`은 모델만 있고 `town.map` 미배치(T74 보고는 "5동"이나 실제 4동). 이 항목과 함께 처리 여부를 제작자가 결정.
+
+### T94. [제작자 직접 — ⚖️ 2026-07-25 보스 결정] 상점거리 노점 M1~M3 (P0-B, T75에서 분리)
+
+- **⛔ 에이전트 착수 금지.** 제작자가 직접 수행한다.
+- **사유**: 커스텀 톱다운 리드로우가 이미 5종 존재(`scratch/artwork_rework/msw_topdown_stall{,_hd,_straight,_c}_*.png`) — **어느 변형을 채택할지가 취향 결정**이라 에이전트 위임 시 되돌릴 확률이 높다. 남은 작업은 채택본 `.sprite` 업로드 → `.model`화 → `town.map` 배치.
+- **명세**: `docs/design/artwork-spec.md` §3 M1~M3. 원본 = `scratch/artwork_rework/source/stall_{a,b,c}.png`.
 
 ### T77. [코드 완료 — 2026-07-21 | refresh Error=0 | 런타임 검증 보류(제작자 수행)] 비전투 마을 NPC 및 생물 다양화 (P1)
 - **배경**: NPC 4인 및 고양이 배치. `docs/design/artwork-spec.md` §6.
@@ -284,7 +325,12 @@
 - **구현 요약 (2026-07-21)**: ResidentA~D + Animal_Cat + Dialog 8행. 보고서: `docs/agents/reports/T77-town-npcs-cat.md`.
 - **검증**: Maker refresh **Error=0** (total 527 / Warning 25 / Info 502). **런타임 검증 보류(제작자 수행)**.
 
-### T78. [대기] 필드 및 영지 바이옴 오브젝트 변주 (P1)
+### T78. [❌ 폐기 — ⚖️ 2026-07-25 보스 결정] 필드 및 영지 바이옴 오브젝트 변주 (P1)
+
+- **폐기 사유 2건**: ① **체감 기여가 큐에서 가장 낮음**(사냥터 나무·바위 실루엣 변주) ② **Phase 21(T90~T92)이 사냥터에 물 지형을 도입해 `template_field` 지형이 재편**되므로, 지금 자연물을 배치하면 T90의 생성기 재생성에 덮이거나 재배치 작업이 중복된다.
+- **재개 조건**: Phase 21 완료 후 사냥터 지형이 확정되고, 그때도 시각적 단조로움이 실제 불만으로 남아 있으면 **신규 T번호로 재발행**한다(이 번호는 재사용하지 않는다 — T번호 단조 증가 규칙).
+- **보존**: 명세 `docs/design/artwork-spec.md` §7(F1~F3·F5·F7~F8 RUID 검증 완료분)은 그대로 유지 — 재발행 시 재검색 불요. **F9 낚시터 리스킨은 이미 완료됐다**(커밋 `38ae03c`).
+- ~~아래는 폐기된 원문(이력 보존)~~
 - **배경**: 단조로운 필드의 나무, 바위 등 변주. `docs/design/artwork-spec.md` §7.
 - **Target**: `RootDesk/MyDesk/MapObjects/Models/` (신규 .model), `map/template_field.map`, `map/town.map` (낚시터)
 - **Change**: F1~F3, F5, F7~F9 아트 확보 및 `.model` 작성. 변주된 자연물을 사냥터에 배치. ~~마을 낚시터 리스킨 반영~~ → **🧭 2026-07-25 지휘자: 낚시터 리스킨(F9)은 무티켓 커밋 `38ae03c`에서 이미 완료**(`FishingSpot_Pond.model` `SpriteRUID=ecb83722d7fa4a3ab425302401032701`) — **이 티켓 범위에서 제외**.
@@ -411,7 +457,7 @@
 - **Acceptance**: ① `RootDesk/MyDesk/` 최상위에 `.directory` / `tile1.tileset` / `wall.tileset` 외 파일 **0개**(Glob 출력 발췌를 보고서에) ② refresh **Error=0**, 이동 전 대비 **신규 Warning 0** ③ 상점 건물·낚시 게시판·의뢰 게시판·연못·조준 리티클이 **전부 정상 렌더**(SpriteRUID 미해결 0 — 규칙 3) ④ 보고 3종. Play 육안은 제작자.
 - **충돌 주의**: 파일 이동 레인 단독. `.model`/`.map`/`.ui` 내용 수정 금지(이동만으로 해결돼야 한다 — 수정이 필요해지면 그 자체가 ③의 롤백 신호다). **배치 N 마지막**(T84~T86 완료 후) 착수.
 
-### T88. [대기 — 🔴 긴급] T79 L029 수정 원복 — Maker 스테일 저장 3차 사고 복구 (규칙 11)
+### T88. [코드 완료 — 2026-07-28 | ui_lint error=0 | refresh·런타임 검증 보류(제작자 수행)] T79 L029 수정 원복 — Maker 스테일 저장 3차 사고 복구 (규칙 11)
 
 - **배경(🔴 지휘자 실측 2026-07-25 — 규칙 11 사고 3번째 발생)**: `maker_refresh_workspace` 직후 워킹 트리를 대조한 결과 **`ui/PopupGroup.ui`가 전량 재직렬화**(diff 33,123행 / +16,685 −16,683)되면서 **T79의 산출물이 되돌아갔다**.
   - 근거(UIBuilder 대조): **HEAD** → `FurnacePopup has UIGroupComponent: false` ✅ / **현재 워킹 트리** → `UIGroup 있음` ❌. 엔티티 수는 341개로 양쪽 동일 → **전량 재직렬화 + 해당 컴포넌트만 복원**된 전형적 스테일 저장 패턴.
@@ -425,8 +471,10 @@
   ④ `ui_lint`로 L029=0 재확인, 출력 발췌를 보고서에.
 - **Acceptance**: ① `FurnacePopup`에 `UIGroupComponent` 없음(UIBuilder 대조 출력을 보고서에) ② `ui_lint` error=0 ③ 화로 팝업 여닫기·슬롯 드래그·제련 회귀 0 ④ 타 팝업(Warp/Chest/SkillTree) 무영향 — 엔티티 수 341 유지 ⑤ refresh Error=0 + 보고 3종.
 - **충돌 주의**: `ui/PopupGroup.ui` 레인 단독. **배치 N(T84~T87)과 파일 겹침 없음 — 병렬 가능**. `.mlua` 수정 금지.
+- **구현 요약 (2026-07-28)**: 착수 시 `has UIGroup=true`(비정상) → UIBuilder로 제거 → `false`·entity 341·`ui_lint 0 error`. Maker MCP 미연결로 refresh 선행 확인 불가 — **제작자 refresh 후 저장** 필수. 보고서: `docs/agents/reports/T88-furnace-uigroup-stale-recovery.md`.
+- **검증**: ui_lint **0 error** / 89 warning / 131 info. **런타임 검증 보류(제작자 수행)**.
 
-### T89. [대기] 마을 Y축 렌더 정렬 정합 — 플레이어·NPC가 Y정렬 대상에서 누락 (⚖️ 2026-07-25 제작자 Play 버그)
+### T89. [완료 — refresh Error=0 | 런타임 검증 보류(제작자 수행)] 마을 Y축 렌더 정렬 정합 — 플레이어·NPC가 Y정렬 대상에서 누락 (⚖️ 2026-07-25 제작자 Play 버그)
 
 - **배경(제작자)**: "마을에서 레이어 정렬이 잘 안 됨. **y축 위치에 따라 정렬되어야 하는 원칙**인데 적용이 안 된 것 같다. **유저뿐 아니라 마을 주민도** 제대로 정렬 안 된 채 렌더링."
 - **🔴 지휘자 실사 — 원인 확정(코드·맵 실측 2026-07-25)**: Y정렬은 **일부 시스템에만** 적용돼 있고, 플레이어와 NPC는 **고정 OrderInLayer**라 y와 무관하게 항상 같은 앞뒤 관계로 그려진다.
@@ -455,6 +503,200 @@
 - **Target**: `Util/RenderLayers.mlua`, 신규 `MapObjects/Scripts/YSortSprite.mlua`, `Player/Scripts/PlayerController.mlua`, `MapObjects/Scripts/WalkBehindFade.mlua`(공식 호출부 교체), `MapObjects/Scripts/ResourceSpawner.mlua`·`Monster/Scripts/MonsterSpawner.mlua`·`Player/Scripts/PlayerInventory.mlua`(공식 호출부 교체만 — 로직 변경 금지), `map/town.map` + `NPC/Models/{Merchant, Villager_Elder, Villager_Fisher, Villager_ResidentA~D}.model` + `MapObjects/Models/Animal_Cat.model` + `Furniture/Models/FishingSpot_Pond.model`
 - **Acceptance**: ① 플레이어가 건물·NPC보다 **y가 작으면(남쪽) 앞**, **크면(북쪽) 뒤**로 그려짐 ② **NPC끼리도 y 순서대로** 앞뒤가 갈림 ③ 플레이어↔NPC 앞뒤가 y로 결정됨(현행 "NPC가 항상 앞" 소멸) ④ 고양이 배회 중에도 정렬 유지 ⑤ 낚시터·자원·설치 가구·몬스터 정렬 **회귀 0**(기준값 통일로 인한 역전 없음 — 근거 기재) ⑥ T83 walk-behind 반투명 동작 회귀 0 ⑦ 공식 리터럴 중복 0(전부 `ComputeYOrder` 경유) ⑧ refresh Error=0 + 보고 3종. 최종 육안은 제작자 Play.
 - **충돌 주의**: `town.map`·NPC 모델을 **T84·T86과 공유** → **배치 N 완료 후 착수**. `PlayerController.mlua`는 단독. 신규 `.mlua`이므로 **refresh로 `.codeblock` 생성 확인 필수**(핵심 규칙 2). 착수 전 `msw-scripting` + `msw-general/references/platform.md §6`(3단 우선순위) 로드.
+
+### T90. [🔴 반려 — 2026-07-28 지휘자 검수 | Change ⑥ 미이행 → T98로 재작업] 물 타일 기반 신설 — L1 `Water` (Phase 21 ①)
+
+> **반려 사유(제작자 Play 2026-07-28 "물이 배치가 안 돼 있어" + 지휘자 실측)**: 티켓 **Change ⑥(생성기 고정 수역 배치 + 산출 검사)을 통째로 미이행**했다.
+> - `map/{map01, town, template_field, template_boss}.map` 전부 **`Water` 참조 0건**(실측).
+> - `scripts/build_maps.cjs` **미수정**(git diff 공백), 파일 내 `water` 문자열 **0건**.
+> - 보고서 §2 수정 파일 목록에 `build_maps.cjs`가 없고, §5는 "발견한 문제 없음"으로 누락을 드러내지 못했다.
+> - 결과적으로 **Acceptance ①(물 렌더·통행 불가) ②(물가 프린지) ④(미니맵 물색)가 구조적으로 확인 불가능한 상태**에서 [완료]로 표기됐다 — 지휘자 규약 "Acceptance 전부 충족 전 [완료] 금지" 위반.
+>
+> **인정 부분(재작업 범위에서 제외)**: `wall.tileset`의 `Water` 타일 정의 + `IsCollidable=true` · `ResourceSpawner.IsWaterTileName`과 스폰 억제 · 미니맵 물색 — 이 3건은 실물 확인됨. **T98은 "물을 실제로 맵에 놓는 일"만** 수행한다.
+
+- **배경(⚖️ 2026-07-25 보스 지시)**: "크래프팅 게임에서 **물은 필수 요소**. 물을 이용한 개인 영지 디자인을 하고 싶다. 어느 맵에서든 물로 낚시할 수 있게." ⚖️ 확정 3건 — **물 생성 = 생성기 고정 배치 + 영지만 삽으로 파기 병행** / **물 통행 = 불가(수영 없음)** / 차단 장치는 T93.
+- **🧭 지휘자 설계 확정 — 기존 잔디 마스크 문법을 건드리지 않는다 (이 티켓의 핵심 제약)**: §1.3 타일 스킴은 **"흙 vs 잔디" 1축 서브셀 마스크**다. 물을 3번째 지형으로 넣으면 `TileNameToMask`/`MaskToTileName`/`ComputeGrassTileName`/오토타일이 전부 2축으로 재설계돼야 하고, 이는 프로젝트에서 하중이 가장 큰 부분이다. **따라서 물은 L1의 타일 이름만 `Soil` ↔ `Water`로 가르는 방식으로 도입한다**:
+  ```
+  현행:  L2 홀(잔디 없음) → L1 Soil 노출        = 흙길·광장 바닥
+  신규:  L2 홀            → L1이 Soil이면 흙 / Water면 물
+  ```
+  → 잔디 방향 에지·오목/볼록 코너·대각 `SubGrass` 문법 **전량 무변경**, 물가 테두리도 기존 잔디 프린지가 그대로 처리. **마스크 관련 함수를 한 줄도 고치지 말 것** — 고쳐야 할 것 같으면 설계가 어긋난 것이니 [보류]+질문.
+- **Target**: `RootDesk/MyDesk/wall.tileset`(미사용 슬롯에 물 타일 추가), `MapObjects/Scripts/ResourceSpawner.mlua`(판정 함수·스폰 억제), `UI/Scripts/UIMinimapController.mlua`(`TileColor`), `scripts/build_maps.cjs`(고정 수역 배치 + 산출 검사)
+- **Change**:
+  ① **타일 추가**: `wall.tileset`의 미사용 슬롯(지휘자 실측 — `xx`, `x`, `Name15`, `Name16`, `Name23~Name25`, `Name28~Name32`)에 물 타일을 넣는다. 이름 규약 = **정확히 `Water`**(`IsSoilTileName`이 `"Soil"` 정확 일치인 선례 미러). 아트는 **msw-search 공식 리소스 1순위**(R1), 없으면 제작자 협업. ⚠️ 타일셋은 Maker 편집 영역이 섞이므로 **슬롯 이름 변경 시 기존 15종 잔디 패밀리 이름을 절대 건드리지 말 것**.
+  ② **판정 함수 신설**: `IsWaterTileName(name)` (정확 일치). `IsSoilTileName`은 **무변경**(물을 흙으로 오판하면 자원이 물 위에 스폰된다).
+  ③ **통행 불가**: 물 셀의 타일 `Movable = false`. RectTile 충돌은 타일 Movable 기반(`platform-rect.md` §3)이므로 **엔티티 Trigger 불요**. `EnableTileCollision=true` 전제 확인만.
+  ④ **자원 스폰 억제**: `RequiredTile` 판정에서 물 셀은 **어떤 자원도 스폰 불가**로 확정(`BiomeResourceDataSet` 무수정 — 코드 판정에서 배제). 기존 `FullGrass`/`Soil` 판정 회귀 0.
+  ⑤ **미니맵**: `TileColor`에 물색 추가(잔디색·흙색과 명확히 구분).
+  ⑥ **생성기 고정 수역**: `build_maps.cjs`가 `template_field`(사냥터)와 `town`에 수역을 배치. 문법은 §1.3 "문법 2 — 광장/밭"의 홀 유지 규칙 재사용(내부 = L2 홀, 둘레 = 잔디 프린지) + **L1을 `Water`로**. **산출 검사 추가**: 물 셀에 L2 잔디가 남아 있거나 물 셀이 Movable이면 즉시 실패.
+  - ⚠️ **`node scripts/build_maps.cjs --force`는 손편집을 전량 덮어쓴다** — 실행 전 반드시 제작자 확인을 받고, 현재 `map01`에 남아 있는 지형 편집·배치물 소실 여부를 먼저 보고할 것.
+- **Acceptance**: ① 물 타일이 렌더되고 **8방향 전부 진입 불가** ② 물가 잔디 테두리가 기존 문법대로 자동 생성(전용 물가 타일 신설 0) ③ 물 셀에 자원 스폰 0(로그 근거) ④ 미니맵에 물이 구분되어 표시 ⑤ **마스크 관련 함수 diff 0** ⑥ 기존 길·광장·밭·대각 타일 회귀 0 ⑦ refresh Error=0 + 보고 3종.
+- **충돌 주의**: `ResourceSpawner.mlua`는 T89(Y정렬)와 공유 → **순차**. T91·T92가 이 티켓에 의존하므로 **Phase 21 선두**.
+
+### T91. [완료 — refresh Error=0 | 런타임 검증 보류(제작자 수행)] 낚시 = 물 타일 인접 판정으로 전환 + 맵별 어종 (Phase 21 ②, T90 후 착수)
+
+- **배경(⚖️ 2026-07-25 보스 지시)**: "**마을 낚시터는 그대로 남기되, 개인 영지·다른 맵의 낚시터는 제거**. 대신 물 요소를 통해 **어느 맵에서든 낚시**. 단 **맵마다 특수한 물고기**가 존재해야 한다."
+- **🔴 이력 왕복 고지**: 이 티켓은 **T85(2026-07-25, 커밋 `ce13617`)가 복구한 `map01`의 `FishingSpot`을 다시 제거**한다. T85는 당시 §15-C 설계(3곳 유지)에 따른 정당한 복구였고, 같은 날 보스 설계 변경으로 무효화된 것이다 — 구현자는 이를 회귀로 오해하지 말 것.
+- **🧭 지휘자 설계 확정 — 두 경로 공존**: 마을은 **기존 픽스처 유지**, 그 외는 **타일 판정**. 판정 우선순위 = ① 조준 셀에 `FishingSpot` 픽스처가 있으면 그 픽스처의 `SpotType` ② 없고 조준 셀이 물 타일이면 **맵 기반 SpotType**. 이러면 마을 낚시터의 랭킹·연출이 그대로 살고 픽스처 삭제 마이그레이션도 불필요하다.
+- **Target**: `Player/Scripts/PlayerController.mlua`(조준 셀 물 판정 → 낚시 진입), `Furniture/Scripts/FishingSpot.mlua`(픽스처 없는 낚시 세션 지원), `item/DataSets/FishDataSet.csv`(맵별 행 추가), `map/map01.map`·`map/template_field.map`(`FishingSpot` 제거), (**유지 — 수정 금지**) `map/town.map`의 `FishingSpot`
+- **Change**:
+  ① **조준 셀 물 판정으로 낚시 진입**: T67/T82의 조준 셀(`playerCell + LastDirection`)이 물 타일이면 F로 캐스팅. 기존 `IsAimTarget`(엔티티 대상) 경로는 **무수정** — 타일 판정은 별도 분기로 추가한다(T82 회귀 금지).
+  ② **세션 소유 구조**: 현행 `FishingSpot.Sessions`는 픽스처 컴포넌트가 소유한다. 픽스처 없는 낚시를 위해 **세션 소유자를 어디로 둘지 먼저 결정**하고 사유를 보고서에 적을 것 — 권장안 = 맵 단위 싱글턴(`@Logic`)이 아니라 **플레이어 측 세션**(PlayerController 소유)으로 두어 T64의 릴링 상태기(`ReelTick` 0.1s·홀드 폴링)를 그대로 재사용. ⚠️ `@Logic`은 `OnMapEnter`/`OnMapLeave`가 호출되지 않으므로 맵 전환 정리 용도로 쓰지 말 것(R2).
+  ③ **맵별 SpotType**: 맵 종류 판정은 **T37 mapKind 규약을 재사용**(신규 판정 로직 발명 금지 — 규칙 8로 정의 확인 후 호출). `SpotType` = 맵 종류 문자열(`estate`/`town`/`field`/`boss`). **맵이 늘면 CSV 행 추가만으로 어종이 붙어야 한다**(R3).
+  ④ **CSV 행 추가**: 사냥터·보스맵 전용 어종을 `FishDataSet`에 추가(`Difficulty`/`MinFishingLevel`/`FishingXp`/`RankPoints` 포함). 기존 `estate`/`town` 행은 유지 — 영지는 T92의 판 물에서 계속 유효하다.
+  ⑤ **픽스처 제거**: `map01`·`template_field`의 `FishingSpot` 엔티티 삭제(MapBuilder). **`FishingSpot_Pond.model`은 삭제하지 말 것** — town이 쓰고 있다.
+  ⑥ **회귀**: 주간 낚시왕 적립(T57/T63)은 `SpotType` 무관하게 동작해야 한다 — 물 타일 낚시도 랭킹에 적립되는지 확인하고 결과를 보고.
+- **Acceptance**: ① 영지·사냥터에서 **물가에 서서 조준 방향이 물이면** F로 낚시 시작 ② 마을 낚시터는 기존과 동일하게 동작(회귀 0) ③ 맵마다 다른 어종이 나옴(로그 근거) ④ `map01`·`template_field`에 `FishingSpot` 엔티티 0건 ⑤ T64 릴링(홀드-릴리즈·텐션·숙련 레벨) 전량 회귀 0 ⑥ 주간 낚시왕 적립 정상 ⑦ 어종·수치 하드코딩 0 ⑧ refresh Error=0 + 보고 3종.
+- **충돌 주의**: `PlayerController.mlua`를 T89와 공유 → **순차**. `town.map` 무수정.
+
+### T92. [완료 — refresh Error=0 | 런타임 검증 보류(제작자 수행)] 영지 물 파기 — 지형 편집 action 추가 (Phase 21 ③, T90 후 착수)
+
+- **배경(⚖️ 2026-07-25 보스 확정 "둘 다")**: 고정 수역(T90 생성기)에 더해 **개인 영지에서는 플레이어가 직접 물을 파서 디자인**할 수 있어야 한다.
+- **🧭 실현 근거(지휘자 실측)**: 지형 편집은 이미 **action 기반 + 맵별 영속** 구조다 — `ApplyTerrainEdit(mapName, map, action, x, y, axis, side, persist)` + `GetTerrainEditsJson`/`SetTerrainEditsJson`/`ReconstructTerrainEditsForMap`. **신규 저장 설계 없이 action 하나 추가로 성립**한다.
+- **Target**: `MapObjects/Scripts/ResourceSpawner.mlua`(action 추가), `item/DataSets/item_dataset.csv`(도구 행 — `TerrainEditCooldown` 포함, T61 선례)
+- **Change**:
+  ① **`dig_water` action 신설** — 대상 셀의 L1을 `Soil` → `Water`로, Movable=false로 전환. **되메우기 action(`fill_water`)도 함께** 신설(물 → 흙) — 없으면 실수로 판 물을 되돌릴 수 없다.
+  ② **영지 전용 게이트**: 영지(`Home_<UserId>`) 외 맵에서는 물 파기 불가. 맵 종류 판정은 **T37 mapKind 규약 재사용**(T91 ③과 동일 경로 — 중복 구현 금지).
+  ③ **도구**: 기존 `Shovel` 재사용 여부 또는 전용 도구 신설을 **CSV 행으로** 결정. `if itemName == "..."` 분기 금지(R3) — 데이터셋 행 존재로 판정.
+  ④ **안전 가드**: 플레이어가 선 셀·설치물이 점유한 셀·자원이 있는 셀은 파기 불가(물은 통행 불가라 **자기 자신을 가둘 수 있다**). 갇힘 방지 규칙을 명시하고 보고서에 적을 것.
+  ⑤ **영속 검증**: 판 물이 재접속 후에도 유지되는지 `TerrainEditsJson` 경로로 확인. ⚠️ 세이브 경로를 만지게 되면 **규칙 9(Yield 금지)** 적용.
+- **Acceptance**: ① 영지에서 삽으로 물을 파고 되메울 수 있음 ② 판 물에서 즉시 낚시 가능(T91 연계) ③ 재접속 후 물 지형 유지 ④ 사냥터·마을에서는 물 파기 불가 ⑤ 자기 자신이 갇히는 배치 불가 ⑥ 기존 지형 편집(길 파기·밭)·쿨다운(T61) 회귀 0 ⑦ refresh Error=0 + 보고 3종.
+- **충돌 주의**: `ResourceSpawner.mlua`를 T89·T90과 공유 → **T90 완료 후 순차**.
+
+### T93. [코드 완료 — 2026-07-28 | LSP errors=0 | refresh·런타임 검증 보류(제작자 수행)] 몬스터 접근 차단 장치 — 안전 낚시용 설치물 (Phase 21 ④)
+
+- **배경(⚖️ 2026-07-25 보스 지시)**: "낚시를 안전하게 하기 위한 **몬스터가 오지 못하게 하는 장치 아이템**." ⚖️ 확정 = **설치 반경 내 접근 회피**(스폰 억제나 어그로 차단이 아니라, 몬스터 AI가 반경 안으로 들어오지 않음 — 이미 있는 몬스터에도 즉시 효과).
+- **🧭 적용 범위**: **사냥터·보스맵 전용**이다. ⚖️ 영지 평화 원칙(§1.5 — 영지 내 전투·피격 없음)상 영지에는 몬스터가 없어 장치가 무의미하다. 영지에서 설치 시 동작하지 않는 게 정상이며, 이를 UI/툴팁으로 오해 없게 표기할지는 보고서 §5에 소견으로 남길 것.
+- **Target**: 신규 `.model`(`Furniture/Models/` — ModelBuilder), 신규 또는 기존 `Furniture/Scripts/`(설치물 컴포넌트), `Monster/Scripts/MonsterAI.mlua`(회피 판정), `item/DataSets/item_dataset.csv` + 제작 레시피 데이터셋
+- **Change**:
+  ① **설치물**: 기존 `PlaceableFurniture` 인프라 재사용(신규 설치 체계 발명 금지 — 규칙 8로 정의 확인 후). 반경·지속시간/내구도는 **컴포넌트 프로퍼티 + CSV**(리터럴 금지 — 등급별 상위 장치를 CSV 행 추가만으로 낼 수 있어야 한다).
+  ② **회피 로직**: `MonsterAI`의 추격·배회 목표 계산에서 **활성 장치 반경 안을 목적지로 삼지 않도록** 배제. 이미 반경 안에 있는 몬스터는 밖으로 이탈. ⚠️ 반경 경계에서 **떨림(진입↔이탈 반복)** 이 나지 않도록 히스테리시스(이탈 반경 > 진입 반경)를 두고, 값은 프로퍼티로.
+  ③ **탐색 비용**: 몬스터마다 매 프레임 전 장치를 순회하면 비용이 커진다. 활성 장치 목록을 캐시하고 갱신 시점을 명시할 것(설치/철거/만료 시).
+  ④ **보스 예외**: 보스가 이 장치로 무력화되면 안 된다 — **보스는 회피 대상에서 제외**(몬스터 데이터셋의 기존 보스 구분 컬럼을 재사용, 이름 분기 금지 R3).
+  ⑤ **제작**: 아이템 + 레시피를 CSV 행으로 추가(제작창은 도감형 — T14/T25/T26 구조 그대로).
+- **Acceptance**: ① 사냥터에 설치 → 반경 안으로 몬스터가 들어오지 않음(로그 근거) ② 이미 안에 있던 몬스터가 밖으로 나감 ③ 경계에서 떨림 없음 ④ 보스는 영향 없음 ⑤ 철거·만료 시 즉시 원복 ⑥ 반경·지속시간이 **CSV 행 수정만으로** 조정됨 ⑦ 기존 몬스터 추격·귀환·전투(T38~T41) 회귀 0 ⑧ refresh Error=0 + 보고 3종.
+- **충돌 주의**: `MonsterAI.mlua` 단독 레인 — T89~T92와 파일 겹침 없어 **병렬 가능**. 착수 전 `msw-combat-system` + `references/ai-bt.md` 로드.
+- **구현 요약 (2026-07-28)**: `Monster Ward` 가구 + `MonsterApproachBlocker`/`MonsterAvoidanceRegistry` + `MonsterAI` 회피·히스테리시스·`IsBoss` 면제 + CSV 컬럼 3종·레시피. 스프라이트=Portal RUID placeholder. 보고서: `docs/agents/reports/T93-monster-approach-blocker.md`.
+- **검증**: LSP **errors=0**. **런타임 검증 보류(제작자 수행)**.
+
+### T95. [완료 — refresh Error=0 | 런타임 검증 보류(제작자 수행)] Y정렬 기준점을 접지선으로 통일 — T89 후속 보정 (⚖️ 2026-07-28 제작자 Play 피드백)
+
+- **배경(⚖️ 제작자 원문 요지)**: "건물의 중심 기준으로 **Y축 아래 유닛은 건물보다 튀어나오게, Y축 위 유닛은 건물보다 밑으로 깔리게** 해야 자연스럽다." → ⚖️ **T89 적용 후 상태를 보고 나온 피드백**(제작자 확인 2026-07-28).
+- **🧭 지휘자 진단(실측 2026-07-28)**: **정렬 방향 규칙 자체는 이미 옳다** — `ComputeYOrder = (SortRadius − y) × 100`이라 y가 작을수록 OIL이 커져 앞에 그려진다. 문제는 **비교점**이다. T89는 전 대상을 `TransformComponent.WorldPosition.y` **한 점**으로 비교하는데, 실제 접지선(T81 충돌 박스 하단 = `ColliderOffset.y − BoxSize.y/2`)은 Transform에서 **대상마다 다르게** 떨어져 있다:
+
+  | 모델 | BoxSize.y | ColliderOffset.y | 접지선(Transform 상대) |
+  |---|---:|---:|---:|
+  | `Building_Shop` | 3.12 | −0.44 | **−2.00** |
+  | `Building_Blacksmith` | 2.96 | −0.42 | **−1.90** |
+  | `House_MushroomA` | 2.57 | −0.36 | **−1.65** |
+  | `FishingSpot_Pond` | 4.50 | 0 | **−2.25** |
+  | `Villager_Elder` | 0.80 | −0.35 | **−0.75** |
+
+  → 편차가 **0.75~2.25유닛으로 제각각**이라, 큰 건물일수록 실제보다 남쪽에 있는 것처럼 취급돼 앞뒤 전환선이 어긋난다. T89 티켓 ⑤가 "발밑 기준 + `SortYOffset` 보정"을 요구했으나 **구현은 프로퍼티만 만들고 전 모델에서 값이 0**이라 사실상 미적용 상태다(T89 보고서 §5 "발견한 문제 없음"은 이 누락을 놓친 것 — 검수 소견).
+- **⚖️ 2026-07-28 보스 확정 2건**: ① **비교점 = 접지선(충돌 박스 하단)으로 전 대상 통일** ② **동률 시 유닛이 항상 이김**(캐릭터가 가려져 안 보이는 사고 방지 우선).
+- **🧭 지휘자 설계 확정 — 접지선은 Trigger 박스에서 자동 산출(모델 수작업 금지)**:
+  ① `RenderLayers`에 **`ComputeYOrderForEntity(Entity e, number extraOffset)`** 신설:
+     - 대상에 유효 `TriggerComponent`가 있으면 → `groundY = worldY + ColliderOffset.y − BoxSize.y / 2`
+     - 없으면 → `groundY = worldY + (SortYOffset or 0)` (수동 폴백)
+     - 반환 = `ComputeYOrder(groundY)`
+     이러면 **T81 Trigger 박스가 통행 차단(T81) + 상호작용 범위(T82) + walk-behind 페이드(T83) + 정렬 접지선(T95)의 단일 데이터 소스**가 된다 — ⚖️ 2026-07-25 "단일 데이터 소스 유지" 결정과 정합. **모델 15종에 수치를 손으로 박지 말 것**(R3).
+  ② **유닛 우선 동률 규칙**: `RenderLayers`에 `property integer UnitTieBias = 1`(튜닝값) 신설. **유닛 계열**(플레이어·NPC·몬스터·펫·동물)의 OIL에만 `+ UnitTieBias`를 더한다. OIL 1 = y 0.01유닛이므로 체감 영향 없이 동률만 깬다. **오브젝트 계열**(건물·구조물·자원·설치 가구·소품)에는 더하지 않는다.
+  ③ **호출부 전환**: `YSortSprite` · `WalkBehindFade` · `PlayerController.UpdateAvatarYOrder` · `ResourceSpawner` · `MonsterSpawner` · `PlayerInventory`의 OIL 산출을 전부 `ComputeYOrderForEntity` 경유로. **`ComputeYOrder(y)`는 남겨두되**(순수 y 계산이 필요한 곳), 엔티티가 있으면 반드시 새 헬퍼를 쓴다.
+  ④ **⚖️ 2026-07-28 보스 확정 — 플레이어 아바타 `Transform` = 발밑**: 따라서 아바타는 **보정 오프셋 0**, `worldY`를 그대로 접지선으로 쓴다. 🔴 **아바타에는 Trigger 자동 산출 경로를 태우지 말 것** — 플레이어 엔티티에 다른 목적의 `TriggerComponent`가 있으면 접지선이 엉뚱하게 계산된다. `UpdateAvatarYOrder`는 `ComputeYOrder(worldY)` 직접 호출로 유지하고, 그 사유를 코드 주석에 남길 것.
+  ⑤ **Trigger 유무별 처리 (지휘자 전수 실측 2026-07-28 — 45모델 중 보유 22 / 미보유 23)**:
+     - **보유 22종**(건물·구조물 12 · NPC 8 · 연못 · 포탈) → **Trigger 자동 산출**. 접지선 −0.75 ~ −2.25.
+     - **미보유 중 유닛 계열**(`Slime`, `SlimeKing`, `Boar`, `HornMushroom`, `Animal_Cat/Chicken/Sheep`, `Pet_Dog`) → **`SortYOffset = 0` 그대로**. 아바타와 같은 규약(발밑 = Transform)이 적용된다고 보고, 어긋나 보이면 값을 발명하지 말고 §5에 소견으로 보고.
+     - **미보유 중 오브젝트 계열**(`Tree1`, `Tree2`, `Stone`, `IronNodeResource`, `GrownGrass`, `Crop_Carrot`, `TreasureChest`, `Furniture_{Bed, CookingPot, Furnace, WoodenChest, AnimalPen, MonsterWard}`) → **이 티켓에서는 `SortYOffset` 폴백(기본 0) 유지**. 값을 임의로 채우지 말 것 — 근본 해결은 T96 검토 결과에 따른다.
+     - ⚠️ **일관성 이상 보고 대상**: `Big Stone1`(−1.25)·`Big Stone2`(−2.20)는 Trigger가 있는데 `Stone`·`Tree1/2`는 없다. 같은 자원 계열인데 갈리는 이유를 조사해 §5에 적을 것(런타임에 `ResourceSpawner`가 붙이는지 여부 포함).
+     - `Projectile_Spore`는 투사체이므로 Y정렬 대상 밖 — 손대지 말 것.
+- **Target**: `Util/RenderLayers.mlua`, `MapObjects/Scripts/{YSortSprite, WalkBehindFade, ResourceSpawner}.mlua`, `Player/Scripts/{PlayerController, PlayerInventory}.mlua`, `Monster/Scripts/MonsterSpawner.mlua`. **`.model`·`.map` 수정은 원칙적으로 불요** — 필요해지면 그 자체가 설계 이탈 신호이니 사유를 보고할 것.
+- **Acceptance**: ① 건물 **바로 앞(남쪽)** 에 서면 캐릭터가 건물 앞, **바로 뒤(북쪽)** 로 가면 건물 뒤 — 전환선이 건물 접지선과 일치 ② 크기가 다른 건물(상점 3.12 vs 주민 0.80)끼리도 접지선 기준으로 올바르게 갈림 ③ 동률·근접 시 유닛이 앞(캐릭터가 오브젝트에 먹히지 않음) ④ 전환선 근처에서 좌우로 움직여도 깜박임 없음 ⑤ 자원·설치 가구·몬스터·낚시터·walk-behind 반투명(T83) 회귀 0 ⑥ **모델 파일에 수동 오프셋 수치 0건**(전부 Trigger 자동 산출 또는 폴백 프로퍼티) ⑦ refresh Error=0 + 보고 3종. 최종 체감은 제작자 Play.
+- **충돌 주의**: **레인 A 소유 파일 전량** — T89~T92와 같은 파일을 만지므로 **레인 A에서 T92 완료 후 순차 착수**. 레인 B는 손대지 말 것.
+
+### T96. [검토 — ⚖️ 2026-07-28 보스 "생각해보자" | 착수 전 보스 결정 필요] 소품·자원·가구에 `TriggerComponent` 부여 여부
+
+- **배경(⚖️ 제작자)**: "소품 및 일부 자원도 trigger는 생각해보자." T95에서 접지선을 Trigger 박스로 자동 산출하기로 하면서, **Trigger 미보유 대상은 자동화 밖에 남는다**는 문제가 드러났다.
+- **🧭 지휘자 실측 현황 (2026-07-28, 45모델 전수)**: 보유 **22** / 미보유 **23**.
+
+  | 그룹 | Trigger | 현재 정렬 근거 |
+  |---|:--:|---|
+  | 건물·구조물 12 · NPC 8 · 연못 · 포탈 | ✅ | Trigger 박스 자동 |
+  | 자원 `Tree1`·`Tree2`·`Stone`·`IronNodeResource`·`GrownGrass`·`Crop_Carrot` | ❌ | Transform y (보정 없음) |
+  | 자원 `Big Stone1`·`Big Stone2` | ✅ | **같은 자원인데 갈림 — 원인 미확인** |
+  | 가구 `Bed`·`CookingPot`·`Furnace`·`WoodenChest`·`AnimalPen`·`MonsterWard` | ❌ | Transform y |
+  | 몬스터 5 · 동물/펫 4 | ❌ | Transform y (발밑 가정) |
+  | 소품 P1~P11 (T75 — 미제작) | — | **신규라 지금 정하면 수작업 0** |
+
+- **🔴 결정이 필요한 이유 — Trigger는 정렬 전용 부품이 아니다**: 이 프로젝트에서 `TriggerComponent`는 이미 **4가지를 동시에 구동**한다 — 통행 차단(T81, `ResourceOccupiedArea` 동반 시) · 상호작용 범위(T82 `IsAimTarget`) · walk-behind 페이드(T83) · 정렬 접지선(T95). 따라서 **정렬을 위해 Trigger를 붙이면 상호작용 범위와 통행 판정이 함께 바뀐다.**
+  - 예: `Furniture_Bed`에 Trigger를 붙이면 상호작용이 현행 `AimFootprint` 방식에서 **Trigger AABB 방식으로 자동 전환**된다(T82 ②의 "Trigger 유무에 따라 자동 전환"). 범위가 넓어져 인접 설치물과 다시 꼬일 수 있다.
+  - 예: 소품(벤치·꽃밭)에 `ResourceOccupiedArea`까지 붙이면 통행이 막혀 마을이 답답해진다. **Trigger만 붙이고 `ResourceOccupiedArea`는 안 붙이면 차단 없이 정렬·상호작용만** 얻을 수 있는지 — 이 조합의 실제 동작을 코드로 확인해야 한다(T81 배경 = "차단 자격 = Trigger + 멤버십" 이므로 이론상 가능하나 실증 필요).
+- **선행 조사 항목 (결정 전에 지휘자/구현자가 답할 것)**:
+  ① `Big Stone1/2`만 Trigger를 가진 이유 — `ResourceSpawner`가 런타임에 붙이는지, 아니면 단순 누락인지.
+  ② `TriggerComponent`만 있고 `ResourceOccupiedArea`가 없을 때 통행이 실제로 안 막히는지(코드 근거).
+  ③ 가구 6종에 Trigger를 붙였을 때 T82 상호작용 범위가 어떻게 변하는지(현행 `AimFootprintW/H` 값과 비교).
+- **선택지(보스 결정 대기)**:
+  - **(A) 전면 부여** — 45모델 전부 Trigger. 정렬 완전 자동화. 단 T82·T81 회귀 검증 범위가 가장 큼.
+  - **(B) 신규만 부여** — T75 소품부터는 Trigger 필수로 규약화하고, 기존 미보유 23종은 `SortYOffset` 폴백 유지. **수작업 0 · 회귀 위험 최소**.
+  - **(C) 오브젝트 계열만 부여** — 자원·가구·소품에는 부여, 몬스터·동물·펫은 발밑 규약 유지(유닛은 Transform=발밑이라 보정 불요).
+- **🧭 지휘자 소견**: **(B) 또는 (C)** 를 권장한다. (A)는 T81·T82·T83이 모두 Play 확인을 마친 직후라 지금 전면 변경하면 방금 안정화한 3개 시스템을 동시에 흔든다. **T95 결과를 Play로 본 뒤**, 실제로 정렬이 어색한 대상만 좁혀서 부여하는 편이 안전하다.
+- **Target/Change/Acceptance**: **보스 결정 후 확정**. 결정 전 착수 금지 — 이 항목은 티켓이 아니라 결정 대기 항목이다.
+
+### T97. [대기] T95 검수 지적 3건 — 이름 분기 제거(R3) · 아바타 경로 · 가축/펫 Y정렬 누락
+
+- **배경**: 지휘자 검수(2026-07-28, 코드 실측)에서 T95 구현의 결함 3건 확인. **T95를 반려하지는 않는다**(접지선 통일·`UnitTieBias`·refresh Error=0은 정상 이행) — 잔여 결함만 분리 발행.
+- **① 🔴 R3 위반 — 유닛 판정에 이름 문자열 분기**: `Util/RenderLayers.mlua` `ComputeYOrderForEntity` 72~75행이
+  ```lua
+  if entName ~= nil and (string.find(entName, "Villager") or string.find(entName, "Merchant")
+     or string.find(entName, "Elder") or string.find(entName, "Fisher")) then isUnit = true
+  ```
+  로 **엔티티 이름 문자열을 분기**한다. AGENTS.md **R3("`if itemName == "..."` 형태의 이름 분기 금지")** 정면 위반이며, 이름이 다른 신규 NPC는 조용히 오브젝트로 분류된다.
+  - **수정**: `YSortSprite`에 **`property boolean IsUnit = false`** 를 신설하고 유닛 계열 모델에 `true`로 설정 → `ComputeYOrderForEntity`는 그 프로퍼티만 본다. 이름 분기 4줄은 **완전 삭제**. 판정 우선순위 = `PlayerController`/`PlayerComponent`/`MonsterAI` 보유(코드 계약) → `YSortSprite.IsUnit`(데이터) 순.
+- **② 🟡 아바타가 Trigger 자동 산출 경로를 탐 (T95 티켓 ④ 명시 지시 위반)**: `PlayerController.UpdateAvatarYOrder`(3093행)가 `ComputeYOrderForEntity(self.Entity, 0)`를 호출한다. T95 티켓 ④는 **`ComputeYOrder(worldY)` 직접 호출 유지**를 지시했다.
+  - **현재 영향 없음(지휘자 실측)**: `Global/DefaultPlayer.model`에 `TriggerComponent`·`PhysicsColliderComponent`가 **둘 다 없어** 폴백으로 `groundY = worldY`가 되어 우연히 정상 동작한다. ⚖️ 보스 확정대로 아바타 Transform = 발밑이므로 결과도 옳다.
+  - **그러나 잠재 결함**: 향후 플레이어에 어떤 목적으로든 Trigger/Collider가 붙는 순간 **접지선이 조용히 어긋난다**(에러 없음). 
+  - **수정**: `UpdateAvatarYOrder`를 `ComputeYOrder(transform.WorldPosition.y)` 직접 호출로 되돌리고, **"아바타 Transform은 발밑이므로 박스 보정 금지"** 사유를 코드 주석으로 남길 것. `UnitTieBias`는 별도로 가산(아바타도 유닛이므로 +bias 유지 — 현행 동작과 동일해야 한다).
+- **③ 🟡 가축·펫 Y정렬 누락**: `Animal_Chicken` / `Animal_Sheep` / `Pet_Dog` 3종은 **`YSortSprite` 미부착 + `MonsterAI` 없음 + 이름 분기에도 미포함**(지휘자 실측) → Y정렬이 적용되지 않고 유닛으로도 분류되지 않는다. T89가 `Animal_Cat`만 처리하고 나머지 이동체를 놓쳤다.
+  - **수정**: 3종 모델에 `script.YSortSprite`(`Dynamic=true`, `IsUnit=true`) 부착. `Animal_Cat`에도 `IsUnit=true` 추가.
+- **Target**: `Util/RenderLayers.mlua`, `MapObjects/Scripts/YSortSprite.mlua`, `Player/Scripts/PlayerController.mlua`, `MapObjects/Models/{Animal_Cat, Animal_Chicken, Animal_Sheep, Pet_Dog}.model`, `NPC/Models/*.model`(7종 — `IsUnit=true`)
+- **Acceptance**: ① `RenderLayers.mlua`에 **엔티티 이름 문자열 분기 0건**(grep 근거를 보고서에) ② 이름을 바꾼 NPC도 유닛으로 정상 분류 ③ 아바타는 박스 보정을 타지 않음(코드+주석 확인) ④ 닭·양·개가 y 순서대로 정렬되고 동률 시 오브젝트에 안 먹힘 ⑤ T95의 정렬 결과가 **육안상 회귀 0**(바이어스·접지선 동작 동일) ⑥ refresh Error=0 + 보고 3종.
+- **충돌 주의**: 레인 A 소유 파일. **T95 완료 후 단독 착수** — 다른 티켓과 병행 금지.
+
+### T98. [대기 — 🔴 T90 반려 재작업] 고정 수역 실배치 — 맵에 물을 실제로 놓는다
+
+- **배경**: T90이 물 타일 **정의**는 만들었으나 **배치**를 하지 않아 게임에 물이 한 셀도 없다(제작자 Play 확인 + 지휘자 실측: 4개 맵 `Water` 참조 0건). 이 티켓은 배치만 담당한다.
+- **⚖️ 2026-07-28 보스 결정 — 물 페인팅은 제작자가 Maker에서 직접, 에이전트는 테두리(프린지) 보정만**. 초안(CSV+런타임 적용)은 폐기.
+- **🧭 지휘자 근거 — 이 분업이 프로젝트 규약과 정합**:
+  - `ResourceSpawner.mlua` 914~916행 주석: **"맵 타일은 이제 Maker 손편집이 소스 오브 트루스다. 이 보정을 켜두면 로그인마다 사용자가 고른 타일 변형을 다시 계산해 덮어쓴다."** → 런타임 자동 배치는 이 철학과 충돌한다.
+  - ⛔ `MapBuilder`는 타일 페인팅 미지원(`builder-protocol.md` §1.6 커버리지 갭) — 에이전트가 칠할 수단 자체가 없다.
+  - ⛔ `build_maps.cjs --force`는 `town.map` 손배치(건물 8동·NPC 7기·Trigger·WalkBehindFade·YSortSprite)를 전량 파괴 — 사용 금지.
+  - ⛔ `AutotileGrassLayer`(전맵 패스)는 **밀착 페어 길을 FullGrass로 평탄화해 길을 소실시킨다**(§1.3 · 코드 689~694행 경고). **절대 호출 금지.**
+- **🔑 핵심 통찰 — 물가 프린지 = 기존 홀 프린지와 동일**: L2 관점에서 물 셀은 그냥 **L2 홀**이다(L1이 `Soil`이든 `Water`든 무관). 따라서 **전용 물가 타일이 필요 없고**, `digHole`과 똑같은 마스크 연산으로 둘레가 처리된다. 신규 타일·신규 문법 0.
+- **제작자 선행 작업 (에이전트 착수 전 완료돼야 함)**: Maker에서 **L1 `RectTileMap` 레이어에 `Water` 타일만** 칠한다. **L2(`RectTileMap2`)는 건드리지 않는다** — 프린지는 이 티켓이 처리한다.
+- **Target**: 신규 `scripts/fix_water_fringe.cjs` + 대상 `.map` 파일의 **L2 레이어만** 국소 수정. **`scripts/build_maps.cjs` 수정 금지 · `--force` 실행 금지 · `.mlua` 수정 금지 · L1/L3/L4/L5 레이어 수정 금지.**
+- **Change**:
+  ① **신규 오프라인 스크립트 `scripts/fix_water_fringe.cjs`**: `.map`을 읽어 **L1의 `Water` 셀 집합**을 구하고, ⓐ 그 셀들의 **L2를 홀로 비우고** ⓑ 물에 인접한 **잔디 셀의 서브셀 흙 마스크를 갱신**해 올바른 `FullGrass`/`Grass{8방}`/`Grass*Corner`/`SubGrass{LTRD,RTLD}` 로 다시 칠한다.
+     - **프린지 계산 로직은 `build_maps.cjs`의 기존 `cellTile`/마스크 함수를 재사용**할 것(로직 복제 금지 — 두 곳이 갈라지면 §1.3 스킴이 깨진다). 재사용이 구조상 불가하면 그 사유를 보고서에 적고 **[보류]+질문**.
+     - **국소성 엄수**: 물 셀과 그 8이웃 범위 밖의 L2 셀은 **1개도 건드리지 않는다**(밀착 페어 길 보존). 수정 셀 수를 로그로 출력할 것.
+  ② **산출 검사 내장**(`build_maps.cjs` 선례): ⓐ L1이 `Water`인 셀에 L2 잔디가 남아 있으면 실패 ⓑ L2에 §1.3의 유효 15종(`FullGrass`+`Grass{dir}`8+`Grass*Corner`4+`SubGrass`2) 외 타일명이 생기면 실패 ⓒ 물 셀 외 영역의 L2 diff가 발생하면 실패.
+  ③ **드라이런 우선**: `--dry-run`으로 변경 예정 셀 수·좌표 요약을 먼저 출력해 보고서에 첨부하고, 제작자 확인 후 실제 적용. **백업**: 적용 전 대상 `.map`의 git 상태를 확인하고(미커밋 변경이 섞이지 않게) 실행 결과를 diff로 검증.
+  ④ **`.map` 직접 편집 허용 근거 명시**: 타일 페인팅은 `builder-protocol.md` §1.6 명시적 커버리지 갭이므로 **최소 범위 직접 편집 + `refresh` + 로그 검증**이 허용된다(msw-general 절대원칙 16). 그 외 영역은 절대 손대지 말 것.
+  ⑤ **회귀 확인**: 물이 스폰 지점·포탈·NPC·건물·기존 통행로를 막지 않는지 확인하고, 막으면 **직접 고치지 말고** 좌표를 보고서에 적어 제작자에게 되돌린다(맵 디자인은 제작자 소유).
+- **Acceptance**: ① 물가 잔디 테두리가 §1.3 문법대로 정확히 생성(전용 물가 타일 신설 0) ② **밀착 페어 길·광장·밭이 1셀도 변경되지 않음**(diff 범위 검사 근거를 보고서에) ③ L1 `Water` 셀에 L2 잔디 잔존 0 ④ 물 셀 자원 스폰 0 · 미니맵 물색 표시(T90 인정분 동작 확인) ⑤ **물가에서 F로 낚시 성립**(T91 연계 — Phase 21 완성 게이트) ⑥ 물 8방향 진입 불가 ⑦ refresh Error=0 + 보고 3종. Play 최종 확인은 제작자.
+- **충돌 주의**: 대상 `.map`의 L2 레이어 단독. **제작자의 물 페인팅 완료 + 커밋 후 착수**(미커밋 상태에서 스크립트를 돌리면 규칙 11 사고와 섞여 원인 추적이 불가능해진다). T97·T99와 파일 겹침 없음 — 병렬 가능.
+
+### T99. [대기] 몬스터가 자원·오브젝트를 통과하는 문제 — 엔티티 장애물 판정이 플레이어 전용 (⚖️ 2026-07-28 제작자 Play)
+
+- **배경(제작자)**: "몬스터가 자원을 통과하며 움직이는 버그."
+- **🧭 지휘자 진단 — 회귀가 아니라 처음부터 미구현(실측 확정)**: 엔티티 장애물 판정 3종(`IsObstacle` / `ResolveOverlaps` / `GetColliderAABB`)이 **`PlayerController.mlua`에만 22건 존재하고 다른 스크립트에는 0건**이다. 즉 T36 차단 시스템은 **플레이어 전용**이며, 몬스터는 `KinematicbodyComponent`의 **타일 충돌(Movable)만** 따르므로 **엔티티인 자원·건물·설치물을 통과하는 것이 현재 설계상 정상 동작**이다. (T81 ②에서 "`ResolveOverlaps`는 플레이어 전용이라 이동 NPC 차단은 별개 주제"로 이미 기록해 둔 사안이 제작자 Play에서 표면화된 것.) **이번 배치(T89~T95)의 회귀가 아니다.**
+- **Target**: `Player/Scripts/PlayerController.mlua`(판정 로직 **추출**만 — 동작 변경 금지), 신규 공용 스크립트(예: `Util/ObstacleQuery.mlua` 또는 `@Logic`), `Monster/Scripts/MonsterAI.mlua`(이동 경로에 판정 적용)
+- **Change**:
+  ① **공용화**: `IsObstacle`/`GetColliderAABB` 계열을 플레이어에서 **공용 모듈로 추출**하고 PlayerController는 그것을 호출하도록 변경. **플레이어 이동 체감은 1도 바뀌면 안 된다**(T36·T41 회귀 0 — 추출 전후 동작 동일성을 보고서에 근거와 함께).
+  ② **몬스터 적용**: `MonsterAI`의 이동 확정 지점에서 목표/다음 위치가 장애물과 겹치면 이동을 막거나 미끄러지게(slide) 처리. **T93의 `TryFleeAvoidZone`/`ClampChaseTargetOutsideAvoid`와 충돌하지 않게** 적용 순서를 정하고 보고서에 기재.
+  ③ 🔴 **갇힘 방지 필수**: 몬스터가 자원 사이에 끼어 영구 정지하거나 스폰 직후 오브젝트 안에 갇히는 상황을 막아야 한다. 최소한 **일정 시간 이동 실패 시 탈출 폴백**(귀환/재배치)을 두고, 그 임계값은 프로퍼티로.
+  ④ **성능**: 몬스터 N × 장애물 M 전수 비교는 매 프레임 비용이 크다. 주변 셀 기반 후보 축소나 캐시를 쓰고, 방식과 근거를 보고서 §3에.
+  ⑤ **범위 한정**: 이 티켓은 **몬스터**만. NPC·동물·펫 이동체 차단은 범위 밖(필요하면 후속 티켓).
+- **Acceptance**: ① 몬스터가 나무·바위·광맥을 **통과하지 못함** ② 몬스터가 자원 사이에 **영구히 갇히지 않음**(탈출 폴백 로그 근거) ③ 추격·귀환·배회·돌진(T38~T41)·회피 장치(T93) 회귀 0 ④ **플레이어 이동·채집 체감 회귀 0**(추출 리팩터링 안전성) ⑤ 프레임 저하 없음(근거 기재) ⑥ refresh Error=0 + 보고 3종.
+- **충돌 주의**: `PlayerController.mlua`(레인 A 핵심 파일) + `MonsterAI.mlua`(T93 레인 B가 방금 수정) **양쪽을 동시에 만지는 유일한 티켓** → **단독 착수, 다른 티켓과 병행 금지**. 착수 전 `msw-combat-system` + `references/ai-bt.md` 로드.
 
 ### (신규 작업 추가 템플릿)
 

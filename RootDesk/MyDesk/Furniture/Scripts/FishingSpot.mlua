@@ -25,13 +25,18 @@ script FishingSpot extends Component
 	end
 
 	@ExecSpace("ServerOnly")
-	method void StartFishing(Entity playerEntity)
+	method void StartFishing(Entity playerEntity, string overrideSpotType)
 		if not isvalid(playerEntity) then return end
 		local playerComp = playerEntity.PlayerComponent
 		if playerComp == nil then return end
 		local userId = playerComp.UserId
 
 		self:CancelFishing(playerEntity)
+
+		local spotType = overrideSpotType
+		if spotType == nil or spotType == "" then
+			spotType = self.SpotType
+		end
 
 		local minTime = 2.0
 		local maxTime = 5.0
@@ -40,7 +45,7 @@ script FishingSpot extends Component
 			local rows = fishDs:GetAllRow()
 			local matches = {}
 			for _, row in ipairs(rows) do
-				if row:GetItem("SpotType") == self.SpotType then
+				if row:GetItem("SpotType") == spotType then
 					table.insert(matches, row)
 				end
 			end

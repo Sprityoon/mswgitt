@@ -376,6 +376,21 @@ script ResourceSpawner extends Logic
 				end
 			end
 
+		elseif action == "dig_water" then
+			if not self:IsTerrainCellEditable(map, x, y) then return false end
+			if self:IsGridOccupied(mapName, x, y) then return false end
+			if isvalid(tilemap1) then
+				tilemap1:SetTile("Water", x, y)
+			end
+			self:SetCellMaskExact(tilemap2, x, y, 15)
+
+		elseif action == "fill_water" then
+			if not self:IsTerrainCellEditable(map, x, y) then return false end
+			if isvalid(tilemap1) then
+				tilemap1:SetTile("Soil", x, y)
+			end
+			self:SetCellMaskExact(tilemap2, x, y, 15)
+
 		else
 			return false
 		end
@@ -608,6 +623,11 @@ script ResourceSpawner extends Logic
 		-- 베이스 지반 타일 (wall 타일셋 "Soil" 단일 타일 — Layer 1 전면 깔림).
 		-- 2026-07-08 밀착 페어 스킴: L2 홀로 Soil이 드러나는 곳 = 광장/밭 바닥. 좁은 길은 L2 방향 에지 페어.
 		return name ~= nil and name == "Soil"
+	end
+
+	method boolean IsWaterTileName(string name)
+		-- L1 물 타일 (wall 타일셋 "Water" 단일 타일).
+		return name ~= nil and name == "Water"
 	end
 
 	method string ComputeAutotileName(string prefix, any maskAt, integer x, integer y)
@@ -1163,7 +1183,7 @@ script ResourceSpawner extends Logic
 		if isvalid(sprite) then
 			sprite.IgnoreMapLayerCheck = true
 			sprite.SortingLayer = _RenderLayers.EntityLayer
-			sprite.OrderInLayer = math.max(_RenderLayers.MinEntityOrder, math.floor((self.MapRadius - by) * 100))
+			sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(boss, 0)
 		end
 
 		log("ResourceSpawner: Boss " .. bossModelId .. " spawned in " .. map.Name)
@@ -1186,7 +1206,7 @@ script ResourceSpawner extends Logic
 		if isvalid(sprite) then
 			sprite.IgnoreMapLayerCheck = true
 			sprite.SortingLayer = _RenderLayers.EntityLayer
-			sprite.OrderInLayer = math.max(_RenderLayers.MinEntityOrder, math.floor((self.MapRadius - py) * 100))
+			sprite.OrderInLayer = _RenderLayers:ComputeYOrder(py)
 		end
 
 		local pg = portal:GetComponent("script.PortalGate")
@@ -1424,8 +1444,12 @@ script ResourceSpawner extends Logic
 						end
 					else
 						local info1 = tilemap1:GetTile(x, y)
-						if info1 ~= nil and self:IsSoilTileName(info1.Name) then
-							choice = "Soil"
+						if info1 ~= nil then
+							if self:IsSoilTileName(info1.Name) then
+								choice = "Soil"
+							elseif self:IsWaterTileName(info1.Name) then
+								choice = "Water"
+							end
 						end
 					end
 				end
@@ -1434,7 +1458,7 @@ script ResourceSpawner extends Logic
 				local spawnZoneRadius = self.SpawnZoneRadius
 				local inSpawnZone = (x >= -spawnZoneRadius and x <= spawnZoneRadius and y >= -spawnZoneRadius and y <= spawnZoneRadius)
 				
-				if not inSpawnZone then
+				if not inSpawnZone and choice ~= "Water" then
 					local gKey = x .. "_" .. y
 					local existing = gridToEntity[gKey]
 					
@@ -1554,7 +1578,7 @@ script ResourceSpawner extends Logic
 		if isvalid(sprite) then
 			sprite.IgnoreMapLayerCheck = true
 			sprite.SortingLayer = _RenderLayers.EntityLayer
-			sprite.OrderInLayer = math.max(_RenderLayers.MinEntityOrder, math.floor((mapRadius - y) * 100))
+			sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(resEntity, 0)
 		end
 
 		-- T9: 3% 희귀 변종 — DropMultiplier↑ + 스케일/틴트 연출 (확률은 결정론 해시).
@@ -1994,7 +2018,7 @@ script ResourceSpawner extends Logic
 		if isvalid(sprite) then
 			sprite.IgnoreMapLayerCheck = true
 			sprite.SortingLayer = _RenderLayers.EntityLayer
-			sprite.OrderInLayer = math.max(_RenderLayers.MinEntityOrder, math.floor((self.MapRadius - y) * 100))
+			sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(resEntity, 0)
 		end
 		
 		local xMin, xMax, yMin, yMax = x, x, y, y
@@ -2149,7 +2173,7 @@ script ResourceSpawner extends Logic
 					if isvalid(sprite) then
 						sprite.IgnoreMapLayerCheck = true
 						sprite.SortingLayer = _RenderLayers.EntityLayer
-						sprite.OrderInLayer = math.max(_RenderLayers.MinEntityOrder, math.floor((self.MapRadius - fy) * 100))
+						sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(spawnedEntity, 0)
 					end
 
 					if isCrop then

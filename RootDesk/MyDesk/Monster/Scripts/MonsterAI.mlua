@@ -97,6 +97,8 @@ script MonsterAI extends Component
 	@HideFromInspector property Vector2 SpawnPos = Vector2(0, 0)
 	@HideFromInspector property number AttackCooldownTimer = 0
 	@HideFromInspector property boolean DeathPlayed = false
+	-- T93: 접근 차단 장치 히스테리시스 — 진입 후 이탈 반경을 벗어날 때까지 유지
+	@HideFromInspector property boolean InsideAvoidZone = false
 	-- CHARGE 상태 진행 단계("PAUSE" 정지 | "DASH" 전속 직진 | "DECEL" 감속 정지)
 	@HideFromInspector property string ChargePhase = "PAUSE"
 	@HideFromInspector property Vector2 ChargeDir = Vector2(1, 0)
@@ -270,6 +272,11 @@ script MonsterAI extends Component
 
 		local myPos = self:Pos2D()
 
+		-- T93: 활성 차단 장치 반경 안이면 보스 외 몬스터는 즉시 이탈(추격·배회보다 우선).
+		if self:TryFleeAvoidZone(myPos, delta) then
+			return
+		end
+
 		-- 타겟/거리 선계산 (귀환 재교전 판정과 추적 판정이 공유).
 		local target = self:FindNearestPlayer()
 		local hasTarget = isvalid(target)
@@ -277,6 +284,7 @@ script MonsterAI extends Component
 		local dSq = 0
 		if hasTarget then
 			tp = self:EntityPos2D(target)
+			tp = self:ClampChaseTargetOutsideAvoid(myPos, tp)
 			dSq = self:DistSq(myPos, tp)
 		end
 		local distSpawnSq = self:DistSq(myPos, self.SpawnPos)
@@ -818,11 +826,115 @@ script MonsterAI extends Component
 	method void MoveToward(Vector2 targetPos, number delta)
 		-- Moves one frame toward targetPos using a normalized direction.
 		local myPos = self:Pos2D()
+		-- T93: 목적지가 장치 반경 안이면 가장자리로 클램프해 진입을 막는다.
+		targetPos = self:ClampChaseTargetOutsideAvoid(myPos, targetPos)
 		local dx = targetPos.x - myPos.x
 		local dy = targetPos.y - myPos.y
 		local len = math.sqrt(dx * dx + dy * dy)
 		if len <= 0.0001 then return end
 		self:MoveDirVec(Vector2(dx / len, dy / len), delta)
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsBossMonster()
+		-- Monster.IsBoss 모델 프로퍼티로 보스 여부를 판정한다(이름 분기 금지).
+		local m = self:GetMonster()
+		return isvalid(m) and m.IsBoss
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean TryFleeAvoidZone(Vector2 myPos, number delta)
+		-- 진입 반경(또는 히스테리시스 이탈 반경) 안이면 중심에서 멀어지고 true를 반환한다.
+		if self:IsBossMonster() then return false end
+		if _MonsterAvoidanceRegistry == nil then return false end
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return false end
+		local list = _MonsterAvoidanceRegistry:GetActiveForMap(map.Name)
+		if list == nil or #list == 0 then
+			self.InsideAvoidZone = false
+			return false
+		end
+		local bestDx = 0
+		local bestDy = 0
+		local bestDistSq = nil
+		local anyInsideEnter = false
+		local anyInsideExit = false
+		local wasInside = self.InsideAvoidZone
+		for i, e in ipairs(list) do
+			local enterR = e.enterR or 0
+			local exitR = e.exitR or enterR
+			if exitR < enterR then exitR = enterR end
+			local dx = myPos.x - (e.x or 0)
+			local dy = myPos.y - (e.y or 0)
+			local distSq = dx * dx + dy * dy
+			local enterSq = enterR * enterR
+			local exitSq = exitR * exitR
+			if distSq <= enterSq then anyInsideEnter = true end
+			if distSq <= exitSq then anyInsideExit = true end
+			local shouldFlee = distSq <= enterSq or (self.InsideAvoidZone and distSq <= exitSq)
+			if shouldFlee then
+				if bestDistSq == nil or distSq < bestDistSq then
+					bestDistSq = distSq
+					local len = math.sqrt(distSq)
+					if len <= 0.0001 then
+						bestDx = 1
+						bestDy = 0
+					else
+						bestDx = dx / len
+						bestDy = dy / len
+					end
+				end
+			end
+		end
+		if anyInsideEnter then
+			self.InsideAvoidZone = true
+		elseif not anyInsideExit then
+			self.InsideAvoidZone = false
+		end
+		if bestDistSq == nil then return false end
+		if self.CurrentAIState ~= "CHASE" and self.CurrentAIState ~= "RETURN" then
+			self:EnterState("CHASE")
+		end
+		self:MoveDirVec(Vector2(bestDx, bestDy), delta)
+		if anyInsideEnter and not wasInside then
+			log("[T93][AVOID] flee enter distSq=" .. tostring(bestDistSq))
+		end
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method Vector2 ClampChaseTargetOutsideAvoid(Vector2 myPos, Vector2 tp)
+		-- 추적 목표가 장치 진입 반경 안이면 이탈 반경 가장자리로 밀어 목적지로 삼지 않는다.
+		if self:IsBossMonster() then return tp end
+		if _MonsterAvoidanceRegistry == nil then return tp end
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return tp end
+		local list = _MonsterAvoidanceRegistry:GetActiveForMap(map.Name)
+		if list == nil or #list == 0 then return tp end
+		local out = tp
+		for i, e in ipairs(list) do
+			local enterR = e.enterR or 0
+			local exitR = e.exitR or enterR
+			if exitR < enterR then exitR = enterR end
+			local cx = e.x or 0
+			local cy = e.y or 0
+			local dx = out.x - cx
+			local dy = out.y - cy
+			local distSq = dx * dx + dy * dy
+			if distSq < enterR * enterR then
+				-- 몬스터가 있는 쪽의 가장자리로 투영
+				local fromCx = myPos.x - cx
+				local fromCy = myPos.y - cy
+				local len = math.sqrt(fromCx * fromCx + fromCy * fromCy)
+				if len <= 0.0001 then
+					fromCx = 1
+					fromCy = 0
+					len = 1
+				end
+				out = Vector2(cx + fromCx / len * exitR, cy + fromCy / len * exitR)
+			end
+		end
+		return out
 	end
 
 	@ExecSpace("ServerOnly")

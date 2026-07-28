@@ -14,4 +14,74 @@ script RenderLayers extends Logic
 	-- 같은 레이어 안에서 타일(OrderInLayer 1)보다 위에 오도록 코드 스폰 스프라이트가 지켜야 할 최소값
 	property integer MinEntityOrder = 2
 
+	-- 전 맵 공통 톱다운 렌더 정렬 기준 반지름 (OrderInLayer = (SortRadius - worldY) * 100)
+	property number SortRadius = 100
+
+	-- 유닛 계열(플레이어·NPC·몬스터·동물) 동률 시 오브젝트 가림 방지 바이어스 (+1 = y 0.01유닛 체감 영향 무)
+	property integer UnitTieBias = 1
+
+	method integer ComputeYOrder(number worldY)
+		-- worldY 위치에 따른 톱다운 OrderInLayer 계산.
+		local radius = self.SortRadius or 100
+		local y = worldY or 0
+		local minOrder = self.MinEntityOrder or 2
+		return math.max(minOrder, math.floor((radius - y) * 100))
+	end
+
+	method integer ComputeYOrderForEntity(Entity entity, number extraOffset)
+		-- T95: 전 대상 접지선(충돌/트리거 박스 하단 = y + ColliderOffset.y - BoxSize.y/2) 기반 Y정렬
+		if not isvalid(entity) then return self.MinEntityOrder end
+		local transform = entity.TransformComponent
+		if not isvalid(transform) then return self.MinEntityOrder end
+		
+		local worldY = transform.WorldPosition.y
+		local groundY = worldY
+		
+		local trigger = entity.TriggerComponent
+		if isvalid(trigger) and trigger.BoxSize ~= nil then
+			groundY = worldY + trigger.ColliderOffset.y - (trigger.BoxSize.y * 0.5)
+		else
+			local collider = entity.PhysicsColliderComponent
+			if isvalid(collider) and collider.BoxSize ~= nil then
+				groundY = worldY + collider.ColliderOffset.y - (collider.BoxSize.y * 0.5)
+			else
+				local ysort = entity:GetComponent("script.YSortSprite")
+				if isvalid(ysort) and ysort.SortYOffset ~= nil then
+					groundY = worldY + ysort.SortYOffset
+				end
+			end
+		end
+		
+		if extraOffset ~= nil then
+			groundY = groundY + extraOffset
+		end
+
+		local order = self:ComputeYOrder(groundY)
+		
+		-- 유닛 계열(플레이어, NPC, 몬스터, 동물) 여부 확인하여 UnitTieBias(+1) 가산
+		local isUnit = false
+		if isvalid(entity:GetComponent("script.PlayerController")) or
+		   isvalid(entity.PlayerComponent) or
+		   isvalid(entity:GetComponent("script.MonsterAI")) then
+			isUnit = true
+		else
+			local ysort = entity:GetComponent("script.YSortSprite")
+			if isvalid(ysort) and ysort.Dynamic then
+				isUnit = true
+			else
+				local entName = entity.Name
+				if entName ~= nil and (string.find(entName, "Villager") or string.find(entName, "Merchant") or string.find(entName, "Elder") or string.find(entName, "Fisher")) then
+					isUnit = true
+				end
+			end
+		end
+
+		if isUnit then
+			order = order + (self.UnitTieBias or 1)
+		end
+
+		return order
+	end
+
 end
+

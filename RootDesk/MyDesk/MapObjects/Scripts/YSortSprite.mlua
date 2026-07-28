@@ -1,0 +1,39 @@
+@Component
+script YSortSprite extends Component
+
+	property boolean Dynamic = false
+	property number SortYOffset = 0.0
+	property number _LastY = -999999
+
+	method void OnBeginPlay()
+		-- Initializes rendering order for non-fading sprites.
+		if not self:IsClient() then return end
+		self:ApplyYSort()
+	end
+
+	method void ApplyYSort()
+		-- Calculates and applies OrderInLayer based on world position and offset.
+		local sprite = self.Entity.SpriteRendererComponent
+		local transform = self.Entity.TransformComponent
+		if not isvalid(sprite) or not isvalid(transform) then return end
+
+		if _RenderLayers then
+			sprite.SortingLayer = _RenderLayers.EntityLayer
+			self._LastY = transform.WorldPosition.y
+			sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(self.Entity, self.SortYOffset)
+		end
+	end
+
+	method void OnUpdate(number delta)
+		-- Periodically updates rendering order for dynamic moving entities.
+		if not self:IsClient() or not self.Dynamic then return end
+		local transform = self.Entity.TransformComponent
+		if not isvalid(transform) then return end
+
+		local y = transform.WorldPosition.y
+		if math.abs(y - self._LastY) >= 0.05 then
+			self:ApplyYSort()
+		end
+	end
+
+end

@@ -1,0 +1,117 @@
+@Component
+script MonsterApproachBlocker extends Component
+	-- T93: 설치 반경 내 몬스터 접근 회피 장치.
+	-- 수치 기본값은 CSV(item_dataset)에서 ItemId로 덮어쓴다. 리터럴 분기는 없다.
+
+	property number AvoidRadius = 4.0
+	property number AvoidExitRadius = 5.0
+	property number ActiveDurationSec = 180.0
+	property boolean IsActive = true
+	property any ExpireTimerId = nil
+	property boolean Registered = false
+
+	@ExecSpace("ServerOnly")
+	method void OnBeginPlay()
+		-- CSV 수치 로드 후 레지스트리 등록, 지속시간 만료 타이머를 건다.
+		self:LoadParamsFromItemDataset()
+		if self.AvoidExitRadius < self.AvoidRadius then
+			self.AvoidExitRadius = self.AvoidRadius + 1.0
+		end
+		self:RegisterSelf()
+		if self.ActiveDurationSec > 0 then
+			local dur = self.ActiveDurationSec
+			self.ExpireTimerId = _TimerService:SetTimerOnce(function()
+				self:ExpireDevice()
+			end, dur)
+		end
+		log("[T93][AVOID] blocker begin enter=" .. tostring(self.AvoidRadius) .. " exit=" .. tostring(self.AvoidExitRadius) .. " dur=" .. tostring(self.ActiveDurationSec))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnEndPlay()
+		-- 철거·만료·맵 이탈 시 레지스트리·타이머를 정리한다.
+		self:ClearExpireTimer()
+		self:UnregisterSelf()
+	end
+
+	@ExecSpace("ServerOnly")
+	method void LoadParamsFromItemDataset()
+		-- PlaceableFurniture.ItemId → item_dataset 행에서 반경·지속시간을 읽는다.
+		local pf = self.Entity:GetComponent("script.PlaceableFurniture")
+		if not isvalid(pf) then return end
+		local itemId = pf.ItemId
+		if itemId == nil or itemId == "" then return end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return end
+		local row = ds:FindRow("Name", itemId)
+		if row == nil then return end
+		local okR, rawR = pcall(function() return row:GetItem("AvoidRadius") end)
+		if okR and rawR ~= nil and tostring(rawR) ~= "" then
+			local n = tonumber(rawR)
+			if n ~= nil and n > 0 then self.AvoidRadius = n end
+		end
+		local okE, rawE = pcall(function() return row:GetItem("AvoidExitRadius") end)
+		if okE and rawE ~= nil and tostring(rawE) ~= "" then
+			local n = tonumber(rawE)
+			if n ~= nil and n > 0 then self.AvoidExitRadius = n end
+		end
+		local okD, rawD = pcall(function() return row:GetItem("ActiveDurationSec") end)
+		if okD and rawD ~= nil and tostring(rawD) ~= "" then
+			local n = tonumber(rawD)
+			if n ~= nil and n >= 0 then self.ActiveDurationSec = n end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RegisterSelf()
+		-- 현재 월드 좌표로 회피 레지스트리에 등록한다.
+		if not self.IsActive then return end
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return end
+		local pos = self.Entity.TransformComponent.WorldPosition
+		if _MonsterAvoidanceRegistry ~= nil then
+			_MonsterAvoidanceRegistry:Register(map.Name, self.Entity, pos.x, pos.y, self.AvoidRadius, self.AvoidExitRadius)
+			self.Registered = true
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void UnregisterSelf()
+		-- 레지스트리에서 제거한다.
+		if not self.Registered then return end
+		local map = self.Entity.CurrentMap
+		local mapName = ""
+		if isvalid(map) then mapName = map.Name end
+		if _MonsterAvoidanceRegistry ~= nil and mapName ~= "" then
+			_MonsterAvoidanceRegistry:Unregister(mapName, self.Entity)
+		end
+		self.Registered = false
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ClearExpireTimer()
+		-- 만료 타이머를 해제한다.
+		if self.ExpireTimerId ~= nil then
+			_TimerService:ClearTimer(self.ExpireTimerId)
+			self.ExpireTimerId = nil
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ExpireDevice()
+		-- 지속시간 만료: 가구 점유 해제 후 엔티티 파괴.
+		self.ExpireTimerId = nil
+		self.IsActive = false
+		self:UnregisterSelf()
+		local map = self.Entity.CurrentMap
+		if isvalid(map) and _ResourceSpawner ~= nil then
+			local pos = self.Entity.TransformComponent.WorldPosition
+			local cx = math.floor(pos.x)
+			local cy = math.floor(pos.y)
+			_ResourceSpawner:RemovePlacedFurniture(map.Name, cx, cy)
+		end
+		log("[T93][AVOID] blocker expired destroy")
+		self.Entity:Destroy()
+	end
+
+end
