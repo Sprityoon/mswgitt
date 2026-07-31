@@ -23,7 +23,7 @@
 | PostToolUse (전체) | `hooks/mcp-log/mcp-log.cjs` | MCP 호출 기록 → `.mswai/logs/mcp.log`. **응답 본문은 `MCP_LOG_MAX_OUTPUT_BYTES=2048`로 캡** (settings.json `env`) | 벤더 |
 | SessionStart | `hooks-project/mlua-session-start.cjs` (SessionEnd는 벤더 `hooks/mlua-lsp/mlua-session-end.cjs` 유지) | LSP 데몬 기동/종료 | 프로젝트 (벤더 포크 — 2026-07-16 stdin 블록 수정, 아래 변경 항목) |
 | SessionStart (startup·resume) | `hooks/update-check/update-check.cjs` | mswai 신버전 안내 | 벤더 |
-| UserPromptSubmit | `hooks/core-version-check/core-version-check.cjs` | `Environment/config`의 CoreVersion ≠ `26.5.0.0`이면 작업 중단 지시 주입 (워크스페이스당 1회) | 벤더 |
+| UserPromptSubmit | `hooks/core-version-check/core-version-check.cjs` | `Environment/config`의 CoreVersion ≠ **`26.7.0.0`**(2026-07-28 벤더 업데이트로 26.5.0.0에서 상향)이면 작업 중단 지시 주입 (워크스페이스당 1회) | 벤더 |
 | UserPromptSubmit | `hooks-project/skill-router-lite.cjs` | 스킬 라우팅 리마인더: **세션 첫 프롬프트 = 벤더 전문(~20KB) 위임 주입, 이후 = 요약(~2KB)** | 프로젝트 (신설 — 매 턴 20KB 주입하던 벤더판 대체. 전문 텍스트의 단일 소스는 여전히 벤더 스크립트) |
 
 ### 2026-07-23 변경 — 벤더 스킬 v0.6.0 동기화 + 라우터 LITE에 위키·플래닝 라우팅 추가

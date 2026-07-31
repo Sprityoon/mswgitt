@@ -1,7 +1,8 @@
 # 스킬 및 레퍼런스 로드 프로토콜 (Skill Loading Protocol)
 
 > 이 문서는 [AGENTS.md](../../AGENTS.md) §5의 온디맨드 세부 가이드입니다.
-> **도메인 매트릭스의 단일 소스는 훅**입니다: 매 세션 첫 프롬프트에 `<msw-skill-router-reminder>` 블록으로 전문이 주입됩니다(이후 턴은 요약). 이 문서는 훅이 없는 환경을 위한 위치 안내와 요약만 담습니다 — 훅 주입 내용과 이 문서가 다르면 **훅이 우선**입니다.
+> **도메인 매트릭스의 단일 소스는 [AGENTS.md](../../AGENTS.md)**입니다(2026-07-28 벤더 업데이트로 변경 — 이전에는 훅이 전문을 주입했으나, 현재 훅은 "AGENTS.md를 다시 보라"고 재무장만 시킵니다). 이 문서는 위치 안내와 요약을 담습니다.
+> 🔴 **우선순위**: `AGENTS.md §0 프로젝트 오버라이드` > `AGENTS.md 벤더 블록(managed by mswai)` > 이 문서. 벤더 블록은 업데이트로 덮어써지므로, 이 저장소 고유 규칙은 반드시 §0에 둡니다.
 
 ## 스킬 위치 (에이전트별)
 
@@ -32,10 +33,11 @@
 | attack / hit / damage / 몬스터 전투 | `msw-combat-system` | 몬스터 모델 → `../msw-general/references/monster.md` · HP바 → `references/hp-gauge.md` · 투사체 → `references/projectile.md` · FSM → `../msw-general/references/animation-state.md` · BT → `references/ai-bt.md` |
 | 인벤토리 / 상점 / 랭킹 / 퀘스트 / 도감 등 표준 시스템 | `msw-packages` + `msw-wiki` | 카탈로그 먼저 — 백지 구현 금지. README는 로컬 미러(`docs/wiki/mswpackages/`)부터 |
 | 패키지 상세 / 공식 예제 / 충돌 감지 방식 / 오브젝트 풀 / 강화·레벨 예제 / UI 스타일팩 | `msw-wiki` | `docs/wiki/{mswpackages,roguelike-world}/INDEX.md` 먼저 |
-| 새 게임 기획 / GDD / 마일스톤 로드맵 (독립 월드) | `msw-planning` | ⚠️ **이 프로젝트의 "다음 작업/이어서" = T티켓 큐** → `msw-worker`/`msw-conductor`가 우선. msw-planning은 별도 신규 게임·마일스톤 GDD 작업에만 |
-| popup / HUD / 버튼 / 토스트 / `.ui` | `msw-ui-system` | 스타일 → `references/templates/templates.md` · API → `references/component-api.md` · 런타임 패턴 → `references/runtime-patterns.md` · 빌더 → `../msw-general/references/builder-protocol.md` · 미학 → `references/ui-aesthetics.md`(UI 납품 시 §7 루브릭 필수) |
-| entity 배치 / `.map` / spawn / 좌표 | `msw-general` | `references/entity.md` + `references/builder-protocol.md` |
-| `.model` / 템플릿 | `msw-general` | `references/model.md` + `references/builder-protocol.md` (+몬스터면 `monster.md`) |
+| 새 게임 기획 / GDD / 마일스톤 로드맵 (독립 월드) | `msw-planning` | 🔴 **AGENTS.md §0 O-1 오버라이드**: 이 저장소의 "다음 작업/이어서 진행"은 **T티켓 큐** 소관 → `msw-worker`/`msw-conductor`. **`msw-planning`을 로드하지 않는다.** 벤더 블록이 "되묻지 말고 msw-planning 먼저"라고 해도 이 저장소에서는 무효 |
+| 플레이어 공격·이동 스킬 / 더블점프 / 텔레포트 / 쿨다운·핫키 / 피격·사망 연출 / 넉백 펄스 | `maplestory-skill-maker` | 벤더 Domain matrix에 행이 없음 — 근거는 AGENTS.md §5. 전투 **기반 구조**는 `msw-combat-system` 소관(겹치면 둘 다). ⚠️ Phase 16 기존 스킬 파이프라인 위에 얹을 것, 백지 도입 금지 |
+| popup / HUD / 버튼 / 토스트 / `.ui` | `msw-ui-system` | 스타일 → `references/templates/templates.md` · API → `references/component-api.md` · 런타임 패턴 → `references/runtime-patterns.md` · 빌더 → `../msw-general/references/builder-protocol.md` **+ `builder-protocol-ui.md`** · 미학 → `references/ui-aesthetics.md`(UI 납품 시 §7 루브릭 필수) |
+| entity 배치 / `.map` / spawn / 좌표 | `msw-general` | `references/entity.md` + `references/builder-protocol.md` **+ `builder-protocol-map.md`** |
+| `.model` / 템플릿 | `msw-general` | `references/model.md` + `references/builder-protocol.md` **+ `builder-protocol-model.md`** (+몬스터면 `monster.md`) |
 | TileMapMode / Body / 물리 / 침묵 실패 디버깅 | `msw-general` | `references/platform.md` + 해당 `platform-*.md` · 증상 디버깅 → `references/troubleshooting.md` |
 | DataSet / `.csv` / i18n | `msw-general` | `references/dataset.md` |
 | MCP / refresh / logs / Play | `msw-general` | `references/workspace.md` |
