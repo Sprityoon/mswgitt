@@ -18,7 +18,8 @@ description: 이 프로젝트의 커밋·푸시 절차. 사용자가 "푸시해�
 ## 2. 저장소 특유의 함정
 
 - **CSV BOM**: DataSet `.csv`는 git clean 필터(`scripts/git-stripbom.cjs`, 커밋 faa90ea)가 UTF-8 BOM을 제거한다. `git status`에 CSV가 "수정됨"으로 떠도 `git diff`가 비어 보이면 BOM 차이뿐 — 정상이며 그대로 커밋해도 된다. Excel류로 CSV를 열면 BOM이 다시 붙는다.
-- `.mcp.json`은 **의도적으로 미추적**(API 토큰 포함) — `git add`에 절대 포함하지 말 것.
+- 🔴 **MCP 설정 파일 = Bearer 토큰 평문. 절대 추적 금지.** `.mcp.json` 하나만 보면 안 된다 — `mswai`가 **에이전트별 미러**(`.cursor/mcp.json`, `.agents/`, `.codex/`, `.github/`)를 새로 만든다. `.gitignore`에 5경로가 등록돼 있지만, **벤더 동기화·새 에이전트 도입 직후에는 `git status`에 `mcp.json`류가 뜨는지 반드시 확인**할 것.
+  > 사고 이력: `.cursor/mcp.json`이 벤더 업데이트로 신규 생성돼 `5beb4c5`에 커밋·푸시됨. 확인 명령: `git ls-files | grep mcp.json` (비어 있어야 정상).
 - 경로에 한글이 있으므로 쉘 인자는 항상 큰따옴표+슬래시.
 
 ## 3. 커밋

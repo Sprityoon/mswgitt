@@ -372,6 +372,8 @@ If none of the above resolves the issue, tell the user:
   - **Warning 급증도 보고 대상**: baseline 대비 늘었으면 원인과 소유 스크립트를 밝힌다(`LWA-4012`=모델에 프로퍼티 기본값 미명시 계열).
   - **신규 `.mlua`를 만들었으면 refresh 후 `.codeblock` 생성을 반드시 확인**한다(8대 핵심 규칙 2 — 쌍이 없으면 스크립트가 등록조차 안 된다).
   - MCP 미연결 환경이면 LSP 진단까지만 수행하고 **"refresh 검증 보류"** 로 정확히 보고한다(허위 Error=0 기재 금지).
+  - ⚠️ **"MCP 미연결"을 단정하기 전에 원인 3종을 구분**한다 — ① Cursor 승인 해시 무효화(`.cursor/mcp.json` 수정 시마다 발생, `-p` 모드에서 조용히 `not loaded`) ② cursor-agent의 HTTP 전송 종료 어서션(우리 설정 무관, stdio는 정상) ③ `MakerMCP_run.exe` 고아 프로세스의 브리지 점유. 실측 근거와 대응은 [workflow.md](./docs/agents/workflow.md) "에이전트별 MCP 연결 실태" 참조.
+  - 🔴 **MCP 설정 파일(`.mcp.json` / `.cursor/mcp.json` 등)은 커밋 금지** — Bearer 토큰 평문. `.gitignore`에 5경로 등록됨. 새 에이전트 도입 시 경로 추가할 것.
 
 ---
 
