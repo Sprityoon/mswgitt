@@ -32,6 +32,12 @@
 11. **Maker 스테일 저장이 빌더 산출 `.ui`를 되돌린다 (2026-07-15 신설 — 실사고)**: Maker 에디터는 저장 시 **에디터 메모리 상태로 워크스페이스 파일을 통째로 재직렬화**한다. 에디터가 구버전 상태(git pull·빌더 편집을 refresh로 반영하기 전)를 들고 있으면 무관한 저장에도 `ui/*.ui`가 구버전으로 덮인다 — 2026-07-15 실사고(T47·T48·T50 산출물 소실 → 지휘자 HEAD 복구). **규칙**: ① git pull 또는 빌더로 `.map`/`.model`/`.ui`를 바꾼 뒤에는 Maker에서 어떤 저장이든 하기 전에 반드시 `refresh` 먼저 ② 에이전트는 Maker 저장 흔적(git status에 의도치 않은 `.ui`/`.csv` 변경)이 보이면 **덮어쓰기 여부부터 대조**하고 작업을 시작한다(핵심 산출물 존재 검사 — `scratch/inspect_stale_save_check.cjs` 선례) ③ CSV의 BOM 재직렬화는 무해(클린 필터 처리). `.ui` 전량 재직렬화 diff도 **내용이 전수 실존하면 무해** — 되돌리지 말고 커밋에 포함(2026-07-16 판정 선례. 되돌리면 다음 에디터 저장에서 재발).
 > 🔴 **3차 사고 (2026-07-25, 지휘자 실측) — "재직렬화는 무해" 판정을 오용하지 말 것**: `maker_refresh_workspace` 직후 `ui/PopupGroup.ui`가 전량 재직렬화(+16,685 −16,683)되면서 **T79의 L029 수정(FurnacePopup 중첩 `UIGroupComponent` 제거)이 원복**됐다. HEAD=`false` / 워킹트리=`있음`, 엔티티 수는 341로 동일. **2026-07-16 판정의 전제는 "내용이 전수 실존"이며, 산출물이 하나라도 사라졌으면 그 판정은 적용되지 않는다** — 그때는 복구가 정답이다(→ T88). **재직렬화 diff를 봤을 때의 필수 절차: 무해 판정 전에 반드시 "그 커밋이 만든 핵심 산출물이 지금도 실존하는가"를 빌더로 1건씩 대조**할 것(엔티티 수 일치는 근거가 아니다 — 이번 건도 수는 같았다). 또한 **`refresh` 호출 자체가 Maker의 스테일 상태를 디스크로 밀어낼 수 있다**는 점이 이번에 처음 실증됐다 — 빌더로 `.ui`/`.map`/`.model`을 바꾼 세션에서는 refresh 전후로 `git status`를 확인한다.
 12. **`_EffectService`/`_ParticleService` instigator에 nil 금지 (2026-07-18 신설 — T71 런타임 실측)**: `PlayEffect`/`PlayBasicParticle` 등의 instigator 인자에 `nil`을 넘기면 **클라이언트에서 생성이 에러 없이 조용히 실패(serial=0)** 한다 — 서버는 nil을 통과시켜 serial>0을 반환하므로 "서버 로그만 성공"으로 오진하기 쉽다. 반드시 유효 엔티티(시전자·대상 등)를 넘기고, 재생 직후 반환 serial을 로그로 남겨 0 여부를 확인한다. `SpawnByModelId` parent nil 금지(핵심 규칙 4)와 동계열 함정.
+13. 🔴 **`ModelBuilder.read()`가 `maplestorymapobject$` 모델을 "빈 모델"로 읽는다 (2026-08-01 신설 — 지휘자 실측)**: 모델 본체(`Components`/`Values`)가 **셸 한 단계 안쪽**에 들어 있는 형식이 있다. `EntryKey`/`Id`가 `maplestorymapobject$...` 형태(메이플 네이티브 맵오브젝트 임포트)면 여기 해당한다. 이때 `ModelBuilder.read()`는 **에러 없이 `0 components, 0 values`** 를 반환한다 — 실제로는 `TriggerComponent`·`ResourceOccupiedArea`가 멀쩡히 들어 있는데도. **UUID형 `model_id` + `base_model_id` 있는 모델(예: `Big Stone1`)은 정상 파싱**되므로 "빌더가 되니까 다 된다"고 믿으면 안 된다.
+    - **사고 실례**: 이 갭 때문에 **T96의 실측표가 틀렸다** — 자원 `Tree1`·`Tree2`·`Stone`·`IronNodeResource`를 "Trigger 미보유"로 기재했으나 **4종 모두 보유**. 그 표를 근거로 만든 T100의 작업 범위도 함께 틀어졌다.
+    - **판정 절차**: `.model` 구성 감사 시 `listComponents()`가 빈 배열이면 **"컴포넌트 없음"으로 결론내지 말고 갭을 먼저 의심**한다. 확인은 `snapshot().model_id`가 `$`를 포함하는지 보면 된다. 갭에 걸린 모델은 `Components` 배열을 가진 **가장 안쪽 노드**를 본체로 삼아 읽는다(진단용 읽기 전용 우회는 허용 — 쓰기는 여전히 빌더로).
+14. 🔴 **콜라이더 실물 = `BoxSize × Transform.Scale` (2026-08-01 신설 — Big Stone 통과 버그 실측)**: 엔진이 쓰는 실제 충돌/트리거 박스는 모델의 `BoxSize`·`ColliderOffset`에 **`Transform.Scale`이 곱해진 값**이다. 코드에서 박스로 기하 계산을 할 때 Scale을 빼먹으면 `Scale≠1` 모델에서 **판정이 실물보다 작아져 그대로 통과**한다. `TransformComponent`에 `WorldScale`은 **없다**(`.d.mlua` 확인) — 로컬 `Scale`이 유일한 소스이며, 맵 직속 엔티티는 이것이 곧 월드 스케일이다.
+    - **사고 실례**: `ObstacleQuery.GetColliderAABB` / `RenderLayers.ComputeYOrderForEntity`가 Scale 미반영 → `Big Stone1`(Scale 2) 판정 박스 1/2, **`Tree1`(Scale 1.5) 판정 박스 2/3** → 제작자 Play "조정했는데도 통과" (→ **T101**에서 수정).
+    - **주의**: Maker에서 박스를 키워도 실물이 같이 커지므로 **에디터 조정으로는 절대 상쇄되지 않는다.** 증상이 보이면 모델값이 아니라 **코드의 Scale 반영 여부**를 먼저 본다.
 
 ### 1.3 ⚖️ 현행 타일 스킴 (2026-07-08 밀착 페어 확정 — 이 문서의 최우선 배경지식)
 
@@ -93,7 +99,7 @@
 ## 3. 작업 큐 (하위 에이전트 위임 대상)
 
 > 상태: `[대기]` / `[진행]` / `[완료]` / `[보류]`
-> 각 항목은 **Target(파일) / Change(변경) / Acceptance(완료 기준)** 3요소를 반드시 채운다. **T번호는 단조 증가·재사용 금지 — 현재 최대 = T100.**
+> 각 항목은 **Target(파일) / Change(변경) / Acceptance(완료 기준)** 3요소를 반드시 채운다. **T번호는 단조 증가·재사용 금지 — 현재 최대 = T101.**
 
 > 🧭 **현황판 (지휘자 2026-07-21 — 버그픽스)**
 > - **Play PASS 확정**: T50까지의 전 완료분 + T56(주민 대화 말풍선 버그픽스 검증) + T51 · T58 · T59 · T60 · **T62**(⚖️ 2026-07-16 확정) · **T63**(낚시 랭킹 수정 — 핫픽스 포함 확인). 체크포인트 커밋 = 이 갱신과 동시.
@@ -152,6 +158,11 @@
 >     3. **T75**(소품 11종 — `town.map` 엔티티). T100 커밋 후 단독.
 >     - 보스가 페인팅을 뒤로 미루면 **T100을 먼저 단독 발행**해도 무방하다(`.model`만 만져 물과 무관). 단 그 경우에도 **에이전트 작업 중 Maker 저장 금지**.
 >   - **잔여 큐**: T98(보스 선행 대기) · T100(발행 가능) · T75(T100 후) / **제작자 직접**: T76·T94 / **보류**: T4(🔴 `wall.tileset` — 물 작업과 동시 편집 금지).
+> - **🔴 2026-08-01 지휘자 직접 — T101 발행·완료 + T100 범위 재작성 (제작자 Play "조정했는데도 통과")**
+>   - **T101 원인**: 콜라이더 실물은 `BoxSize × Transform.Scale`인데 `ObstacleQuery.GetColliderAABB`가 스케일을 빼먹었다. 후보 수집은 실물로, 침투 판정은 축소 박스로 하는 불일치 → **`Big Stone1` 1/2 · `Tree1` 2/3 크기로 판정**. **Maker 조정으로는 상쇄 불가**(박스를 키우면 실물도 커짐)라 제작자가 자력으로 못 고친 게 정상이다. `RenderLayers`의 접지선에도 같은 결함 → 함께 수정. **refresh Error=0 / Warning 17(baseline 유지)**.
+>   - 🔴 **규칙 13 신설 — `ModelBuilder.read()`가 `maplestorymapobject$` 모델을 빈 모델로 반환한다.** 이 갭이 **T96 실측표를 오염**시켰고(자원 4종을 "Trigger 미보유"로 오기재), 그 표로 만든 **T100 범위도 틀렸으며**, 심지어 T101의 1차 영향범위 집계까지 이 갭에 걸렸다(`Tree1` 누락). **`.model` 감사 결과가 "컴포넌트 없음"이면 갭부터 의심할 것.**
+>   - 🔄 **T100 재작성**: 자원 6종은 **이미 전부 Trigger 보유 → 작업 대상 아님**. 실제 대상은 **가구 6종뿐**이고, 이들은 Trigger·PhysicsCollider가 **둘 다 없어** `OverlapAll(TriggerBox)` 후보 수집에조차 안 걸릴 가능성이 있다 → **가구 통행 차단이 지금 작동하지 않을 수 있다**는 판정을 T100 ②로 편입.
+>   - **발행 순서 불변**: 보스 물 페인팅(단독) → T98 ∥ T100 → T75.
 > - **병렬 규약(요지)**: ① 상대 레인 소유 파일은 읽기만 ② 이 문서 갱신은 자기 T블록 라인만 ③ 티켓 완료마다 refresh 1회+빌드 Error 수를 보고서 §4에 기재 ④ 무보고 종료 = 반려(§5 조항 11).
 
 ### T4. [보류 유지 — 제작자 협업 전제 | 🔴 T90과 `wall.tileset` 충돌 주의] 경계 테라스/절벽 아트 정리
@@ -644,7 +655,19 @@
 > - 🧭 지휘자 소견(참고): 아래 원 소견은 (B)/(C)를 권장했고 보스가 (C)를 택했다. (C)는 (B)보다 회귀 검증 범위가 넓으므로 **T81·T82·T83이 방금 Play PASS한 상태를 깨지 않는 것이 T100의 최우선 제약**이다.
 
 - **배경(⚖️ 제작자)**: "소품 및 일부 자원도 trigger는 생각해보자." T95에서 접지선을 Trigger 박스로 자동 산출하기로 하면서, **Trigger 미보유 대상은 자동화 밖에 남는다**는 문제가 드러났다.
-- **🧭 지휘자 실측 현황 (2026-07-28, 45모델 전수)**: 보유 **22** / 미보유 **23**.
+- 🔴 **정정 (2026-08-01 지휘자 재실측) — 아래 표의 자원 행은 틀렸다**: `ModelBuilder.read()`가 `maplestorymapobject$` 계열 모델을 **에러 없이 빈 모델로 반환**하는 갭(§1.2 **규칙 13**) 때문에, 실제로는 Trigger를 가진 모델이 "미보유"로 집계됐다. **재실측 결과**:
+
+  | 모델 | Trigger | PhysicsCollider | 멤버십 | Scale |
+  |---|:--:|:--:|:--:|:--:|
+  | `Tree1` | ✅ | ✅ | Occ | **1.5** |
+  | `Tree2` · `Stone` · `IronNodeResource` · `Big Stone2` | ✅ | ✅ | Occ | 1 |
+  | `Big Stone1` | ✅ | ✅ | Occ | **2** |
+  | `GrownGrass` · `Crop_Carrot` | ❌ | ❌ | Occ | 1 / 0.55 |
+  | 가구 6종 (`Bed`·`CookingPot`·`Furnace`·`WoodenChest`·`AnimalPen`·`MonsterWard`) | ❌ | ❌ | Occ | 1 |
+
+  → **자원은 이미 6종 중 6종이 Trigger를 갖고 있다**(GrownGrass는 의도적 통과 자원, Crop_Carrot은 작물). **"보유 22 / 미보유 23"이라는 총계 자체를 신뢰하지 말 것** — 같은 갭을 탄 수치다. 전수 재감사는 T100 ①이 수행한다.
+
+- **🧭 지휘자 실측 현황 (2026-07-28, 45모델 전수 — ⚠️ 위 정정 참조, 자원 행 오류 있음)**: 보유 **22** / 미보유 **23**.
 
   | 그룹 | Trigger | 현재 정렬 근거 |
   |---|:--:|---|
@@ -728,27 +751,43 @@
 - **구현 요약 (2026-07-28)**: `Util/ObstacleQuery.mlua`(@Logic) 신설 · PC 래퍼 추출(YOrder 무수정) · `MonsterAI.MoveDirVec` 슬라이드+갇힘 탈출. T93 순서=회피→MoveDirVec 내 장애물. 성능=OverlapAll(queryR). 보고서: `docs/agents/reports/T99-monster-entity-obstacles.md`.
 - **검증**: LSP **errors=0**. **런타임 검증 보류(제작자 수행)**. refresh 측정 불가(MCP 미연결) — baseline Error=0 대비 제작자 refresh 필수.
 
-### T100. [대기 — ⚖️ 2026-08-01 보스 T96 (C) 확정 | 🔴 T75의 선행] 자원 6종·가구 6종 `TriggerComponent` 부여 — T96 (C) 실행
+### T100. [대기 — ⚖️ 2026-08-01 보스 T96 (C) 확정 | 🔄 2026-08-01 실측으로 범위 재작성 | 🔴 T75의 선행] 가구 6종 `TriggerComponent` 부여 + Trigger 전수 재감사 — T96 (C) 실행
 
-- **배경**: T96이 **(C) 오브젝트 계열 전면 부여**로 확정(⚖️ 2026-08-01). T95가 정렬 접지선을 Trigger 박스에서 자동 산출하므로, Trigger 미보유 모델은 자동화 밖에 남는다. 이 티켓은 **자원·가구**를 편입하고, **소품(T75)의 스펙을 확정할 조사 결론**을 낸다.
+- **배경**: T96이 **(C) 오브젝트 계열 전면 부여**로 확정(⚖️ 2026-08-01). T95가 정렬 접지선을 Trigger 박스에서 자동 산출하므로 Trigger 미보유 모델은 자동화 밖에 남는다.
+- 🔄 **범위 재작성 (2026-08-01 지휘자 실측)** — 최초 발행본은 "자원 6종 + 가구 6종"이었으나 **자원은 작업 대상이 아니다**:
+  - **자원 6종은 이미 전부 Trigger 보유**(`Tree1`·`Tree2`·`Stone`·`IronNodeResource`·`Big Stone1`·`Big Stone2`). T96 표가 "미보유"로 적었던 건 **§1.2 규칙 13(ModelBuilder 갭)** 때문의 오독이다. `GrownGrass`(의도적 통과 자원)·`Crop_Carrot`(작물)은 부여 대상이 아니다.
+  - **실제 부여 대상은 가구 6종뿐** — 이들은 `TriggerComponent`도 `PhysicsColliderComponent`도 **둘 다 없고** `script.ResourceOccupiedArea`만 갖고 있다.
+  - 🔴 **그래서 새 의심이 생겼다**: `ObstacleQuery.IsObstacle`의 후보 수집은 `OverlapAll(CollisionGroups.TriggerBox, ...)` 이고, `CollisionGroups.TriggerBox`는 **`TriggerComponent`의 그룹**이다(`TriggerComponent.d.mlua` 39행). 박스가 아예 없는 가구는 **후보로 수집조차 안 될 수 있다** = 침대·화로·상자 등이 지금 **통행 차단이 안 되고 있을 가능성**. 이 티켓의 조사 ②가 이걸 판정한다.
 - 🔴 **최우선 제약**: T81(통행 차단)·T82(상호작용 범위)·T83(walk-behind)이 **2026-07-25/28 Play PASS로 방금 안정화**된 상태다. 이 티켓은 정렬만 얻고 **그 3개 시스템의 동작을 바꾸지 않는 것**이 목표다. 바꿔야만 한다면 [보류]+질문.
 - **Target**
-  - 자원 6: `RootDesk/MyDesk/MapObjects/Models/{Tree1, Tree2, Stone, IronNodeResource, GrownGrass, Crop_Carrot}.model`
   - 가구 6: `RootDesk/MyDesk/Furniture/Models/Furniture_{Bed, CookingPot, Furnace, WoodenChest, AnimalPen, MonsterWard}.model`
-  - 읽기 전용 참조: `MapObjects/Scripts/ResourceSpawner.mlua` · `Player/Scripts/PlayerController.mlua` · `Util/RenderLayers.mlua` · `MapObjects/Models/Big Stone1.model`
-  - ⛔ **`.map` 파일 일절 수정 금지**(T75·T98과의 충돌 회피) · `.mlua` 수정 금지(조사 결과 필요 시 [보류]+질문)
+  - 읽기 전용 참조: `Util/ObstacleQuery.mlua` · `Player/Scripts/PlayerController.mlua` · `Util/RenderLayers.mlua` · `Furniture/Scripts/PlaceableFurniture.mlua` · `Environment/NativeScripts/Component/TriggerComponent.d.mlua`
+  - ⛔ **자원 `.model` 수정 금지**(이미 Trigger 보유 — 손대면 T99 Play PASS 상태를 흔든다) · **`.map` 일절 수정 금지**(T75·T98 충돌 회피) · `.mlua` 수정 금지(필요하다고 판단되면 **[보류]+질문**)
 - **Change**
-  ① **선행조사 3항목을 코드 근거와 함께 보고서 §3에 먼저 답한다 — 부여 작업보다 앞선다.**
-     - ⓐ `Big Stone1/2`만 Trigger를 가진 이유: `ResourceSpawner`가 런타임 부착하는가, 단순 누락인가. (→ 런타임 부착이면 **자원 6종도 코드로 처리하는 편이 맞을 수 있다**. 그 경우 모델 편집 대신 그 경로를 쓰고 사유를 기재.)
-     - ⓑ `TriggerComponent`만 있고 `script.ResourceOccupiedArea`가 **없을 때 통행이 실제로 안 막히는지** — `PlayerController`의 차단 판정이 멤버십을 어떻게 보는지 인용해 확정.
-     - ⓒ 가구 6종에 Trigger를 붙였을 때 **T82 `IsAimTarget`이 `AimFootprintW/H` → Trigger AABB로 자동 전환**되며 범위가 어떻게 변하는지. 현행 `AimFootprint` 값과 Trigger 박스 예정값을 **수치 표로 대조**하고, 넓어져 인접 설치물과 꼬이면 **회피책(값 명시 또는 제외 규약)을 제시**할 것. **이 결론이 T75 소품 스펙을 확정한다.**
-  ② **자원 6종 Trigger 부여** — `ModelBuilder`로 `TriggerComponent` 추가. `BoxSize`/`ColliderOffset`은 **스프라이트 접지면 기준**(T81·T95 규약). `script.ResourceOccupiedArea` **멤버십은 현행 그대로 유지**(이 티켓은 차단 자격을 바꾸지 않는다 — 자원은 이미 채집 판정 경로가 별도).
-  ③ **가구 6종 Trigger 부여** — 동일. ⓒ의 결론에 따라 `AimFootprint` 값 보존 조치를 함께 적용.
-  ④ **역방향 검사**: 부여 후 `RenderLayers.ComputeYOrderForEntity`가 이 12종에서 **Trigger 경로로 접지선을 산출**하는지, 그리고 `IsUnit` 오분류가 생기지 않았는지 확인(T97 검수 방식 재사용).
-  ⑤ **`SortYOffset` 폴백 정리**: Trigger를 얻은 모델에 남아 있는 `SortYOffset` 값이 **이중 보정**을 일으키지 않는지 확인. 일으키면 해당 모델의 값을 0으로.
+  ① 🔴 **Trigger 전수 재감사 — 부여 작업보다 앞선다.** §1.2 **규칙 13**의 갭을 우회하는 읽기 경로(`Components` 배열을 가진 가장 안쪽 노드)로 **`.model` 66개 전수**를 다시 세고, T96의 "보유 22 / 미보유 23"을 **정확한 수치로 교체**해 보고서 §3에 표로 제출한다. 이 표가 이후 모든 Trigger 논의의 기준이 된다.
+  ② 🔴 **가구 통행 차단 실태 판정** — `ObstacleQuery.IsObstacle`은 `OverlapAll(CollisionGroups.TriggerBox, ...)`로 후보를 모으고, 그 그룹은 `TriggerComponent`의 것이다. **박스가 없는 가구 6종이 실제로 차단되고 있는지**를 코드 경로 추적으로 확정한다(`IsBlockingOverlapEntity`가 `PlaceableFurniture`를 보긴 하지만, 그 앞의 후보 수집을 통과하는지가 관건). **차단이 안 되고 있다면 그것이 이 티켓의 진짜 가치**이므로 보고서 제목에 명시할 것.
+  ③ **가구 6종 `TriggerComponent` 부여** — `ModelBuilder`로 추가. `BoxSize`/`ColliderOffset`은 **스프라이트 접지면 기준**(T81·T95 규약). `script.PlaceableFurniture` / `ResourceOccupiedArea` **멤버십은 현행 유지** — 이 티켓은 차단 *자격*을 바꾸지 않는다.
+     - ⚠️ **`Transform.Scale`이 1이 아닌 모델에는 §1.2 규칙 14를 적용**해 박스를 정한다(실물 = `BoxSize × Scale`). 가구 6종은 현재 전부 Scale 1이지만, 값을 바꾸게 되면 반드시 재확인.
+  ④ **T82 상호작용 범위 영향 대조** — Trigger가 생기면 `IsAimTarget`이 `AimFootprintW/H` → Trigger AABB로 **자동 전환**된다. 전환 전후 범위를 **수치 표로 대조**하고, 넓어져 인접 설치물과 꼬이면 회피책(값 명시 또는 제외 규약)을 제시할 것. **이 결론이 T75 소품 스펙을 확정한다.**
+  ⑤ **역방향 검사**: 부여 후 `RenderLayers.ComputeYOrderForEntity`가 가구 6종에서 **Trigger 경로로 접지선을 산출**하는지, `IsUnit` 오분류가 없는지 확인(T97 검수 방식 재사용).
+  ⑥ **`SortYOffset` 폴백 정리**: Trigger를 얻은 모델에 남은 `SortYOffset`이 **이중 보정**을 일으키지 않는지 확인. 일으키면 그 모델의 값을 0으로.
 - **Acceptance**
-  ① 조사 3항목이 **코드 인용과 함께** 보고서 §3에 답변됨(T75 착수 근거가 됨) ② 자원 6 + 가구 6 전부 `TriggerComponent` 보유 ③ **통행 차단 동작 회귀 0** — 부여 전후로 막히는 대상 집합이 동일(ⓑ 근거) ④ **상호작용 범위 회귀 0** — 화로·요리냄비·상자·침대·축사·와드가 기존과 같은 거리에서 `F`로 잡힘(ⓒ 대조표) ⑤ 12종이 플레이어·NPC와 접지선 기준으로 정렬 ⑥ 이중 보정 없음 ⑦ refresh **Error=0** · Warning **baseline 17 유지**(초과 시 원인·소유 스크립트 명시) + 보고 3종.
-- **충돌 주의**: `.model`만 만지므로 **T98(`.map` L2 타일)과 파일 겹침 0 → 병렬 가능**. **T75와는 순차**(T75가 이 티켓의 ⓒ 결론에 종속). 🔴 **보스의 Maker 물 페인팅 세션과는 겹치지 말 것** — Maker 저장이 워크스페이스를 재직렬화해 `.model` 편집을 원복시킨다(§1.2 규칙 11).
+  ① **정확한 Trigger 전수표**가 보고서 §3에 제출되고 T96 수치가 교체됨 ② 가구 통행 차단 실태가 **코드 인용과 함께** 판정됨 ③ 가구 6종 전부 `TriggerComponent` 보유 ④ **상호작용 범위 회귀 0** — 화로·요리냄비·상자·침대·축사·와드가 기존과 같은 거리에서 `F`로 잡힘(④ 대조표 근거) ⑤ 가구 6종이 플레이어·NPC와 접지선 기준으로 정렬 ⑥ 이중 보정 없음 ⑦ **자원 `.model` diff 0**(범위 밖 확인) ⑧ refresh **Error=0** · Warning **baseline 17 유지**(초과 시 원인·소유 스크립트 명시) + 보고 3종.
+- **충돌 주의**: `.model`만 만지므로 **T98(`.map` L2 타일)과 파일 겹침 0 → 병렬 가능**. **T75와는 순차**(T75가 이 티켓 ④의 결론에 종속). 🔴 **보스의 Maker 물 페인팅 세션과는 겹치지 말 것** — Maker 저장이 워크스페이스를 재직렬화해 `.model` 편집을 원복시킨다(§1.2 규칙 11).
+
+### T101. [✅ 완료 — 2026-08-01 지휘자 직접 | refresh **Error=0 / Warning 17(baseline 유지) / Info 520 / total 537** · LSP errors=0 | 런타임 검증 보류(제작자 수행)] 콜라이더 판정에 `Transform.Scale` 미반영 — 자원 통과 버그 (⚖️ 2026-08-01 제작자 Play)
+
+- **배경(제작자)**: "Big Stone1/2 스프라이트를 변경하고 collider와 trigger box를 조정했는데도 통과된다."
+- **🧭 지휘자 진단 — 모델값이 아니라 코드 결함**: 엔진 실물 콜라이더는 `BoxSize × Transform.Scale`인데 `ObstacleQuery.GetColliderAABB`가 **원본 `BoxSize`/`ColliderOffset`을 그대로** 썼다. 후보 수집(`OverlapAll`)은 실물 콜라이더로 이뤄지므로 대상은 정상적으로 발견되는데, 이어지는 침투 판정만 축소된 박스로 계산돼 **겹치지 않은 것으로 나와 통과**했다.
+  - `Big Stone1`(Scale 2): 실물 `(1.92, 1.023)` / 판정 `(0.96, 0.512)` = **1/2**
+  - **`Tree1`(Scale 1.5)**: 판정 박스가 실물의 **2/3** — 가장 흔한 자원이 계속 얇게 판정되고 있었다
+  - **에디터로는 상쇄 불가**: Maker에서 박스를 키우면 실물도 같이 커진다. 제작자의 조정이 듣지 않은 이유가 이것.
+- **Target**: `RootDesk/MyDesk/Util/ObstacleQuery.mlua` · `RootDesk/MyDesk/Util/RenderLayers.mlua`
+- **Change**: ① `GetColliderAABB` — `BoxSize`·`ColliderOffset`에 `Transform.Scale` 반영(`WorldScale`은 API에 없음 — `.d.mlua` 확인, 맵 직속이라 로컬 Scale = 월드 스케일) ② `ComputeYOrderForEntity` — 접지선 계산에 동일 적용(Big Stone1 기준선이 **1.0유닛 위**로 잡혀 있었다) ③ §1.2 **규칙 13·14** 신설.
+- **영향 범위(전수 실측)**: `.model` 66개 중 `Scale≠1` **AND** 충돌 박스 보유 = **`Big Stone1`·`Tree1` 2종뿐**. 나머지는 `Scale=1`이라 수식이 완전히 동일 → **회귀 위험 0**.
+  - ⚠️ 최초 스캔에서 "`Big Stone1` 1종"으로 집계했으나 **규칙 13 갭을 그대로 탄 오집계**였다. 갭 우회 리더로 재스캔해 `Tree1`을 추가 확인 — **이 티켓 자체가 규칙 13의 위험성을 실증한 사례**다.
+- **Acceptance**: ① Big Stone1/2·Tree1에 8방향으로 부딪혀 통과 불가 ② 바위·나무 발치에서 플레이어가 앞뒤로 자연스럽게 정렬 ③ 몬스터도 통과 불가(동일 모듈) ④ 기존 자원 통행·채집 체감 회귀 0 ⑤ refresh Error=0 — **①~④는 제작자 Play**.
+- **충돌 주의**: T97·T99가 만진 두 파일이지만 **추가 로직 없이 스케일 계수만 곱한 것**이라 기능 변경 0. T100과 파일 겹침 없음.
 
 ### (신규 작업 추가 템플릿)
 

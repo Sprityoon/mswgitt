@@ -36,14 +36,24 @@ script RenderLayers extends Logic
 		
 		local worldY = transform.WorldPosition.y
 		local groundY = worldY
-		
+
+		-- 🔴 박스는 Transform.Scale이 곱해진 것이 실물이다(ObstacleQuery.GetColliderAABB와 동일 규약).
+		--    스케일을 빼면 Scale≠1 모델의 접지선이 실제보다 위로 잡혀 정렬 전환선이 어긋난다.
+		--    실측: Big Stone1 Scale=2 → 접지선이 1.0유닛 위로 계산되고 있었다.
+		local sy = 1.0
+		local scale = transform.Scale
+		if scale ~= nil then
+			sy = math.abs(tonumber(scale.y) or 1.0)
+			if sy <= 0.0001 then sy = 1.0 end
+		end
+
 		local trigger = entity.TriggerComponent
 		if isvalid(trigger) and trigger.BoxSize ~= nil then
-			groundY = worldY + trigger.ColliderOffset.y - (trigger.BoxSize.y * 0.5)
+			groundY = worldY + (trigger.ColliderOffset.y * sy) - (trigger.BoxSize.y * 0.5 * sy)
 		else
 			local collider = entity.PhysicsColliderComponent
 			if isvalid(collider) and collider.BoxSize ~= nil then
-				groundY = worldY + collider.ColliderOffset.y - (collider.BoxSize.y * 0.5)
+				groundY = worldY + (collider.ColliderOffset.y * sy) - (collider.BoxSize.y * 0.5 * sy)
 			else
 				local ysort = entity:GetComponent("script.YSortSprite")
 				if isvalid(ysort) and ysort.SortYOffset ~= nil then
