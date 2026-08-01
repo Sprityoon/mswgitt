@@ -134,45 +134,6 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
 
 > Symptom of violation: `ls: cannot access 'D:msw-world-projects...'` — the backslashes were eaten by bash. Stop and re-issue as `Glob` / `Read` / `Grep`.
 
-### Runtime interaction requires MCP — no exceptions
-
-⛔ **Never claim a runtime result without an actual MCP tool call.**
-
-- Saying "I clicked the button" without calling `mouse_input` is a hallucination.
-- Saying "it works" without calling `play` → `logs` is a hallucination.
-- Saying "no errors" without calling `logs(kind="build")` or `logs(kind="normal")` is a hallucination.
-
-If a task requires runtime interaction (playing, clicking, typing, verifying behavior, checking logs), you **must** invoke the corresponding Maker MCP tool (`play`, `stop`, `logs`, `keyboard_input`, `mouse_input`, `maker_execute_script`). Text alone cannot substitute for tool execution. Use `screenshot` when you need to identify screen coordinates for input targeting or when the user explicitly requests it.
-
-## 0. Plan (MANDATORY)
-
-> **Prerequisite:** Foundation Skills (2) + Foundation references (4) + the matching `platform-{maple|rect|sideview}.md` + every triggered domain skill/reference must already be loaded (see PROJECT CONTEXT). Pass the 7 self-check questions before continuing.
-
-1. **Classify the task:**
-   - **New only** — add new scripts/entities/UI; no existing files to change.
-   - **Modify existing** — change or extend existing files only.
-   - **Both**.
-
-2. **Branch:**
-   - **New only** → skip workspace analysis; go to step 3.
-   - **Modify existing / Both** → analyze the workspace by domain:
-
-     | Domain | Editable | Reference | Search in |
-     |---|---|---|---|
-     | **Script** (logic, components, events) | `.mlua` | `.d.mlua` | RootDesk |
-     | **Entity** (models, config, spawning) | `.model` | `.d.mlua` | RootDesk |
-     | **UI** (widgets, layouts, bindings) | `.ui` | `.d.mlua` | ui |
-
-     Search only the file types relevant to the request; read matches to learn patterns and dependencies.
-
-3. **`TodoWrite`** — break the task into concrete, verifiable steps. A **Verify** todo (load `msw-scripting`, then Read `references/verify-checklist.md`) is required (see ## 3). Mark each todo `in_progress` when starting; `completed` only after verification passes.
-
-## 1. Analyze
-
-- Read `.d.mlua` for available APIs, signatures, parameter types.
-- Read existing `.mlua` to learn current code patterns and conventions.
-- For config tasks, read existing `.model` / `.ui` / other JSON config to understand structure.
-- For new `.model` files, read examples from `Global/NativeModel/`.
 
 ## 2. Implement
 
@@ -204,64 +165,15 @@ If a task requires runtime interaction (playing, clicking, typing, verifying beh
 
   Rule of thumb: *"Should this still be running when the player walks into another map?"* → Yes ⇒ `@Logic`. → No, only this map ⇒ map-entity `@Component`. → No, only this actor ⇒ actor `@Component`.
 
-### Camera → Everything mapping
+> 📌 **이 벤더 블록은 이 저장소에서 축약되었습니다 (2026-08-01, `/doctor`).**
+> 제거한 절: `Runtime interaction requires MCP`(§0 O-2가 대체 — 이 저장소는 Play가 제작자 전담) ·
+> `## 0. Plan` · `## 1. Analyze`(→ [workflow.md](./docs/agents/workflow.md) 5단계) ·
+> `Camera → Everything` 표 · `Script lifecycle` · `ExecSpace` 표(→ Foundation으로 매 턴 로드되는
+> `msw-general/references/platform.md`에 동일 내용 존재) · `## 3. Verify` ~ `## 5. Finally`(→ §4 + workflow.md).
+> **남긴 것**: Foundation 로딩 규칙 · Domain matrix · 침묵 실패 표 · 워크스페이스/도구 규칙 · `## 2. Implement`
+> (`@Logic` vs `@Component` 수명 판단은 다른 곳에 없음).
+> ⚠️ `mswai` 동기화는 이 블록을 원본으로 되돌립니다. 벤더 업데이트 후 이 노트가 사라져 있으면 다시 축약할 것.
 
-The camera perspective (`TileMapMode`) determines the entire physics, movement, map, and collision stack. **An entity with the wrong Body component will not move.**
-
-| TileMapMode | View | Body | Map structure | Gravity | Movement |
-|---|---|---|---|---|---|
-| `MapleTile` | Side-view | `RigidbodyComponent` | `FootholdComponent` platforms | Yes | Left/right + jump |
-| `RectTile` | Top-down | `KinematicbodyComponent` | `RectTileMapComponent` tiles | No | Free 4-directional |
-| `SideViewRectTile` | Side-view | `SideviewbodyComponent` | `RectTileMapComponent` tiles | Yes | Left/right + jump (tile-based) |
-
-### Script lifecycle
-
-**Component lifecycle methods** (execute in this order based on entity state):
-
-- `OnInitialize` — once after the entity and its components are created. Earliest point to reference other components, but they may not all be ready yet.
-- `OnBeginPlay` — once when logic starts. Guarantees other components/entities exist; safe to reference.
-- `OnMapEnter(Entity)` / `OnMapLeave(Entity)` — fires on every map transition. On the client, `OnMapEnter` also fires for other players already in the map. Both server and client.
-- `OnSyncProperty(string name, any value)` — client-only. Called when a `@Sync` property finishes synchronizing. Not called if sync setting is None.
-- `OnUpdate(number delta)` — every frame.
-- `OnEndPlay` — when the entity is removed from the map.
-- `OnDestroy` — immediately before the entity is destroyed.
-
-**Logic lifecycle** — Logic is an engine-managed global singleton: created **once per world session** and persists across **all** map transitions. Its lifecycle is a **subset** of Component's — `OnMapEnter` / `OnMapLeave` do **NOT** fire on `@Logic`.
-
-- `OnInitialize`, `OnBeginPlay` — once at world start.
-- `OnUpdate` — every frame; runs **before** any Component's `OnUpdate`.
-- `OnEndPlay` — only at world session end (e.g. shutdown). **Not** on map change.
-- `OnDestroy` — when the Logic is removed (rare).
-
-> ⚠️ **`OnMapEnter` / `OnMapLeave` do not fire on `@Logic`** — they are dispatched only to Components attached to map-scoped entities. Writing `method void OnMapEnter(Entity m) ... end` on a Logic compiles but the method is never invoked (silent dead code). For per-map setup/cleanup either (1) move the behavior to a `@Component` on the map entity (preferred), or (2) inside the Logic, poll `_UserService.LocalPlayer.CurrentMap` from `OnUpdate` and react to changes. Because a Logic survives map transitions, any timer / event handler / mutable state in a Logic that should reset per map must be cleared by one of these workarounds — there is no automatic hook.
-
-**ExecSpace annotations** — control where code runs:
-
-| Annotation | Behavior |
-|---|---|
-| `@ExecSpace("ServerOnly")` | Server only. |
-| `@ExecSpace("ClientOnly")` | Client only. |
-| `@ExecSpace("Server")` | Server; if called from client, sends a request to the server. |
-| `@ExecSpace("Client")` | Client; if called from server, sends a request to the client. |
-
-## 3. Verify
-
-Load `msw-scripting` (`Skill: msw-scripting`) if not already loaded this turn, then Read `references/verify-checklist.md` in full and follow it.
-
-## 4. On Failure
-
-- Check ExecSpace first — confirm `_Service` calls run on the correct side (Client vs Server).
-- Fix the code, then return to step 3 (Verify).
-- Do not mark the todo as completed until verification passes.
-
-## 5. Finally
-
-If none of the above resolves the issue, tell the user:
-
-> I could not find a solution through local implementation, Maker MCP, or Guide documents.
-> You can get help from the MapleStory Worlds official Discord community:
->
-> **https://discord.com/invite/maplestoryworlds**
 <!-- <<< managed by mswai <<< -->
 
 ---
