@@ -36,7 +36,14 @@
       "Bash(node scratch/inspect_town_fishing_t64.cjs)",
       "Bash(node scratch/move_rankboard_t64.cjs)",
       "mcp__msw-maker-mcp__maker_clear_logs",
-      "mcp__msw-maker-mcp__maker_play"
+      "mcp__msw-maker-mcp__maker_play",
+      "Bash(git status *)",
+      "Bash(git ls-remote *)",
+      "Bash(git rev-list *)",
+      "Bash(npm ls *)",
+      "Bash(npm view *)",
+      "Bash(mswai --version)",
+      "Bash(mswai update *)"
     ]
   },
   "hooks": {
@@ -161,8 +168,8 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-log/skill-log.cjs\"",
-            "async": true,
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       },
@@ -172,8 +179,8 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/mcp-log/mcp-log.cjs\"",
-            "async": true,
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
@@ -270,8 +277,8 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-log/skill-log.cjs\"",
-            "async": true,
-            "timeout": 5
+            "timeout": 5,
+            "async": true
           }
         ]
       }
