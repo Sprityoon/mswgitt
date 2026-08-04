@@ -88,6 +88,71 @@
             },
             "Property": "SpriteRUID"
           }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "SortYOffset",
+          "DisplayName": "SortYOffset",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": null,
+            "Property": "SortYOffset"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "OffsetXMin",
+          "DisplayName": "OffsetXMin",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": null,
+            "Property": "OffsetXMin"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "OffsetXMax",
+          "DisplayName": "OffsetXMax",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": null,
+            "Property": "OffsetXMax"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "OffsetYMin",
+          "DisplayName": "OffsetYMin",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": null,
+            "Property": "OffsetYMin"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "OffsetYMax",
+          "DisplayName": "OffsetYMax",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": null,
+            "Property": "OffsetYMax"
+          }
         }
       ],
       "Values": [
@@ -140,7 +205,7 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 0,
+            "x": 0.0,
             "y": -0.1
           }
         },
@@ -187,7 +252,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0
+          "Value": 0.0
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -205,7 +270,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0
+          "Value": 0.0
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -214,7 +279,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0
+          "Value": 0.0
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -223,7 +288,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0
+          "Value": 0.0
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -232,7 +297,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0
+          "Value": 0.0
         }
       ],
       "EventLinks": [],

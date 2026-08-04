@@ -87,6 +87,19 @@
             },
             "Property": "SpriteRUID"
           }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "SortYOffset",
+          "DisplayName": "SortYOffset",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": null,
+            "Property": "SortYOffset"
+          }
         }
       ],
       "Values": [
@@ -139,7 +152,7 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 0,
+            "x": 0.0,
             "y": -0.1
           }
         },
@@ -186,7 +199,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0
+          "Value": 0.0
         }
       ],
       "EventLinks": [],

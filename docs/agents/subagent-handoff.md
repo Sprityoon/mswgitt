@@ -46,6 +46,14 @@
 16. 🔴 **`.map` 엔티티의 `jsonString`은 중첩 객체(JObject) — 문자열로 stringify 금지 (2026-08-04 신설 — T98 LEA-3015)**: Maker/엔진은 `ContentProto.Entities[].jsonString`을 **`Newtonsoft.Json.Linq.JObject`** 로 역직렬화한다. 스크립트가 `slot.e.jsonString = JSON.stringify(slot.js)`처럼 **JSON 문자열을 대입**하면 파일이 짧아지며(중첩이 한 줄로 붕괴), 로드 시 `[LEA-3015] Invalid cast from 'System.String' to 'JObject'`로 맵이 통째로 실패한다. `maker_logs(kind="build")`는 `.mlua` 빌드만 보므로 **이 구조 붕괴를 Error=0으로 통과시킨다** — refresh 통과 ≠ `.map` 로드 가능.
     - **사고 실례**: T98 `scripts/fix_water_fringe.cjs`가 `RectTileMap2`의 `jsonString`을 문자열로 저장 → `map01` 69,231→41,805줄 · Play/로드 `LEA-3015`. 미푸시 상태에서 `d7b9479`로 객체 대입·맵 복구. 스크립트는 범용이라 방치 시 `town`/`template_*` 재실행으로 동일 파괴가 난다.
     - **판정·수정**: 쓰기 전후 `typeof e.jsonString === "object"`(전 엔티티)를 확인하고, 줄 수가 급감한 커밋은 타일 diff만이 아니라 **직렬화 형태**를 먼저 의심한다. 대입은 항상 `slot.e.jsonString = slot.js`(객체). 이미 붕괴된 파일은 `JSON.parse`로 객체 복원 후 `JSON.stringify(mapRoot, null, 2)`로 저장.
+17. 🔴 **Trigger/배치 = 스프라이트 실루엣 정합이 1순위 — 표·수식·시스템 제약만으로 끝내지 말 것 (2026-08-04 신설 — 제작자 town 재조정)**: `TriggerComponent.BoxSize`/`ColliderOffset`과 맵 배치는 **Maker에서 보이는 스프라이트와 맞아야** 한다. 기획서 목표 폭(`artwork-spec` ~Nu)·종횡비 추정·“중심 피벗 가정”·정수 그리드만으로 확정하면 **눈에 보이는 영역과 동떨어진 박스/좌표**가 나온다(T81·T75 실증). refresh Error=0·조준 SAME·본셀 가둠은 **시각 정합을 대체하지 않는다**.
+    - **사고 실례**: T81이 `artwork-spec` 목표 폭×종횡비로 Box를 산정하고, “`GetColliderAABB`가 Scale을 무시한다”고 오해해 **월드 시각 크기를 `BoxSize`에 기입**한 채 `Transform.Scale`(Shop×2 등)은 그대로 둠 → 실물=`BoxSize×Scale`(규칙 14)과 스프라이트가 구조적으로 어긋남. T75 소품은 RUID+그리드 좌표+고정 `off=(0,-0.1)`·조준용 본셀 가둠으로 배치·박스를 넣어 제작자가 전량 철회·재조정.
+    - **산정 규칙**:
+      1. `BoxSize`/`ColliderOffset`은 **로컬(Scale 적용 전)** 단위. 월드 크기를 Box에 넣지 말 것. 실물 월드 크기 = `BoxSize × Transform.Scale`(규칙 14).
+      2. 피벗은 **추정 금지** — Maker 오버레이로 발밑/실루엣에 맞출 것. 중심 피벗 가정 금지.
+      3. 차단·F조준·페이드·Y정렬이 **한 Trigger**를 공유하므로, 조준/지붕통과 때문에 박스를 깎으면 보고서에 **“시각 불일치 허용 사유”**를 적거나 제작자 확인을 받을 것. Acceptance에 “실루엣 정합”이 없으면 **임의로 눈을 희생하지 말 것**.
+      4. 신규/재조정 Acceptance에 **Maker 육안(또는 제작자 Play) 실루엣 대조**를 넣을 것. MCP 미연결·Play 보류만으로 “박스 완료” 보고 금지.
+      5. 배치 좌표도 스크립트 그리드만으로 끝내지 말 것 — 주변 건물·길과의 여백은 에디터/Play로 확인.
 
 ### 1.3 ⚖️ 현행 타일 스킴 (2026-07-08 밀착 페어 확정 — 이 문서의 최우선 배경지식)
 
@@ -190,6 +198,13 @@
 >   - 경미: T100 갭 목록 `Tree1`/`Tree2`는 재실행 시 갭 아님 → 보고서 각주 정정.
 >   - ⚖️ **2026-08-04 보스 확정**: ① T98 rewrite 채택·추가 amend 없음 · 문서 후속만 ② T75 조건부 통과 유지 + W48 보고 정정 + T103 후속 청소.
 >   - **잔여**: 제작자 Play(T100/T98/T75) · T103(대기) · 제작자 직접 T76·T94 · 보류 T4.
+> - **🧭 2026-08-04 지휘자 — 다음 큐 (배치 P) 발행**
+>   - **에이전트 단독 착수 = T103만.** Prop 11종 `LWA-4012` 청소(T86 패턴). `.model`만 · 값 변경 금지 · Play와 분리(이미 확정).
+>   - ✅ **T103 코드 완료 (2026-08-04)**: Properties 링크 추가 → refresh **W48→17** · 소품 LWA-4012=0. baseline **17 복귀**. 보고서 `T103-prop-lwa4012-cleanup.md`.
+>   - 🧭 **2026-08-04 제작자 — town Trigger/배치 전량 재조정 + Prop 맵 배치 철회**. 원인 분석 → §1.2 **규칙 17** 신설(실루엣 정합·로컬 BoxSize·Scale 혼동 금지·Play/에디터 육안 게이트).
+>   - **제작자 병렬(에이전트 대기 아님)**: 배치 O Play — T100 가구 차단·F거리 / T98 map01 로드·물가 / T75는 모델만 잔존. 체크리스트 = 각 보고서 §6. 이상 보고 시 신규 T번호.
+>   - **에이전트 큐에서 건너뜀**: T76·T94(제작자 직접) · T4(보류) · town/field/boss 물 페인팅(제작자 Maker 선행 후에야 프린지 재실행 — 별도 티켓).
+>   - **T91·T92**: 코드는 완료·물이 map01에 생겼으므로 **제작자 Play로 영지 물가 낚시·파기 경로 재확인** 권장(사냥터는 물 페인팅 전이라 여전히 미검증).
 > - **병렬 규약(요지)**: ① 상대 레인 소유 파일은 읽기만 ② 이 문서 갱신은 자기 T블록 라인만 ③ 티켓 완료마다 refresh 1회+빌드 Error 수를 보고서 §4에 기재 ④ 무보고 종료 = 반려(§5 조항 11).
 
 ### T4. [보류 유지 — 제작자 협업 전제 | 🔴 T90과 `wall.tileset` 충돌 주의] 경계 테라스/절벽 아트 정리
@@ -345,10 +360,11 @@
 - **구현 요약 (2026-07-21)**: House 5종 북서·남서·남동 배치. 보고서: `docs/agents/reports/T74-town-houses.md`.
 - **검증**: Maker refresh **Error=0** (total 527 / Warning 25 / Info 502). **런타임 검증 보류(제작자 수행)**.
 
-### T75. [코드 완료 — 조건부 통과 2026-08-04 지휘자 | refresh Error=0 / **Warning 48(신규 baseline)** | 런타임 검증 보류(제작자 수행)] 마을 생활 소품 배치 (P0-C)
+### T75. [코드 완료 — 조건부 통과 후 **배치 철회 2026-08-04** | 모델 11종 유지 · town 인스턴스 0 | refresh Error=0 / W17 | 런타임 검증 보류] 마을 생활 소품 배치 (P0-C)
 
-- **구현 요약 (2026-08-04)**: Prop 11종 `.model` + town.map **43 인스턴스**. 전 소품 Trigger+YSortSprite. Occ=울타리·술통·궤짝·수레만. 벤치·꽃·배너=T100 회피(조준 비대상). 보고서: `docs/agents/reports/T75-town-props-p1-p11.md`.
-- **검증**: 지휘자 refresh 실측 **Error=0 / Warning 48 / Info 520 / total 568**(구현자 보고 W17은 오기재 — +31은 전부 T75 `LWA-4012`). **런타임 검증 보류(제작자 수행)**. Warning 청소 → **T103**.
+- **구현 요약 (2026-08-04)**: Prop 11종 `.model` + town.map **43 인스턴스**(당시). 전 소품 Trigger+YSortSprite. Occ=울타리·술통·궤짝·수레만.
+- **🧭 2026-08-04 제작자 피드백 → 배치 철회**: 디자인·배치·충돌영역 불만. **`.model` 11종은 유지**, `town.map`의 `Prop_*` 인스턴스 **43개 전량 제거**(엔티티 78→35). 재배치는 제작자/후속 티켓.
+- **검증**: 배치 철회 후 refresh Error=0 / W17. **런타임 검증 보류(제작자 수행)**.
 - **⚖️ 2026-07-25 보스 결정 — 노점 M1~M3은 이 티켓에서 분리**: 노점은 제작자가 이미 커스텀 리드로우 5종을 만들어 둔 상태(변형 선택 = 취향 결정)라 **제작자 직접 처리(→ T94)**. 이 티켓은 **소품 P1~P11만** 수행한다. 노점 관련 파일·배치에 손대지 말 것.
 - **배경**: 마을 생활감 증대를 위한 데코 소품 11종 배치. `docs/design/artwork-spec.md` §4.
 - **Target**: `RootDesk/MyDesk/MapObjects/Models/` (신규 .model), `map/town.map`
@@ -857,8 +873,10 @@
 - **Acceptance**: ① 화로 팝업 `F` 여닫기 정상 ② 투입/연료/산출 슬롯·진행바·연료 텍스트 표시 정상 ③ **다른 UI를 수정·저장한 뒤에도 `UIGroupComponent`가 재부착되지 않음**(이게 근본 판정 — 1사이클이면 확정) ④ `UIBuilder.write()`가 `PopupGroup.ui`에서 L029로 막히지 않음 — **①~③은 제작자 Play·Maker 작업**.
 - **후속**: T79·T88은 **원인 미제거로 재발한 사례**로 이력 정정(아래 각 티켓 상태줄 참조). 재발 시 §1.2 규칙 15의 판정 절차부터 적용할 것.
 
-### T103. [대기 — 배치 O 후속 | Play와 분리] T75 소품 `LWA-4012` Warning 청소 — 프로퍼티 기본값 명시 (T86 패턴)
+### T103. [코드 완료 — 2026-08-04 | refresh Error=0 / **Warning 17(baseline 복귀)** | 런타임 검증 보류(제작자 수행)] T75 소품 `LWA-4012` Warning 청소 — 프로퍼티 기본값 명시 (T86 패턴)
 
+- **구현 요약 (2026-08-04)**: Prop 11종에 `Properties` 링크 추가(`SortYOffset` · Occ 5종 `Offset*`). Values는 이미 0이었고 **변경 0**. 원인 = T75가 value만 넣고 property 링크를 생략. W48→**17**, 소품 LWA-4012=0. 보고서: `docs/agents/reports/T103-prop-lwa4012-cleanup.md`.
+- **검증**: refresh Error=0 / Warning **17** / Info 520 / total 537. **런타임 검증 보류(제작자 수행)**.
 - **배경**: 배치 O 지휘자 refresh 실측(2026-08-04) **Warning 17→48(+31)**. 전부분 17은 유지. 증가분 전량 T75 소품:
   | 경고 | 건수 | 출처 |
   |---|---:|---|

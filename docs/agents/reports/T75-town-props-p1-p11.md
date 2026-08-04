@@ -81,3 +81,4 @@ artwork-spec §4 검증 RUID로 소품 11종 `.model`을 만들고 `town.map`에
 
 - 2026-08-04 최초 작성 (구현자 — Cursor Grok 4.5) — Warning 17 오기재
 - 2026-08-04 지휘자 조건부 통과 · W48 정정 · T103 발행 (문서 커밋)
+- 2026-08-04 **제작자 피드백 — 배치 철회**: `town.map` Prop_* 43인스턴스 전량 제거, `.model` 11종 유지. refresh Error=0/W17.
