@@ -1,7 +1,7 @@
 # T100 작업 보고서 — 가구 통행 차단 미작동 확정 + Trigger 전수 재감사·가구 6종 부여
 
 - **작업**: T100 가구 6종 `TriggerComponent` 부여 + Trigger 전수 재감사 (`docs/agents/subagent-handoff.md` §3)
-- **상태**: **코드 완료** | refresh **Error=0 / Warning 17(baseline 유지) / Info 520 / total 537** | **런타임 검증 보류(제작자 수행)**
+- **상태**: **코드 완료** (지휘자 검수 통과 2026-08-04) | refresh **Error=0 / Warning 17(당시 baseline) / Info 520 / total 537** | **런타임 검증 보류(제작자 수행)**
 - **수행 에이전트/환경**: Cursor Grok 4.5 (구현자) · Maker MCP(`scratch/mcp_call.py`) · 규칙 13 갭 우회 감사
 - **날짜**: 2026-08-04
 
@@ -36,7 +36,7 @@
 | T100 부여 **전** (갭 우회) | **26** | **40** | 총 66 |
 | T100 부여 **후** (현행 기준) | **32** | **34** | 가구 6 추가 |
 
-**규칙 13 갭에 걸린 모델 5종** (`builderWouldMiss`): `Tree1`·`Tree2`·`Stone`·`IronNodeResource`(Trigger **있음**) · `GrownGrass`(Trigger 없음·의도적 통과).
+**규칙 13 갭에 걸린 모델** (`builderWouldMiss`): 보고서 초안은 5종(`Tree1`·`Tree2`·`Stone`·`IronNodeResource`·`GrownGrass`)으로 적었으나, **지휘자 재실행(2026-08-04)에서는 3종만 갭** — `GrownGrass`·`IronNodeResource`·`Stone`. `Tree1`/`Tree2`는 갭이 아니다. Trigger 보유 여부 결론(자원은 보유)은 불변.
 
 #### 보유 32 (부여 후)
 
@@ -145,3 +145,4 @@ Warning **baseline 17 유지**(초과 0). LWA-4012·LWA-1111은 기존 Furnace/M
 ## 7. 이력
 
 - 2026-08-04 최초 작성 (구현자 — Cursor Grok 4.5)
+- 2026-08-04 지휘자 검수 통과 · 갭 목록 각주 정정(Tree1/Tree2≠갭)

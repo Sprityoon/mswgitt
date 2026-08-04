@@ -43,6 +43,9 @@
     - **판정 절차**: `.ui`에서 지운 컴포넌트가 되살아나면 **`b.find(path).jsonString.origin.entry_id` / `.modelId`를 먼저 확인**한다. 루트 UIGroup 외의 엔티티가 `uigroup`이면 그게 원인이다.
     - **수정 방법 — 통째로 다시 만들 필요 없다**: 빌더 `_add()`가 `origin.entry_id`와 `modelId`를 덮어쓰므로(1292·1308행) **해당 이름으로 `empty()`를 재호출해 타입만 교체**하면 된다. 단 `@components`가 교체되므로 스크립트 컴포넌트는 `addComponent`로 재부착하고, `enable`/`displayOrder`는 creator가 보존하지 않으니 명시·`patch()`로 복원할 것. **UUID·자식 엔티티·트랜스폼은 그대로 유지된다**(바인딩 안 깨짐).
     - **L029와의 관계**: 재부착된 상태에서는 중첩 `UIGroupComponent`가 L029 **ERROR**라 그 `.ui`에 대한 모든 `UIBuilder.write()`가 throw한다 — 방치하면 UI 티켓이 그 파일에서 계속 막힌다.
+16. 🔴 **`.map` 엔티티의 `jsonString`은 중첩 객체(JObject) — 문자열로 stringify 금지 (2026-08-04 신설 — T98 LEA-3015)**: Maker/엔진은 `ContentProto.Entities[].jsonString`을 **`Newtonsoft.Json.Linq.JObject`** 로 역직렬화한다. 스크립트가 `slot.e.jsonString = JSON.stringify(slot.js)`처럼 **JSON 문자열을 대입**하면 파일이 짧아지며(중첩이 한 줄로 붕괴), 로드 시 `[LEA-3015] Invalid cast from 'System.String' to 'JObject'`로 맵이 통째로 실패한다. `maker_logs(kind="build")`는 `.mlua` 빌드만 보므로 **이 구조 붕괴를 Error=0으로 통과시킨다** — refresh 통과 ≠ `.map` 로드 가능.
+    - **사고 실례**: T98 `scripts/fix_water_fringe.cjs`가 `RectTileMap2`의 `jsonString`을 문자열로 저장 → `map01` 69,231→41,805줄 · Play/로드 `LEA-3015`. 미푸시 상태에서 `d7b9479`로 객체 대입·맵 복구. 스크립트는 범용이라 방치 시 `town`/`template_*` 재실행으로 동일 파괴가 난다.
+    - **판정·수정**: 쓰기 전후 `typeof e.jsonString === "object"`(전 엔티티)를 확인하고, 줄 수가 급감한 커밋은 타일 diff만이 아니라 **직렬화 형태**를 먼저 의심한다. 대입은 항상 `slot.e.jsonString = slot.js`(객체). 이미 붕괴된 파일은 `JSON.parse`로 객체 복원 후 `JSON.stringify(mapRoot, null, 2)`로 저장.
 
 ### 1.3 ⚖️ 현행 타일 스킴 (2026-07-08 밀착 페어 확정 — 이 문서의 최우선 배경지식)
 
@@ -104,7 +107,7 @@
 ## 3. 작업 큐 (하위 에이전트 위임 대상)
 
 > 상태: `[대기]` / `[진행]` / `[완료]` / `[보류]`
-> 각 항목은 **Target(파일) / Change(변경) / Acceptance(완료 기준)** 3요소를 반드시 채운다. **T번호는 단조 증가·재사용 금지 — 현재 최대 = T102.**
+> 각 항목은 **Target(파일) / Change(변경) / Acceptance(완료 기준)** 3요소를 반드시 채운다. **T번호는 단조 증가·재사용 금지 — 현재 최대 = T103.**
 
 > 🧭 **현황판 (지휘자 2026-07-21 — 버그픽스)**
 > - **Play PASS 확정**: T50까지의 전 완료분 + T56(주민 대화 말풍선 버그픽스 검증) + T51 · T58 · T59 · T60 · **T62**(⚖️ 2026-07-16 확정) · **T63**(낚시 랭킹 수정 — 핫픽스 포함 확인). 체크포인트 커밋 = 이 갱신과 동시.
@@ -180,6 +183,13 @@
 >   - ⚠️ **지휘자 측정 오류 정정**: 앞선 턴에서 `grep '"Water"'`로 세어 "4개 맵 물 0셀"이라 보고했으나 **`.map`은 타일을 이름이 아니라 `tileIndex`로 저장**한다. 실제 `map01`에 **Water(index 44) 61셀**이 이미 있었다(병렬 세션 `MapBuilder` 실측이 정확). `.map` 타일 조사에 이름 grep을 쓰지 말 것.
 >   - **배치 O = 한 에이전트가 순차 수행: T100 → T98 → T75.** 단일 에이전트라 파일 교집합은 문제되지 않으며, 순서는 **의존성**으로 정했다 — T75가 T100 ④(T82 범위 전환 대조)의 결론에 종속. T98은 독립이지만 Phase 21 완성 게이트라 T75(대형 아트)보다 앞에 둬 부분 완료 시에도 게이트가 열리게 했다.
 >   - **T98 미결 2건은 지휘자가 해소**(범위 = `map01` 단독 · 스크립트는 범용 · `Name44`는 경고 후 스킵) → 착수 차단 없음.
+> - **🧭 2026-08-04 지휘자 검수 — 배치 O (T100→T98→T75) + ⚖️ 보스 확정안**
+>   - **실사 통과**: T100 진단·Trigger 부여 정확 · T98 L2 40셀 국소성(범위 밖 diff 0) · T75 11모델/43인스턴스·Occ 5종만 — 보고서 표와 일치.
+>   - 🔴 **T98 1차 반려(코드는 이후 복구)**: 초기 커밋이 `RectTileMap2.jsonString`을 문자열로 붕괴(LEA-3015). **build Error=0이 `.map` JSON 붕괴를 못 잡음**(R8 형식 충족·R9 사실 보고 미달). 미푸시 rewrite `d7b9479`로 맵·스크립트 복구 완료(`jsonString = slot.js`). **규칙 16 신설**. 보고서·핸드오프에 사고 소급 기록(본 문서 커밋).
+>   - ⚠️ **T75 조건부 통과**: 배치·구성 정확. 지휘자 refresh 실측 **Error=0 / Warning 48 / Info 520 / total 568**(구현자 보고 W17은 오기재). +31 = 소품 `LWA-4012`(SortYOffset×11 + Occ Offset*×20). **baseline을 48로 갱신**. 청소는 **T103**(T86 패턴) — Play와 분리.
+>   - 경미: T100 갭 목록 `Tree1`/`Tree2`는 재실행 시 갭 아님 → 보고서 각주 정정.
+>   - ⚖️ **2026-08-04 보스 확정**: ① T98 rewrite 채택·추가 amend 없음 · 문서 후속만 ② T75 조건부 통과 유지 + W48 보고 정정 + T103 후속 청소.
+>   - **잔여**: 제작자 Play(T100/T98/T75) · T103(대기) · 제작자 직접 T76·T94 · 보류 T4.
 > - **병렬 규약(요지)**: ① 상대 레인 소유 파일은 읽기만 ② 이 문서 갱신은 자기 T블록 라인만 ③ 티켓 완료마다 refresh 1회+빌드 Error 수를 보고서 §4에 기재 ④ 무보고 종료 = 반려(§5 조항 11).
 
 ### T4. [보류 유지 — 제작자 협업 전제 | 🔴 T90과 `wall.tileset` 충돌 주의] 경계 테라스/절벽 아트 정리
@@ -335,10 +345,10 @@
 - **구현 요약 (2026-07-21)**: House 5종 북서·남서·남동 배치. 보고서: `docs/agents/reports/T74-town-houses.md`.
 - **검증**: Maker refresh **Error=0** (total 527 / Warning 25 / Info 502). **런타임 검증 보류(제작자 수행)**.
 
-### T75. [코드 완료 — 2026-08-04 | refresh Error=0 / Warning 17(baseline) | 런타임 검증 보류(제작자 수행)] 마을 생활 소품 배치 (P0-C)
+### T75. [코드 완료 — 조건부 통과 2026-08-04 지휘자 | refresh Error=0 / **Warning 48(신규 baseline)** | 런타임 검증 보류(제작자 수행)] 마을 생활 소품 배치 (P0-C)
 
 - **구현 요약 (2026-08-04)**: Prop 11종 `.model` + town.map **43 인스턴스**. 전 소품 Trigger+YSortSprite. Occ=울타리·술통·궤짝·수레만. 벤치·꽃·배너=T100 회피(조준 비대상). 보고서: `docs/agents/reports/T75-town-props-p1-p11.md`.
-- **검증**: refresh Error=0 / W17. **런타임 검증 보류(제작자 수행)**.
+- **검증**: 지휘자 refresh 실측 **Error=0 / Warning 48 / Info 520 / total 568**(구현자 보고 W17은 오기재 — +31은 전부 T75 `LWA-4012`). **런타임 검증 보류(제작자 수행)**. Warning 청소 → **T103**.
 - **⚖️ 2026-07-25 보스 결정 — 노점 M1~M3은 이 티켓에서 분리**: 노점은 제작자가 이미 커스텀 리드로우 5종을 만들어 둔 상태(변형 선택 = 취향 결정)라 **제작자 직접 처리(→ T94)**. 이 티켓은 **소품 P1~P11만** 수행한다. 노점 관련 파일·배치에 손대지 말 것.
 - **배경**: 마을 생활감 증대를 위한 데코 소품 11종 배치. `docs/design/artwork-spec.md` §4.
 - **Target**: `RootDesk/MyDesk/MapObjects/Models/` (신규 .model), `map/town.map`
@@ -733,10 +743,10 @@
 - **Acceptance**: ① `RenderLayers.mlua`에 **엔티티 이름 문자열 분기 0건**(grep 근거를 보고서에) ② 이름을 바꾼 NPC도 유닛으로 정상 분류 ③ 아바타는 박스 보정을 타지 않음(코드+주석 확인) ④ 닭·양·개가 y 순서대로 정렬되고 동률 시 오브젝트에 안 먹힘 ⑤ T95의 정렬 결과가 **육안상 회귀 0**(바이어스·접지선 동작 동일) ⑥ refresh Error=0 + 보고 3종.
 - **충돌 주의**: 레인 A 소유 파일. **T95 완료 후 단독 착수** — 다른 티켓과 병행 금지.
 
-### T98. [코드 완료 — 2026-08-04 | refresh Error=0 / Warning 17(baseline) | 런타임 검증 보류(제작자 수행)] 고정 수역 실배치 — map01 L2 물가 프린지
+### T98. [코드 완료 — 2026-08-04 지휘자 검수 통과(사고 복구 포함) | refresh Error=0 · **map 로드 가능(규칙 16)** | 런타임 검증 보류(제작자 수행)] 고정 수역 실배치 — map01 L2 물가 프린지
 
 - **구현 요약 (2026-08-04)**: `scripts/fix_water_fringe.cjs` 신설(맵 경로 인자 범용). `build_maps.cjs`의 `cellTile`을 소스 추출 재사용. digHole 프린지 비트 동일. map01 L2 **40셀** 프린지 적용 · 범위 밖 diff 0 · Water 61 홀 유지. 보고서: `docs/agents/reports/T98-water-fringe-map01.md`.
-- **검증**: refresh Error=0 / W17 / I520 / total 537. **런타임 검증 보류(제작자 수행)**.
+- **검증**: refresh Error=0(빌드). ⚠️ 1차 커밋은 `jsonString` 문자열 붕괴(LEA-3015) — **`d7b9479`에서 맵·스크립트 복구**. build 로그만으로는 이 사고를 못 잡음 → **규칙 16**. **런타임 검증 보류(제작자 수행)**.
 
 > 🧭 **2026-08-04 지휘자 결정 — 미결 2건 해소 (착수 차단 해제)**
 > - **범위 = `map01` 단독으로 진행한다.** 근거: 나머지 3맵은 물이 0셀이고 언제 칠할지 미정인데, 영지(`map01`)만으로 Phase 21의 낚시 경로(T91)가 검증 가능하다. 물 없는 맵을 기다리며 게이트를 잡아둘 이유가 없다.
@@ -794,10 +804,10 @@
 - **구현 요약 (2026-07-28)**: `Util/ObstacleQuery.mlua`(@Logic) 신설 · PC 래퍼 추출(YOrder 무수정) · `MonsterAI.MoveDirVec` 슬라이드+갇힘 탈출. T93 순서=회피→MoveDirVec 내 장애물. 성능=OverlapAll(queryR). 보고서: `docs/agents/reports/T99-monster-entity-obstacles.md`.
 - **검증**: LSP **errors=0**. **런타임 검증 보류(제작자 수행)**. refresh 측정 불가(MCP 미연결) — baseline Error=0 대비 제작자 refresh 필수.
 
-### T100. [코드 완료 — 2026-08-04 | refresh Error=0 / Warning 17(baseline) | 런타임 검증 보류(제작자 수행)] 가구 통행 차단 미작동 확정 + Trigger 전수 재감사·가구 6종 부여 — T96 (C) 실행
+### T100. [코드 완료 — 2026-08-04 지휘자 검수 통과 | refresh Error=0 / Warning 17(당시 baseline) | 런타임 검증 보류(제작자 수행)] 가구 통행 차단 미작동 확정 + Trigger 전수 재감사·가구 6종 부여 — T96 (C) 실행
 
 - **구현 요약 (2026-08-04)**: 규칙 13 갭 우회 전수감사 → **보유 26→32 / 미보유 40→34**(T96 22/23 폐기). ② **가구 통행 차단 미작동 확정**(OverlapAll(TriggerBox) 후보 미수집). ③ 가구 6종 Trigger(IsPassive) 부여·박스 재조정으로 F 거리 SAME. ④ T75 회피책=데코에 Occ/상호작용 스크립트 금지·Box 본셀 가둠. 자원·map·mlua diff 0. 보고서: `docs/agents/reports/T100-furniture-trigger-passthrough.md`.
-- **검증**: refresh Error=0 / W17 / I520 / total 537. **런타임 검증 보류(제작자 수행)**.
+- **검증**: refresh Error=0 / W17 / I520 / total 537(T75 이전). **런타임 검증 보류(제작자 수행)**. 🧭 갭 목록 각주: 재실행 시 `builderWouldMiss`는 **GrownGrass·IronNodeResource·Stone** 3종(Tree1/Tree2는 갭 아님) — Trigger 보유 결론은 불변.
 - **배경**: T96이 **(C) 오브젝트 계열 전면 부여**로 확정(⚖️ 2026-08-01). T95가 정렬 접지선을 Trigger 박스에서 자동 산출하므로 Trigger 미보유 모델은 자동화 밖에 남는다.
 - 🔄 **범위 재작성 (2026-08-01 지휘자 실측)** — 최초 발행본은 "자원 6종 + 가구 6종"이었으나 **자원은 작업 대상이 아니다**:
   - **자원 6종은 이미 전부 Trigger 보유**(`Tree1`·`Tree2`·`Stone`·`IronNodeResource`·`Big Stone1`·`Big Stone2`). T96 표가 "미보유"로 적었던 건 **§1.2 규칙 13(ModelBuilder 갭)** 때문의 오독이다. `GrownGrass`(의도적 통과 자원)·`Crop_Carrot`(작물)은 부여 대상이 아니다.
@@ -847,6 +857,20 @@
 - **Acceptance**: ① 화로 팝업 `F` 여닫기 정상 ② 투입/연료/산출 슬롯·진행바·연료 텍스트 표시 정상 ③ **다른 UI를 수정·저장한 뒤에도 `UIGroupComponent`가 재부착되지 않음**(이게 근본 판정 — 1사이클이면 확정) ④ `UIBuilder.write()`가 `PopupGroup.ui`에서 L029로 막히지 않음 — **①~③은 제작자 Play·Maker 작업**.
 - **후속**: T79·T88은 **원인 미제거로 재발한 사례**로 이력 정정(아래 각 티켓 상태줄 참조). 재발 시 §1.2 규칙 15의 판정 절차부터 적용할 것.
 
+### T103. [대기 — 배치 O 후속 | Play와 분리] T75 소품 `LWA-4012` Warning 청소 — 프로퍼티 기본값 명시 (T86 패턴)
+
+- **배경**: 배치 O 지휘자 refresh 실측(2026-08-04) **Warning 17→48(+31)**. 전부분 17은 유지. 증가분 전량 T75 소품:
+  | 경고 | 건수 | 출처 |
+  |---|---:|---|
+  | LWA-4012 `SortYOffset` | 11 | Prop 11종 × `script.YSortSprite` |
+  | LWA-4012 `Offset{X,Y}{Min,Max}` | 20 | Occ 보유 5종 × `script.ResourceOccupiedArea` 4프로퍼티 |
+  - 동작 무관이나 AGENTS.md §4 "Warning 급증도 보고 대상". 이 저장소는 `ce13617`에서 LWA-4012를 청소한 이력이 있음(T86).
+  - ⚖️ **2026-08-04 보스 확정**: Play와 분리. baseline은 **48**로 갱신해 두고, 본 티켓으로 17 근처로 되돌린다.
+- **Target**: `RootDesk/MyDesk/MapObjects/Models/Prop_*.model` 11종 — **ModelBuilder만**. `.mlua`/`.map`/기타 모델 수정 금지.
+- **Change**: ① T86과 동일 — 스크립트 기본값과 1:1인 프로퍼티를 모델 `Values`에 명시해 `LWA-4012` 소멸. `YSortSprite.SortYOffset`(전 11종, 현재 의도값·보통 0) · Occ 5종의 `ResourceOccupiedArea.Offset{X,Y}{Min,Max}`(모델에 이미 쓰인 값 그대로). ② 값 변경·박스·Trigger·Occ 멤버십·배치 좌표 **일절 금지**(경고 표지만 제거).
+- **Acceptance**: ① refresh 후 Warning이 **≈17**(기존 잔여)로 복귀 — `LWA-4012` 소품 출처 **0**. §4에 경고 분류 표 ② Error=0 유지 ③ Prop 시각·차단·조준 회귀 0(값 동일 대조표) ④ 보고 3종. Play는 제작자(배치 O와 묶지 않음).
+- **충돌 주의**: Prop `.model`만. T75 Play 중 Maker 저장과 겹치지 말 것(규칙 11).
+
 ### (신규 작업 추가 템플릿)
 
 ### T<n>. [대기] <제목>
@@ -854,7 +878,6 @@
 - **Target**: <수정할 파일 경로들>
 - **Change**: <단계별 변경 내용, 사용할 데이터셋/API>
 - **Acceptance**: <관찰 가능한 완료 기준 + 검증 방법>
-```
 
 ---
 
