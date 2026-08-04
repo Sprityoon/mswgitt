@@ -121,7 +121,7 @@
       {
         "id": "a434dc9c-338d-475d-a9c8-21e3e821d737",
         "path": "/ui/PopupGroup/FurnacePopup",
-        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.CanvasGroupComponent,script.UIFurnaceController",
+        "componentNames": "MOD.Core.UITransformComponent,script.UIFurnaceController",
         "jsonString": {
           "name": "FurnacePopup",
           "path": "/ui/PopupGroup/FurnacePopup",
@@ -134,12 +134,12 @@
           "revision": 0,
           "origin": {
             "type": "Model",
-            "entry_id": "UIGroup",
+            "entry_id": "UIEmpty",
             "sub_entity_id": null,
             "root_entity_id": null,
             "replaced_model_id": null
           },
-          "modelId": "uigroup",
+          "modelId": "uiempty",
           "@components": [
             {
               "@type": "MOD.Core.UITransformComponent",
@@ -203,13 +203,6 @@
                 "z": 1
               },
               "ZRotation": 0,
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.CanvasGroupComponent",
-              "BlocksRaycasts": true,
-              "GroupAlpha": 1,
-              "Interactable": true,
               "Enable": true
             },
             {
