@@ -731,7 +731,10 @@
 - **Acceptance**: ① `RenderLayers.mlua`에 **엔티티 이름 문자열 분기 0건**(grep 근거를 보고서에) ② 이름을 바꾼 NPC도 유닛으로 정상 분류 ③ 아바타는 박스 보정을 타지 않음(코드+주석 확인) ④ 닭·양·개가 y 순서대로 정렬되고 동률 시 오브젝트에 안 먹힘 ⑤ T95의 정렬 결과가 **육안상 회귀 0**(바이어스·접지선 동작 동일) ⑥ refresh Error=0 + 보고 3종.
 - **충돌 주의**: 레인 A 소유 파일. **T95 완료 후 단독 착수** — 다른 티켓과 병행 금지.
 
-### T98. [🟢 착수 가능 — 제작자 물 페인팅 완료·커밋(`7a702a3`) | 🧭 **2026-08-04 지휘자 범위 확정: `map01` 단독 + 스크립트는 범용**] 고정 수역 실배치 — 맵에 물을 실제로 놓는다
+### T98. [코드 완료 — 2026-08-04 | refresh Error=0 / Warning 17(baseline) | 런타임 검증 보류(제작자 수행)] 고정 수역 실배치 — map01 L2 물가 프린지
+
+- **구현 요약 (2026-08-04)**: `scripts/fix_water_fringe.cjs` 신설(맵 경로 인자 범용). `build_maps.cjs`의 `cellTile`을 소스 추출 재사용. digHole 프린지 비트 동일. map01 L2 **40셀** 프린지 적용 · 범위 밖 diff 0 · Water 61 홀 유지. 보고서: `docs/agents/reports/T98-water-fringe-map01.md`.
+- **검증**: refresh Error=0 / W17 / I520 / total 537. **런타임 검증 보류(제작자 수행)**.
 
 > 🧭 **2026-08-04 지휘자 결정 — 미결 2건 해소 (착수 차단 해제)**
 > - **범위 = `map01` 단독으로 진행한다.** 근거: 나머지 3맵은 물이 0셀이고 언제 칠할지 미정인데, 영지(`map01`)만으로 Phase 21의 낚시 경로(T91)가 검증 가능하다. 물 없는 맵을 기다리며 게이트를 잡아둘 이유가 없다.
@@ -789,8 +792,10 @@
 - **구현 요약 (2026-07-28)**: `Util/ObstacleQuery.mlua`(@Logic) 신설 · PC 래퍼 추출(YOrder 무수정) · `MonsterAI.MoveDirVec` 슬라이드+갇힘 탈출. T93 순서=회피→MoveDirVec 내 장애물. 성능=OverlapAll(queryR). 보고서: `docs/agents/reports/T99-monster-entity-obstacles.md`.
 - **검증**: LSP **errors=0**. **런타임 검증 보류(제작자 수행)**. refresh 측정 불가(MCP 미연결) — baseline Error=0 대비 제작자 refresh 필수.
 
-### T100. [대기 — ⚖️ 2026-08-01 보스 T96 (C) 확정 | 🔄 2026-08-01 실측으로 범위 재작성 | 🔴 T75의 선행] 가구 6종 `TriggerComponent` 부여 + Trigger 전수 재감사 — T96 (C) 실행
+### T100. [코드 완료 — 2026-08-04 | refresh Error=0 / Warning 17(baseline) | 런타임 검증 보류(제작자 수행)] 가구 통행 차단 미작동 확정 + Trigger 전수 재감사·가구 6종 부여 — T96 (C) 실행
 
+- **구현 요약 (2026-08-04)**: 규칙 13 갭 우회 전수감사 → **보유 26→32 / 미보유 40→34**(T96 22/23 폐기). ② **가구 통행 차단 미작동 확정**(OverlapAll(TriggerBox) 후보 미수집). ③ 가구 6종 Trigger(IsPassive) 부여·박스 재조정으로 F 거리 SAME. ④ T75 회피책=데코에 Occ/상호작용 스크립트 금지·Box 본셀 가둠. 자원·map·mlua diff 0. 보고서: `docs/agents/reports/T100-furniture-trigger-passthrough.md`.
+- **검증**: refresh Error=0 / W17 / I520 / total 537. **런타임 검증 보류(제작자 수행)**.
 - **배경**: T96이 **(C) 오브젝트 계열 전면 부여**로 확정(⚖️ 2026-08-01). T95가 정렬 접지선을 Trigger 박스에서 자동 산출하므로 Trigger 미보유 모델은 자동화 밖에 남는다.
 - 🔄 **범위 재작성 (2026-08-01 지휘자 실측)** — 최초 발행본은 "자원 6종 + 가구 6종"이었으나 **자원은 작업 대상이 아니다**:
   - **자원 6종은 이미 전부 Trigger 보유**(`Tree1`·`Tree2`·`Stone`·`IronNodeResource`·`Big Stone1`·`Big Stone2`). T96 표가 "미보유"로 적었던 건 **§1.2 규칙 13(ModelBuilder 갭)** 때문의 오독이다. `GrownGrass`(의도적 통과 자원)·`Crop_Carrot`(작물)은 부여 대상이 아니다.

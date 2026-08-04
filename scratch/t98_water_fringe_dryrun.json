@@ -1,0 +1,264 @@
+{
+  "map": "map/map01.map",
+  "water": 61,
+  "affected": 101,
+  "changes": 40,
+  "outsideDiff": 0,
+  "warnings": [],
+  "byTo": {
+    "GrassRT": 3,
+    "GrassR": 4,
+    "GrassRTCorner": 4,
+    "GrassRD": 2,
+    "GrassRDCorner": 3,
+    "GrassT": 4,
+    "GrassD": 5,
+    "GrassLD": 2,
+    "GrassLDCorner": 3,
+    "GrassLT": 2,
+    "GrassLTCorner": 3,
+    "GrassL": 5
+  },
+  "changeSample": [
+    {
+      "key": "18,-22",
+      "from": "FullGrass",
+      "to": "GrassRT",
+      "reason": "fringe"
+    },
+    {
+      "key": "17,-21",
+      "from": "FullGrass",
+      "to": "GrassR",
+      "reason": "fringe"
+    },
+    {
+      "key": "17,-20",
+      "from": "FullGrass",
+      "to": "GrassR",
+      "reason": "fringe"
+    },
+    {
+      "key": "17,-22",
+      "from": "FullGrass",
+      "to": "GrassRTCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "18,-19",
+      "from": "FullGrass",
+      "to": "GrassRD",
+      "reason": "fringe"
+    },
+    {
+      "key": "17,-19",
+      "from": "FullGrass",
+      "to": "GrassRDCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "19,-24",
+      "from": "FullGrass",
+      "to": "GrassRT",
+      "reason": "fringe"
+    },
+    {
+      "key": "18,-23",
+      "from": "FullGrass",
+      "to": "GrassR",
+      "reason": "fringe"
+    },
+    {
+      "key": "18,-24",
+      "from": "FullGrass",
+      "to": "GrassRTCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "18,-18",
+      "from": "FullGrass",
+      "to": "GrassR",
+      "reason": "fringe"
+    },
+    {
+      "key": "19,-17",
+      "from": "FullGrass",
+      "to": "GrassRD",
+      "reason": "fringe"
+    },
+    {
+      "key": "18,-17",
+      "from": "FullGrass",
+      "to": "GrassRDCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "20,-25",
+      "from": "FullGrass",
+      "to": "GrassT",
+      "reason": "fringe"
+    },
+    {
+      "key": "21,-25",
+      "from": "FullGrass",
+      "to": "GrassT",
+      "reason": "fringe"
+    },
+    {
+      "key": "19,-25",
+      "from": "FullGrass",
+      "to": "GrassRTCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "20,-16",
+      "from": "FullGrass",
+      "to": "GrassD",
+      "reason": "fringe"
+    },
+    {
+      "key": "21,-16",
+      "from": "FullGrass",
+      "to": "GrassD",
+      "reason": "fringe"
+    },
+    {
+      "key": "19,-16",
+      "from": "FullGrass",
+      "to": "GrassRDCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "22,-25",
+      "from": "FullGrass",
+      "to": "GrassRT",
+      "reason": "fringe"
+    },
+    {
+      "key": "22,-16",
+      "from": "FullGrass",
+      "to": "GrassD",
+      "reason": "fringe"
+    },
+    {
+      "key": "23,-16",
+      "from": "FullGrass",
+      "to": "GrassD",
+      "reason": "fringe"
+    },
+    {
+      "key": "23,-26",
+      "from": "FullGrass",
+      "to": "GrassT",
+      "reason": "fringe"
+    },
+    {
+      "key": "24,-26",
+      "from": "FullGrass",
+      "to": "GrassT",
+      "reason": "fringe"
+    },
+    {
+      "key": "22,-26",
+      "from": "FullGrass",
+      "to": "GrassRTCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "24,-17",
+      "from": "FullGrass",
+      "to": "GrassLD",
+      "reason": "fringe"
+    },
+    {
+      "key": "24,-16",
+      "from": "FullGrass",
+      "to": "GrassLDCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "25,-25",
+      "from": "FullGrass",
+      "to": "GrassLT",
+      "reason": "fringe"
+    },
+    {
+      "key": "25,-26",
+      "from": "FullGrass",
+      "to": "GrassLTCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "25,-17",
+      "from": "FullGrass",
+      "to": "GrassD",
+      "reason": "fringe"
+    },
+    {
+      "key": "26,-24",
+      "from": "FullGrass",
+      "to": "GrassLT",
+      "reason": "fringe"
+    },
+    {
+      "key": "26,-25",
+      "from": "FullGrass",
+      "to": "GrassLTCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "26,-18",
+      "from": "FullGrass",
+      "to": "GrassLD",
+      "reason": "fringe"
+    },
+    {
+      "key": "26,-17",
+      "from": "FullGrass",
+      "to": "GrassLDCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "27,-23",
+      "from": "FullGrass",
+      "to": "GrassL",
+      "reason": "fringe"
+    },
+    {
+      "key": "27,-22",
+      "from": "FullGrass",
+      "to": "GrassL",
+      "reason": "fringe"
+    },
+    {
+      "key": "27,-24",
+      "from": "FullGrass",
+      "to": "GrassLTCorner",
+      "reason": "fringe"
+    },
+    {
+      "key": "27,-21",
+      "from": "FullGrass",
+      "to": "GrassL",
+      "reason": "fringe"
+    },
+    {
+      "key": "27,-20",
+      "from": "FullGrass",
+      "to": "GrassL",
+      "reason": "fringe"
+    },
+    {
+      "key": "27,-19",
+      "from": "FullGrass",
+      "to": "GrassL",
+      "reason": "fringe"
+    },
+    {
+      "key": "27,-18",
+      "from": "FullGrass",
+      "to": "GrassLDCorner",
+      "reason": "fringe"
+    }
+  ]
+}
