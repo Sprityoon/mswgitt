@@ -89444,6 +89444,3968 @@
           ],
           "@version": 1
         }
+      },
+      {
+        "id": "6993fbca-c0b1-48f7-a92f-4391826c0aa0",
+        "path": "/maps/town/Prop_LampPost_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_LampPost_1",
+          "path": "/maps/town/Prop_LampPost_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 34,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_lamppost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 5,
+                "y": 2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.45,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_lamppost",
+            "sub_entity_id": null,
+            "root_entity_id": "6993fbca-c0b1-48f7-a92f-4391826c0aa0",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "6f5a7a39-f1d1-448d-a1bf-ae9e67fdb713",
+        "path": "/maps/town/Prop_LampPost_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_LampPost_2",
+          "path": "/maps/town/Prop_LampPost_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 35,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_lamppost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -5,
+                "y": 2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.45,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_lamppost",
+            "sub_entity_id": null,
+            "root_entity_id": "6f5a7a39-f1d1-448d-a1bf-ae9e67fdb713",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "d692fed0-3230-4837-bfad-a461dba26ada",
+        "path": "/maps/town/Prop_LampPost_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_LampPost_3",
+          "path": "/maps/town/Prop_LampPost_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 36,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_lamppost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 5,
+                "y": -8,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.45,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_lamppost",
+            "sub_entity_id": null,
+            "root_entity_id": "d692fed0-3230-4837-bfad-a461dba26ada",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "e657f8bf-28b7-47af-8938-7d0e43d89981",
+        "path": "/maps/town/Prop_LampPost_4",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_LampPost_4",
+          "path": "/maps/town/Prop_LampPost_4",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 37,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_lamppost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -5,
+                "y": -8,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.45,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_lamppost",
+            "sub_entity_id": null,
+            "root_entity_id": "e657f8bf-28b7-47af-8938-7d0e43d89981",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "eaf95a46-e224-4e8d-9417-ad511c0380c5",
+        "path": "/maps/town/Prop_LampPost_5",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_LampPost_5",
+          "path": "/maps/town/Prop_LampPost_5",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 38,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_lamppost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 12,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.45,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_lamppost",
+            "sub_entity_id": null,
+            "root_entity_id": "eaf95a46-e224-4e8d-9417-ad511c0380c5",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "f5d25c5d-b190-47e8-8365-600572f3d86a",
+        "path": "/maps/town/Prop_LampPost_6",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_LampPost_6",
+          "path": "/maps/town/Prop_LampPost_6",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 39,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_lamppost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -12,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.45,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_lamppost",
+            "sub_entity_id": null,
+            "root_entity_id": "f5d25c5d-b190-47e8-8365-600572f3d86a",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "4cbe86a4-9bc2-4e5b-875e-cee11c1949c1",
+        "path": "/maps/town/Prop_LampPost_7",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_LampPost_7",
+          "path": "/maps/town/Prop_LampPost_7",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 40,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_lamppost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0,
+                "y": 8,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.45,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_lamppost",
+            "sub_entity_id": null,
+            "root_entity_id": "4cbe86a4-9bc2-4e5b-875e-cee11c1949c1",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "4fb2fe1a-d738-444c-9112-ae1f3327a815",
+        "path": "/maps/town/Prop_LampPost_8",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_LampPost_8",
+          "path": "/maps/town/Prop_LampPost_8",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 41,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_lamppost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0,
+                "y": -10,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.45,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_lamppost",
+            "sub_entity_id": null,
+            "root_entity_id": "4fb2fe1a-d738-444c-9112-ae1f3327a815",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "db1dcefd-ab30-4281-8886-e5d79d2580d4",
+        "path": "/maps/town/Prop_StakeFence_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_StakeFence_1",
+          "path": "/maps/town/Prop_StakeFence_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 42,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_stakefence",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -14,
+                "y": 4,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "e43df25f64ba4673acb95e84814aed2e",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 3.2,
+                "y": 0.55
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_stakefence",
+            "sub_entity_id": null,
+            "root_entity_id": "db1dcefd-ab30-4281-8886-e5d79d2580d4",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "9fbbf22b-d717-48d9-8fa8-480b00cdf298",
+        "path": "/maps/town/Prop_StakeFence_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_StakeFence_2",
+          "path": "/maps/town/Prop_StakeFence_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 43,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_stakefence",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 14,
+                "y": 4,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "e43df25f64ba4673acb95e84814aed2e",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 3.2,
+                "y": 0.55
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_stakefence",
+            "sub_entity_id": null,
+            "root_entity_id": "9fbbf22b-d717-48d9-8fa8-480b00cdf298",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "0d147455-8931-48bc-abdd-d4860a7f8577",
+        "path": "/maps/town/Prop_StakeFence_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_StakeFence_3",
+          "path": "/maps/town/Prop_StakeFence_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 44,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_stakefence",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -14,
+                "y": -10,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "e43df25f64ba4673acb95e84814aed2e",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 3.2,
+                "y": 0.55
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_stakefence",
+            "sub_entity_id": null,
+            "root_entity_id": "0d147455-8931-48bc-abdd-d4860a7f8577",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "b7127045-af6a-45d1-af00-f0aadc84b931",
+        "path": "/maps/town/Prop_StakeFence_4",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_StakeFence_4",
+          "path": "/maps/town/Prop_StakeFence_4",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 45,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_stakefence",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 14,
+                "y": -10,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "e43df25f64ba4673acb95e84814aed2e",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 3.2,
+                "y": 0.55
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_stakefence",
+            "sub_entity_id": null,
+            "root_entity_id": "b7127045-af6a-45d1-af00-f0aadc84b931",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "2336337f-40c8-41d3-b414-778bd44c3c74",
+        "path": "/maps/town/Prop_WhiteFence_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_WhiteFence_1",
+          "path": "/maps/town/Prop_WhiteFence_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 46,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_whitefence",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 8,
+                "y": 7,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "58c7377fb81d439f9d097683224b1dbc",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 3.4,
+                "y": 0.6
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_whitefence",
+            "sub_entity_id": null,
+            "root_entity_id": "2336337f-40c8-41d3-b414-778bd44c3c74",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "95b5369d-e4ad-48d7-bc35-9114412c8419",
+        "path": "/maps/town/Prop_WhiteFence_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_WhiteFence_2",
+          "path": "/maps/town/Prop_WhiteFence_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 47,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_whitefence",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 4,
+                "y": 7,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "58c7377fb81d439f9d097683224b1dbc",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 3.4,
+                "y": 0.6
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_whitefence",
+            "sub_entity_id": null,
+            "root_entity_id": "95b5369d-e4ad-48d7-bc35-9114412c8419",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "183a2359-a95d-45b3-ad07-c09edeef2ff3",
+        "path": "/maps/town/Prop_WhiteFence_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_WhiteFence_3",
+          "path": "/maps/town/Prop_WhiteFence_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 48,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_whitefence",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 10,
+                "y": 3,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "58c7377fb81d439f9d097683224b1dbc",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 3.4,
+                "y": 0.6
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_whitefence",
+            "sub_entity_id": null,
+            "root_entity_id": "183a2359-a95d-45b3-ad07-c09edeef2ff3",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "a0e9e67f-3a14-497d-a92e-d9451a161c53",
+        "path": "/maps/town/Prop_Signpost_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Signpost_1",
+          "path": "/maps/town/Prop_Signpost_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 49,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_signpost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 2,
+                "y": 9,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "be45d53696de43ffa3c659cc53a03529",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.5,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_signpost",
+            "sub_entity_id": null,
+            "root_entity_id": "a0e9e67f-3a14-497d-a92e-d9451a161c53",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "7bb78cd7-844e-4281-a5cc-edecaccc165b",
+        "path": "/maps/town/Prop_Signpost_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Signpost_2",
+          "path": "/maps/town/Prop_Signpost_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 50,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_signpost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -2,
+                "y": -12,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "be45d53696de43ffa3c659cc53a03529",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.5,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_signpost",
+            "sub_entity_id": null,
+            "root_entity_id": "7bb78cd7-844e-4281-a5cc-edecaccc165b",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "1908cd54-ad34-4de3-81b0-e1c2b03bd6e8",
+        "path": "/maps/town/Prop_Signpost_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Signpost_3",
+          "path": "/maps/town/Prop_Signpost_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 51,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_signpost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 14,
+                "y": 1,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "be45d53696de43ffa3c659cc53a03529",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.5,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_signpost",
+            "sub_entity_id": null,
+            "root_entity_id": "1908cd54-ad34-4de3-81b0-e1c2b03bd6e8",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "ef720407-a8fa-487f-a239-514b13a97dbe",
+        "path": "/maps/town/Prop_Bench_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Bench_1",
+          "path": "/maps/town/Prop_Bench_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 52,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_bench",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 2.5,
+                "y": -2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "9c977980eb414e149878c027f8a30755",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.45
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_bench",
+            "sub_entity_id": null,
+            "root_entity_id": "ef720407-a8fa-487f-a239-514b13a97dbe",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "96baed61-fe37-4fb3-ba25-44111650af22",
+        "path": "/maps/town/Prop_Bench_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Bench_2",
+          "path": "/maps/town/Prop_Bench_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 53,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_bench",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -2.5,
+                "y": -2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "9c977980eb414e149878c027f8a30755",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.45
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_bench",
+            "sub_entity_id": null,
+            "root_entity_id": "96baed61-fe37-4fb3-ba25-44111650af22",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "dd672419-d3c1-4854-a806-deb0b10be72c",
+        "path": "/maps/town/Prop_Bench_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Bench_3",
+          "path": "/maps/town/Prop_Bench_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 54,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_bench",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 2.5,
+                "y": 1.2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "9c977980eb414e149878c027f8a30755",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.45
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_bench",
+            "sub_entity_id": null,
+            "root_entity_id": "dd672419-d3c1-4854-a806-deb0b10be72c",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "2f3556bd-2dad-43af-94a9-985845f6ceba",
+        "path": "/maps/town/Prop_Bench_4",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Bench_4",
+          "path": "/maps/town/Prop_Bench_4",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 55,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_bench",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -2.5,
+                "y": 1.2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "9c977980eb414e149878c027f8a30755",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.45
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_bench",
+            "sub_entity_id": null,
+            "root_entity_id": "2f3556bd-2dad-43af-94a9-985845f6ceba",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "2b18dcbd-988a-48a7-94ed-ea8dff67fbe2",
+        "path": "/maps/town/Prop_FlowerBed_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_FlowerBed_1",
+          "path": "/maps/town/Prop_FlowerBed_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 56,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_flowerbed",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 3,
+                "y": -5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "77a93f102bf2486db210803a14267fb7",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_flowerbed",
+            "sub_entity_id": null,
+            "root_entity_id": "2b18dcbd-988a-48a7-94ed-ea8dff67fbe2",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "ad000f5d-a2b2-42fe-9e48-8d0c06a9d6b1",
+        "path": "/maps/town/Prop_FlowerBed_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_FlowerBed_2",
+          "path": "/maps/town/Prop_FlowerBed_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 57,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_flowerbed",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -3,
+                "y": -5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "77a93f102bf2486db210803a14267fb7",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_flowerbed",
+            "sub_entity_id": null,
+            "root_entity_id": "ad000f5d-a2b2-42fe-9e48-8d0c06a9d6b1",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "feb070da-0a4c-4a9e-8763-017a462dab52",
+        "path": "/maps/town/Prop_FlowerBed_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_FlowerBed_3",
+          "path": "/maps/town/Prop_FlowerBed_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 58,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_flowerbed",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -7,
+                "y": 3,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "77a93f102bf2486db210803a14267fb7",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_flowerbed",
+            "sub_entity_id": null,
+            "root_entity_id": "feb070da-0a4c-4a9e-8763-017a462dab52",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "a7a293b6-cccc-476c-960d-8bc27af0f967",
+        "path": "/maps/town/Prop_FlowerBed_4",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_FlowerBed_4",
+          "path": "/maps/town/Prop_FlowerBed_4",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 59,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_flowerbed",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 7,
+                "y": 3,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "77a93f102bf2486db210803a14267fb7",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_flowerbed",
+            "sub_entity_id": null,
+            "root_entity_id": "a7a293b6-cccc-476c-960d-8bc27af0f967",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "73acab5c-ac9a-4a7c-b9e6-1829196505ea",
+        "path": "/maps/town/Prop_FlowerBed_5",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_FlowerBed_5",
+          "path": "/maps/town/Prop_FlowerBed_5",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 60,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_flowerbed",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -1,
+                "y": 5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "77a93f102bf2486db210803a14267fb7",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_flowerbed",
+            "sub_entity_id": null,
+            "root_entity_id": "73acab5c-ac9a-4a7c-b9e6-1829196505ea",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "b9d2ac1c-51ad-4d49-bd08-678d18ba9111",
+        "path": "/maps/town/Prop_FlowerBed_6",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_FlowerBed_6",
+          "path": "/maps/town/Prop_FlowerBed_6",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 61,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_flowerbed",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 1,
+                "y": -7,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "77a93f102bf2486db210803a14267fb7",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_flowerbed",
+            "sub_entity_id": null,
+            "root_entity_id": "b9d2ac1c-51ad-4d49-bd08-678d18ba9111",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "91641f9d-07f5-427c-a4f3-758c1a580d7d",
+        "path": "/maps/town/Prop_Barrel_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_Barrel_1",
+          "path": "/maps/town/Prop_Barrel_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 62,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_barrel",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 16.5,
+                "y": 3,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "6db04f1549554ff09a51f949c93108d5",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.65
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_barrel",
+            "sub_entity_id": null,
+            "root_entity_id": "91641f9d-07f5-427c-a4f3-758c1a580d7d",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "c4196363-ad78-4348-a968-b518799e4be9",
+        "path": "/maps/town/Prop_Barrel_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_Barrel_2",
+          "path": "/maps/town/Prop_Barrel_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 63,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_barrel",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 17.5,
+                "y": 5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "6db04f1549554ff09a51f949c93108d5",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.65
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_barrel",
+            "sub_entity_id": null,
+            "root_entity_id": "c4196363-ad78-4348-a968-b518799e4be9",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "2b518965-171c-44f3-b8f0-13bdc5aebf10",
+        "path": "/maps/town/Prop_Barrel_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_Barrel_3",
+          "path": "/maps/town/Prop_Barrel_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 64,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_barrel",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -6.5,
+                "y": -7.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "6db04f1549554ff09a51f949c93108d5",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.9,
+                "y": 0.65
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_barrel",
+            "sub_entity_id": null,
+            "root_entity_id": "2b518965-171c-44f3-b8f0-13bdc5aebf10",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "e978de12-484a-466d-8fd1-c2a5d49e6164",
+        "path": "/maps/town/Prop_CrateStack_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_CrateStack_1",
+          "path": "/maps/town/Prop_CrateStack_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 65,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_cratestack",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -5.2,
+                "y": -5.2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "a1899b99ce5c4bbf80265a2b55977b27",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.95,
+                "y": 0.7
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_cratestack",
+            "sub_entity_id": null,
+            "root_entity_id": "e978de12-484a-466d-8fd1-c2a5d49e6164",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "181f4614-efc7-42f6-981d-613196934274",
+        "path": "/maps/town/Prop_CrateStack_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_CrateStack_2",
+          "path": "/maps/town/Prop_CrateStack_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 66,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_cratestack",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -7.2,
+                "y": -7.2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "a1899b99ce5c4bbf80265a2b55977b27",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.95,
+                "y": 0.7
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_cratestack",
+            "sub_entity_id": null,
+            "root_entity_id": "181f4614-efc7-42f6-981d-613196934274",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "eee9fe6e-f682-4665-9f97-286c5de8938f",
+        "path": "/maps/town/Prop_CrateStack_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_CrateStack_3",
+          "path": "/maps/town/Prop_CrateStack_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 67,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_cratestack",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 17,
+                "y": 2.8,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "a1899b99ce5c4bbf80265a2b55977b27",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.95,
+                "y": 0.7
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_cratestack",
+            "sub_entity_id": null,
+            "root_entity_id": "eee9fe6e-f682-4665-9f97-286c5de8938f",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "2e882ad0-def8-4fb4-9e24-817e18e3bdbd",
+        "path": "/maps/town/Prop_JarSet_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_JarSet_1",
+          "path": "/maps/town/Prop_JarSet_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 68,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_jarset",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -4.2,
+                "y": 3.8,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "b3d52eecbd114f629c8ff05d36de4de7",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.7,
+                "y": 0.45
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_jarset",
+            "sub_entity_id": null,
+            "root_entity_id": "2e882ad0-def8-4fb4-9e24-817e18e3bdbd",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "9b4ec0c6-d7f2-40fc-bc68-0c3a2d447b48",
+        "path": "/maps/town/Prop_JarSet_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_JarSet_2",
+          "path": "/maps/town/Prop_JarSet_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 69,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_jarset",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -15.2,
+                "y": 3.2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "b3d52eecbd114f629c8ff05d36de4de7",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.7,
+                "y": 0.45
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_jarset",
+            "sub_entity_id": null,
+            "root_entity_id": "9b4ec0c6-d7f2-40fc-bc68-0c3a2d447b48",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "be1b90c8-ff78-49f9-8276-724de4f5dca1",
+        "path": "/maps/town/Prop_JarSet_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_JarSet_3",
+          "path": "/maps/town/Prop_JarSet_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 70,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_jarset",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -11.2,
+                "y": 10.2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "b3d52eecbd114f629c8ff05d36de4de7",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.7,
+                "y": 0.45
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_jarset",
+            "sub_entity_id": null,
+            "root_entity_id": "be1b90c8-ff78-49f9-8276-724de4f5dca1",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "d0be1600-3859-4f5c-bf3c-48754d54382a",
+        "path": "/maps/town/Prop_Cart_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_Cart_1",
+          "path": "/maps/town/Prop_Cart_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 71,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_cart",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -4.5,
+                "y": -10,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "9ae1efe54bd54f33ac437082312b1d69",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1.5,
+                "y": 0.7
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_cart",
+            "sub_entity_id": null,
+            "root_entity_id": "d0be1600-3859-4f5c-bf3c-48754d54382a",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "facec81d-01a8-4af0-a993-81449512f4a4",
+        "path": "/maps/town/Prop_Cart_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,script.ResourceOccupiedArea",
+        "jsonString": {
+          "name": "Prop_Cart_2",
+          "path": "/maps/town/Prop_Cart_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 72,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_cart",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 15.5,
+                "y": 2.2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "9ae1efe54bd54f33ac437082312b1d69",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1.5,
+                "y": 0.7
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "BlocksMovement": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 0,
+              "OffsetYMin": 0,
+              "OffsetYMax": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_cart",
+            "sub_entity_id": null,
+            "root_entity_id": "facec81d-01a8-4af0-a993-81449512f4a4",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "25bf6c94-d28b-40d4-bdf9-aeff4b9cf97d",
+        "path": "/maps/town/Prop_Banner_1",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Banner_1",
+          "path": "/maps/town/Prop_Banner_1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 73,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_banner",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -6.5,
+                "y": -5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "b4f985e6aff343c5984f8e5d6e70a891",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.4,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_banner",
+            "sub_entity_id": null,
+            "root_entity_id": "25bf6c94-d28b-40d4-bdf9-aeff4b9cf97d",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "2371087f-8f75-4fb9-9699-5733d25d4391",
+        "path": "/maps/town/Prop_Banner_2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Banner_2",
+          "path": "/maps/town/Prop_Banner_2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 74,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_banner",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -3.5,
+                "y": -6.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "b4f985e6aff343c5984f8e5d6e70a891",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.4,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_banner",
+            "sub_entity_id": null,
+            "root_entity_id": "2371087f-8f75-4fb9-9699-5733d25d4391",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "30b6f3da-7f25-44aa-934e-fa93273ca0af",
+        "path": "/maps/town/Prop_Banner_3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Banner_3",
+          "path": "/maps/town/Prop_Banner_3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 75,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_banner",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 5.2,
+                "y": 5.2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "b4f985e6aff343c5984f8e5d6e70a891",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.4,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_banner",
+            "sub_entity_id": null,
+            "root_entity_id": "30b6f3da-7f25-44aa-934e-fa93273ca0af",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "a1bedc92-52b5-4768-8b80-347d371a5dc1",
+        "path": "/maps/town/Prop_Banner_4",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "Prop_Banner_4",
+          "path": "/maps/town/Prop_Banner_4",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 76,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_banner",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 7.5,
+                "y": 5.2,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "b4f985e6aff343c5984f8e5d6e70a891",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.4,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_banner",
+            "sub_entity_id": null,
+            "root_entity_id": "a1bedc92-52b5-4768-8b80-347d371a5dc1",
+            "replaced_model_id": null
+          }
+        }
       }
     ]
   }

@@ -335,8 +335,10 @@
 - **구현 요약 (2026-07-21)**: House 5종 북서·남서·남동 배치. 보고서: `docs/agents/reports/T74-town-houses.md`.
 - **검증**: Maker refresh **Error=0** (total 527 / Warning 25 / Info 502). **런타임 검증 보류(제작자 수행)**.
 
-### T75. [대기 — 🧭 2026-07-25 범위 축소: **소품 P1~P11 전용** | 🔄 2026-08-01 ③ 개정(T96 (C) 반영) | 🔴 **T100 완료 후 착수**] 마을 생활 소품 배치 (P0-C)
+### T75. [코드 완료 — 2026-08-04 | refresh Error=0 / Warning 17(baseline) | 런타임 검증 보류(제작자 수행)] 마을 생활 소품 배치 (P0-C)
 
+- **구현 요약 (2026-08-04)**: Prop 11종 `.model` + town.map **43 인스턴스**. 전 소품 Trigger+YSortSprite. Occ=울타리·술통·궤짝·수레만. 벤치·꽃·배너=T100 회피(조준 비대상). 보고서: `docs/agents/reports/T75-town-props-p1-p11.md`.
+- **검증**: refresh Error=0 / W17. **런타임 검증 보류(제작자 수행)**.
 - **⚖️ 2026-07-25 보스 결정 — 노점 M1~M3은 이 티켓에서 분리**: 노점은 제작자가 이미 커스텀 리드로우 5종을 만들어 둔 상태(변형 선택 = 취향 결정)라 **제작자 직접 처리(→ T94)**. 이 티켓은 **소품 P1~P11만** 수행한다. 노점 관련 파일·배치에 손대지 말 것.
 - **배경**: 마을 생활감 증대를 위한 데코 소품 11종 배치. `docs/design/artwork-spec.md` §4.
 - **Target**: `RootDesk/MyDesk/MapObjects/Models/` (신규 .model), `map/town.map`
