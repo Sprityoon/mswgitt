@@ -1,0 +1,303 @@
+@Component
+script UIPreviewToolController extends Component
+
+	-- Bound by UIBuilder.injectBindings (see scratchpad/build_preview_ui.cjs).
+	-- `root` wraps Dimmer + Window so one toggle hides both; the Controller entity
+	-- itself sits outside root, otherwise disabling it would kill the F9 handler.
+	property Entity root = "67aa3bbe-0316-4d75-bc7b-369ad8e88d0b"
+	property Entity window = "6885f6a5-76f7-43a4-aef0-53ca4b833a5c"
+	property ButtonComponent btnModeAvatar = "d475cf47-f670-488e-b456-5cca759bfd08"
+	property ButtonComponent btnModeMonster = "a1c8da63-8754-4ebc-a36b-5d04bab6abfa"
+	property ButtonComponent btnSwing = "68ad3f9f-462a-46f1-ad55-5d97bcd82b2a"
+	property ButtonComponent btnClose = "db598f78-c714-4516-9420-b25d5ce51a1c"
+	property TextGUIRendererComponent title = "a34a23c3-5355-49f4-a9be-e0c4918addce"
+
+	-- Event handles (must be released in OnEndPlay).
+	property any keyHandler = nil
+	property any modeAvatarHandler = nil
+	property any modeMonsterHandler = nil
+	property any swingHandler = nil
+	property any closeHandler = nil
+
+	property string mode = "avatar"
+	property integer slotCount = 5
+
+	@ExecSpace("ClientOnly")
+	method table GetAvatarCandidates()
+		-- EDIT POINT: avatar items compared in avatar mode. All entries must be
+		-- real avataritem RUIDs from msw-search; a fabricated RUID renders nothing.
+		-- `slot` picks the MapleAvatarItemCategory the RUID is equipped into and
+		-- MUST match the item's own category, or the slot silently stays empty.
+		-- `action` must match the slot family: swingO*/stabO* for onehand,
+		-- swingT*/stabT* for twohand. Mismatched families make the weapon parts
+		-- vanish mid-motion (the old 곡괭이 swingT1 bug) — see MineState.mlua.
+		-- Item colour cannot be corrected in code (SetAvatarPartColor is a silent
+		-- no-op — see docs/agents/resource-api-pitfalls.md §5-quater), so judge the
+		-- colour here and reject the item if it does not fit.
+		--
+		-- Slots 1~3 mirror item_dataset's current tools; keep them in sync when the
+		-- WeaponRUID of a tool changes. Slots 4~5 are scratch space for candidates.
+		return {
+			{ ruid = "384de1d5a70747a4b356484cf2753b5f", label = "주먹도끼 (빨간 벽돌)", slot = "onehand", action = "swingO2" },
+			{ ruid = "096fabc5a35e426db5912ec35e77a769", label = "돌도끼 (GMS Axe)", slot = "onehand", action = "swingO2" },
+			{ ruid = "18a44a9f39a94633b56902492e5b7da6", label = "돌곡괭이 (곡괭이)", slot = "twohand", action = "swingT1" },
+			{ ruid = "5b0af54d1fd0489198f8c31183d130fa", label = "손 도끼 (비교용·이전 주먹도끼)", slot = "onehand", action = "swingO2" },
+			{ ruid = "5e6acebb7afb46f2a375c7b331ef13d5", label = "토마호크 (비교용)", slot = "onehand", action = "swingO2" },
+		}
+	end
+
+	@ExecSpace("ClientOnly")
+	method table GetSpriteCandidates()
+		-- EDIT POINT: plain sprite / animationclip RUIDs for monster & object mode.
+		-- Seeded with item_dataset icons so the mode is verifiable out of the box.
+		return {
+			{ ruid = "b952164321fd4c9c94cb0d3e7c73b182", label = "Wood 아이콘" },
+			{ ruid = "5ed8bdcf520044c0a1660873beb30b10", label = "Stone 아이콘" },
+			{ ruid = "57345d4aa6a640419af19e340c29940f", label = "Hand Axe 아이콘" },
+			{ ruid = "2e0751aabbb14ccf85cfb99c024511c9", label = "Stone Axe 아이콘" },
+			{ ruid = "428577ffb2964719b8ab0bb18e5171e1", label = "Stone Pickaxe 아이콘" },
+		}
+	end
+
+	@ExecSpace("ClientOnly")
+	method Entity GetSlot(integer index)
+		-- Returns the Slot<index> container entity, or nil when out of range.
+		if isvalid(self.window) == false then return nil end
+		return self.window:GetChildByName("Slot" .. tostring(index), false)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- Wires buttons + F9 toggle, then renders the default (avatar) mode.
+		log("[PreviewTool] OnBeginPlay client entry")
+
+		if isvalid(self.root) then
+			-- Hides Dimmer and Window together; the dimmer blocks world clicks
+			-- while visible, so it must never be left on when the tool is closed.
+			self.root.Enable = false
+		else
+			log_warning("[PreviewTool] root binding is invalid — check injectBindings")
+		end
+		if isvalid(self.window) == false then
+			log_warning("[PreviewTool] window binding is invalid — check injectBindings")
+		end
+
+		self.keyHandler = _InputService:ConnectEvent(KeyDownEvent, self.OnKeyDown)
+
+		if isvalid(self.btnModeAvatar) then
+			self.modeAvatarHandler = self.btnModeAvatar.Entity:ConnectEvent(ButtonClickEvent, function()
+				self:SetMode("avatar")
+			end)
+		end
+		if isvalid(self.btnModeMonster) then
+			self.modeMonsterHandler = self.btnModeMonster.Entity:ConnectEvent(ButtonClickEvent, function()
+				self:SetMode("sprite")
+			end)
+		end
+		if isvalid(self.btnSwing) then
+			self.swingHandler = self.btnSwing.Entity:ConnectEvent(ButtonClickEvent, function()
+				self:PlaySwing()
+			end)
+		end
+		if isvalid(self.btnClose) then
+			self.closeHandler = self.btnClose.Entity:ConnectEvent(ButtonClickEvent, function()
+				if isvalid(self.root) then self.root.Enable = false end
+			end)
+		end
+
+		self:SetMode("avatar")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnKeyDown(KeyDownEvent event)
+		-- F9 toggles the whole preview overlay (dimmer + window).
+		if event.key ~= KeyboardKey.F9 then return end
+		if isvalid(self.root) == false then return end
+		self.root.Enable = not self.root.Enable
+		log("[PreviewTool] toggled root -> " .. tostring(self.root.Enable))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetMode(string newMode)
+		-- Switches between avatar-composition mode and plain sprite mode.
+		self.mode = newMode
+		log("[PreviewTool] SetMode " .. newMode)
+
+		if isvalid(self.title) then
+			if newMode == "avatar" then
+				self.title.Text = "리소스 프리뷰 — 아바타 + 아이템"
+			else
+				self.title.Text = "리소스 프리뷰 — 몬스터 / 스프라이트"
+			end
+		end
+
+		if newMode == "avatar" then
+			self:ApplyAvatarMode()
+		else
+			self:ApplySpriteMode()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyAvatarMode()
+		-- Equips each candidate onto its own UI avatar and shows the isolated
+		-- item thumbnail as a badge, so shape and worn-appearance are visible together.
+		local list = self:GetAvatarCandidates()
+		local applied = 0
+
+		for i = 1, self.slotCount do
+			local slot = self:GetSlot(i)
+			if isvalid(slot) then
+				local avatarEnt = slot:GetChildByName("Avatar", false)
+				local thumbEnt = slot:GetChildByName("Thumb", false)
+				local labelEnt = slot:GetChildByName("Label", false)
+				local c = list[i]
+
+				if isvalid(avatarEnt) then avatarEnt.Enable = true end
+
+				if c == nil then
+					if isvalid(avatarEnt) then avatarEnt.Enable = false end
+					if isvalid(thumbEnt) then thumbEnt.Enable = false end
+					if isvalid(labelEnt) then labelEnt.TextGUIRendererComponent.Text = "-" end
+				else
+					if isvalid(avatarEnt) then
+						local costume = avatarEnt.CostumeManagerComponent
+						if isvalid(costume) then
+							-- Base look stays the account default; only the weapon slots are overridden.
+							if c.slot == "twohand" then
+								costume:SetEquip(MapleAvatarItemCategory.TwoHandedWeapon, c.ruid)
+								costume:SetEquip(MapleAvatarItemCategory.OneHandedWeapon, "")
+							elseif c.slot == "glove" then
+								costume:SetEquip(MapleAvatarItemCategory.Glove, c.ruid)
+								costume:SetEquip(MapleAvatarItemCategory.OneHandedWeapon, "")
+								costume:SetEquip(MapleAvatarItemCategory.TwoHandedWeapon, "")
+							else
+								costume:SetEquip(MapleAvatarItemCategory.OneHandedWeapon, c.ruid)
+								costume:SetEquip(MapleAvatarItemCategory.TwoHandedWeapon, "")
+							end
+							applied = applied + 1
+						else
+							log_warning("[PreviewTool] Slot" .. tostring(i) .. " avatar has no CostumeManagerComponent")
+						end
+					end
+
+					if isvalid(thumbEnt) then
+						thumbEnt.Enable = true
+						-- Restore badge geometry: sprite mode enlarges and centres this same
+						-- entity, so without this the icon covers the avatar after a mode round-trip.
+						thumbEnt.UITransformComponent.RectSize = Vector2(96, 96)
+						thumbEnt.UITransformComponent.anchoredPosition = Vector2(80, 170)
+						-- avataritem RUIDs render only through the thumbnail:// prefix.
+						thumbEnt.SpriteGUIRendererComponent.ImageRUID = DataRef("thumbnail://" .. c.ruid)
+					end
+					if isvalid(labelEnt) then
+						labelEnt.TextGUIRendererComponent.Text = c.label .. "\n" .. string.sub(c.ruid, 1, 8)
+					end
+				end
+			end
+		end
+
+		log("[PreviewTool] ApplyAvatarMode equipped " .. tostring(applied) .. " slot(s)")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplySpriteMode()
+		-- Renders plain sprite / animationclip RUIDs; hides the avatar renderers.
+		local list = self:GetSpriteCandidates()
+		local applied = 0
+
+		for i = 1, self.slotCount do
+			local slot = self:GetSlot(i)
+			if isvalid(slot) then
+				local avatarEnt = slot:GetChildByName("Avatar", false)
+				local thumbEnt = slot:GetChildByName("Thumb", false)
+				local labelEnt = slot:GetChildByName("Label", false)
+				local c = list[i]
+
+				if isvalid(avatarEnt) then avatarEnt.Enable = false end
+
+				if c == nil then
+					if isvalid(thumbEnt) then thumbEnt.Enable = false end
+					if isvalid(labelEnt) then labelEnt.TextGUIRendererComponent.Text = "-" end
+				else
+					if isvalid(thumbEnt) then
+						thumbEnt.Enable = true
+						-- Plain sprite RUID: no prefix. Prefixing an already-icon sprite is redundant.
+						thumbEnt.SpriteGUIRendererComponent.ImageRUID = DataRef(c.ruid)
+						thumbEnt.UITransformComponent.RectSize = Vector2(200, 200)
+						thumbEnt.UITransformComponent.anchoredPosition = Vector2(0, 50)
+						applied = applied + 1
+					end
+					if isvalid(labelEnt) then
+						labelEnt.TextGUIRendererComponent.Text = c.label .. "\n" .. string.sub(c.ruid, 1, 8)
+					end
+				end
+			end
+		end
+
+		log("[PreviewTool] ApplySpriteMode rendered " .. tostring(applied) .. " slot(s)")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlaySwing()
+		-- Plays swingO2 on every avatar slot so the held item can be judged in motion.
+		if self.mode ~= "avatar" then
+			log("[PreviewTool] PlaySwing ignored — not in avatar mode")
+			return
+		end
+
+		local list = self:GetAvatarCandidates()
+		local played = 0
+		for i = 1, self.slotCount do
+			local slot = self:GetSlot(i)
+			local c = list[i]
+			if isvalid(slot) and c ~= nil then
+				local avatarEnt = slot:GetChildByName("Avatar", false)
+				if isvalid(avatarEnt) then
+					local renderer = avatarEnt.AvatarGUIRendererComponent
+					if isvalid(renderer) then
+						local body = renderer:GetBodyEntity()
+						if isvalid(body) then
+							-- Per-candidate action: a twohand item played with a onehand
+							-- action has no weapon-part frames and vanishes mid-swing.
+							local anim = c.action
+							if anim == nil or anim == "" then
+								if c.slot == "twohand" then anim = "swingT1" else anim = "swingO2" end
+							end
+							local ev = ActionStateChangedEvent()
+							ev.CoreActionName = anim
+							ev.PartsActionName = anim
+							ev.PlayRate = 1.0
+							ev.PlayType = SpriteAnimClipPlayType.Onetime
+							body:SendEvent(ev)
+							played = played + 1
+						end
+					end
+				end
+			end
+		end
+
+		log("[PreviewTool] PlaySwing dispatched to " .. tostring(played) .. " avatar(s)")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- Releases every handler connected in OnBeginPlay.
+		if self.keyHandler ~= nil then
+			_InputService:DisconnectEvent(KeyDownEvent, self.keyHandler)
+		end
+		if self.modeAvatarHandler ~= nil and isvalid(self.btnModeAvatar) then
+			self.btnModeAvatar.Entity:DisconnectEvent(ButtonClickEvent, self.modeAvatarHandler)
+		end
+		if self.modeMonsterHandler ~= nil and isvalid(self.btnModeMonster) then
+			self.btnModeMonster.Entity:DisconnectEvent(ButtonClickEvent, self.modeMonsterHandler)
+		end
+		if self.swingHandler ~= nil and isvalid(self.btnSwing) then
+			self.btnSwing.Entity:DisconnectEvent(ButtonClickEvent, self.swingHandler)
+		end
+		if self.closeHandler ~= nil and isvalid(self.btnClose) then
+			self.btnClose.Entity:DisconnectEvent(ButtonClickEvent, self.closeHandler)
+		end
+	end
+
+end
