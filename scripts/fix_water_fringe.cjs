@@ -7,7 +7,16 @@
  *
  * 재사용: build_maps.cjs 의 loadWallTileIndex / cellTile 을 소스 추출로 로드
  *   (파일 상단 --force 가드 + paintMap 본문이 require를 막음 — 구조상 직접 require 불가).
- * 프린지 비트: ResourceSpawner.GetTerrainFringeTable / digHole 과 동일 (½셀 마진).
+ *
+ * ⚠️ 2026-08-06 규칙 반전 — "잔디가 물을 덮는다"
+ *   구 규칙(광장/밭 문법 그대로 차용): 물 셀 = L2 홀, 이웃 잔디 셀에 ½셀 프린지를 켠다.
+ *     → 프린지가 뚫는 것은 **이웃 셀 자신의 L1**이고 그건 `Soil`이라, 연못 둘레에 흙 후광이 생겼다.
+ *       (Grass{dir}.png 의 흙 쪽은 alpha=0 투명 — 실측: GrassD 하단 59.7% 투명. 즉 L1이 그대로 비친다.)
+ *   신 규칙: 프린지를 **물 셀 안쪽으로** 넣는다.
+ *     · 경계 물 셀 = 마스크 15에서 "잔디로 덮인 이웃" 방향 비트를 제거 → 그 방향 ½셀이 잔디로 덮임.
+ *       투명 구멍으로는 그 셀의 L1 = Water 가 비쳐 물가가 자연스럽다.
+ *     · 이웃 잔디 셀 = 물 유래 비트를 되돌려 FullGrass 복귀 (광장/길 유래 비트는 보존).
+ *   결과: 흙 후광 소멸, 잔디 둔치가 물 위로 ½셀 걸침. **L1은 건드리지 않는다**(제작자 Maker 페인팅 보존).
  *
  * ⛔ build_maps.cjs 수정 금지 · --force 금지 · AutotileGrassLayer 금지.
  */
@@ -49,6 +58,7 @@ const {
 } = loadBuildMapsHelpers();
 
 // digHole ½셀 프린지 — ResourceSpawner.GetTerrainFringeTable 미러 (단일 의미)
+// 의미: 홀 셀 H 기준, H+(dx,dy) 위치의 이웃 셀에서 켜지는 흙 비트.
 const FRINGE = [
   { dx: 0, dy: 1, bits: 3 }, // N: BL|BR
   { dx: 0, dy: -1, bits: 12 }, // S: TL|TR
@@ -59,6 +69,19 @@ const FRINGE = [
   { dx: 1, dy: -1, bits: 4 }, // SE: TL
   { dx: -1, dy: -1, bits: 8 }, // SW: TR
 ];
+
+// 같은 방향에서 "물 셀 자신"의 이웃 쪽 절반에 해당하는 비트 (FRINGE.bits 의 상하/좌우 반전).
+// 물 셀에서 이 비트를 지우면 그 방향 ½셀이 잔디로 덮인다 = 잔디 둔치가 물 위로 걸침.
+const SELF_SIDE = {
+  3: 12, // N 이웃 → 물 셀의 위쪽 절반 TL|TR
+  12: 3, // S 이웃 → 아래쪽 BL|BR
+  5: 10, // E 이웃 → 오른쪽 BR|TR
+  10: 5, // W 이웃 → 왼쪽 BL|TL
+  1: 8, // NE 이웃 → TR
+  2: 4, // NW 이웃 → TL
+  4: 2, // SE 이웃 → BR
+  8: 1, // SW 이웃 → BL
+};
 
 const VALID_GRASS = new Set([
   "FullGrass",
@@ -228,28 +251,60 @@ function main() {
     return tileNameToMask(name);
   }
 
-  // digHole-equivalent fringe: water already hole; OR fringe bits onto neighbors
+  // 잔디가 물을 덮는다 (2026-08-06 규칙 반전)
+  //  ① 경계 물 셀: 15에서 "잔디로 덮인 이웃" 방향의 자기 절반 비트를 제거 → 잔디 ½셀 오버행
+  //  ② 이웃 잔디 셀: 물 유래 비트를 제거하고, 광장/길(비-물 홀) 유래 비트는 되살린다
+  const isL2Hole = (k) => !l2Before.byKey.has(k);
+  const isGrassCovered = (k) => l2Before.byKey.has(k); // L2 타일 존재 = 잔디 패밀리
+
   const newMask = new Map();
   for (const key of affected) {
     newMask.set(key, getMask(key));
   }
+
+  const degenerate = [];
   for (const key of water) {
-    newMask.set(key, 15);
     const [x, y] = key.split(",").map(Number);
+    let wm = 15;
     for (const f of FRINGE) {
       const nk = `${x + f.dx},${y + f.dy}`;
-      if (water.has(nk)) continue; // stay hole
-      let nm = newMask.has(nk) ? newMask.get(nk) : getMask(nk);
-      if (nm < 0) continue;
-      nm = nm | f.bits;
-      newMask.set(nk, nm);
+      if (water.has(nk)) continue; // 물끼리 — 경계 아님
+      if (!isGrassCovered(nk)) continue; // 홀(광장/길 흙) — 덮을 잔디가 없다
+      wm = wm & ~SELF_SIDE[f.bits];
     }
+    if (wm === 0) {
+      // 사방이 잔디인 1셀 연못 — 전부 덮으면 물이 사라진다. 홀 유지.
+      degenerate.push(key);
+      wm = 15;
+    }
+    newMask.set(key, wm);
+  }
+
+  for (const key of affected) {
+    if (water.has(key)) continue;
+    const base = getMask(key);
+    if (base < 0) continue;
+    const [x, y] = key.split(",").map(Number);
+    let waterBits = 0;
+    let otherBits = 0;
+    for (const f of FRINGE) {
+      // f.bits 는 "홀이 key-(dx,dy) 에 있을 때 key 에서 켜지는 비트"
+      const sk = `${x - f.dx},${y - f.dy}`;
+      if (water.has(sk)) waterBits |= f.bits;
+      else if (isL2Hole(sk)) otherBits |= f.bits;
+    }
+    newMask.set(key, (base & ~waterBits) | otherBits);
+  }
+
+  if (degenerate.length > 0) {
+    console.warn(
+      `WARN: 사방이 잔디인 단일 물 셀 ${degenerate.length}건은 홀 유지(오버행 시 물이 사라짐): ${degenerate.join(" ")}`
+    );
   }
 
   // Build new L2 map: start from full copy, patch affected
   const l2After = new Map(l2Before.byKey);
   const changes = [];
-  let clearedWaterL2 = 0;
 
   for (const [key, mask] of newMask) {
     const [x, y] = key.split(",").map(Number);
@@ -269,17 +324,6 @@ function main() {
       process.exit(1);
     }
 
-    if (water.has(key)) {
-      if (l2After.has(key)) {
-        l2After.delete(key);
-        clearedWaterL2++;
-      }
-      if (oldIdx != null) {
-        changes.push({ key, from: oldName, to: "(hole)", reason: "water-hole" });
-      }
-      continue;
-    }
-
     if (newIdx == null) {
       if (l2After.has(key)) {
         l2After.delete(key);
@@ -289,7 +333,12 @@ function main() {
       const prev = l2After.has(key) ? l2After.get(key) : null;
       if (prev !== newIdx) {
         l2After.set(key, newIdx);
-        changes.push({ key, from: oldName, to: newName, reason: "fringe" });
+        changes.push({
+          key,
+          from: oldName,
+          to: newName,
+          reason: water.has(key) ? "water-overhang" : "fringe",
+        });
       }
     }
   }
@@ -304,17 +353,31 @@ function main() {
     if (!affected.has(key) && !outsideBefore.has(key)) outsideDiff++;
   }
 
-  // Water cells must have no L2
-  let waterWithL2 = 0;
+  // 신 규칙 자가검사
+  //  ① 물 셀 중 잔디로 완전히 덮인(=마스크 0 → FullGrass) 셀이 있으면 물이 사라진 것 → FAIL
+  //  ② 링(비-물) 셀에 물 유래 흙이 남아 있으면 흙 후광이 남은 것 → 보고
+  let waterFullyCovered = 0;
+  let waterOverhang = 0;
   for (const key of water) {
-    if (l2After.has(key)) waterWithL2++;
+    if (!l2After.has(key)) continue;
+    const nm = indexToName(IDX, l2After.get(key));
+    if (nm === "FullGrass") waterFullyCovered++;
+    else waterOverhang++;
+  }
+  let ringStillDirty = 0;
+  for (const key of affected) {
+    if (water.has(key)) continue;
+    if (!l2After.has(key)) continue; // 광장/길 홀은 원래 흙 — 대상 아님
+    const nm = indexToName(IDX, l2After.get(key));
+    if (nm !== "FullGrass") ringStillDirty++;
   }
 
   console.log(`Affected cells (water∪8-neigh): ${affected.size}`);
   console.log(`L2 changes planned: ${changes.length}`);
-  console.log(`Water L2 clears: ${clearedWaterL2}`);
+  console.log(`Water cells with grass overhang: ${waterOverhang}`);
+  console.log(`Water cells fully covered (FAIL 조건): ${waterFullyCovered}`);
+  console.log(`Ring cells still showing dirt: ${ringStillDirty}`);
   console.log(`Outside-affected L2 diff: ${outsideDiff}`);
-  console.log(`Water cells still with L2 after: ${waterWithL2}`);
 
   // Coordinate summary: group by new tile name
   const byTo = {};
@@ -328,8 +391,8 @@ function main() {
     console.log(`  ${name}: ${keys.length}  e.g. ${sample}${keys.length > 12 ? " ..." : ""}`);
   }
 
-  if (outsideDiff !== 0 || waterWithL2 !== 0) {
-    console.error("FAIL: locality or water-hole check");
+  if (outsideDiff !== 0 || waterFullyCovered !== 0) {
+    console.error("FAIL: locality 위반이거나 물 셀이 잔디로 완전히 덮임");
     process.exit(1);
   }
 

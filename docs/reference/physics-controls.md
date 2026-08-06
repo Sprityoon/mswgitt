@@ -13,7 +13,7 @@
 | `map/template_field.map` | 사냥터 | 몬스터 스폰 |
 | `map/template_boss.map` | 보스 | |
 
-- 타일 레이어 구조(레이어 5장 + 엔티티 레이어)와 서브셀 흙 마스크 문법의 최신 단일 소스는 [subagent-handoff.md](./subagent-handoff.md) **§1.3**입니다. 블록아웃 재생성은 `node scripts/build_maps.cjs --force`(손편집 전량 덮어씀 — 사용자 확인 후 실행).
+- 타일 레이어 구조(레이어 5장 + 엔티티 레이어)와 서브셀 흙 마스크 문법의 최신 단일 소스는 **[tile-scheme.md](../tile-scheme.md)** 입니다. 블록아웃 재생성은 `node scripts/build_maps.cjs --force`(손편집 전량 덮어씀 — 사용자 확인 후 실행).
 
 ## 조작 키
 

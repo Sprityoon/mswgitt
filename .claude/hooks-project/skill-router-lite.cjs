@@ -61,7 +61,7 @@ function emitFull() {
 const LITE = `<msw-skill-router-reminder mode="lite">
 NEW user message — re-classify it against the MSW skill domain matrix (the FULL
 matrix was injected on this session's first prompt; if compaction dropped it,
-see docs/agents/skill-routing.md or re-derive by loading the skills below).
+see docs/reference/skill-routing.md or re-derive by loading the skills below).
 Already-loaded skills do NOT exempt you: if this turn touches a NEW domain,
 LOAD the matching skill BEFORE planning.
 
@@ -79,10 +79,13 @@ Domain → additional skill:
   inventory/shop/quest/ranking → msw-packages (catalog FIRST — never write standard systems from scratch)
                                  + msw-wiki: local mirrors docs/wiki/mswpackages/ (read INDEX.md before any GitHub fetch)
   official examples/obj pool/collision-detect choice/UI style packs → msw-wiki (docs/wiki/roguelike-world + mswpackages)
-  NEW standalone game planning/GDD → msw-planning (in THIS repo "next task/continue" = T-ticket queue → msw-worker, NOT planning)
+  NEW standalone game planning/GDD → msw-planning (in THIS repo "next task/continue" = docs/tasks.md → msw-project, NOT planning)
   popup/HUD/.ui                → msw-ui-system refs (+builder-protocol.md; ui-aesthetics.md §7 rubric on delivery)
   .map/.model/entity/platform  → msw-general refs (entity.md / model.md / platform*.md / troubleshooting.md)
-  T-ticket work                → msw-worker        | conductor duties → msw-conductor
+  this repo's work loop        → msw-project (status → pitfalls check → implement → verify → record)
+
+Project docs: docs/pitfalls.md (17 measured silent-failure traps — CHECK BEFORE IMPLEMENTING)
+              docs/workflow.md (procedure) | docs/tasks.md (what to do) | docs/tile-scheme.md (terrain grammar)
 
 Hard rules: load skills via the skill system (never Read workspace 'plugins/' paths);
 Read references IN FULL with the Read tool (no offset/limit, no shell cat/head);

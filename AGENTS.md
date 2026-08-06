@@ -167,7 +167,7 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
 
 > 📌 **이 벤더 블록은 이 저장소에서 축약되었습니다 (2026-08-01, `/doctor`).**
 > 제거한 절: `Runtime interaction requires MCP`(§0 O-2가 대체 — 이 저장소는 Play가 제작자 전담) ·
-> `## 0. Plan` · `## 1. Analyze`(→ [workflow.md](./docs/agents/workflow.md) 5단계) ·
+> `## 0. Plan` · `## 1. Analyze`(→ [docs/workflow.md](./docs/workflow.md) 5단계) ·
 > `Camera → Everything` 표 · `Script lifecycle` · `ExecSpace` 표(→ Foundation으로 매 턴 로드되는
 > `msw-general/references/platform.md`에 동일 내용 존재) · `## 3. Verify` ~ `## 5. Finally`(→ §4 + workflow.md).
 > **남긴 것**: Foundation 로딩 규칙 · Domain matrix · 침묵 실패 표 · 워크스페이스/도구 규칙 · `## 2. Implement`
@@ -193,8 +193,8 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
 ### O-1. 🔴 `msw-planning` 게이트는 이 저장소에 적용하지 않는다
 
 - **벤더 서술**: "continue / resume / next task / 다음 작업 / 이어서 진행" 요청은 **모호하지 않으며 `msw-planning`을 먼저 로드**하고, 되묻지 말 것.
-- **이 저장소**: 그 요청은 **T티켓 큐 소관**이다. → **`msw-worker`**(구현) 또는 **`msw-conductor`**(지휘) 를 로드한다. `msw-planning`을 로드하지 말 것.
-- **근거**: 벤더 게이트는 `Docs/*-GDD.md` 기반 신규 게임 플로우를 전제하는데, 이 저장소의 계획 산출물은 `game_design.md` Phase 트래커 + `docs/agents/subagent-handoff.md` §3 T티켓 큐다. 형식이 달라 resume flow가 상태를 못 읽는다.
+- **이 저장소**: 그 요청은 **[docs/tasks.md](./docs/tasks.md) 소관**이다. → `docs/tasks.md`(할 일) + [docs/workflow.md](./docs/workflow.md)(절차)를 읽고 진행한다. `msw-planning`을 로드하지 말 것.
+- **근거**: 벤더 게이트는 `Docs/*-GDD.md` 기반 신규 게임 플로우를 전제하는데, 이 저장소의 계획 산출물은 `game_design.md` Phase 트래커 + `docs/tasks.md`다. 형식이 달라 resume flow가 상태를 못 읽는다.
 - **`msw-planning`을 쓰는 경우**: 이 게임과 **별개의 신규 월드**를 기획할 때만.
 
 ### O-2. 🔴 Play 런타임 검증은 **제작자(사람) 전담** — 에이전트는 실행하지 않는다
@@ -213,7 +213,14 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
 ### O-4. 이 저장소는 `Docs/` 가 아니라 `docs/` 를 쓴다
 
 - 벤더 문서가 말하는 `Docs/*-GDD.md` / `Archive/` 규약은 **이 저장소에 존재하지 않는다**. 찾지 말고 생성하지도 말 것.
-- 이 저장소의 대응물: 설계 = `game_design.md` · 작업 큐 = `docs/agents/subagent-handoff.md` §3 · 보고서 = `docs/agents/reports/T<n>-*.md` · 설계 문서 = `docs/design/*.md`.
+- 이 저장소의 대응물: 설계 = `game_design.md` · 할 일 = `docs/tasks.md` · 절차 = `docs/workflow.md` · 함정 사전 = `docs/pitfalls.md` · 설계 문서 = `docs/design/*.md` · 구 T티켓 아카이브 = `docs/agents/`.
+
+### O-5. 🔴 운영 체계는 **솔로**다 (2026-08-06 전환)
+
+- 지휘자(conductor) + 구현자(worker) 위임 체제는 **종료**했다. `docs/agents/conductor-role.md` · `docs/agents/subagent-handoff.md` · 킥오프 프롬프트 · T티켓 신규 발행은 전부 폐기다.
+- 현재 체제 = **제작자(사람) 1명 주도 + AI 어시스턴트 보조**. 절차는 [docs/workflow.md](./docs/workflow.md) 하나로 통합됐다.
+- **하위 에이전트를 임의로 띄우지 말 것** — 제작자가 명시적으로 지시할 때만.
+- 구 T번호는 아카이브 식별자로만 유효하다. 신규 작업은 T번호 없이 `docs/tasks.md`에 항목으로 추가한다.
 
 ---
 
@@ -225,9 +232,9 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
   - 모든 동적 엔티티(플레이어, 몬스터, NPC)는 반드시 **`KinematicbodyComponent`**를 부착한다 (`Rigidbody`/`Sideviewbody` 사용 금지).
   - 맵 파일 4종: `map/map01.map` (영지 원본), `map/town.map` (공동 마을), `map/template_field.map` (사냥터), `map/template_boss.map` (보스). 런타임 영지 인스턴스: `Home_<UserId>`.
 - **조작계**: 방향키 4방향 이동 / `Alt` 비주얼 점프(물리 높이 변화 없음) / `Ctrl` 공격·채광(바라보는 인접 셀) / `F` 상호작용(설치물·NPC·게시판·낚시터).
-- **운영 체계**: 지휘자(conductor) 1세션 + 구현자(worker) N세션 (작업 큐: [docs/agents/subagent-handoff.md](./docs/agents/subagent-handoff.md) §3 T티켓, 전체 설계: `game_design.md`).
-  - "지휘자" 지시 → [docs/agents/conductor-role.md](./docs/agents/conductor-role.md) 참조 (`msw-conductor` 스킬).
-  - T티켓 구현 지시 → [docs/agents/subagent-handoff.md](./docs/agents/subagent-handoff.md) §1 참조 (`msw-worker` 스킬).
+- **운영 체계 (솔로 — §0 O-5)**: 제작자 1명 주도 + AI 어시스턴트 보조.
+  - 할 일 → [docs/tasks.md](./docs/tasks.md) · 절차 → [docs/workflow.md](./docs/workflow.md) · 전체 설계 → `game_design.md`
+  - 🔴 착수 전 [docs/pitfalls.md](./docs/pitfalls.md)에서 해당 작업이 걸리는 함정을 확인할 것 (17건 — 전부 **에러 없이 조용히 틀리는** 종류).
 
 ---
 
@@ -251,9 +258,10 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
 
 ---
 
-## 3. 프로젝트 절대 규칙 (R1 ~ R9)
+## 3. 프로젝트 절대 규칙 (R1 ~ R8)
 
 *(상단의 MSW 공통 문법 및 8대 핵심 규칙에 더해, 이 프로젝트에서 반드시 지켜야 할 절대 규칙)*
+*(🔴 이 목록은 요약이다. **왜 그런지와 판별 절차의 원문은 [docs/pitfalls.md](./docs/pitfalls.md)** — 실측 사고 17건. 규칙 번호가 겹치는 항목은 그쪽이 원본이다.)*
 
 - **R1. 프리셋 우선 (Preset-First)**: 백지 구현 전 패키지(`msw-packages` / [docs/wiki/mswpackages/INDEX.md](./docs/wiki/mswpackages/INDEX.md)), 모델 템플릿(`msw-general`), UI 템플릿(`msw-ui-system`), 리소스 검색(`msw-search`)을 선확인한다.
 - **R2. mlua 전용 문법 엄수**: `@Component`, `@Logic`, `@ExecSpace`, `@Sync` 구조화. `@Logic`에서는 `OnMapEnter`/`OnMapLeave`가 **호출되지 않음**을 유의. 타입은 `integer`/`number`/`boolean`/`string`만 사용.
@@ -263,7 +271,9 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
 - **R6. 크로스 스크립트 호출 전 정의 확인**: 타 스크립트 호출 전 Grep으로 대상 `.mlua` 내 메서드/프로퍼티 존재 및 시그니처를 검증한다.
 - **R7. 세이브 경로 Yield 금지**: `SavePlayerData` 루틴 내에서 필수 `GetAndWait`/`SetAndWait` 외 추가 Yield(타이머 대기 등) 금지.
 - **R8. 런타임 검증 근거 필수**: 동작 확인 보고 시 §4 MCP 검증 체인 로그 근거 제시. 미사용 환경 시 "코드 수정 완료, 런타임 검증 보류" 명시.
-- **R9. T티켓 보고 3종**: ① 채팅 요약, ② `subagent-handoff.md` §3 상태 갱신, ③ `docs/agents/reports/T<n>-<slug>.md` 보고서 파일 제출.
+  - ⚠️ **build Error=0이 잡지 못하는 것**: `.map` JSON 구조 붕괴(pitfalls 규칙 16) · `.ui` 산출물 원복(규칙 11) · 시각 실루엣 불일치(규칙 17). "Error=0 = 정상"으로 단정하지 말 것.
+
+> ~~R9. T티켓 보고 3종~~ — **폐기 (2026-08-06, §0 O-5)**. 솔로 체제에서는 보고서 파일을 강제하지 않는다. 대신 진행 상황은 [docs/tasks.md](./docs/tasks.md), 재발 방지 가치가 있는 실측은 [docs/pitfalls.md](./docs/pitfalls.md)에 규칙 18번부터 append한다.
 
 ---
 
@@ -278,13 +288,13 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
   ```
   1) maker_refresh_workspace          → status ok 확인
   2) maker_logs(kind="build")         → Error 수 집계 (Error=0 이 게이트)
-  3) 보고서 §4에 Error/Warning/Info 수 + 근거 발췌 기재
+  3) Error/Warning/Info 수 + 근거 발췌를 보고에 기재
   4) 이후 Play 시나리오는 "런타임 검증 보류(제작자 수행)"로 명시
   ```
-  - **Warning 급증도 보고 대상**: baseline 대비 늘었으면 원인과 소유 스크립트를 밝힌다(`LWA-4012`=모델에 프로퍼티 기본값 미명시 계열).
+  - **Warning 급증도 보고 대상**: baseline 대비 늘었으면 원인과 소유 스크립트를 밝힌다(`LWA-4012`=모델에 프로퍼티 기본값 미명시 계열). **현재 baseline = 48** (2026-08-06 실측 — 내역·미해결 건은 [docs/workflow.md](./docs/workflow.md) §④).
   - **신규 `.mlua`를 만들었으면 refresh 후 `.codeblock` 생성을 반드시 확인**한다(8대 핵심 규칙 2 — 쌍이 없으면 스크립트가 등록조차 안 된다).
   - MCP 미연결 환경이면 LSP 진단까지만 수행하고 **"refresh 검증 보류"** 로 정확히 보고한다(허위 Error=0 기재 금지).
-  - ⚠️ **"MCP 미연결"을 단정하기 전에 원인 3종을 구분**한다 — ① Cursor 승인 해시 무효화(`.cursor/mcp.json` 수정 시마다 발생, `-p` 모드에서 조용히 `not loaded`) ② cursor-agent의 HTTP 전송 종료 어서션(우리 설정 무관, stdio는 정상) ③ `MakerMCP_run.exe` 고아 프로세스의 브리지 점유. 실측 근거와 대응은 [workflow.md](./docs/agents/workflow.md) "에이전트별 MCP 연결 실태" 참조.
+  - ⚠️ **"MCP 미연결"을 단정하기 전에 `MakerMCP_run.exe` 고아 프로세스부터 의심**한다(브리지 포트 점유). 대응은 [docs/workflow.md](./docs/workflow.md) §2 "연결이 이상할 때" 참조.
   - 🔴 **MCP 설정 파일(`.mcp.json` / `.cursor/mcp.json` 등)은 커밋 금지** — Bearer 토큰 평문. `.gitignore`에 5경로 등록됨. 새 에이전트 도입 시 경로 추가할 것.
 
 ---
@@ -293,25 +303,31 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
 
 - **공통 기초 스킬**: 상단 mswai 라우팅표에 따라 매 턴 `msw-general` + `msw-ui-system` 및 4대 레퍼런스 기본 로드.
 - **프로젝트 전용 운용 스킬** (`skills-lock.json` 미등재 = 이 저장소 소유, 자유 편집):
-  - `msw-conductor`: 지휘자(conductor) 세션 운영 ([conductor-role.md](./docs/agents/conductor-role.md))
-  - `msw-worker`: 구현자(worker) T티켓 구현 ([subagent-handoff.md](./docs/agents/subagent-handoff.md))
+  - `msw-project`: 이 프로젝트 작업 부팅 — 현황 파악 → 함정 확인 → 구현 → 검증 → 기록 ([workflow.md](./docs/workflow.md) · [pitfalls.md](./docs/pitfalls.md) · [tasks.md](./docs/tasks.md))
   - `msw-checkpoint`: 문서 동기화 및 Git 커밋/푸시
   - `msw-wiki`: 로컬 위키 (`docs/wiki/`) MSWPackages & RoguelikeWorld 예제 참조
   - `image-to-pixel`: 이미지 자산 픽셀화 변환
-  - *⚠️ `msw-planning` 주의*: **§0 O-1 참조** — "다음 작업/이어서 진행"은 T티켓 큐 소관이며 `msw-planning`을 로드하지 않는다.
+  - *⚠️ `msw-planning` 주의*: **§0 O-1 참조** — "다음 작업/이어서 진행"은 `docs/tasks.md` 소관이며 `msw-planning`을 로드하지 않는다.
+  - *🧊 폐기*: `msw-conductor` · `msw-worker`(2026-08-06, §0 O-5) — `msw-project`로 통합됐다.
 - **벤더 스킬 라우팅 보강** (상단 Domain matrix에 행이 없거나 이 프로젝트에서 해석이 필요한 것):
   - **`maplestory-skill-maker`** (2026-07-28 신규 등재): 플레이어 공격·이동 스킬(직격/투사체, 더블점프, 텔레포트, 쿨다운·핫키) + 몬스터 전투 연출(피격/사망 애니, 데미지스킨 홀드, 넉백 펄스, ATTACK 사거리·타이밍). **상단 Domain matrix에 행이 없으므로 이 항목이 라우팅 근거다.**
     - **`msw-combat-system`과의 분담**: 전투 *기반 구조*(HitEvent 파이프라인·데미지 모델·몬스터 AI/BT·HP 게이지) = `msw-combat-system` / **플레이어 스킬 연출·입력·모션 락·이동기** = `maplestory-skill-maker`. 겹치면 둘 다 로드.
     - ⚠️ 이 저장소는 스킬 시스템이 **이미 구축돼 있다**(Phase 16 — `SkillDataSet` + `PlayerController` 시전 경로 + `Projectile.mlua` + `CastAction`). 이 스킬의 예제를 **백지 도입하지 말고**, 기존 파이프라인에 맞춰 차용할 것(R1 프리셋 우선의 역방향 함정).
   - `ponytail`: 과잉 설계 억제. 구조를 크게 벌리는 제안 전에 참고(선택).
-- **자동 차단 훅(Hook) 요약** ([hooks.md](./docs/agents/hooks.md)):
+- **자동 차단 훅(Hook) 요약** ([hooks.md](./docs/reference/hooks.md)):
   - `.model`/`.ui` 직접 편집 차단 → 빌더 사용 강제 (⚠️ `git add`/`rm` 같은 쉘 명령도 경로 문자열에 `.ui`/`.model`이 들어가면 차단됨 — 디렉터리 단위로 지정해 우회)
   - `Environment/**`, `*.codeblock`, `*.d.mlua` 쓰기 차단
   - `.mlua` 저장 시 LSP 진단 자동 실행
   - CoreVersion(**`26.7.0.0`**) 불일치 시 경고 주입 (§0 O-3)
 - **온디맨드 상세 문서**:
-  - 물리/조작: [physics-controls.md](./docs/agents/physics-controls.md)
-  - 디렉터리 구조: [directory-structure.md](./docs/agents/directory-structure.md)
-  - 스킬 라우팅: [skill-routing.md](./docs/agents/skill-routing.md)
-  - 개발 워크플로우: [workflow.md](./docs/agents/workflow.md)
-  - 훅 사양: [hooks.md](./docs/agents/hooks.md)
+  - 🔴 **함정 사전(실측 사고 17건)**: [docs/pitfalls.md](./docs/pitfalls.md) — 착수 전 해당 규칙 확인
+  - 작업 절차·MCP 검증: [docs/workflow.md](./docs/workflow.md)
+  - 할 일 목록: [docs/tasks.md](./docs/tasks.md)
+  - 타일 지형 문법: [docs/tile-scheme.md](./docs/tile-scheme.md)
+  - 상시 디자인 정책: [docs/design-policy.md](./docs/design-policy.md)
+  - 물리/조작: [docs/reference/physics-controls.md](./docs/reference/physics-controls.md)
+  - 디렉터리 구조: [docs/reference/directory-structure.md](./docs/reference/directory-structure.md)
+  - 스킬 라우팅: [docs/reference/skill-routing.md](./docs/reference/skill-routing.md)
+  - 훅 사양: [docs/reference/hooks.md](./docs/reference/hooks.md)
+  - 리소스 검색 API 함정: [docs/reference/resource-api-pitfalls.md](./docs/reference/resource-api-pitfalls.md)
+  - 구 T티켓 아카이브: [docs/agents/README.md](./docs/agents/README.md)

@@ -1,4 +1,4 @@
-id,Name,ModelName,EntryId,Category,ToolType,ToolPower,IconRUID,PlacedTileName,Rarity,Tradable,Description,WeaponRUID,SwingAction,WeaponSlot,TerrainEditAction,UseUnlockId,UseBuffId,PreviewRUID,FurnitureKind,IsCurrency,UseAnimalId,UsePetId,TerrainEditCooldown,SwingSoundRUID,HitSoundRUID,AvoidRadius,AvoidExitRadius,ActiveDurationSec
+﻿id,Name,ModelName,EntryId,Category,ToolType,ToolPower,IconRUID,PlacedTileName,Rarity,Tradable,Description,WeaponRUID,SwingAction,WeaponSlot,TerrainEditAction,UseUnlockId,UseBuffId,PreviewRUID,FurnitureKind,IsCurrency,UseAnimalId,UsePetId,TerrainEditCooldown,SwingSoundRUID,HitSoundRUID,AvoidRadius,AvoidExitRadius,ActiveDurationSec
 wood,Wood,Item_Wood,2cb8f37e-ef6b-4e17-86fb-d940f18a7412,resource,,0,b952164321fd4c9c94cb0d3e7c73b182,,Common,true,A flexible wooden branch. Useful for crafting basic tools.,,,,,,,,,,,,,,,,,
 stone,Stone,Item_Stone,05fa541a-a48d-4f36-bf82-0c60784a4a53,resource,,0,5ed8bdcf520044c0a1660873beb30b10,,Common,true,A common stone found in the wild. Used in crafting tools and buildings.,,,,,,,,,,,,,,,,,
 copper ore,Copper Ore,Item_CopperOre,3484bbf6-1973-4b23-a720-9d1b0754aa6f,resource,,0,914eb87802b64924b5f78bb97a55faeb,,Common,true,A chunk of copper ore. Can be smelted into copper bars.,,,,,,,,,,,,,,,,,
@@ -45,5 +45,4 @@ chicken_ticket,Chicken Ticket,Item_Wood,2cb8f37e-ef6b-4e17-86fb-d940f18a7412,con
 sheep_ticket,Sheep Ticket,Item_Wood,2cb8f37e-ef6b-4e17-86fb-d940f18a7412,consumable,,0,bb0d2f1ec25443ce818de52cd0e5b87b,,Uncommon,true,Use near an Animal Pen at home to spawn a sheep.,,,,,,,,,,Sheep,,,,,,,
 egg_omelette,Egg Omelette,Item_Grass,896c7bd8-8a8a-48a8-a7c7-fc8c337c2a9b,consumable,,0,26ab1dcdcd2c463e96ce061d9e2b8b24,,Uncommon,true,Fluffy omelette. Slight gather focus.,,,,,,gather_boost_small,,,,,,,,,,,
 dog_whistle,Dog Whistle,Item_Wood,2cb8f37e-ef6b-4e17-86fb-d940f18a7412,consumable,,0,abd9bdcfeb97424c847459303373070f,,Uncommon,true,Blow to summon your dog companion. Not consumed on use.,,,,,,,,,,,Dog,,,,,,
-
 monster_ward,Monster Ward,Item_MonsterWard,,furniture,,0,aba58d2139ca4736bab39f6b4c39aa37,,Uncommon,true,Keeps monsters away for safer fishing. Effective on hunt/boss maps; unused on estate (no monsters).,,,,,,,aba58d2139ca4736bab39f6b4c39aa37,monster_ward,,,,,,,4,5,180

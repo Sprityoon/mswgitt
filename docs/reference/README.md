@@ -1,4 +1,17 @@
-# 참조 데이터
+# 레퍼런스
+
+이 폴더는 **필요할 때 찾아보는 참조 자료**다. 매번 읽을 문서는 [../workflow.md](../workflow.md) · [../pitfalls.md](../pitfalls.md) 쪽에 있다.
+
+| 파일 | 내용 |
+|---|---|
+| [physics-controls.md](./physics-controls.md) | 맵 4종 구성 · RectTile/Kinematicbody 물리 · 조작키 |
+| [directory-structure.md](./directory-structure.md) | `RootDesk/MyDesk/` 카테고리→자산종류 2단계 폴더 규칙 |
+| [skill-routing.md](./skill-routing.md) | MSW 스킬 로딩 프로토콜 · 도메인 매트릭스 |
+| [hooks.md](./hooks.md) | 활성 훅 인벤토리 · 종료 코드 계약 · deny 대응 |
+| [resource-api-pitfalls.md](./resource-api-pitfalls.md) | 리소스 검색 API 실측 함정 (아바타 아이템 등) |
+| `avatar-item-catalog.csv` | 아바타 아이템 33,763개 전량 덤프 (아래) |
+
+---
 
 ## `avatar-item-catalog.csv` — 아바타(장착) 아이템 전량 카탈로그
 
@@ -21,7 +34,7 @@ subweapon 69 / shield 102 / glove 476 / cap 3,125 / hair 11,746 / face 8,255 등
 
 1. **찾는다**: 이 CSV를 에디터·Excel에서 검색한다. 카테고리로 먼저 좁히면 빠르다.
    의미 검색이 필요하면 `msw-search` 의 `search-avatar` 를 쓰되, 이름 임베딩에 끌리는 한계가 있다
-   ([resource-api-pitfalls.md](../agents/resource-api-pitfalls.md) §3).
+   ([resource-api-pitfalls.md](./resource-api-pitfalls.md) §3).
 2. **본다**: 찾은 RUID를
    [UIPreviewToolController.mlua](../../RootDesk/MyDesk/DevTools/UIPreviewToolController.mlua) 의
    `GetAvatarCandidates()` 에 넣고 Maker refresh → Play → **F9**.

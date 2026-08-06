@@ -2667,31 +2667,27 @@ script PlayerController extends Component
 
 	@ExecSpace("ClientOnly")
 	method boolean IsAimTileWater()
+		-- 조준 셀(L1)이 물 타일인지 판정. 셀 환산·바라보는 방향은 채광/설치와 **같은 단일 규약**을 쓴다
+		-- (T67 조준선 = tilemap:ToCellPosition + LastDirectionX/Y). 자체 환산을 두면 조준선과 어긋난다.
 		local currentMap = self.Entity.CurrentMap
 		if not isvalid(currentMap) then return false end
-		local playerPos = self.Entity.TransformComponent.WorldPosition
-		local px = math.floor(playerPos.x)
-		local py = math.floor(playerPos.y)
-		local dx, dy = 0, -1
-		if self.LastDirection == "Left" or self.LastDirection == "left" then
-			dx = -1 dy = 0
-		elseif self.LastDirection == "Right" or self.LastDirection == "right" then
-			dx = 1 dy = 0
-		elseif self.LastDirection == "Up" or self.LastDirection == "up" then
-			dx = 0 dy = 1
-		elseif self.LastDirection == "Down" or self.LastDirection == "down" then
-			dx = 0 dy = -1
-		end
-		local aimX = px + dx
-		local aimY = py + dy
+
+		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
+		if not isvalid(tilemap) then return false end
+		local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
+		if playerCell == nil then return false end
+		local aimCell = Vector2Int(playerCell.x + self.LastDirectionX, playerCell.y + self.LastDirectionY)
+
 		local l1 = currentMap:GetChildByName("RectTileMap")
-		if isvalid(l1) and isvalid(l1.RectTileMapComponent) then
-			local tile = l1.RectTileMapComponent:GetTile(Vector2Int(aimX, aimY))
-			if tile ~= nil and tile.Name == "Water" then
-				return true
-			end
-		end
-		return false
+		if not isvalid(l1) or not isvalid(l1.RectTileMapComponent) then return false end
+
+		local tileName = "nil"
+		local tile = l1.RectTileMapComponent:GetTile(aimCell)
+		if tile ~= nil then tileName = tile.Name end
+		local isWater = (tileName == "Water")
+		log("[FISHING] aim=(" .. aimCell.x .. "," .. aimCell.y .. ") tile=" .. tileName
+			.. " water=" .. tostring(isWater))
+		return isWater
 	end
 
 	method string GetMapSpotType()
