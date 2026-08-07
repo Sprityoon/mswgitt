@@ -33,6 +33,21 @@
 `payload`에 `color_hex` / `group_*` 만 있고 `payload.thumbnail`이 없다
 (sprite · animationclip · resource_pack 에는 있다).
 
+### 2-bis. 🔴 `get` 응답의 `payload` 가 통째로 `null` 이다 (실측 2026-08-06)
+
+`msw_resource_api.cjs get 5803e765…`(삼각 강철 야삽) 응답:
+
+```json
+{ "id": "5803e765…", "type": "avataritem", "category": "weapon",
+  "names": { "ko": ["삼각 강철 야삽"] }, "dname": "onehandedweapon-729",
+  "assetGuid": null, "hasEmbedding": true, "payload": null }
+```
+
+즉 **쓸 수 있는 건 `names` / `category` / `dname` 뿐**이다. 특히:
+
+- **그 아이템이 어떤 액션 ID(`swingO1`/`swingO2`/`swingO3`/`stabO1`/`stabO2`)를 가지고 있는지 알 방법이 없다.** 없는 액션을 지정하면 무기 파츠 프레임이 없어 **모션 중 도구만 사라진다**(`MineState.mlua` 주석 — 과거 곡괭이 `swingT1` 사고).
+- 따라서 **액션 후보 선별은 코드로 사전 필터링이 불가능**하고, [ui/PreviewTool.ui](../../ui/PreviewTool.ui)(F9)에 같은 RUID + 서로 다른 액션을 슬롯별로 걸어 **「모션 재생」으로 눈으로 걸러내는 것이 유일한 방법**이다. 사라지는 슬롯 = 그 아이템에 없는 액션.
+
 → **아바타 아이템의 생김새를 외부에서 확인할 방법이 없다.** 유일한 렌더러는 MSW 엔진이다:
 - UI: `SpriteGUIRendererComponent.ImageRUID = DataRef("thumbnail://" .. ruid)`
 - 월드: `SpriteRendererComponent.SpriteRUID = "thumbnail://" .. ruid`

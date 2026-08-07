@@ -32,7 +32,24 @@ script MineState extends StateType
 						animName = swingAction
 					else
 						-- 2순위 폴백: ToolType 기반. 반드시 한손 액션만 사용한다.
-						-- swingO1 = 머리 위에서 내리찍기(채광), swingO2 = 사선 내려치기(벌목).
+						-- ⚠️ 2026-08-06 정정: 예전 주석은 swingO1을 "머리 위에서 내리찍기",
+						--    swingO2를 "사선 내려치기"로 적어 뒀으나 **근거 없는 추정이었다**.
+						--    제작자 육안 확인 결과 swingO1은 내려찍기보다 **휘두르기에 가깝다**.
+						--    공식 문서(Controlling Avatar Animations)는 액션 '이름 목록'만 제공하고
+						--    각 모션이 어떤 동작인지는 설명하지 않는다 — 확인 수단은 Maker의
+						--    AvatarItem Editor 미리보기 또는 이 저장소의 F9 PreviewTool뿐이다.
+						--    아래 매핑은 관례일 뿐이니 모션 인상을 주석으로 단정하지 말 것.
+						--
+						-- 한손에서 쓸 수 있는 전체 액션(공식 목록):
+						--   swingO1 · swingO2 · swingO3 · swingOF · stabO1 · stabO2 · stabOF
+						--   (+ 폴암 계열 swingP1 · swingP2 · swingPF)
+						-- 두손 전용: swingT1~T3 · swingTF · stabT1 · stabT2 · stabTF
+						--
+						-- 📌 2026-08-06 제작자 육안 실측 (문서에 없는 내용 — 재조사 방지):
+						--   · `*F` 계열(swingOF/stabOF) = **모션이 훨씬 크다.** 치명타/강타 연출 후보.
+						--   · **폴암 계열(swingP*)은 한손 아바타 아이템에 프레임이 없어 무기가 사라진다.**
+						--     → 한손 도구에 P 계열을 쓰지 말 것.
+						--   · 삽 계열 채택 모션 = `stabO1`(찌르기) — 땅에 삽을 꽂는 동작에 가장 근접.
 						local toolType = row:GetItem("ToolType") or ""
 						if toolType == "pickaxe" then
 							animName = "swingO1"

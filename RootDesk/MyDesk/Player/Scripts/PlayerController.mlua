@@ -700,6 +700,9 @@ script PlayerController extends Component
 		elseif key == KeyboardKey.F then
 			-- T59: F 본문은 TryInteract로 추출(로직 변경 없음). 분산 핸들러는 기존 KeyDown 동시 리슨 유지.
 			self:TryInteract()
+		elseif key == KeyboardKey.G then
+			-- 임시(2026-08-07): 조준 셀을 Soil+FullGrass로 덮는다 (물/프린지 꼬임 수동 복구).
+			self:ServerRequestForceGrassCell(self.LastDirectionX, self.LastDirectionY)
 		else
 			-- Numeric Keys (1 to 0)
 			local slotIndex = 0
@@ -838,6 +841,39 @@ script PlayerController extends Component
 		-- description: Show gathering feedback as a screen popup message.
 		_ScreenMessageLogic:PrivateMsg(message)
 		log("[Gather] " .. message)
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestForceGrassCell(integer dirX, integer dirY)
+		-- G키 복구: 조준 셀 기준 3×3 → L1=Soil, L2=FullGrass, L4 scrub.
+		-- 지형 델타(forceGrass)로 영속 — 재접속/재실행 후에도 ReconstructTerrainEdits가 재생.
+		-- 팝업 없음. 로그 `[TEMP][G]`만.
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then
+			return
+		end
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) then return end
+		local mapName = currentMap.Name
+		if string.sub(mapName, 1, 5) ~= "Home_" then
+			return
+		end
+		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+		if not isvalid(tilemap) then return end
+		local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
+		if playerCell == nil then return end
+		local dx = dirX
+		local dy = dirY
+		if dx == nil then dx = 0 end
+		if dy == nil then dy = 0 end
+		local cx = playerCell.x + dx
+		local cy = playerCell.y + dy
+		local ok = _ResourceSpawner:ApplyTerrainEdit(mapName, currentMap, "forceGrass", cx, cy, "", "", true)
+		if not ok then return end
+		log(string.format("[TEMP][G] forceGrass 3x3 center=(%d,%d) map=%s persist=1", cx, cy, mapName))
+		if _PersistenceManager then
+			_PersistenceManager:MarkPlayerDirty(playerComp.UserId)
+		end
 	end
 
 	@ExecSpace("Server")
@@ -1097,6 +1133,109 @@ script PlayerController extends Component
 		else
 				-- Mining mode (tool / bare-hand / empty slot): show the mining target-cell reticle.
 				self:UpdateMineReticle()
+		end
+
+		-- 조준점과 **별개로**, 지형 편집 도구를 들고 있으면 실제로 영향받는 셀들을 함께 표시한다.
+		self:UpdateTerrainAffectPreview(isPlaceable, activeItem)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateTerrainAffectPreview(boolean isPlaceable, string activeItem)
+		-- 삽/괭이/씨앗/물삽을 들었을 때 이번 한 번의 편집이 건드릴 셀을 미리 칠한다.
+		-- 진한 노랑 = 직접 파이는 셀 / 옅은 노랑 = 프린지(½셀 마진)만 받는 셀.
+		-- 셀 집합은 _ResourceSpawner:GetTerrainEditAffectedCells 단일 소스에서 온다(규칙 18).
+		local pool = self._T.TerrainAffectPool
+		if pool == nil then
+			pool = {}
+			self._T.TerrainAffectPool = pool
+		end
+
+		local action = ""
+		if not isPlaceable and activeItem ~= "" and _ResourceSpawner ~= nil then
+			local inv = self.Entity:GetComponent("script.PlayerInventory")
+			if isvalid(inv) then
+				local ds = _DataService:GetTable("item_dataset")
+				if ds ~= nil then
+					local row = ds:FindRow("Name", inv:GetBaseItemName(activeItem))
+					if row ~= nil then
+						local ok, v = pcall(function() return row:GetItem("TerrainEditAction") end)
+						if ok and v ~= nil then action = v end
+					end
+				end
+			end
+		end
+
+		local cells = {}
+		if action ~= "" then
+			local currentMap = self.Entity.CurrentMap
+			local tilemap = nil
+			if isvalid(currentMap) then
+				tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
+			end
+			if isvalid(tilemap) then
+				local worldPos = self.Entity.TransformComponent.WorldPosition
+				local playerCell = tilemap:ToCellPosition(worldPos)
+				if playerCell ~= nil then
+					local tx = playerCell.x + self.LastDirectionX
+					local ty = playerCell.y + self.LastDirectionY
+					local axis = ""
+					local side = ""
+					if action == "digPath" then
+						local ax = _ResourceSpawner:DeriveDigPathAxisSide(
+							self.LastDirectionX, self.LastDirectionY, worldPos.x, worldPos.y)
+						axis = ax.axis
+						side = ax.side
+					end
+					-- 물삽은 조준 셀이 아니라 **블록 원점** 기준이다 (서버 적용과 같은 함수 — 규칙 18).
+					if action == "dig_water" or action == "fill_water" then
+						local origin = _ResourceSpawner:GetWaterDigOrigin(
+							tx, ty, self.LastDirectionX, self.LastDirectionY)
+						tx = origin.x
+						ty = origin.y
+					end
+					cells = _ResourceSpawner:GetTerrainEditAffectedCells(action, tx, ty, axis, side)
+				end
+			end
+		end
+
+		local mapRadius = 75
+		if _ResourceSpawner ~= nil then mapRadius = _ResourceSpawner.MapRadius end
+
+		-- 풀 크기 = 물 2×2 + 둘레 1칸 = 4×4 = 16 (지형 편집 중 최대 영향 셀 수).
+		for i = 1, 16 do
+			local ent = pool[i]
+			if not isvalid(ent) then
+				local currentMap = self.Entity.CurrentMap
+				if isvalid(currentMap) then
+					ent = currentMap:GetChildByName("TerrainAffect_" .. tostring(i))
+					pool[i] = ent
+				end
+			end
+			if isvalid(ent) then
+				local c = cells[i]
+				if c == nil then
+					ent.Enable = false
+				else
+					ent.Enable = true
+					ent.Visible = true
+					ent.TransformComponent.WorldPosition = Vector3(c.x + 0.5, c.y + 0.5, 0)
+					-- 조준점과 **같은 박스 스프라이트·같은 스케일**을 쓴다 (별도 아트 도입 금지).
+					-- 구분은 오직 틴팅 알파로 한다.
+					ent.TransformComponent.Scale = Vector3(self.ReticleScale, self.ReticleScale, 1.0)
+					local sprite = ent.SpriteRendererComponent
+					if isvalid(sprite) then
+						if sprite.SpriteRUID ~= self.ReticleSpriteRUID then
+							sprite.SpriteRUID = self.ReticleSpriteRUID
+						end
+						if c.tier == 1 then
+							sprite.Color = Color(1.0, 0.85, 0.25, 0.55)
+						else
+							sprite.Color = Color(1.0, 0.85, 0.25, 0.22)
+						end
+						sprite.OrderInLayer = math.floor((mapRadius - c.y) * 100)
+					end
+				end
+			end
 		end
 	end
 

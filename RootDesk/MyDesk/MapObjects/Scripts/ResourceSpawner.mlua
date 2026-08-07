@@ -36,6 +36,12 @@ script ResourceSpawner extends Logic
 	-- Layer 4 is the canonical impassable-wall layer (game_design.md §2.2).
 	property integer WallThickness = 3
 	property integer SpawnZoneRadius = 5
+	-- 물삽 1회가 파는 정사각 블록의 한 변(셀). ⚖️ 2026-08-06 = 2.
+	-- 🔴 1로 내리지 말 것: 물가 오버행 문법(docs/tile-scheme.md §4-bis)상 사방이 잔디인 1×1 물은
+	--    오버행이 셀을 전부 덮어 물이 사라지므로 degenerate 가드가 홀로 되돌린다
+	--    → 프린지가 아예 안 붙고 각진 물 1칸이 된다(2026-08-06 제작자 신고 원인).
+	--    2×2부터 각 셀이 안쪽 모서리를 남겨 "중앙 물웅덩이 + 사방 잔디 오버행"이 성립한다.
+	property integer WaterDigSize = 2
 	property integer MacroCellSize = 10
 	property integer MacroGridCount = 15
 	-- When non-empty, GetBiomeAt returns this single biome for the whole map instead of the
@@ -168,6 +174,384 @@ script ResourceSpawner extends Logic
 		if mask == 6 then return "SubGrassLTRD" end  -- TL|BR 대각
 		if mask == 9 then return "SubGrassRTLD" end  -- TR|BL 대각
 		return "FullGrass"
+	end
+
+	method table DeriveDigPathAxisSide(integer dirX, integer dirY, number playerWorldX, number playerWorldY)
+		-- digPath의 axis/side 결정 **단일 소스**. 적용 경로(PlayerInventory, 서버)와
+		-- 미리보기 경로(PlayerController, 클라)가 반드시 이걸 같이 쓴다.
+		-- ⚠️ 한쪽에 복제본을 만들면 미리보기와 실제 결과가 조용히 어긋난다(docs/pitfalls.md 규칙 18).
+		local axis = "h"
+		if math.abs(dirX) >= math.abs(dirY) and dirX ~= 0 then
+			axis = "h"
+		elseif dirY ~= 0 then
+			axis = "v"
+		end
+		local side = ""
+		local fracX = playerWorldX - math.floor(playerWorldX)
+		local fracY = playerWorldY - math.floor(playerWorldY)
+		if axis == "h" then
+			if fracY >= 0.5 then side = "up" else side = "down" end
+		else
+			if fracX >= 0.5 then side = "right" else side = "left" end
+		end
+		return { axis = axis, side = side }
+	end
+
+	method table GetTerrainEditAffectedCells(string action, integer x, integer y, string axis, string side)
+		-- 지형 편집이 실제로 건드리는 셀 목록 — 시각 피드백과 적용이 같은 규칙을 쓰도록 하는 단일 소스.
+		-- 반환: { {x=, y=, tier=}, ... }   tier 1 = 직접 파이는 셀 / tier 2 = 프린지(½셀 마진) 영향 셀.
+		-- ⚠️ ApplyTerrainEdit의 각 분기와 동일한 셀 집합이어야 한다. 한쪽만 고치지 말 것(규칙 18).
+		local out = {}
+		if action == "digPath" then
+			local x1 = x
+			local y1 = y
+			local x2 = x
+			local y2 = y
+			if axis == "v" then
+				if side == "right" then x2 = x + 1 else x1 = x - 1 end
+			else
+				if side == "up" then y2 = y + 1 else y1 = y - 1 end
+			end
+			table.insert(out, { x = x1, y = y1, tier = 1 })
+			table.insert(out, { x = x2, y = y2, tier = 1 })
+			local caps = {}
+			if axis == "v" then
+				caps = { { x1, y1 + 1 }, { x2, y2 + 1 }, { x1, y1 - 1 }, { x2, y2 - 1 } }
+			else
+				caps = { { x1 + 1, y1 }, { x2 + 1, y2 }, { x1 - 1, y1 }, { x2 - 1, y2 } }
+			end
+			for _, c in ipairs(caps) do
+				table.insert(out, { x = c[1], y = c[2], tier = 2 })
+			end
+		elseif action == "digHole" or action == "plantGrass" then
+			-- 대상 1셀 + 8이웃 ½셀 프린지.
+			table.insert(out, { x = x, y = y, tier = 1 })
+			for _, f in ipairs(self:GetTerrainFringeTable()) do
+				table.insert(out, { x = x + f[1], y = y + f[2], tier = 2 })
+			end
+		elseif action == "dig_water" or action == "fill_water" then
+			-- (x, y) = 블록 원점. n×n 직접 + 둘레 1칸(오버행 재계산 범위) = (n+2)².
+			local n = self.WaterDigSize
+			if n < 1 then n = 1 end
+			for by = y - 1, y + n do
+				for bx = x - 1, x + n do
+					local inside = (bx >= x and bx <= x + n - 1 and by >= y and by <= y + n - 1)
+					local t = 2
+					if inside then t = 1 end
+					table.insert(out, { x = bx, y = by, tier = t })
+				end
+			end
+		elseif action == "forceGrass" then
+			-- G키 3×3 (중심 = x,y).
+			for by = y - 1, y + 1 do
+				for bx = x - 1, x + 1 do
+					table.insert(out, { x = bx, y = by, tier = 1 })
+				end
+			end
+		else
+			table.insert(out, { x = x, y = y, tier = 1 })
+		end
+		return out
+	end
+
+	method integer MirrorFringeBits(integer bits)
+		-- GetTerrainFringeTable의 "이웃 셀에서 켜지는 비트" → **물 셀 자신**의 그 방향 절반 비트
+		-- (상하/좌우 반전). 물 셀에서 이 비트를 지우면 그 방향 ½셀이 잔디로 덮인다.
+		if bits == 3 then return 12 end   -- N 이웃 → 자기 위쪽 TL|TR
+		if bits == 12 then return 3 end   -- S 이웃 → 아래쪽 BL|BR
+		if bits == 5 then return 10 end   -- E 이웃 → 오른쪽 BR|TR
+		if bits == 10 then return 5 end   -- W 이웃 → 왼쪽 BL|TL
+		if bits == 1 then return 8 end    -- NE → TR
+		if bits == 2 then return 4 end    -- NW → TL
+		if bits == 4 then return 2 end    -- SE → BR
+		if bits == 8 then return 1 end    -- SW → BL
+		return 0
+	end
+
+	method integer ClearBits(integer mask, integer bits)
+		-- mask & ~bits 동등식. mlua에서 단항 비트 NOT(~) 사용을 피한다.
+		return mask - (mask & bits)
+	end
+
+	method boolean IsWaterCell(any tilemap1, integer x, integer y)
+		-- L1이 Water 타일인지.
+		if not isvalid(tilemap1) then return false end
+		local info = tilemap1:GetTile(x, y)
+		return info ~= nil and self:IsWaterTileName(info.Name)
+	end
+
+	method table GetWaterDigOrigin(integer tx, integer ty, integer dirX, integer dirY)
+		-- 물삽 1회가 파는 정사각 블록의 원점. 조준 셀을 **항상 포함**하며, 바라보는 쪽으로 뻗는다.
+		-- 🔴 서버(적용)·클라(미리보기) 공용 단일 소스 — 복제본 만들지 말 것(규칙 18).
+		-- 영속 델타에는 이 원점이 x,y로 저장되므로 재생 시 dir 없이도 재현된다.
+		local n = self.WaterDigSize
+		if n < 1 then n = 1 end
+		local ox = tx
+		local oy = ty
+		if dirX < 0 then ox = tx - (n - 1) end
+		if dirY < 0 then oy = ty - (n - 1) end
+		return { x = ox, y = oy, size = n }
+	end
+
+	method void RefreshWaterArea(any tilemap1, any tilemap2, integer cx, integer cy)
+		-- 단일 셀 편의 래퍼 (1×1 블록).
+		self:RefreshWaterAreaRect(tilemap1, tilemap2, cx, cy, 1, 1)
+	end
+
+	method void RefreshWaterAreaRect(any tilemap1, any tilemap2, integer x0, integer y0, integer w, integer h)
+		-- 물가 문법(docs/tile-scheme.md §4-bis) 런타임 적용 — "잔디가 물을 덮는다".
+		-- (x0,y0)~(x0+w-1,y0+h-1) 블록 + 1칸 패딩을 재계산한다. L1은 호출 전에 이미 갱신돼 있어야 한다.
+		--  · 물 셀: 15에서 "잔디로 덮인 이웃" 방향의 자기 절반 비트를 제거 → ½셀 잔디 오버행.
+		--           전부 덮여 마스크 0이 되면(사방이 잔디인 1셀 연못) 물이 사라지므로 홀 유지.
+		--  · 잔디 셀: 물 유래 프린지 비트를 제거하고, 흙 홀 유래 비트는 살린다(흙 후광은 정상).
+		--  · L2 홀인 땅(광장/구덩이 바닥)은 그대로 둔다 — 홀은 프린지 대상이 아니다.
+		-- ⚠️ 오프라인 보정 스크립트 scripts/fix_water_fringe.cjs와 **같은 규칙**이다. 한쪽만 고치지 말 것.
+		-- 2026-08-07: ipairs+nested plan tables can stall in some call paths; unroll fringe and use parallel arrays.
+		if not isvalid(tilemap2) then return end
+
+		local planX = {}
+		local planY = {}
+		local planM = {}
+		local planN = 0
+
+		local y = y0 - 1
+		local yMax = y0 + h
+		local xMin = x0 - 1
+		local xMax = x0 + w
+		while y <= yMax do
+			local x = xMin
+			while x <= xMax do
+				if self:IsWaterCell(tilemap1, x, y) then
+					local m = 15
+					-- Grass-covered neighbors only. MirrorFringeBits inlined.
+					if (not self:IsWaterCell(tilemap1, x, y + 1)) and (tilemap2:GetTile(x, y + 1) ~= nil) then
+						m = self:ClearBits(m, 12)
+					end
+					if (not self:IsWaterCell(tilemap1, x, y - 1)) and (tilemap2:GetTile(x, y - 1) ~= nil) then
+						m = self:ClearBits(m, 3)
+					end
+					if (not self:IsWaterCell(tilemap1, x + 1, y)) and (tilemap2:GetTile(x + 1, y) ~= nil) then
+						m = self:ClearBits(m, 10)
+					end
+					if (not self:IsWaterCell(tilemap1, x - 1, y)) and (tilemap2:GetTile(x - 1, y) ~= nil) then
+						m = self:ClearBits(m, 5)
+					end
+					if (not self:IsWaterCell(tilemap1, x + 1, y + 1)) and (tilemap2:GetTile(x + 1, y + 1) ~= nil) then
+						m = self:ClearBits(m, 8)
+					end
+					if (not self:IsWaterCell(tilemap1, x - 1, y + 1)) and (tilemap2:GetTile(x - 1, y + 1) ~= nil) then
+						m = self:ClearBits(m, 4)
+					end
+					if (not self:IsWaterCell(tilemap1, x + 1, y - 1)) and (tilemap2:GetTile(x + 1, y - 1) ~= nil) then
+						m = self:ClearBits(m, 2)
+					end
+					if (not self:IsWaterCell(tilemap1, x - 1, y - 1)) and (tilemap2:GetTile(x - 1, y - 1) ~= nil) then
+						m = self:ClearBits(m, 1)
+					end
+					if m == 0 then m = 15 end
+					planN = planN + 1
+					planX[planN] = x
+					planY[planN] = y
+					planM[planN] = m
+				else
+					local base = self:GetCellMask(tilemap2, tilemap1, x, y)
+					if base >= 0 and base ~= 15 then
+						local waterBits = 0
+						local otherBits = 0
+						if self:IsWaterCell(tilemap1, x, y - 1) then
+							waterBits = waterBits | 3
+						elseif (tilemap2:GetTile(x, y - 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x, y - 1) then
+							otherBits = otherBits | 3
+						end
+						if self:IsWaterCell(tilemap1, x, y + 1) then
+							waterBits = waterBits | 12
+						elseif (tilemap2:GetTile(x, y + 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x, y + 1) then
+							otherBits = otherBits | 12
+						end
+						if self:IsWaterCell(tilemap1, x - 1, y) then
+							waterBits = waterBits | 5
+						elseif (tilemap2:GetTile(x - 1, y) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x - 1, y) then
+							otherBits = otherBits | 5
+						end
+						if self:IsWaterCell(tilemap1, x + 1, y) then
+							waterBits = waterBits | 10
+						elseif (tilemap2:GetTile(x + 1, y) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x + 1, y) then
+							otherBits = otherBits | 10
+						end
+						if self:IsWaterCell(tilemap1, x - 1, y - 1) then
+							waterBits = waterBits | 1
+						elseif (tilemap2:GetTile(x - 1, y - 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x - 1, y - 1) then
+							otherBits = otherBits | 1
+						end
+						if self:IsWaterCell(tilemap1, x + 1, y - 1) then
+							waterBits = waterBits | 2
+						elseif (tilemap2:GetTile(x + 1, y - 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x + 1, y - 1) then
+							otherBits = otherBits | 2
+						end
+						if self:IsWaterCell(tilemap1, x - 1, y + 1) then
+							waterBits = waterBits | 4
+						elseif (tilemap2:GetTile(x - 1, y + 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x - 1, y + 1) then
+							otherBits = otherBits | 4
+						end
+						if self:IsWaterCell(tilemap1, x + 1, y + 1) then
+							waterBits = waterBits | 8
+						elseif (tilemap2:GetTile(x + 1, y + 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x + 1, y + 1) then
+							otherBits = otherBits | 8
+						end
+						-- Water-priority: clear contested subcells so grass separates dirt and water.
+						if waterBits ~= 0 then
+							local m = self:ClearBits(base | otherBits, waterBits)
+							planN = planN + 1
+							planX[planN] = x
+							planY[planN] = y
+							planM[planN] = m
+						end
+					end
+				end
+				x = x + 1
+			end
+			y = y + 1
+		end
+
+		local i = 1
+		while i <= planN do
+			self:SetCellMaskExact(tilemap2, planX[i], planY[i], planM[i])
+			i = i + 1
+		end
+		log(string.format("[WATER-FRINGE] refreshed cells=%d origin=(%d,%d) size=%dx%d", planN, x0, y0, w, h))
+	end
+
+	method boolean HasWaterNear(any tilemap1, integer x0, integer y0, integer w, integer h)
+		-- 범위 + 2칸 패딩 안에 물 셀이 하나라도 있는지. 물 없는 지형에서는 보정을 아예 건너뛴다.
+		for y = y0 - 2, y0 + h + 1 do
+			for x = x0 - 2, x0 + w + 1 do
+				if self:IsWaterCell(tilemap1, x, y) then return true end
+			end
+		end
+		return false
+	end
+
+	method boolean IsExposedDirtCell(any tilemap1, any tilemap2, integer x, integer y)
+		-- L2 홀 + L1이 물 아님 = 드러난 흙(광장/길/구덩이).
+		if not isvalid(tilemap1) or not isvalid(tilemap2) then return false end
+		if self:IsWaterCell(tilemap1, x, y) then return false end
+		if tilemap1:GetTile(x, y) == nil then return false end
+		return tilemap2:GetTile(x, y) == nil
+	end
+
+	method boolean HasExposedDirtNearWaterDig(any tilemap1, any tilemap2, integer x0, integer y0, integer w, integer h)
+		-- 물 블록 둘레 1칸(프린지 영향권)에 드러난 흙이 있으면 물·흙 프린지 경합이 난다.
+		-- 블록 **안**은 곧 물로 바뀌므로 검사하지 않는다. 서버·클라 공용(규칙 18).
+		if not isvalid(tilemap1) or not isvalid(tilemap2) then return false end
+		if w < 1 then w = 1 end
+		if h < 1 then h = 1 end
+		local y = y0 - 1
+		local yMax = y0 + h
+		local xMin = x0 - 1
+		local xMax = x0 + w
+		while y <= yMax do
+			local x = xMin
+			while x <= xMax do
+				local inside = (x >= x0 and x <= x0 + w - 1 and y >= y0 and y <= y0 + h - 1)
+				if not inside then
+					if self:IsExposedDirtCell(tilemap1, tilemap2, x, y) then
+						return true
+					end
+				end
+				x = x + 1
+			end
+			y = y + 1
+		end
+		return false
+	end
+
+	method void ForceGrassCoverCell(any tilemap1, any tilemap2, any tilemap4, integer x, integer y)
+		-- 임시 복구: 조준 셀 기준 3×3을 L1=Soil + L2=FullGrass + L4 오적재 제거.
+		self:ForceGrassCoverRect(tilemap1, tilemap2, tilemap4, x - 1, y - 1, 3, 3)
+	end
+
+	method void ScrubLayer4NonWallsRect(any tilemap4, integer x0, integer y0, integer w, integer h)
+		-- 범위 안 L4에서 Big Wall이 아닌 타일 제거. 잔디·프린지는 L2 전용.
+		if not isvalid(tilemap4) then return end
+		if w < 1 then w = 1 end
+		if h < 1 then h = 1 end
+		local y = y0
+		local yMax = y0 + h - 1
+		while y <= yMax do
+			local x = x0
+			local xMax = x0 + w - 1
+			while x <= xMax do
+				if not self:IsInWallBand(x, y) then
+					local info4 = tilemap4:GetTile(x, y)
+					if info4 ~= nil and info4.Name ~= "Big Wall" then
+						tilemap4:RemoveTile(x, y)
+					end
+				end
+				x = x + 1
+			end
+			y = y + 1
+		end
+	end
+
+	method void ForceGrassCoverRect(any tilemap1, any tilemap2, any tilemap4, integer x0, integer y0, integer w, integer h)
+		-- tilemap4는 선택(nil 가능). 있으면 L4에서 Big Wall이 아닌 타일(잔디/프린지/물 오적재)을 제거한다.
+		if not isvalid(tilemap1) or not isvalid(tilemap2) then return end
+		if w < 1 then w = 1 end
+		if h < 1 then h = 1 end
+		local y = y0
+		local yMax = y0 + h - 1
+		while y <= yMax do
+			local x = x0
+			local xMax = x0 + w - 1
+			while x <= xMax do
+				if not self:IsInWallBand(x, y) and tilemap1:GetTile(x, y) ~= nil then
+					tilemap1:SetTile("Soil", x, y)
+					self:SetCellMaskExact(tilemap2, x, y, 0)
+				end
+				x = x + 1
+			end
+			y = y + 1
+		end
+		self:ScrubLayer4NonWallsRect(tilemap4, x0, y0, w, h)
+		if self:HasWaterNear(tilemap1, x0, y0, w, h) then
+			self:RefreshWaterAreaRect(tilemap1, tilemap2, x0, y0, w, h)
+		end
+	end
+
+	method integer ScrubLayer4NonWalls(Entity map)
+		-- L4에서 Big Wall이 아닌 타일 전부 제거(잔디/프린지/물 오적재). 맵 로드·임시 복구용.
+		-- 잔디·프린지 문법은 L2만 (docs/tile-scheme.md §1).
+		if not isvalid(map) then return 0 end
+		local layer4Entity = map:GetChildByName("RectTileMap4")
+		if not isvalid(layer4Entity) or not isvalid(layer4Entity.RectTileMapComponent) then return 0 end
+		local tilemap4 = layer4Entity.RectTileMapComponent
+		local removed = 0
+		local r = self.MapRadius
+		local y = -r
+		while y <= r do
+			local x = -r
+			while x <= r do
+				if not self:IsInWallBand(x, y) then
+					local info = tilemap4:GetTile(x, y)
+					if info ~= nil and info.Name ~= "Big Wall" then
+						tilemap4:RemoveTile(x, y)
+						removed = removed + 1
+					end
+				end
+				x = x + 1
+			end
+			y = y + 1
+		end
+		if removed > 0 then
+			log(string.format("[L4-SCRUB] removed non-wall tiles=%d map=%s", removed, map.Name))
+		end
+		return removed
+	end
+
+	method boolean IsTerrainCellEditableRaw(any tilemap1, integer x, integer y)
+		-- L1 타일 존재 여부만 (맵 엔티티 조회 없이 — RefreshWaterArea 내부 루프용).
+		if not isvalid(tilemap1) then return false end
+		return tilemap1:GetTile(x, y) ~= nil
 	end
 
 	method boolean IsInWallBand(integer x, integer y)
@@ -376,23 +760,71 @@ script ResourceSpawner extends Logic
 				end
 			end
 
-		elseif action == "dig_water" then
-			if not self:IsTerrainCellEditable(map, x, y) then return false end
-			if self:IsGridOccupied(mapName, x, y) then return false end
-			if isvalid(tilemap1) then
-				tilemap1:SetTile("Water", x, y)
-			end
-			self:SetCellMaskExact(tilemap2, x, y, 15)
+		elseif action == "dig_water" or action == "fill_water" then
+			-- (x, y)는 조준 셀이 아니라 **블록 원점**이다 (GetWaterDigOrigin 결과 = 영속 델타 저장값).
+			if not isvalid(tilemap1) then return false end
+			local n = self.WaterDigSize
+			if n < 1 then n = 1 end
 
-		elseif action == "fill_water" then
-			if not self:IsTerrainCellEditable(map, x, y) then return false end
-			if isvalid(tilemap1) then
-				tilemap1:SetTile("Soil", x, y)
+			-- 블록 전 셀이 편집 가능해야 한다(부분 적용 금지 — 재생 결정성 유지).
+			for by = y, y + n - 1 do
+				for bx = x, x + n - 1 do
+					if not self:IsTerrainCellEditable(map, bx, by) then return false end
+					if action == "dig_water" and self:IsGridOccupied(mapName, bx, by) then return false end
+				end
 			end
-			self:SetCellMaskExact(tilemap2, x, y, 15)
+
+			-- ⚖️ 2026-08-07: 드러난 흙이 둘레에 있으면 물 파기 금지 (물·흙 프린지 경합).
+			if action == "dig_water" then
+				if self:HasExposedDirtNearWaterDig(tilemap1, tilemap2, x, y, n, n) then
+					return false
+				end
+			end
+
+			for by = y, y + n - 1 do
+				for bx = x, x + n - 1 do
+					if action == "dig_water" then
+						tilemap1:SetTile("Water", bx, by)
+						-- 물은 L2 홀로 시작 → RefreshWaterAreaRect가 오버행을 얹는다.
+						self:SetCellMaskExact(tilemap2, bx, by, 15)
+					else
+						-- fill_water: 흙 구덩이가 아니라 Soil+FullGrass로 복구.
+						-- (홀이면 남은 물과 다시 경합해 프린지가 꼬인다 — 2026-08-07)
+						tilemap1:SetTile("Soil", bx, by)
+						self:SetCellMaskExact(tilemap2, bx, by, 0)
+					end
+				end
+			end
+			-- L1을 전부 바꾼 뒤 물가 오버행을 블록+1칸 패딩 범위로 재계산 (docs/tile-scheme.md §4-bis).
+			self:RefreshWaterAreaRect(tilemap1, tilemap2, x, y, n, n)
+			-- 물 편집 중 L4에 잔디/프린지가 쌓이지 않게 주변 오적재를 쓸어낸다 (L2만 프린지).
+			local layer4Entity = map:GetChildByName("RectTileMap4")
+			if isvalid(layer4Entity) and isvalid(layer4Entity.RectTileMapComponent) then
+				self:ScrubLayer4NonWallsRect(layer4Entity.RectTileMapComponent, x - 1, y - 1, n + 2, n + 2)
+			end
+
+		elseif action == "forceGrass" then
+			-- G키 임시 복구(영속): 중심 (x,y) 기준 3×3 Soil+FullGrass + L4 scrub.
+			local layer4Entity = map:GetChildByName("RectTileMap4")
+			local tm4 = nil
+			if isvalid(layer4Entity) and isvalid(layer4Entity.RectTileMapComponent) then
+				tm4 = layer4Entity.RectTileMapComponent
+			end
+			if not isvalid(tilemap1) or not isvalid(tilemap2) then return false end
+			self:ForceGrassCoverCell(tilemap1, tilemap2, tm4, x, y)
 
 		else
 			return false
+		end
+
+		-- 🔴 물가 사후 보정 (2026-08-06): digPath/digHole/plantGrass는 물을 모르고 8이웃에 흙 비트를
+		--    얹는다. 물 옆에서 그러면 물에 흙이 붙어 프린지가 꼬인다(전수 스윕에서 16조합 재현).
+		--    편집 근처에 물이 있을 때만 보정하므로 물 없는 지형은 기존 동작 그대로다.
+		if action ~= "dig_water" and action ~= "fill_water" and action ~= "forceGrass" and isvalid(tilemap1) then
+			if self:HasWaterNear(tilemap1, x, y, 1, 1) then
+				-- (x-2 .. x+2, y-2 .. y+2) 커버 — digPath 밴드 2셀 + 캡 1셀까지 포함.
+				self:RefreshWaterAreaRect(tilemap1, tilemap2, x - 1, y - 1, 3, 3)
+			end
 		end
 
 		if persist then
@@ -909,6 +1341,9 @@ script ResourceSpawner extends Logic
 		
 		-- Reconstruct player-placed tiles and furniture
 		self:ReconstructWorldPlacementsForMap(map)
+
+		-- L4는 Big Wall만. 손페인팅/오적재된 잔디·프린지를 로드 시 한 번 쓸어낸다.
+		self:ScrubLayer4NonWalls(map)
 
 		-- Layer 2 잔디 커버 오토타일 런타임 보정 — ⛔ 기본 OFF (2026-07-04 맵 소유권 전환):
 		-- 맵 타일은 이제 Maker 손편집이 소스 오브 트루스다. 이 보정을 켜두면 로그인마다

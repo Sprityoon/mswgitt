@@ -293,7 +293,15 @@ function main() {
       if (water.has(sk)) waterBits |= f.bits;
       else if (isL2Hole(sk)) otherBits |= f.bits;
     }
-    newMask.set(key, (base & ~waterBits) | otherBits);
+    // 🔴 물 우선 (2026-08-06) — ResourceSpawner.RefreshWaterAreaRect와 동일 규칙.
+    //    흙 홀과 물이 같은 서브셀을 주장할 때 흙을 나중에 얹으면 물에 붙은 흙 조각이 남는다.
+    //    물을 마지막에 지워 잔디가 흙과 물 사이를 가르게 한다.
+    //    물과 무관한 셀(waterBits=0)은 손대지 않는다.
+    if (waterBits !== 0) {
+      newMask.set(key, (base | otherBits) & ~waterBits);
+    } else {
+      newMask.set(key, base);
+    }
   }
 
   if (degenerate.length > 0) {

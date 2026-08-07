@@ -1890,26 +1890,14 @@ script PlayerInventory extends Component
 		if resourceSpawner == nil then return end
 
 		-- digPath axis/side 결정 (저장 시 side 확정 — 재생 시 플레이어 위치 재계산 금지).
+		-- 🔴 판정은 _ResourceSpawner:DeriveDigPathAxisSide 단일 소스를 쓴다 — 클라 미리보기
+		--    (PlayerController:UpdateTerrainAffectPreview)와 같은 결과여야 한다(규칙 18).
 		local axis = ""
 		local side = ""
 		if action == "digPath" then
-			-- |dirX| > 0 → 동서 시선 → 수평 길 밴드(axis="h"). 남북 → axis="v".
-			if math.abs(dirX) >= math.abs(dirY) and dirX ~= 0 then
-				axis = "h"
-			elseif dirY ~= 0 then
-				axis = "v"
-			else
-				-- 시선 없음: 기본 수평
-				axis = "h"
-			end
-			-- 셀 내 소수부: 월드 단위 셀 = floor 기준 [n, n+1).
-			local fracX = playerPos.x - math.floor(playerPos.x)
-			local fracY = playerPos.y - math.floor(playerPos.y)
-			if axis == "h" then
-				if fracY >= 0.5 then side = "up" else side = "down" end
-			else
-				if fracX >= 0.5 then side = "right" else side = "left" end
-			end
+			local ax = resourceSpawner:DeriveDigPathAxisSide(dirX, dirY, playerPos.x, playerPos.y)
+			axis = ax.axis
+			side = ax.side
 		end
 
 		-- 점유 셀 사전 검사 (digPath는 두 셀 모두 — Apply 내부와 동일 규칙, 피드백 메시지용).
@@ -1942,37 +1930,71 @@ script PlayerInventory extends Component
 			end
 		end
 
-		-- T92: Shovel 도구로 물 지형 파기 및 되메우기 (dig_water / fill_water)
+		-- 물 파기 (Water Spade = dig_water만). 되메움(fill_water)은 별도 도구 — 토글 금지(2026-08-07).
+		-- 🔴 물은 **n×n 블록 단위**로 판다(ResourceSpawner.WaterDigSize, 현재 2). 1×1은 오버행 문법상
+		--    degenerate라 프린지가 아예 안 붙는다 — 자세한 이유는 그 프로퍼티 주석 참조.
+		--    ApplyTerrainEdit에 넘기는 cellX/cellY는 조준 셀이 아니라 **블록 원점**이며,
+		--    영속 델타에도 원점이 저장되어 재생 시 dir 없이 재현된다.
+		-- 🔴 이 조건에 `digPath`를 넣지 말 것 (2026-08-06 회귀 수정): T92가 물 파기를 삽에 얹으면서
+		--    digPath를 조건에 포함시켜 realAction이 항상 물로 치환됐고, 그 결과 ApplyTerrainEdit의
+		--    digPath 분기가 도달 불가능해져 **길 파기가 통째로 사라졌다**(Phase 14-A 회귀).
 		local realAction = action
-		if action == "dig_water" or action == "fill_water" or action == "digPath" then
+		local editX = cellX
+		local editY = cellY
+		if action == "dig_water" then
 			local l1Ent = currentMap:GetChildByName("RectTileMap")
 			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
 				local curTile = l1Ent.RectTileMapComponent:GetTile(Vector2Int(cellX, cellY))
 				if curTile ~= nil and curTile.Name == "Water" then
-					realAction = "fill_water"
-				else
-					if cellX == playerCell.x and cellY == playerCell.y then
-						if isvalid(pc) then pc:ShowMineFeedback("발 밑 셀에는 물을 갤 수 없습니다.") end
-						return
+					if isvalid(pc) then
+						pc:ShowMineFeedback("이미 물입니다. 복구는 다른 도구를 사용하세요.")
 					end
-					realAction = "dig_water"
+					return
 				end
+			end
+			-- 조준 셀 → 블록 원점 (클라 미리보기와 동일 함수를 쓴다 — 규칙 18).
+			local origin = resourceSpawner:GetWaterDigOrigin(cellX, cellY, dirX, dirY)
+			editX = origin.x
+			editY = origin.y
+			-- 플레이어가 블록 안에 있으면 물에 갇힌다 → 차단.
+			if playerCell.x >= editX and playerCell.x <= editX + origin.size - 1
+				and playerCell.y >= editY and playerCell.y <= editY + origin.size - 1 then
+				if isvalid(pc) then pc:ShowMineFeedback("발 밑 셀에는 물을 갤 수 없습니다.") end
+				return
+			end
+			-- 드러난 흙(L2 홀)이 둘레에 있으면 물·흙 프린지 경합 → 파기 금지.
+			local l2Ent = currentMap:GetChildByName("RectTileMap2")
+			if isvalid(l1Ent) and isvalid(l2Ent)
+				and isvalid(l1Ent.RectTileMapComponent) and isvalid(l2Ent.RectTileMapComponent) then
+				if resourceSpawner:HasExposedDirtNearWaterDig(
+					l1Ent.RectTileMapComponent, l2Ent.RectTileMapComponent,
+					editX, editY, origin.size, origin.size) then
+					if isvalid(pc) then
+						pc:ShowMineFeedback("드러난 흙 근처에는 물을 갤 수 없습니다.")
+					end
+					return
+				end
+			end
+		elseif action == "fill_water" then
+			-- 향후 복구 전용 도구용. Water Spade CSV는 dig_water만 쓴다.
+			local origin = resourceSpawner:GetWaterDigOrigin(cellX, cellY, dirX, dirY)
+			editX = origin.x
+			editY = origin.y
+		else
+			if resourceSpawner:IsGridOccupied(mapName, cellX, cellY) then
+				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
+				return
 			end
 		end
 
-		if resourceSpawner:IsGridOccupied(mapName, cellX, cellY) then
-			if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
-			return
-		end
-
-		-- 지형 편집 적용 (서브셀 마스크 + 영속 델타).
-		local success = resourceSpawner:ApplyTerrainEdit(mapName, currentMap, realAction, cellX, cellY, axis, side, true)
+		-- 지형 편집 적용 (서브셀 마스크 + 영속 델타). 물은 editX/editY = 블록 원점.
+		local success = resourceSpawner:ApplyTerrainEdit(mapName, currentMap, realAction, editX, editY, axis, side, true)
 		if not success then
 			if isvalid(pc) then
 				if realAction == "dig_water" then
-					pc:ShowMineFeedback("이미 물 지형입니다.")
+					pc:ShowMineFeedback("여기에 물을 갤 수 없습니다.")
 				elseif realAction == "fill_water" then
-					pc:ShowMineFeedback("이미 흙 지형입니다.")
+					pc:ShowMineFeedback("여기에 되메울 수 없습니다.")
 				elseif action == "digHole" then
 					pc:ShowMineFeedback("이미 파여 있습니다.")
 				else

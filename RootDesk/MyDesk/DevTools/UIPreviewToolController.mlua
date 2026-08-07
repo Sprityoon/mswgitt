@@ -35,14 +35,20 @@ script UIPreviewToolController extends Component
 		-- no-op — see docs/agents/resource-api-pitfalls.md §5-quater), so judge the
 		-- colour here and reject the item if it does not fit.
 		--
-		-- Slots 1~3 mirror item_dataset's current tools; keep them in sync when the
-		-- WeaponRUID of a tool changes. Slots 4~5 are scratch space for candidates.
+		-- These mirror item_dataset's current tools; keep them in sync when the
+		-- WeaponRUID / WeaponSlot / SwingAction of a tool changes.
+		--
+		-- ⚖️ 2026-08-06 삽 모션 확정 = `stabO1`. 2라운드 비교 후 제작자 선택.
+		--    실측으로 알아낸 것(문서에 없는 내용):
+		--      · `*F` 계열(swingOF/stabOF)은 **모션이 훨씬 크다** — 치명타 연출 후보로 쓸 만하다.
+		--      · **폴암 계열(swingP1/P2/PF)은 한손 아이템에 프레임이 없어 무기가 사라진다.**
+		--      · `swingO1`은 내려찍기가 아니라 휘두르기에 가깝다(구 주석이 틀렸음 — MineState.mlua 참조).
 		return {
+			{ ruid = "f1b86bd8137f42ee99847b0079a16bce", label = "Shovel (사각 강철 야삽)", slot = "onehand", action = "stabO1" },
+			{ ruid = "5803e76509014a149c11c07022ffae1c", label = "Water Spade (삼각 강철 야삽)", slot = "onehand", action = "stabO1" },
+			{ ruid = "db5c8f98b77f4f1a9e7505eac4d5f496", label = "Hoe (호프만)", slot = "twohand", action = "swingT1" },
 			{ ruid = "384de1d5a70747a4b356484cf2753b5f", label = "주먹도끼 (빨간 벽돌)", slot = "onehand", action = "swingO1" },
-			{ ruid = "096fabc5a35e426db5912ec35e77a769", label = "돌도끼 (GMS Axe)", slot = "onehand", action = "swingO2" },
 			{ ruid = "18a44a9f39a94633b56902492e5b7da6", label = "돌곡괭이 (곡괭이)", slot = "twohand", action = "swingT1" },
-			{ ruid = "5b0af54d1fd0489198f8c31183d130fa", label = "손 도끼 (비교용·이전 주먹도끼)", slot = "onehand", action = "swingO2" },
-			{ ruid = "5e6acebb7afb46f2a375c7b331ef13d5", label = "토마호크 (비교용)", slot = "onehand", action = "swingO2" },
 		}
 	end
 

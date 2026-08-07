@@ -8,7 +8,8 @@ script ObstacleQuery extends Logic
 	property table WallLayerByMap = {}
 
 	method boolean IsWallAt(Entity mover, Vector2 checkPos)
-		-- Layer-4 벽 타일 위면 true. mover의 CurrentMap 기준.
+		-- Layer-4 위 **Big Wall**만 벽. L4에 잘못 쌓인 잔디/프린지/물은 벽이 아니다
+		-- (2026-08-07: 잔디·프린지는 L2 전용 — L4에 있으면 ObstacleQuery가 전부 벽으로 오판해 통행 불가).
 		if not isvalid(mover) then return false end
 		local map = mover.CurrentMap
 		if not isvalid(map) then return false end
@@ -26,10 +27,10 @@ script ObstacleQuery extends Logic
 			end
 		end
 		local cell = wallLayer:ToCellPosition(Vector3(checkPos.x, checkPos.y, 0))
-		if cell ~= nil and wallLayer:GetTile(cell) ~= nil then
-			return true
-		end
-		return false
+		if cell == nil then return false end
+		local info = wallLayer:GetTile(cell)
+		if info == nil then return false end
+		return info.Name == "Big Wall"
 	end
 
 	method boolean IsBlockingOverlapEntity(Entity mover, Entity entity)
