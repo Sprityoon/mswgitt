@@ -13,8 +13,22 @@
 | `item_dataset.csv` · `.userdataset` | 주먹도끼 외형·모션 조정 후속 (커밋 `af6f676` 계열) |
 | `ui/PreviewTool.ui` · `ui/PopupGroup.ui` | 인게임 리소스 프리뷰 도구(F9) 후속 (커밋 `8f36832` 계열) |
 | `map/map01.map` · `scripts/fix_water_fringe.cjs` · `PlayerController.mlua` | **물가 프린지 규칙 반전 + 낚시 조준 판정 수정** (2026-08-06, 아래 참조) |
+| `PlayerController.mlua` + 인터랙터블 12종 `.mlua` | **상호작용 가이드 — 조준 대상 라벨 + 하이라이트** (2026-08-08, 아래 참조) |
 
 관련 실측 기록: [reference/resource-api-pitfalls.md](./reference/resource-api-pitfalls.md) §2 · §5-bis · §5-quater.
+
+### 2026-08-08 상호작용 가이드 (로드맵 2번) — Play 확인 필요
+
+| 항목 | 내용 |
+|---|---|
+| ✨ **신규** | 조준선이 상호작용 대상에 닿으면 **대상 위에 "[F] {행동}" 라벨**(메이플 폰트·흰 글자·다크 아웃라인, 모바일은 키 프리픽스 없음) + **대상 스프라이트를 노란 틴트로 하이라이트**. 라벨은 `uitext` 런타임 스폰(TimeClock 패턴 — `.ui` 파일 무수정, 규칙 11 영향권 밖) |
+| 대상 탐지 | `ProbeInteractTarget()`이 **TryInteract와 같은 우선순위**로 판정만 수행: 보물상자→포탈→침대→화로→상자→낚시터→물 타일→분산 6종(연구소/게시판/상인/주민/낚시왕/가축). ⚠️ 우선순위는 양쪽 동시 수정(규칙 18 계열 주석 명시) |
+| 라벨 문구 | 각 인터랙터블 스크립트의 `property string InteractLabel` 기본값 (연구소 이용하기/포탈 이용하기/대화하기 등 12종 — 이름 분기 없음, R3) |
+| 로그 스팸 방지 | `IsAimTarget`/`IsAimTileWater`를 **코어(무로그)+래퍼(로그)** 로 분리 — F 단발 판정은 기존 로그 유지, 0.15s 프로브는 무로그. 대상 변경 시에만 `[GUIDE]` 1줄 |
+| 한계 | 아바타 렌더러 NPC는 `Color` 프로퍼티가 없어 **라벨만** 표시(틴트 없음). 아웃라인 셰이더(`Outline` 카테고리 머티리얼)는 msw-guide-mcp 연결 후 속성 확정해 후속 적용 |
+
+- 검증: LSP 진단 인터랙터블 12종 errors=0 · warnings=0 (info는 기존 크로스 스크립트 오탐). **refresh Error=0 · Warning 48 = baseline 유지(증가분 0), Info 519(+6 = 신규 프로퍼티 LIA-1114 계열) — 2026-08-08 실측**. 런타임 검증 보류(제작자 Play).
+- Play 확인 포인트: ① 포탈/연구소/상인/침대/화로/상자/게시판/가축/물가를 조준할 때 라벨 문구·위치(대상 상단) ② 스프라이트 대상 노란 틴트 적용·이탈 시 **원색 복원**(특히 색 있는 포탈) ③ F를 눌렀을 때 실제 동작과 라벨이 일치하는지(어긋나면 우선순위 규약 위반) ④ 콘솔 `[GUIDE] label=... target=...`이 대상 변경 시에만 찍히는지(스팸이면 회귀) ⑤ 낚시 중/수면 중 라벨 숨김
 
 ### 2026-08-06 물·낚시 수정 — Play 확인 필요
 
@@ -91,6 +105,7 @@
 | ♻️ **규칙 18 정리** | `digPath` axis/side 판정이 서버(PlayerInventory)에만 있어 미리보기가 복제본을 만들 뻔했다 → `ResourceSpawner:DeriveDigPathAxisSide()` 단일 소스로 추출, 서버·클라 공용. 영향 셀 집합도 `GetTerrainEditAffectedCells()` 단일 소스 |
 
 - 검증: refresh **Error=0** (Warning 48 = baseline 유지, 증가분 0). `map01` 엔티티 25개 전부 `jsonString` 객체 유지(규칙 16 통과).
+- **2026-08-08 코드 정합 재검증 (로드맵 4번 — 어시스턴트)**: ① 단일 소스 3함수(`GetTerrainEditAffectedCells`/`GetWaterDigOrigin`/`DeriveDigPathAxisSide`) 시그니처 = 클라 프리뷰(PlayerController)·서버 적용(PlayerInventory) 호출부와 일치 ② 최대 영향 셀 16(물 4×4) = `TerrainAffect_` 풀 16개(map01 실존) = 프리뷰 루프 상한 16 3자 일치 ③ digPath 6 / digHole·plantGrass 9 / dig_water 16 / forceGrass 9 전 분기 커버. **2026-08-08 refresh 재확인 Error=0 · Warning 48**(baseline 유지) — 남은 것은 아래 Play 확인뿐.
 - Play 확인 포인트: ① 물삽으로 물 팔 때 **잔디가 물을 ½셀 덮는지**(흙 후광 없이) ② 되메우기 정상 ③ 삽/괭이/씨앗/물삽 들었을 때 **영향 셀이 노랗게 표시**되는지 ④ 표시된 셀과 실제로 바뀌는 셀이 **일치**하는지(어긋나면 규칙 18 위반 재발)
 
 > ⚖️ **2026-08-06 결정 — 물삽 1회 = 2×2 블록** (`ResourceSpawner.WaterDigSize = 2`)
@@ -160,8 +175,14 @@
 
 ## 4. 후속 후보 (미착수)
 
+> 🗺️ **2026-08-08 제작자 로드맵 5건** — ② 상호작용 가이드는 §1에서 구현 완료(Play 대기), ④ 지형 편집 시각 피드백은 §1 재검증 완료(Play 대기). 나머지 3건은 설계 문서 작성 완료, 구현 미착수.
+
 | 항목 | 선행 조건 |
 |---|---|
+| **로드맵 ① 스토리·NPC·퀘스트 연동** | 설계 + 스토리 에이전트 핸드오프 브리프 = [design/story-npc-quest-plan.md](./design/story-npc-quest-plan.md). 선행: 브리프 §4 열린 결정(톤/분량) 제작자 확정 → 외부 에이전트에 브리프 전달 → 산출물 수령 후 구현 A~E |
+| **로드맵 ③ 메인화면 + 슬롯 세이브 (3~5슬롯, 영지 분리)** | 설계 = [design/main-menu-save-slots.md](./design/main-menu-save-slots.md). ⚠️ 세이브 마이그레이션 포함(규칙 9) — 착수 전 제작자 백업 고지 필수. 키 아트는 로드맵 ⑤ 프롬프트로 병행 |
+| **로드맵 ⑤ 아트 스타일 가이드·생성 프롬프트** | 가이드 = [design/art-style-guide.md](./design/art-style-guide.md) 작성 완료. 제작자가 타사 에이전트로 생성 → image-to-pixel 도트화 → RUID 교체 파이프라인 |
+| **상호작용 아웃라인 셰이더 (로드맵 ② 후속)** | 현행은 Color 틴트. `Outline` 카테고리 `.material` 저작은 msw-guide-mcp(`user-msw-guide-mcp`) 연결 후 속성명 확정 필요 (material.md §3.3 — 스켈레톤만 쓰면 조용히 무효과) |
 | **Prop `LWA-4012` 경고 31건 재발 규명** | 2026-08-06 실측 Warning **48**(=상시 17 + Prop 31). T103이 "W17 복귀"로 보고했으나 재현되지 않음 — 커밋 `c6c0a3c`는 HEAD에 온전하고 Prop 모델 워킹트리도 HEAD와 동일. 동작 무관(표지 경고)이라 우선순위 낮음 |
 | **town / template_field / template_boss 물 페인팅 + L2 프린지** | 제작자가 Maker에서 L1 `Water` 페인팅 → `scripts/fix_water_fringe.cjs` 재실행 (스크립트는 범용). ⚠️ [규칙 16](./pitfalls.md#규칙-16-map의-jsonstring은-중첩-객체다--문자열-대입-금지) 재확인 필수 |
 | **마을 생활 소품 재배치** | T75가 모델 11종만 남기고 `town.map` 인스턴스 43개를 철회한 상태. 재배치는 [규칙 17](./pitfalls.md#규칙-17-trigger배치는-스프라이트-실루엣-정합이-1순위다) 실루엣 정합 기준으로 |

@@ -10,6 +10,9 @@ script FishingLeaderboardInteract extends Component
 	property integer AimFootprintW = 1
 	property integer AimFootprintH = 1
 
+	-- 조준 가이드 라벨 (PlayerController:ReadInteractLabel이 읽음)
+	property string InteractLabel = "낚시왕 순위 보기"
+
 	method void OnBeginPlay()
 		-- 클라: F KeyDown + InteractRequestEvent 구독.
 		if self:IsClient() then

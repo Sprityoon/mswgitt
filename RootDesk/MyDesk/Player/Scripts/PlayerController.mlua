@@ -126,6 +126,15 @@ script PlayerController extends Component
 	-- T66: 시전 이펙트 전방 오프셋(월드 유닛)·스케일 (CSV EffectOffset/EffectScale 공란 시 폴백)
 	property number SkillEffectForwardOffset = 0.8
 
+	-- 상호작용 가이드: 조준 대상 하이라이트 틴트 (SpriteRenderer 한정 — 아바타 NPC는 라벨만)
+	property Color InteractHighlightColor = Color(1.0, 0.85, 0.45, 1.0)
+
+	-- 상호작용 가이드: 물 타일 조준(엔티티 없는 대상) 라벨
+	property string WaterAimInteractLabel = "낚시하기"
+
+	-- 상호작용 가이드: 대상 재탐지 주기(초). 라벨 위치 추적은 매 프레임
+	property number InteractGuideProbeInterval = 0.15
+
 	-- T89: 아바타 Y정렬 갱신용 이전 Y 위치 기록
 	@HideFromInspector
 	property number _LastAvatarY = -999999
@@ -211,6 +220,12 @@ script PlayerController extends Component
 				preview.Enable = false
 				preview.Visible = false
 				self._T.PlacementPreviewEntity = nil
+			end
+			self:ClearInteractHighlight()
+			local guideLabel = self._T.InteractGuideLabel
+			if isvalid(guideLabel) then
+				guideLabel.Enable = false
+				self._T.InteractGuideLabel = nil
 			end
 			log("PlayerController cleaned up on client.")
 		else
@@ -442,6 +457,9 @@ script PlayerController extends Component
 		
 		-- Update local placement preview
 		self:UpdatePlacementPreview()
+
+		-- 조준 대상 상호작용 가이드 (라벨 + 하이라이트)
+		self:UpdateInteractGuide()
 	end
 
 	@ExecSpace("Server")
@@ -743,7 +761,7 @@ script PlayerController extends Component
 		for _, comp in ipairs(furnaceComponents) do
 			if isvalid(comp) then
 				local ent = comp.Entity
-				if isvalid(ent) and self:IsAimTarget(ent) then
+				if isvalid(ent) and self:IsAimTargetCore(ent, false) then
 					local fPos = ent.TransformComponent.WorldPosition:ToVector2()
 					local dist = (myPos - fPos):Magnitude()
 					if dist < minDist then
@@ -773,7 +791,7 @@ script PlayerController extends Component
 		for _, comp in ipairs(chestComponents) do
 			if isvalid(comp) then
 				local ent = comp.Entity
-				if isvalid(ent) and self:IsAimTarget(ent) then
+				if isvalid(ent) and self:IsAimTargetCore(ent, false) then
 					local fPos = ent.TransformComponent.WorldPosition:ToVector2()
 					local dist = (myPos - fPos):Magnitude()
 					if dist < minDist then
@@ -1240,6 +1258,12 @@ script PlayerController extends Component
 	end
 
 	method boolean IsAimTarget(Entity target)
+		-- T67/T82 조준 판정 + [T82][AIM] 로그. F 입력 등 단발 판정용 (분산 인터랙터블도 이걸 호출).
+		-- 고빈도 폴링(가이드 프로브)은 IsAimTargetCore(target, false)를 쓸 것 — 로그 스팸 방지.
+		return self:IsAimTargetCore(target, true)
+	end
+
+	method boolean IsAimTargetCore(Entity target, boolean verbose)
 		-- T67: 조준선 셀(playerCell+LastDirection)이 대상 footprint 안이면 true.
 		-- T82: TriggerComponent가 있으면(유효 AABB)면 조준 셀 월드 1×1과 Trigger AABB 겹침으로 판정.
 		-- Trigger 없으면 기존 AimFootprintW/H 경로(기본 1×1, 대형은 컴포넌트 프로퍼티 — 이름 분기 금지).
@@ -1264,7 +1288,9 @@ script PlayerController extends Component
 			local eps = 0.001
 			local hit = aimMaxX > (box.minX - eps) and aimMinX < (box.maxX + eps)
 				and aimMaxY > (box.minY - eps) and aimMinY < (box.maxY + eps)
-			log(string.format("[T82][AIM] target=%s mode=trigger hit=%s", targetName, tostring(hit)))
+			if verbose then
+				log(string.format("[T82][AIM] target=%s mode=trigger hit=%s", targetName, tostring(hit)))
+			end
 			return hit
 		end
 
@@ -1278,7 +1304,9 @@ script PlayerController extends Component
 		local dx = math.abs(aimCell.x - targetCell.x)
 		local dy = math.abs(aimCell.y - targetCell.y)
 		local hit = dx <= maxDx and dy <= maxDy
-		log(string.format("[T82][AIM] target=%s mode=footprint hit=%s", targetName, tostring(hit)))
+		if verbose then
+			log(string.format("[T82][AIM] target=%s mode=footprint hit=%s", targetName, tostring(hit)))
+		end
 		return hit
 	end
 
@@ -1349,6 +1377,287 @@ script PlayerController extends Component
 			local mapRadius = 75
 			if _ResourceSpawner then mapRadius = _ResourceSpawner.MapRadius end
 			sprite.OrderInLayer = math.floor((mapRadius - targetCell.y) * 100) + 1
+		end
+	end
+
+	method string ReadInteractLabel(Entity target, string fallback)
+		-- 대상의 상호작용 컴포넌트에서 InteractLabel 프로퍼티를 읽는다 (ReadAimFootprint와 같은 탐색 패턴).
+		-- 라벨 문구는 각 인터랙터블 스크립트의 property 기본값이 소스 — 여기서 이름 분기 금지(R3).
+		local typeNames = {
+			"script.PortalGate",
+			"script.TerritoryPortal",
+			"script.ResearchLab",
+			"script.BulletinBoard",
+			"script.Furniture_Bed",
+			"script.Furnace",
+			"script.Chest",
+			"script.FishingSpot",
+			"script.TreasureChest",
+			"script.MerchantInteract",
+			"script.VillagerDialog",
+			"script.FishingLeaderboardInteract",
+			"script.Animal",
+		}
+		for _, typeName in ipairs(typeNames) do
+			local comp = target:GetComponent(typeName)
+			if isvalid(comp) then
+				local ok, v = pcall(function() return comp.InteractLabel end)
+				if ok and v ~= nil and tostring(v) ~= "" then
+					return tostring(v)
+				end
+			end
+		end
+		return fallback
+	end
+
+	@ExecSpace("ClientOnly")
+	method table FindAimedDistributedInteractable()
+		-- InteractRequestEvent 분산 핸들러(연구소/게시판/상인/주민/낚시왕/가축)와 같은 대상 집합을
+		-- 같은 게이트(IsAimTargetCore)로 탐지만 한다. 반환: { target=Entity, label=string } 또는 {}.
+		local out = {}
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) then return out end
+		local myPos = self.Entity.TransformComponent.WorldPosition:ToVector2()
+		local minDist = 9999.0
+		local typeNames = {
+			"script.ResearchLab",
+			"script.BulletinBoard",
+			"script.MerchantInteract",
+			"script.VillagerDialog",
+			"script.FishingLeaderboardInteract",
+			"script.Animal",
+		}
+		for _, typeName in ipairs(typeNames) do
+			local comps = currentMap:GetChildComponentsByTypeName(typeName, true)
+			if comps then
+				for _, comp in ipairs(comps) do
+					if isvalid(comp) then
+						local ent = comp.Entity
+						if isvalid(ent) and self:IsAimTargetCore(ent, false) then
+							local d = (myPos - ent.TransformComponent.WorldPosition:ToVector2()):Magnitude()
+							if d < minDist then
+								minDist = d
+								out.target = ent
+							end
+						end
+					end
+				end
+			end
+		end
+		if isvalid(out.target) then
+			out.label = self:ReadInteractLabel(out.target, "상호작용")
+		end
+		return out
+	end
+
+	@ExecSpace("ClientOnly")
+	method table ProbeInteractTarget()
+		-- 가이드용 대상 탐지 — TryInteract와 **같은 우선순위**를 판정만 하고 실행하지 않는다.
+		-- ⚠️ 우선순위를 한쪽만 바꾸면 가이드와 실제 F 동작이 어긋난다(규칙 18 계열 — 반드시 같이 수정).
+		-- 반환: { target=Entity|nil, label=string|nil, ax/ay=물 조준 앵커(월드) }
+		local out = {}
+		if self.FishingState ~= "None" then return out end
+		if self.IsDead or self.IsSleeping then return out end
+
+		local target = self:FindNearbyTreasureChest()
+		if isvalid(target) then
+			out.target = target
+			out.label = self:ReadInteractLabel(target, "보물상자 열기")
+			return out
+		end
+		if isvalid(self.ActivePortal) then
+			out.target = self.ActivePortal
+			out.label = self:ReadInteractLabel(self.ActivePortal, "포탈 이용하기")
+			return out
+		end
+		target = self:FindNearbyBed()
+		if isvalid(target) then
+			out.target = target
+			out.label = self:ReadInteractLabel(target, "잠자기")
+			return out
+		end
+		target = self:FindNearbyFurnace()
+		if isvalid(target) then
+			out.target = target
+			out.label = self:ReadInteractLabel(target, "화로 사용하기")
+			return out
+		end
+		target = self:FindNearbyChest()
+		if isvalid(target) then
+			out.target = target
+			out.label = self:ReadInteractLabel(target, "상자 열기")
+			return out
+		end
+		target = self:FindNearbyFishingSpot()
+		if isvalid(target) then
+			out.target = target
+			out.label = self:ReadInteractLabel(target, "낚시하기")
+			return out
+		end
+		if self:IsAimTileWaterCore(false) then
+			local currentMap = self.Entity.CurrentMap
+			if isvalid(currentMap) then
+				local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
+				if isvalid(tilemap) then
+					local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
+					if playerCell ~= nil then
+						out.label = self.WaterAimInteractLabel
+						out.ax = playerCell.x + self.LastDirectionX + 0.5
+						out.ay = playerCell.y + self.LastDirectionY + 1.4
+						return out
+					end
+				end
+			end
+			return out
+		end
+		return self:FindAimedDistributedInteractable()
+	end
+
+	@ExecSpace("ClientOnly")
+	method Entity EnsureInteractGuideLabel()
+		-- HUD 아래 uitext 1개를 지연 생성 — UIHUDController.InitTimeUI(TimeClock)와 같은 런타임 스폰 패턴.
+		-- .ui 파일 무수정: Maker 재직렬화 원복(규칙 11) 영향권 밖.
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		if not isvalid(hud) then return nil end
+		local label = hud:GetChildByName("InteractGuideLabel")
+		if not isvalid(label) then
+			label = _SpawnService:SpawnByModelId("uitext", "InteractGuideLabel", Vector3.zero, hud)
+		end
+		if not isvalid(label) then return nil end
+		self._T.InteractGuideLabel = label
+
+		local sprite = label.SpriteGUIRendererComponent
+		if isvalid(sprite) then
+			sprite.Color = Color(0, 0, 0, 0)
+			sprite.RaycastTarget = false
+		end
+		local transform = label.UITransformComponent
+		if isvalid(transform) then
+			transform.AlignmentOption = AlignmentType.CastFrom("Center")
+			transform.RectSize = Vector2(420, 32)
+		end
+		local textComp = label.TextComponent
+		if isvalid(textComp) then
+			textComp.Font = FontType.Maple
+			textComp.FontSize = 19
+			textComp.FontColor = Color(1.0, 1.0, 1.0, 1.0)
+			textComp.UseOutLine = true
+			textComp.OutlineColor = Color(0.10, 0.07, 0.02, 1.0)
+			textComp.OutlineWidth = 1.2
+			textComp.Alignment = TextAlignmentType.MiddleCenter
+		end
+		return label
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyInteractHighlight(Entity target)
+		-- 대상 스프라이트의 원래 틴트를 저장하고 하이라이트 색을 적용한다.
+		-- AvatarRenderer(NPC)는 Color 프로퍼티가 없어 스킵 — 라벨만으로 피드백.
+		local sprite = target.SpriteRendererComponent
+		if not isvalid(sprite) then return end
+		local c = sprite.Color
+		self._T.GuideTintTarget = target
+		self._T.GuideTintSaved = Color(c.r, c.g, c.b, c.a)
+		sprite.Color = self.InteractHighlightColor
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ClearInteractHighlight()
+		-- 하이라이트 원복. 대상이 이미 파괴됐으면 복원 생략(스테일 핸들 무해).
+		local target = self._T.GuideTintTarget
+		if isvalid(target) then
+			local sprite = target.SpriteRendererComponent
+			if isvalid(sprite) and self._T.GuideTintSaved ~= nil then
+				sprite.Color = self._T.GuideTintSaved
+			end
+		end
+		self._T.GuideTintTarget = nil
+		self._T.GuideTintSaved = nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateInteractGuide()
+		-- 조준 대상 상호작용 가이드: 탐지는 InteractGuideProbeInterval 주기, 라벨 위치 추적은 매 프레임.
+		-- 진한 노랑 틴트 = 지금 F를 누르면 반응할 대상. 라벨 = "[F] {행동}" (모바일은 키 프리픽스 없음).
+		if self.Entity ~= _UserService.LocalPlayer then return end
+
+		local now = _UtilLogic.ElapsedSeconds
+		local nextProbe = self._T.GuideNextProbe or 0
+		if now >= nextProbe then
+			self._T.GuideNextProbe = now + self.InteractGuideProbeInterval
+			local res = self:ProbeInteractTarget()
+			local changed = false
+			if res.label ~= self._T.GuideLabelText then changed = true end
+			if res.target ~= self._T.GuideTarget then changed = true end
+			self._T.GuideLabelText = res.label
+			self._T.GuideTarget = res.target
+			self._T.GuideWaterX = res.ax
+			self._T.GuideWaterY = res.ay
+			if changed then
+				self:ClearInteractHighlight()
+				if isvalid(res.target) then
+					self:ApplyInteractHighlight(res.target)
+				end
+				if res.label ~= nil then
+					local tname = "tile"
+					if isvalid(res.target) then tname = res.target.Name end
+					log("[GUIDE] label=" .. res.label .. " target=" .. tname)
+				end
+			end
+		end
+
+		local text = self._T.GuideLabelText
+		local label = self._T.InteractGuideLabel
+		if text == nil then
+			if isvalid(label) then label.Enable = false end
+			return
+		end
+		if not isvalid(label) then
+			label = self:EnsureInteractGuideLabel()
+			if not isvalid(label) then return end
+		end
+		label.Enable = true
+
+		-- 앵커: 대상 콜라이더 상단 중심(Scale 반영 AABB — 규칙 14), 없으면 위치+1. 물은 조준 셀 상단.
+		local ax = nil
+		local ay = nil
+		local target = self._T.GuideTarget
+		if isvalid(target) then
+			local box = { minX = 0, maxX = 0, minY = 0, maxY = 0 }
+			if self:GetColliderAABB(target, box) then
+				ax = (box.minX + box.maxX) * 0.5
+				ay = box.maxY + 0.35
+			else
+				local p = target.TransformComponent.WorldPosition
+				ax = p.x
+				ay = p.y + 1.0
+			end
+		elseif self._T.GuideWaterX ~= nil then
+			ax = self._T.GuideWaterX
+			ay = self._T.GuideWaterY
+		end
+		if ax == nil then
+			label.Enable = false
+			return
+		end
+
+		if self._T.GuideIsPC == nil then
+			self._T.GuideIsPC = Environment:IsPCPlatform()
+		end
+		local full = text
+		if self._T.GuideIsPC then
+			full = "[F] " .. text
+		end
+		local textComp = label.TextComponent
+		if isvalid(textComp) and textComp.Text ~= full then
+			textComp.Text = full
+		end
+
+		local screenPos = _UILogic:WorldToScreenPosition(Vector2(ax, ay))
+		local uiPos = _UILogic:ScreenToUIPosition(screenPos)
+		local transform = label.UITransformComponent
+		if isvalid(transform) then
+			transform.anchoredPosition = uiPos
 		end
 	end
 
@@ -2733,7 +3042,7 @@ script PlayerController extends Component
 		for _, comp in ipairs(bedComponents) do
 			if isvalid(comp) then
 				local ent = comp.Entity
-				if isvalid(ent) and self:IsAimTarget(ent) then
+				if isvalid(ent) and self:IsAimTargetCore(ent, false) then
 					local fPos = ent.TransformComponent.WorldPosition:ToVector2()
 					local dist = (myPos - fPos):Magnitude()
 					if dist < minDist then
@@ -2764,7 +3073,7 @@ script PlayerController extends Component
 			if isvalid(comp) then
 				if not comp.IsOpened then
 					local ent = comp.Entity
-					if isvalid(ent) and self:IsAimTarget(ent) then
+					if isvalid(ent) and self:IsAimTargetCore(ent, false) then
 						local fPos = ent.TransformComponent.WorldPosition:ToVector2()
 						local dist = (myPos - fPos):Magnitude()
 						if dist < minDist then
@@ -2791,7 +3100,7 @@ script PlayerController extends Component
 		for _, comp in ipairs(comps) do
 			if isvalid(comp) then
 				local ent = comp.Entity
-				if isvalid(ent) and self:IsAimTarget(ent) then
+				if isvalid(ent) and self:IsAimTargetCore(ent, false) then
 					local fPos = ent.TransformComponent.WorldPosition:ToVector2()
 					local dist = (myPos - fPos):Magnitude()
 					if dist < minDist then
@@ -2806,6 +3115,13 @@ script PlayerController extends Component
 
 	@ExecSpace("ClientOnly")
 	method boolean IsAimTileWater()
+		-- 조준 셀 물 판정 + [FISHING] 로그. F 입력 등 단발 판정용.
+		-- 고빈도 폴링(가이드 프로브)은 IsAimTileWaterCore(false)를 쓸 것 — 로그 스팸 방지.
+		return self:IsAimTileWaterCore(true)
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsAimTileWaterCore(boolean verbose)
 		-- 조준 셀(L1)이 물 타일인지 판정. 셀 환산·바라보는 방향은 채광/설치와 **같은 단일 규약**을 쓴다
 		-- (T67 조준선 = tilemap:ToCellPosition + LastDirectionX/Y). 자체 환산을 두면 조준선과 어긋난다.
 		local currentMap = self.Entity.CurrentMap
@@ -2824,8 +3140,10 @@ script PlayerController extends Component
 		local tile = l1.RectTileMapComponent:GetTile(aimCell)
 		if tile ~= nil then tileName = tile.Name end
 		local isWater = (tileName == "Water")
-		log("[FISHING] aim=(" .. aimCell.x .. "," .. aimCell.y .. ") tile=" .. tileName
-			.. " water=" .. tostring(isWater))
+		if verbose then
+			log("[FISHING] aim=(" .. aimCell.x .. "," .. aimCell.y .. ") tile=" .. tileName
+				.. " water=" .. tostring(isWater))
+		end
 		return isWater
 	end
 

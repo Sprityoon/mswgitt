@@ -8,4 +8,7 @@ script Furniture_Bed extends Component
 	property integer AimFootprintW = 2
 	property integer AimFootprintH = 2
 
+	-- 조준 가이드 라벨 (PlayerController:ReadInteractLabel이 읽음)
+	property string InteractLabel = "잠자기"
+
 end

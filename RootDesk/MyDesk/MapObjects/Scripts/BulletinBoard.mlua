@@ -10,6 +10,9 @@ script BulletinBoard extends Component
 	property integer AimFootprintW = 2
 	property integer AimFootprintH = 2
 
+	-- 조준 가이드 라벨 (PlayerController:ReadInteractLabel이 읽음)
+	property string InteractLabel = "게시판 보기"
+
 	method void OnBeginPlay()
 		-- 클라: F KeyDown + InteractRequestEvent 구독.
 		if self:IsClient() then

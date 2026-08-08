@@ -46,6 +46,9 @@ script Animal extends Component
 	property integer AimFootprintW = 1
 	property integer AimFootprintH = 1
 
+	-- 조준 가이드 라벨 (PlayerController:ReadInteractLabel이 읽음)
+	property string InteractLabel = "먹이 주기"
+
 	property number WanderMin = 1.0
 
 	property number WanderMax = 2.5
