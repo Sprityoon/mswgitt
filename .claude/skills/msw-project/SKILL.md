@@ -39,11 +39,13 @@ description: 이 프로젝트(메이플월드 탑다운 크래프팅 게임)의 
 ```
 1) maker_refresh_workspace       → status ok
 2) maker_logs(kind="build")      → Error 수 (Error=0 이 게이트) · Warning 수
-3) 신규 .mlua면 .codeblock 생성 확인
-4) 이후는 "런타임 검증 보류(제작자 Play)"로 명시
+3) 로그 dateTime이 이번 refresh 시각과 같은지 대조 (규칙 22)
+4) 신규 .mlua면 .codeblock 생성 확인
+5) 이후는 "런타임 검증 보류(제작자 Play)"로 명시
 ```
 
-- **현재 Warning baseline = 48** (2026-08-06 실측). 늘었으면 원인과 소유 스크립트를 밝힌다. 내역은 [docs/workflow.md](../../../docs/workflow.md) §④.
+- **현재 Warning baseline = 17** (2026-08-08 실측, HEAD `3126192`). 늘었으면 원인과 소유 스크립트를 밝힌다. 소유별 내역은 [docs/workflow.md](../../../docs/workflow.md) §④. 구 baseline 48은 폐기.
+- 🔴 **build 로그는 refresh마다 갱신되지 않는다** ([규칙 22](../../../docs/pitfalls.md)) — 직전 빌드 스냅샷이 그대로 재반환될 수 있고 `maker_clear_logs`는 `normal`만 지운다. 타임스탬프가 어긋나면 `Error=0`을 근거로 쓰지 말 것.
 - ⛔ `maker_play` / `maker_stop` / `maker_keyboard_input` / `maker_mouse_input` / `maker_screenshot` / `maker_reset_data_storage`는 **제작자 전담 — 호출 금지** (AGENTS.md §0 O-2).
 - ⚠️ **build Error=0이 못 잡는 것**: `.map` JSON 구조 붕괴([규칙 16](../../../docs/pitfalls.md)) · `.ui` 산출물 원복([규칙 11](../../../docs/pitfalls.md)) · 시각 실루엣 불일치([규칙 17](../../../docs/pitfalls.md)).
 - MCP 미연결이면 LSP 진단까지만 하고 **"refresh 검증 보류"** 로 정확히 보고. 허위 `Error=0` 기재 금지 (R8).

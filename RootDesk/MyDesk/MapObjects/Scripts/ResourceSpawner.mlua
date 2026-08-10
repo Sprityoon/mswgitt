@@ -2707,6 +2707,49 @@ script ResourceSpawner extends Logic
 	end
 
 	@ExecSpace("ServerOnly")
+	method boolean SpawnAndRegisterFurniture(Entity map, table rec)
+		-- 런타임에 가구 1개를 즉시 설치하고 영속 델타까지 등록한다 (퀘스트 보상 포탈 개통 등).
+		-- 모델 선택·정렬 레이어·PortalGate 복원 규약은 ReconstructWorldPlacementsForMap과 동일하게 유지한다.
+		if not isvalid(map) or type(rec) ~= "table" then return false end
+		local itemName = rec.itemName
+		if itemName == nil or itemName == "" then return false end
+		local fx = math.floor(tonumber(rec.x) or 0)
+		local fy = math.floor(tonumber(rec.y) or 0)
+
+		local modelId = _EntryService:GetModelIdByName("Furniture_" .. string.gsub(itemName, " ", ""))
+		if modelId == nil or modelId == "" then
+			log_warning("ResourceSpawner: Furniture model not found for '" .. tostring(itemName) .. "'")
+			return false
+		end
+		local ent = _SpawnService:SpawnByModelId(modelId, itemName, Vector3(fx + 0.5, fy + 0.5, 0), map)
+		if not isvalid(ent) then
+			log_warning("ResourceSpawner: SpawnByModelId returned nil for '" .. tostring(itemName) .. "'")
+			return false
+		end
+
+		local sprite = ent.SpriteRendererComponent
+		if isvalid(sprite) then
+			sprite.IgnoreMapLayerCheck = true
+			sprite.SortingLayer = _RenderLayers.EntityLayer
+			sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(ent, 0)
+		end
+
+		local pg = ent:GetComponent("script.PortalGate")
+		if isvalid(pg) then
+			if rec.targetMapName ~= nil then pg.TargetMapName = rec.targetMapName end
+			if rec.targetPositionX ~= nil or rec.targetPositionY ~= nil then
+				pg.TargetPosition = Vector2(rec.targetPositionX or 0, rec.targetPositionY or 0)
+			end
+			if rec.destinationGroup ~= nil then pg.DestinationGroup = rec.destinationGroup end
+			if rec.portalColor ~= nil then pg.PortalColor = rec.portalColor end
+		end
+
+		self:AddPlacedFurniture(map.Name, itemName, fx, fy, ent)
+		log("ResourceSpawner: Runtime-placed '" .. itemName .. "' at (" .. fx .. ", " .. fy .. ") in " .. map.Name)
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
 	method void AddPlacedFurniture(string mapName, string itemName, integer x, integer y, Entity spawnedEntity)
 		-- 가구/작물 설치 영속 델타. 작물은 plantedAt·isCrop 필드를 가구 JSON 패턴에 함께 저장.
 		local json = self:GetPlacedFurnitureJson(mapName)

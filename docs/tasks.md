@@ -10,10 +10,76 @@
 
 | 대상 | 내용 |
 |---|---|
+| `PersistenceManager` · `PlayerDBManager` · `UIMainMenuController` · `ui/MainMenuGroup.ui` | **5슬롯 세이브** + **타이틀→슬롯→외모커스텀** (2026-08-09) |
+| `UIDialogController` · `VillagerDialog` · `ui/DialogGroup.ui` · `StoryDialogDataSet` · Quest 201 | **메이플식 대화창 + 퀘스트 수락** (2026-08-08) |
+| `FishingContestLogic` | 낚시왕 랭킹 = 캐릭터/슬롯 단위 |
 | `item_dataset.csv` · `.userdataset` | 주먹도끼 외형·모션 조정 후속 (커밋 `af6f676` 계열) |
 | `ui/PreviewTool.ui` · `ui/PopupGroup.ui` | 인게임 리소스 프리뷰 도구(F9) 후속 (커밋 `8f36832` 계열) |
 | `map/map01.map` · `scripts/fix_water_fringe.cjs` · `PlayerController.mlua` | **물가 프린지 규칙 반전 + 낚시 조준 판정 수정** (2026-08-06, 아래 참조) |
 | `PlayerController.mlua` + 인터랙터블 12종 `.mlua` | **상호작용 가이드 — 조준 대상 라벨 + 하이라이트** (2026-08-08, 아래 참조) |
+
+### 2026-08-10 새 캐릭터 시작 지점 + 영지 첫 포탈을 퀘스트 보상으로 — Play 확인 필요
+
+| 항목 | 내용 |
+|---|---|
+| 🐛 **마을에서 시작** | `SelectSaveSlot(isNew)`가 **로드보다 먼저 저장**해 `lastMapKind="town"`(그 순간 플레이어는 시작맵에 서 있음)이 박제 → `LoadPlayerData`가 영지 대신 마을로 워프. ([pitfalls 규칙 26](./pitfalls.md)) |
+| 🐛 **영지가 텅 빔** | 같은 원인으로 `homeFurniture="[]"`가 저장되어 `LoadPlayerData`의 *"신규 플레이어"* 기본값 분기가 영영 실행되지 않았음 |
+| 🐛 **포탈이 안 보임** | `map01`의 `TownPortal`이 **`SpriteRUID` 없음**(=투명) + **`PlaceableFurniture.ItemId` 공란**(→ 세이브가 `itemName="TownPortal"`로 기록 → `Furniture_TownPortal` 모델 조회 실패). ([pitfalls 규칙 27](./pitfalls.md)) |
+| ⚖️ **포탈 = 퀘스트 보상** | 신규 영지엔 포탈이 **없다.** `QuestDataSet.RewardPortalId` 신설 → **106(나무 상자 설치) 완료 시 마을 포탈 개통** + 토스트. 곧바로 107(포탈 이동)이 AutoAccept |
+| 🐛 **퀘스트 201 누락** | `QuestDataSet.csv` 201행이 컬럼 1칸 밀려 `Disable="10"` → **촌장 퀘스트가 로드 단계에서 통째로 스킵**되고 보상·GiverNpcId도 유실 상태였음. 정렬 교정 |
+| 🔁 마이그레이션 | 구세이브 `itemName="TownPortal"` → `"Portal"` 정규화 · 이미 106을 깬 세이브는 로그인 시 `BackfillEarnedPortals`가 보정 (멱등) |
+
+- 변경: `PersistenceManager`(부트스트랩 순서·`SeedNewEstate`·`GrantEstatePortal`·`BackfillEarnedPortals`) · `ResourceSpawner.SpawnAndRegisterFurniture` · `QuestData.RewardPortalId` · `UserQuestData.Complete` · `PlayerDBManager.PostOnLoadedDataFromDB` · `QuestDataSet.csv` · `map/map01.map`(TownPortal 제거)
+- 포탈 셀은 `PersistenceManager.EstatePortalCellX/Y`(기본 -2, 0) 프로퍼티. 목적지는 `PortalDestinationDataSet`
+- 검증: `maker_refresh_workspace` ok → `maker_logs(build)` **Error=0 / Warning=6** (전부 기존 `PlayerInventory.ServerRequestUseItem` `LWA-1111`, 무관). dateTime 일치 확인. **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 새 캐릭터 → **영지에서 시작** ② 시작 시 포탈 없음 ③ 나무 상자 제작·설치 → 포탈 등장 + 토스트 ④ 포탈 F → 마을 이동(107 완료) ⑤ 재접속 후 포탈 유지 ⑥ 기존 세이브 접속 시 포탈 정상 ⑦ 촌장 대화로 201 수주
+
+### 2026-08-10 메인메뉴 슬롯/커스텀 레이아웃 정합 + 닉네임 버그 — Play 확인 필요
+
+| 항목 | 내용 |
+|---|---|
+| 🐛 **닉네임 거부** | `UIMainMenuController`의 `customNameInput`/`nameInput`이 **`TextInputComponent`로 선언**돼 있었음 → 실제 엔티티는 `TextGUIRendererInputComponent`라 바인딩이 nil → 입력값이 항상 `""` → **무엇을 입력해도 "글자수가 맞지 않음"**. 슬롯 삭제 확인도 동일 원인으로 항상 불일치. ([pitfalls 규칙 24](./pitfalls.md)) |
+| 🐛 **슬롯 모양** | 수첩 아트가 **1024² 정사각 + AspectOnly** → `RectSize 1700×820`을 줘도 820×820만 그려져 슬롯 카드 5장이 프레임 밖에 있었음. **가로 행 5줄**로 재배치. ([pitfalls 규칙 25](./pitfalls.md)) |
+| 🐛 **글자 배치** | 모든 `*Plate`가 글자보다 displayOrder가 높아 **글자를 가리고** 있었고, 슬롯 Plate는 좌표까지 250px 어긋나 버튼을 덮었음. 텍스트는 전부 `Left/Top` 정렬이라 박스 좌상단에 붙어 있었음 → 전부 정정 |
+| ⚖️ 닉네임 길이 | **2~15자로 통일** (기존엔 클라·서버·`CharacterLimit`·placeholder 모두 2~12였음). 3곳 동기: [design/main-menu-save-slots.md](./design/main-menu-save-slots.md) §4.2 |
+| ✨ 가독성 | 종이 위 글자 = 진한 갈색 잉크 / 키아트 위 글자만 어두운 Plate + 밝은 글자 |
+| ✨ 파츠 버튼 | "내 캐릭터 유지" 선택 시 화살표 버튼이 **사라지던 것** → 흐리게(클릭만 차단) |
+| 🔍 진단 로그 | `OnBeginPlay`에서 입력창 바인딩 성패를 log — 같은 부류 재발 시 즉시 식별 |
+
+- 적용 스크립트: `scratch/fix_mainmenu_layout.cjs`
+- 검증: `maker_refresh_workspace` ok → `maker_logs(build)` **Error=0 / Warning=6** (전부 `PlayerInventory.ServerRequestUseItem`의 기존 `LWA-1111`, 이번 변경과 무관). **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 새로하기 → 2글자 닉네임 생성 성공 ② 15자 초과 입력 차단 ③ 슬롯 5줄이 수첩 안에 들어오는지 ④ 커스텀 화면 글자가 안 가려지는지 ⑤ 삭제 확인(닉네임 재입력) 통과 ⑥ 이어하기 슬롯 아바타/레벨 표시
+
+### 2026-08-09 메인메뉴 타이틀 UX + 외모 커스텀 — Play 확인 필요
+
+| 항목 | 내용 |
+|---|---|
+| ✨ 타이틀 | 키아트 Bg + 로고 + **새로하기 / 이어하기 / 종료하기** 3버튼만 |
+| ✨ 슬롯 | 버튼 누른 뒤 슬롯 선택. 이어하기=점유만(+AvatarGUI 외형), 새로하기=빈 슬롯만 |
+| ✨ 룩모드 | 기본 **내 캐릭터 유지** / 선택 **외형 꾸미기**. `costumeLook.useAccount` |
+| ✨ 커스텀 풀 | 기본 세트 확대 — 헤어20·눈10·피부6·상의15 (화려 코스튬 제외) |
+| 🐛 닉네임 | `#` 바이트 판정 → **UTF-8 글자 수** 2~12 (한글 5자+ 생성 실패 수정) — *2026-08-10에 2~15로 상향* |
+| ✨ 텍스트 | 로고/타이틀버튼 스타일 반영 — 전 텍스트 BestFit + dilate/outline |
+| ✨ 가독성 | 로고·태그라인·슬롯/커스텀 라벨 뒤 `*Plate` + 메뉴 버튼 반투명 채움 |
+| ✨ 세이브 | `SaveData_sN.costumeLook` + `SlotMeta.costume` · 계정=`UseCustomEquipOnly=false` / 커스텀=`true` |
+| ✨ 종료 | `KickUser(WorldContent)` (플랫폼 Leave API 없음) |
+| ✅ UI 배치 | 아트 적용 후 레이아웃 엉망 → **2026-08-10 정합 완료** (위 항목). 인수인계 문서: [design/mainmenu-ui-verify-handoff.md](./design/mainmenu-ui-verify-handoff.md) |
+
+- 검증: **refresh 검증 보류(MCP 미연결)**. 런타임 검증 보류 → 위 핸드오프로 이관.
+- Play 확인: ① 타이틀 3버튼·글자 플레이트 가독 ② 이어하기 아바타(계정/커스텀) ③ 새로하기→**내 캐릭터 유지**로 시작 ④ **외형 꾸미기**→파츠 변경 후 유지 ⑤ 슬롯2 분리 ⑥ 종료/삭제
+
+### 2026-08-08 메인메뉴·슬롯·대화창 — Play 확인 필요
+
+| 항목 | 내용 |
+|---|---|
+| ✨ 슬롯 5 | 접속 시 메인메뉴 → 이어하기/새로하기(닉네임 2~12자)/삭제. 레거시 `SaveData`는 슬롯1 마이그레이션 |
+| ✨ 닉네임 | GlobalDataStorage `NicknameRegistry` + 계정 내 타 슬롯 중복 거부 |
+| ✨ 대화창 | F「대화하기」→ 하단 메이플식 창(DialogGroup displayOrder=40, HUD 덮음). 자동 혼잣말만 말풍선 |
+| ✨ 퀘스트 201 | 촌장 `elder` 수주 — 튜토리얼 107 이후, Grass 5 채집 (코지+미스터리 톤) |
+| ✨ 낚시왕 | 점수 키 = `{userId}_s{slot}`, 표시 = 캐릭터 닉네임 |
+
+- 검증: **refresh 검증 보류(MCP 미연결)**. 런타임 검증 보류(제작자 Play).
+- Play 확인 포인트: ① 접속 시 메인메뉴·페이드 유지 ② 새로하기 닉네임 중복 거부 ③ 슬롯2 새 캐릭터와 슬롯1 진행 분리 ④ 촌장 F → 대화창·201 수락 ⑤ 낚시 랭킹에 캐릭터명 표시 ⑥ 모바일/퀵슬롯이 대화창에 가려지는지
 
 관련 실측 기록: [reference/resource-api-pitfalls.md](./reference/resource-api-pitfalls.md) §2 · §5-bis · §5-quater.
 
@@ -179,11 +245,11 @@
 
 | 항목 | 선행 조건 |
 |---|---|
-| **로드맵 ① 스토리·NPC·퀘스트 연동** | 설계 + 스토리 에이전트 핸드오프 브리프 = [design/story-npc-quest-plan.md](./design/story-npc-quest-plan.md). 선행: 브리프 §4 열린 결정(톤/분량) 제작자 확정 → 외부 에이전트에 브리프 전달 → 산출물 수령 후 구현 A~E |
-| **로드맵 ③ 메인화면 + 슬롯 세이브 (3~5슬롯, 영지 분리)** | 설계 = [design/main-menu-save-slots.md](./design/main-menu-save-slots.md). ⚠️ 세이브 마이그레이션 포함(규칙 9) — 착수 전 제작자 백업 고지 필수. 키 아트는 로드맵 ⑤ 프롬프트로 병행 |
+| **로드맵 ① 스토리·NPC·퀘스트 연동** | 설계 완료 + **챕터1 샘플(Quest 201) 코드 투입**. 톤=코지+미스터리 확정. 추가 챕터는 스토리 에이전트 §5 브리프 |
+| **로드맵 ③ 메인화면 + 슬롯 세이브** | **코드 완료(Play 대기)** — 슬롯5·닉네임 중복금지·캐릭터 단위 낚시왕 |
 | **로드맵 ⑤ 아트 스타일 가이드·생성 프롬프트** | 가이드 = [design/art-style-guide.md](./design/art-style-guide.md) 작성 완료. 제작자가 타사 에이전트로 생성 → image-to-pixel 도트화 → RUID 교체 파이프라인 |
-| **상호작용 아웃라인 셰이더 (로드맵 ② 후속)** | 현행은 Color 틴트. `Outline` 카테고리 `.material` 저작은 msw-guide-mcp(`user-msw-guide-mcp`) 연결 후 속성명 확정 필요 (material.md §3.3 — 스켈레톤만 쓰면 조용히 무효과) |
-| **Prop `LWA-4012` 경고 31건 재발 규명** | 2026-08-06 실측 Warning **48**(=상시 17 + Prop 31). T103이 "W17 복귀"로 보고했으나 재현되지 않음 — 커밋 `c6c0a3c`는 HEAD에 온전하고 Prop 모델 워킹트리도 HEAD와 동일. 동작 무관(표지 경고)이라 우선순위 낮음 |
+| **상호작용 아웃라인 셰이더 (로드맵 ② 후속)** | 현행은 Color 틴트. `Outline` 카테고리 `.material` 저작은 msw-guide-mcp 연결 후 |
+| ~~**Prop `LWA-4012` 경고 31건 재발 규명**~~ → ✅ **해소 (2026-08-08)** | 별도 머신에서 HEAD `3126192` 실측 결과 **Warning 17**이고 내역이 문서상 "상시 잔여 17"과 정확히 일치 — Prop 31건 부재. **T103(`c6c0a3c`) 청소는 실효했다.** 나흘간의 "48"은 고착된 옛 build 로그 스냅샷을 반복 인용한 정황이 강하다(→ [규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라) 신설, baseline 17로 갱신). **잔여 확인**: 48을 보고했던 머신에서 refresh 후 로그 `dateTime`을 대조해 스냅샷 고착이 맞는지 확정할 것 |
 | **town / template_field / template_boss 물 페인팅 + L2 프린지** | 제작자가 Maker에서 L1 `Water` 페인팅 → `scripts/fix_water_fringe.cjs` 재실행 (스크립트는 범용). ⚠️ [규칙 16](./pitfalls.md#규칙-16-map의-jsonstring은-중첩-객체다--문자열-대입-금지) 재확인 필수 |
 | **마을 생활 소품 재배치** | T75가 모델 11종만 남기고 `town.map` 인스턴스 43개를 철회한 상태. 재배치는 [규칙 17](./pitfalls.md#규칙-17-trigger배치는-스프라이트-실루엣-정합이-1순위다) 실루엣 정합 기준으로 |
 | **16-C 직업/전직** | `JobId` 컬럼 예약 완료. 설계 계약 = [design/skill-tree-plan.md](./design/skill-tree-plan.md) §7 |

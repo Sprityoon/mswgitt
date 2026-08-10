@@ -1,0 +1,729 @@
+@Component
+script UIMainMenuController extends Component
+	-- 타이틀(3버튼) → 슬롯 선택 → (새로하기) 외모 커스텀. spawnFade 유지 후 슬롯 확정.
+
+	property Entity root = "ded34f67-8759-46a8-94e4-a4c4ddfe0654"
+	property Entity bg = "182f526a-ed01-454e-a778-f81e7fcbfb64"
+	property Entity titlePanel = "36883014-122d-49b2-9824-a7bc35dfbcc5"
+	property TextGUIRendererComponent logo = "f83e3a59-d096-4353-badd-501f5ab62418"
+	property ButtonComponent btnNew = "a41e3af2-2990-4ce6-867b-a026ce64c3f8"
+	property ButtonComponent btnContinue = "add9c6c2-82c4-4608-acd3-d0695f18982e"
+	property ButtonComponent btnQuit = "241f788d-36f4-4ef4-8d60-1740d019bd9e"
+	property TextGUIRendererComponent titleHint = "dca47c27-479a-4f20-a856-e2dcba7e2ce3"
+
+	property Entity slotPanel = "5759b110-6221-4759-a72f-bd3cd107ab5a"
+	property TextGUIRendererComponent slotSubtitle = "d463b57e-818f-41b8-aba7-f5d55b14c257"
+	property ButtonComponent btnSlotBack = "a65ed452-b281-4d68-8b91-042ee4574c1e"
+
+	property Entity slot1 = "d24f3805-d72d-47d7-abcb-2985b852c12a"
+	property Entity slot1Avatar = "3d07a9e8-6ccf-4102-a536-2e1c6a734663"
+	property TextGUIRendererComponent slot1Title = "a58a8fa0-5cb0-47d6-81e3-8acecb5a177d"
+	property TextGUIRendererComponent slot1Info = "b4faae57-b813-405e-a3b8-e79e168a11cf"
+	property ButtonComponent slot1BtnSelect = "d3b70237-adfc-4094-bb18-a85524fcc12f"
+	property ButtonComponent slot1BtnDelete = "632e86c0-4f84-4c47-8ecb-d50360cdee3b"
+
+	property Entity slot2 = "eb663277-6137-49b1-90d1-d1e3cc09901c"
+	property Entity slot2Avatar = "7020f7ee-375e-4fbe-ab0f-e202110fb7b9"
+	property TextGUIRendererComponent slot2Title = "70d728d4-fd1e-4817-a12d-28132b992066"
+	property TextGUIRendererComponent slot2Info = "369a3402-f90a-45fd-b652-f00e1bfa963f"
+	property ButtonComponent slot2BtnSelect = "0f3fbcce-2438-4830-b38e-63fa0ff24e67"
+	property ButtonComponent slot2BtnDelete = "380195d9-2c64-45ab-8a31-10bf4e457838"
+
+	property Entity slot3 = "81ec18c3-0d8f-4492-a9d1-47026129dede"
+	property Entity slot3Avatar = "f3423872-4bab-41c9-9243-a16eb6601406"
+	property TextGUIRendererComponent slot3Title = "1b9918da-f1ff-4f53-83d1-2c899bdd3a01"
+	property TextGUIRendererComponent slot3Info = "9984aeb0-2c31-478d-87d5-5a1221ad2c1d"
+	property ButtonComponent slot3BtnSelect = "9bc7bf07-d3ca-45c9-8c0f-18ed9ec3612a"
+	property ButtonComponent slot3BtnDelete = "fb6b22d6-1d74-4d4c-b11f-a460ba414543"
+
+	property Entity slot4 = "880125b8-6024-4e2f-b5e1-8b0127be07e6"
+	property Entity slot4Avatar = "d05e136d-74be-448e-b636-f0cde5e9bb78"
+	property TextGUIRendererComponent slot4Title = "86c52578-6eaf-42c9-a00a-cccfc361f7a2"
+	property TextGUIRendererComponent slot4Info = "c257b959-8e3d-43fe-949d-eb15550bb205"
+	property ButtonComponent slot4BtnSelect = "47495b3b-905e-4b3f-9808-23d831d99805"
+	property ButtonComponent slot4BtnDelete = "acc7dec3-ee8d-44b9-9a43-5650917c145e"
+
+	property Entity slot5 = "4f7e947a-68b8-484f-84ca-f14786c75f46"
+	property Entity slot5Avatar = "dc579cb4-bfc2-4e3c-b296-472827ce2d32"
+	property TextGUIRendererComponent slot5Title = "1584507f-c8ea-4388-9487-87964e25de0c"
+	property TextGUIRendererComponent slot5Info = "5e854724-569e-4049-b294-6453db814669"
+	property ButtonComponent slot5BtnSelect = "0f27e32e-86b4-4d1f-9ecf-d9b7dd00fb0c"
+	property ButtonComponent slot5BtnDelete = "e83bbffb-469e-4678-9b5f-ede9aa99c600"
+
+	property Entity customizePanel = "d2b44d53-cb3c-446c-8736-b73eec2ac2ce"
+	property Entity customPreview = "d1d97460-1091-4f62-bb90-306f64e0f739"
+	-- ⚠️ UIBuilder의 textInput()이 만드는 컴포넌트는 TextGUIRendererInputComponent다.
+	-- TextInputComponent(별개 타입)로 선언하면 바인딩이 nil이 되어 입력값이 항상 ""로 읽힌다.
+	property TextGUIRendererInputComponent customNameInput = "a8d2274f-d6a4-4e38-8b24-c13efdb21bd5"
+	property TextGUIRendererComponent customError = "13cbdb02-3040-4447-ae87-8f3a73f95231"
+	property ButtonComponent btnHairPrev = "ca2563a2-5508-4646-88ab-3a96325d3dbd"
+	property ButtonComponent btnHairNext = "ecde9af8-8ae1-43ce-8a32-c5dfc3a61142"
+	property TextGUIRendererComponent hairName = "472557a9-373b-4316-8990-9fa3c130011c"
+	property ButtonComponent btnFacePrev = "6515741b-a10d-446d-aaa2-dc26ce85d2b3"
+	property ButtonComponent btnFaceNext = "da431084-1c8b-4f6b-8f10-d14fd5f9fe19"
+	property TextGUIRendererComponent faceName = "70d3c256-f859-49fb-ac1f-e718cd18701a"
+	property ButtonComponent btnBodyPrev = "d22a93b1-d626-4c6c-adf2-3b28743eaadd"
+	property ButtonComponent btnBodyNext = "07dcfbf7-c0c3-496a-b5f9-851b8a00f2a4"
+	property TextGUIRendererComponent bodyName = "36e9de0e-7951-4131-a899-54b4e56296c3"
+	property ButtonComponent btnCoatPrev = "ceee4c9d-2791-4b01-b2b4-e1b1d86cc538"
+	property ButtonComponent btnCoatNext = "779c83db-fcd7-44c5-8f33-384c88b9992b"
+	property TextGUIRendererComponent coatName = "91eed2ef-da74-4b03-84e9-e777db158bcf"
+	property ButtonComponent btnCustomStart = "eed8b041-0873-4fef-addf-46cd8939801f"
+	property ButtonComponent btnCustomBack = "37fafa61-9632-4605-abb3-504bbc842657"
+	property ButtonComponent btnLookAccount = "e33459ae-e4d8-4b1c-9886-a389d98fde01"
+	property ButtonComponent btnLookCustom = "dad7fd20-7d2f-4654-81cd-8ece45eb75ba"
+	property Entity customParts = ""
+
+	property Entity namePrompt = "7254eb09-8b5e-4d51-a3a5-132766bb084f"
+	property TextGUIRendererInputComponent nameInput = "b87facba-89f2-4825-b418-16645d3b8802"
+	property TextGUIRendererComponent nameError = "b9bfe689-566a-424a-a844-f3c3f6a74c02"
+	property ButtonComponent btnNameOk = "b25d18b2-f4cd-41de-a295-051820ac2868"
+	property ButtonComponent btnNameCancel = "8eb5834c-f2f8-48be-869e-e84154ab0431"
+
+	property table slotMeta = {}
+	property integer pendingSlot = 0
+	property string pendingAction = ""
+	property string menuMode = "title"
+	property boolean isOpen = false
+	property boolean useAccountLook = true
+
+	property integer hairIdx = 1
+	property integer faceIdx = 1
+	property integer bodyIdx = 1
+	property integer coatIdx = 1
+	property string defaultPantsRuid = "e6ff0ea602e043f48a7e231ed4f95daf"
+
+	-- 닉네임 길이 규약. 서버(PersistenceManager.SelectSaveSlot)와 .ui의 CharacterLimit도 같은 값이어야 한다.
+	property integer nickMinLen = 2
+	property integer nickMaxLen = 15
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		self:SetRootEnable(false)
+		self:ShowPanel("title")
+		if isvalid(self.namePrompt) then self.namePrompt.Enable = false end
+
+		self:BindBtn(self.btnNew, function() self:OnTitleNew() end)
+		self:BindBtn(self.btnContinue, function() self:OnTitleContinue() end)
+		self:BindBtn(self.btnQuit, function() self:OnTitleQuit() end)
+		self:BindBtn(self.btnSlotBack, function() self:ShowPanel("title") end)
+		self:BindBtn(self.btnCustomBack, function() self:ShowPanel("slot") end)
+		self:BindBtn(self.btnCustomStart, function() self:OnCustomStart() end)
+		self:BindBtn(self.btnLookAccount, function() self:SetLookMode(true) end)
+		self:BindBtn(self.btnLookCustom, function() self:SetLookMode(false) end)
+		self:BindBtn(self.btnHairPrev, function() self:CyclePart("hair", -1) end)
+		self:BindBtn(self.btnHairNext, function() self:CyclePart("hair", 1) end)
+		self:BindBtn(self.btnFacePrev, function() self:CyclePart("face", -1) end)
+		self:BindBtn(self.btnFaceNext, function() self:CyclePart("face", 1) end)
+		self:BindBtn(self.btnBodyPrev, function() self:CyclePart("body", -1) end)
+		self:BindBtn(self.btnBodyNext, function() self:CyclePart("body", 1) end)
+		self:BindBtn(self.btnCoatPrev, function() self:CyclePart("coat", -1) end)
+		self:BindBtn(self.btnCoatNext, function() self:CyclePart("coat", 1) end)
+
+		for i = 1, 5 do
+			local slotIndex = i
+			self:BindBtn(self["slot" .. i .. "BtnSelect"], function()
+				self:OnSlotSelect(slotIndex)
+			end)
+			self:BindBtn(self["slot" .. i .. "BtnDelete"], function()
+				self:OnDelete(slotIndex)
+			end)
+		end
+
+		self:BindBtn(self.btnNameOk, function() self:OnNameOk() end)
+		self:BindBtn(self.btnNameCancel, function() self:CloseNamePrompt() end)
+		-- 입력 컴포넌트 바인딩은 조용히 실패하면 "글자수가 안 맞는다"로만 보인다 → 시작 시 명시 검증.
+		log("[MAINMENU] controller ready — customNameInput="
+			.. tostring(isvalid(self.customNameInput))
+			.. " nameInput=" .. tostring(isvalid(self.nameInput)))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BindBtn(ButtonComponent btn, any fn)
+		if isvalid(btn) and isvalid(btn.Entity) then
+			btn.Entity:ConnectEvent(ButtonClickEvent, fn)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method table HairOptions()
+		-- 초단순 커트만 (단발/층층/포마드/투블럭/올백/리젠트). 약 20종.
+		return {
+			{ ruid = "242e9d3ac440429b8dc35a268b16ab54", name = "검정 단발" },
+			{ ruid = "b4026d4b793744f39d671878290c5630", name = "갈색 단발" },
+			{ ruid = "d98d69f763e641c48e412617ecb9d39c", name = "노랑 단발" },
+			{ ruid = "8fd195c9ab2e4a0fa6830df20b19f9ff", name = "빨강 단발" },
+			{ ruid = "7118233aa1a6447898d64b43e91dcc34", name = "파랑 단발" },
+			{ ruid = "266bd698ca094a22aa8398638f96d51e", name = "주황 단발" },
+			{ ruid = "00360a4764b745e1b49bcd48b0f06d14", name = "검정 층층" },
+			{ ruid = "3f493935d7e943bd95083b4fb3512dba", name = "갈색 층층" },
+			{ ruid = "f1938df8f19f4c2f896328f8d4ad2807", name = "노랑 층층" },
+			{ ruid = "52f5bf930eec4729b1bbb1e72615fc22", name = "검정 포마드" },
+			{ ruid = "fc96b5fe861e493d95b4595723320394", name = "갈색 포마드" },
+			{ ruid = "8fe4284ad6ed4c2c8f6ecf89e3045b19", name = "노랑 포마드" },
+			{ ruid = "4e16fa5694b04113925313eedc4b625f", name = "검정 투블럭" },
+			{ ruid = "5393d8f8b08d4aa6a5d052f560ed9daa", name = "갈색 투블럭" },
+			{ ruid = "08792e07ad1343c7b4595e898d11a422", name = "검정 셋팅단발" },
+			{ ruid = "f9da953be2d940cc94b57ea660c5bc59", name = "갈색 셋팅단발" },
+			{ ruid = "3a3e379140d44ebda5b73b8dea3cd2ec", name = "검정 똑단발" },
+			{ ruid = "4b348a2cb20047d5af2ec002a9df6832", name = "검정 올백" },
+			{ ruid = "df8dda90c67d47cabbb9c0d74fe73a3a", name = "검정 리젠트" },
+			{ ruid = "dad74b13739b4bf6885e94c3592ed589", name = "검정 조용단발" },
+		}
+	end
+
+	@ExecSpace("ClientOnly")
+	method table FaceOptions()
+		-- 기본 표정/눈 위주. 약 10종.
+		return {
+			{ ruid = "0030d40d6e654f4d8afc334383401303", name = "순수미" },
+			{ ruid = "002edb95ebe24b40856d19b9fc8ffe39", name = "그윽한" },
+			{ ruid = "002b02c5515f48b884211c7eccd2cb3a", name = "찬란한" },
+			{ ruid = "003131e82862449d9746be27a458115e", name = "남자15" },
+			{ ruid = "00394c94b1ff4eea8d67d8f09c9e962e", name = "깨랑깨랑" },
+			{ ruid = "0048a09261e74bc5b709e8ba24adb110", name = "결의" },
+			{ ruid = "005b1222ceb14e0082d6ee10887310e7", name = "헤헤" },
+			{ ruid = "005994da21e14ae4913f9a754c3f10ec", name = "우수어린" },
+			{ ruid = "00858ca6d6dc454a80b9fd72ab1c4ca7", name = "잔잔한" },
+			{ ruid = "c90c2c143c9b49d784eff862c4c15583", name = "동그란눈" },
+		}
+	end
+
+	@ExecSpace("ClientOnly")
+	method table BodyOptions()
+		-- 현실 피부톤만 (구슬/엘프/꽃잎 등 제외).
+		return {
+			{ ruid = "3cf4cb29ae344577b9eed37e531688a4", name = "크림" },
+			{ ruid = "504244b76e654f5db23dc62693106bc8", name = "헬시" },
+			{ ruid = "5b510a5cb03b4ba9bfe1b1666b17b2cf", name = "밀키" },
+			{ ruid = "a7df8f459b2348f5ab88ee3fa0b1de05", name = "태닝" },
+			{ ruid = "f3ab6f5110294f03925699374cc467ac", name = "창백" },
+			{ ruid = "2f62f3dbbbcb4809ae353831a4d62c5e", name = "고져스" },
+		}
+	end
+
+	@ExecSpace("ClientOnly")
+	method table CoatOptions()
+		-- 티·면티·트레이닝·셔츠 등 일상복 위주.
+		return {
+			{ ruid = "0f6cde6c490d4176988a9a4651459f0f", name = "회색 면티" },
+			{ ruid = "ae8d3590a96e48c3b7cd75d46ebd3f15", name = "하얀 면티" },
+			{ ruid = "3d91af69c6fb40a79d8d1075cd3bd884", name = "초록 면티" },
+			{ ruid = "5dcea1068cc8417aa79d76554e7ce07a", name = "노란 면티" },
+			{ ruid = "046722232c5043eb9334fb14fa007fe2", name = "빨간 티" },
+			{ ruid = "293a85be029a4be59fa6bc9a10dc0501", name = "로고 티" },
+			{ ruid = "1e50dcf2da074fd2bff595984e3cc4b2", name = "파란 티" },
+			{ ruid = "62868777c94e4334a14416f4cba5b8e7", name = "주황 스포츠" },
+			{ ruid = "0f69c20ef5d84e718109ce11f401efee", name = "롱 셔츠" },
+			{ ruid = "142156f6ba914a0a8702cd3229ac081d", name = "초록 트레이닝" },
+			{ ruid = "3686bb408ab244ba8a11ab4d54f5cb86", name = "하늘 트레이닝" },
+			{ ruid = "913851140d2848efb6e0fcacd7a44356", name = "검정 트레이닝" },
+			{ ruid = "2742b0d241d94ad2814170d87a08b2b7", name = "백수 트레이닝" },
+			{ ruid = "1d2ce07b8cda4fbdaf344c0b6020432c", name = "빨간 스웨터" },
+			{ ruid = "164353ce472442c89dbb4c2e8d82569e", name = "빈티지 니트" },
+		}
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenWithMetaJson(string metaJson)
+		self.slotMeta = {}
+		if metaJson ~= nil and metaJson ~= "" and metaJson ~= "{}" then
+			local ok, decoded = pcall(function() return _HttpService:JSONDecode(metaJson) end)
+			if ok and type(decoded) == "table" then
+				self.slotMeta = decoded
+			end
+		end
+		self.isOpen = true
+		self:SetRootEnable(true)
+		self:CloseNamePrompt()
+		self:ShowPanel("title")
+		if isvalid(self.titleHint) then self.titleHint.Text = "" end
+		log("[MAINMENU] open title")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		self.isOpen = false
+		self:CloseNamePrompt()
+		self:SetRootEnable(false)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetRootEnable(boolean on)
+		local root = _EntityService:GetEntityByPath("/ui/MainMenuGroup")
+		if isvalid(root) then root.Enable = on end
+		if isvalid(self.bg) then self.bg.Enable = on end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowPanel(string which)
+		self.menuMode = which
+		if isvalid(self.titlePanel) then self.titlePanel.Enable = (which == "title") end
+		if isvalid(self.slotPanel) then self.slotPanel.Enable = (which == "slot") end
+		if isvalid(self.customizePanel) then self.customizePanel.Enable = (which == "customize") end
+		if which == "slot" then
+			self:RefreshSlots()
+		elseif which == "customize" then
+			self.hairIdx = 1
+			self.faceIdx = 1
+			self.bodyIdx = 1
+			self.coatIdx = 1
+			self.useAccountLook = true
+			if isvalid(self.customNameInput) then self.customNameInput.Text = "" end
+			if isvalid(self.customError) then self.customError.Text = "" end
+			self:SetLookMode(true)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnTitleNew()
+		if not self.isOpen then return end
+		self.pendingAction = "new"
+		if isvalid(self.slotSubtitle) then self.slotSubtitle.Text = "빈 슬롯을 선택하세요" end
+		self:ShowPanel("slot")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnTitleContinue()
+		if not self.isOpen then return end
+		local any = false
+		for i = 1, 5 do
+			if self:IsOccupied(i) then any = true break end
+		end
+		if not any then
+			if isvalid(self.titleHint) then self.titleHint.Text = "저장된 캐릭터가 없습니다. 새로하기를 선택하세요." end
+			return
+		end
+		self.pendingAction = "continue"
+		if isvalid(self.slotSubtitle) then self.slotSubtitle.Text = "이어할 캐릭터를 선택하세요" end
+		self:ShowPanel("slot")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnTitleQuit()
+		if not self.isOpen then return end
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return end
+		local pc = lp:GetComponent("script.PlayerController")
+		if isvalid(pc) then
+			pc:ServerQuitWorld()
+		end
+		if isvalid(self.titleHint) then
+			self.titleHint.Text = "월드를 나가는 중…"
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsOccupied(integer slot)
+		local meta = self.slotMeta[tostring(slot)]
+		return meta ~= nil and type(meta) == "table" and meta.name ~= nil and tostring(meta.name) ~= ""
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshSlots()
+		local isNew = (self.pendingAction == "new")
+		for i = 1, 5 do
+			local occupied = self:IsOccupied(i)
+			local meta = self.slotMeta[tostring(i)]
+			local title = self["slot" .. i .. "Title"]
+			local info = self["slot" .. i .. "Info"]
+			local btnS = self["slot" .. i .. "BtnSelect"]
+			local btnD = self["slot" .. i .. "BtnDelete"]
+			local avatarEnt = self["slot" .. i .. "Avatar"]
+
+			if isvalid(title) then
+				title.Text = occupied and tostring(meta.name) or ("슬롯 " .. tostring(i))
+			end
+			if isvalid(info) then
+				if occupied then
+					-- 슬롯 카드가 가로 1행이라 한 줄로 표기 (2줄이면 행 높이를 넘친다).
+					local lv = tonumber(meta.level) or 1
+					local fish = tonumber(meta.fishLv) or 1
+					info.Text = "Lv." .. tostring(lv) .. "  ·  낚시 Lv." .. tostring(fish)
+				else
+					info.Text = "비어 있음"
+				end
+			end
+
+			local selectable = (isNew and not occupied) or ((not isNew) and occupied)
+			self:SetBtn(btnS, selectable)
+			if isvalid(btnS) then
+				local label = btnS.Entity and btnS.Entity.TextGUIRendererComponent
+				if isvalid(label) then
+					if isNew then
+						label.Text = "선택"
+					else
+						label.Text = "이어하기"
+					end
+				end
+			end
+			self:SetBtn(btnD, (not isNew) and occupied)
+
+			if occupied then
+				if isvalid(avatarEnt) then avatarEnt.Enable = true end
+				if type(meta.costume) == "table" then
+					self:ApplyCostumeToEntity(avatarEnt, meta.costume)
+				else
+					self:ApplyCostumeToEntity(avatarEnt, { useAccount = true })
+				end
+			else
+				if isvalid(avatarEnt) then avatarEnt.Enable = false end
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetBtn(ButtonComponent btn, boolean on)
+		if not isvalid(btn) then return end
+		btn.Enable = on
+		if isvalid(btn.Entity) then btn.Entity.Enable = on end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnSlotSelect(integer slot)
+		if not self.isOpen then return end
+		if self.pendingAction == "continue" then
+			if not self:IsOccupied(slot) then return end
+			self:RequestSelect(slot, false, "", "")
+			return
+		end
+		if self.pendingAction == "new" then
+			if self:IsOccupied(slot) then return end
+			self.pendingSlot = slot
+			self:ShowPanel("customize")
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method table DefaultCostume()
+		local h = self:HairOptions()[1]
+		local f = self:FaceOptions()[1]
+		local b = self:BodyOptions()[1]
+		local c = self:CoatOptions()[1]
+		return {
+			hair = h.ruid,
+			face = f.ruid,
+			body = b.ruid,
+			coat = c.ruid,
+			pants = self.defaultPantsRuid
+		}
+	end
+
+	@ExecSpace("ClientOnly")
+	method table CurrentCostume()
+		local h = self:HairOptions()[self.hairIdx] or self:HairOptions()[1]
+		local f = self:FaceOptions()[self.faceIdx] or self:FaceOptions()[1]
+		local b = self:BodyOptions()[self.bodyIdx] or self:BodyOptions()[1]
+		local c = self:CoatOptions()[self.coatIdx] or self:CoatOptions()[1]
+		return {
+			useAccount = false,
+			hair = h.ruid,
+			face = f.ruid,
+			body = b.ruid,
+			coat = c.ruid,
+			pants = self.defaultPantsRuid
+		}
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetLookMode(boolean useAccount)
+		self.useAccountLook = useAccount
+		self:SetPartsInteractable(not useAccount)
+		-- 선택 강조: 계정=초록 톤, 커스텀=나무 톤
+		if isvalid(self.btnLookAccount) then
+			local spr = self.btnLookAccount.Entity and self.btnLookAccount.Entity.SpriteGUIRendererComponent
+			if isvalid(spr) then
+				if useAccount then
+					spr.Color = Color(0.35, 0.55, 0.32, 0.92)
+				else
+					spr.Color = Color(0.42, 0.3, 0.2, 0.75)
+				end
+			end
+		end
+		if isvalid(self.btnLookCustom) then
+			local spr = self.btnLookCustom.Entity and self.btnLookCustom.Entity.SpriteGUIRendererComponent
+			if isvalid(spr) then
+				if useAccount then
+					spr.Color = Color(0.42, 0.3, 0.2, 0.75)
+				else
+					spr.Color = Color(0.35, 0.55, 0.32, 0.92)
+				end
+			end
+		end
+		self:RefreshCustomizePreview()
+		log("[MAINMENU] lookMode account=" .. tostring(useAccount))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetPartsInteractable(boolean on)
+		-- 엔티티를 끄면 버튼이 통째로 사라져 레이아웃이 비어 보인다 → 클릭만 막고 흐리게 표시.
+		local btns = {
+			self.btnHairPrev, self.btnHairNext,
+			self.btnFacePrev, self.btnFaceNext,
+			self.btnBodyPrev, self.btnBodyNext,
+			self.btnCoatPrev, self.btnCoatNext
+		}
+		for _, btn in ipairs(btns) do
+			if isvalid(btn) then
+				btn.Enable = on
+				local spr = btn.Entity and btn.Entity.SpriteGUIRendererComponent
+				if isvalid(spr) then
+					if on then
+						spr.Color = Color(0.55, 0.4, 0.26, 1)
+					else
+						spr.Color = Color(0.55, 0.4, 0.26, 0.35)
+					end
+				end
+			end
+		end
+		if isvalid(self.customParts) then
+			self.customParts.Enable = on
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void CyclePart(string part, integer delta)
+		if self.useAccountLook then return end
+		local list = nil
+		local idx = 1
+		if part == "hair" then
+			list = self:HairOptions()
+			idx = self.hairIdx
+		elseif part == "face" then
+			list = self:FaceOptions()
+			idx = self.faceIdx
+		elseif part == "body" then
+			list = self:BodyOptions()
+			idx = self.bodyIdx
+		else
+			list = self:CoatOptions()
+			idx = self.coatIdx
+		end
+		local n = #list
+		if n < 1 then return end
+		idx = idx + delta
+		if idx < 1 then idx = n end
+		if idx > n then idx = 1 end
+		if part == "hair" then self.hairIdx = idx
+		elseif part == "face" then self.faceIdx = idx
+		elseif part == "body" then self.bodyIdx = idx
+		else self.coatIdx = idx end
+		self:RefreshCustomizePreview()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshCustomizePreview()
+		if self.useAccountLook then
+			if isvalid(self.hairName) then self.hairName.Text = "(계정 외형)" end
+			if isvalid(self.faceName) then self.faceName.Text = "-" end
+			if isvalid(self.bodyName) then self.bodyName.Text = "-" end
+			if isvalid(self.coatName) then self.coatName.Text = "-" end
+			self:ApplyCostumeToEntity(self.customPreview, { useAccount = true })
+			return
+		end
+		local h = self:HairOptions()[self.hairIdx]
+		local f = self:FaceOptions()[self.faceIdx]
+		local b = self:BodyOptions()[self.bodyIdx]
+		local c = self:CoatOptions()[self.coatIdx]
+		if isvalid(self.hairName) and h then self.hairName.Text = h.name end
+		if isvalid(self.faceName) and f then self.faceName.Text = f.name end
+		if isvalid(self.bodyName) and b then self.bodyName.Text = b.name end
+		if isvalid(self.coatName) and c then self.coatName.Text = c.name end
+		self:ApplyCostumeToEntity(self.customPreview, self:CurrentCostume())
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsAccountCostumeTable(table costume)
+		if type(costume) ~= "table" then return true end
+		if costume.useAccount == true then return true end
+		if costume.useAccount == false then return false end
+		if costume.hair ~= nil and tostring(costume.hair) ~= "" then return false end
+		return true
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyCostumeToEntity(Entity avatarEnt, table costume)
+		if not isvalid(avatarEnt) or type(costume) ~= "table" then return end
+		local cm = avatarEnt.CostumeManagerComponent
+		if not isvalid(cm) then return end
+		if self:IsAccountCostumeTable(costume) then
+			cm.UseCustomEquipOnly = false
+			local lp = _UserService.LocalPlayer
+			if isvalid(lp) and isvalid(lp.PlayerComponent) then
+				cm.DefaultEquipUserId = tostring(lp.PlayerComponent.UserId or "")
+			else
+				cm.DefaultEquipUserId = ""
+			end
+			return
+		end
+		cm.UseCustomEquipOnly = true
+		cm.DefaultEquipUserId = ""
+		local hair = tostring(costume.hair or "")
+		local face = tostring(costume.face or "")
+		local body = tostring(costume.body or "")
+		local coat = tostring(costume.coat or "")
+		local pants = tostring(costume.pants or self.defaultPantsRuid)
+		if hair ~= "" then cm:SetEquip(MapleAvatarItemCategory.Hair, hair) end
+		if face ~= "" then cm:SetEquip(MapleAvatarItemCategory.Face, face) end
+		if body ~= "" then cm:SetEquip(MapleAvatarItemCategory.Body, body) end
+		cm:SetEquip(MapleAvatarItemCategory.Longcoat, "")
+		if coat ~= "" then cm:SetEquip(MapleAvatarItemCategory.Coat, coat) end
+		if pants ~= "" then cm:SetEquip(MapleAvatarItemCategory.Pants, pants) end
+	end
+
+	@ExecSpace("ClientOnly")
+	method integer Utf8Len(string s)
+		-- 닉네임 글자 수: Lua `#`는 UTF-8 바이트라 한글 1자=3으로 세어 오판정됨.
+		if s == nil or s == "" then return 0 end
+		local n = 0
+		local i = 1
+		local len = #s
+		while i <= len do
+			local c = string.byte(s, i)
+			if c < 128 then
+				i = i + 1
+			elseif c < 224 then
+				i = i + 2
+			elseif c < 240 then
+				i = i + 3
+			else
+				i = i + 4
+			end
+			n = n + 1
+		end
+		return n
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnCustomStart()
+		if not self.isOpen then return end
+		local raw = ""
+		if isvalid(self.customNameInput) then
+			raw = tostring(self.customNameInput.Text or "")
+		else
+			if isvalid(self.customError) then self.customError.Text = "닉네임 입력창을 찾을 수 없습니다 (UI 바인딩 오류)" end
+			log_error("[MAINMENU] customNameInput binding is nil — check .ui entity component type")
+			return
+		end
+		raw = string.match(raw, "^%s*(.-)%s*$") or ""
+		local nlen = self:Utf8Len(raw)
+		if nlen < self.nickMinLen or nlen > self.nickMaxLen then
+			if isvalid(self.customError) then
+				self.customError.Text = "닉네임은 " .. tostring(self.nickMinLen) .. "~" .. tostring(self.nickMaxLen) .. "글자로 입력하세요"
+			end
+			log("[MAINMENU] nickname reject len=" .. tostring(nlen) .. " bytes=" .. tostring(#raw))
+			return
+		end
+		if self.pendingSlot < 1 or self.pendingSlot > 5 then
+			if isvalid(self.customError) then self.customError.Text = "슬롯을 다시 선택해 주세요" end
+			return
+		end
+		local costume = nil
+		if self.useAccountLook then
+			costume = { useAccount = true }
+		else
+			costume = self:CurrentCostume()
+			costume.useAccount = false
+		end
+		local ok, json = pcall(function() return _HttpService:JSONEncode(costume) end)
+		if not ok or json == nil or json == "" then
+			if isvalid(self.customError) then self.customError.Text = "외형 저장에 실패했습니다" end
+			return
+		end
+		if isvalid(self.customError) then self.customError.Text = "" end
+		log("[MAINMENU] start new slot=" .. tostring(self.pendingSlot) .. " nickLen=" .. tostring(nlen))
+		self:RequestSelect(self.pendingSlot, true, raw, json)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnDelete(integer slot)
+		if not self.isOpen then return end
+		if not self:IsOccupied(slot) then return end
+		local meta = self.slotMeta[tostring(slot)]
+		self.pendingSlot = slot
+		self.pendingAction = "delete"
+		if isvalid(self.namePrompt) then self.namePrompt.Enable = true end
+		if isvalid(self.nameInput) then self.nameInput.Text = "" end
+		if isvalid(self.nameError) then
+			self.nameError.Text = "삭제하려면 닉네임 '" .. tostring(meta.name) .. "' 을 입력"
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnNameOk()
+		local raw = ""
+		if isvalid(self.nameInput) then
+			raw = tostring(self.nameInput.Text or "")
+		else
+			if isvalid(self.nameError) then self.nameError.Text = "입력창을 찾을 수 없습니다 (UI 바인딩 오류)" end
+			log_error("[MAINMENU] nameInput binding is nil — check .ui entity component type")
+			return
+		end
+		raw = string.match(raw, "^%s*(.-)%s*$") or ""
+		if self.pendingAction ~= "delete" then return end
+		local meta = self.slotMeta[tostring(self.pendingSlot)]
+		local expect = meta and tostring(meta.name) or ""
+		if raw ~= expect then
+			if isvalid(self.nameError) then self.nameError.Text = "닉네임이 일치하지 않습니다" end
+			return
+		end
+		self:CloseNamePrompt()
+		self:RequestDelete(self.pendingSlot)
+		self.pendingAction = "continue"
+	end
+
+	@ExecSpace("ClientOnly")
+	method void CloseNamePrompt()
+		if isvalid(self.namePrompt) then self.namePrompt.Enable = false end
+		if isvalid(self.nameError) then self.nameError.Text = "" end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RequestSelect(integer slot, boolean isNew, string nickname, string costumeJson)
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return end
+		local pc = lp:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		pc:ServerSelectSaveSlot(slot, isNew, nickname or "", costumeJson or "")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RequestDelete(integer slot)
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return end
+		local pc = lp:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		pc:ServerDeleteSaveSlot(slot)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyMetaJson(string metaJson)
+		self.slotMeta = {}
+		if metaJson ~= nil and metaJson ~= "" then
+			local ok, decoded = pcall(function() return _HttpService:JSONDecode(metaJson) end)
+			if ok and type(decoded) == "table" then
+				self.slotMeta = decoded
+			end
+		end
+		if self.menuMode == "slot" then
+			self:RefreshSlots()
+		elseif self.menuMode == "title" then
+			-- stay on title after delete
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowNameError(string msg)
+		local m = msg or "사용할 수 없는 닉네임입니다"
+		if self.menuMode == "customize" then
+			if isvalid(self.customError) then self.customError.Text = m end
+			return
+		end
+		if isvalid(self.namePrompt) then self.namePrompt.Enable = true end
+		if isvalid(self.nameError) then self.nameError.Text = m end
+		if isvalid(self.titleHint) and self.menuMode == "title" then
+			self.titleHint.Text = m
+		end
+	end
+
+end

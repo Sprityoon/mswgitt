@@ -1,0 +1,206 @@
+@Component
+script UIDialogController extends Component
+	-- 메이플스토리식 하단 대화창. HUD/퀵슬롯/모바일 버튼을 덮음 (DialogGroup displayOrder=40).
+	-- F「대화하기」전용. 자동 혼잣말은 VillagerDialog 말풍선 유지.
+
+	property Entity dimmer = "0f75f1d6-ebc0-4b53-b30b-cb1e42f6b023"
+	property Entity window = "f5f2be20-5c5a-4f00-84e3-cb1156743524"
+	property TextGUIRendererComponent nameText = "16953a42-aee0-49de-a29e-9f65de1d91f6"
+	property TextGUIRendererComponent bodyText = "f4d3b391-dfdb-48cc-901e-e0e286c47264"
+	property ButtonComponent btnNext = "5b4b285d-8a5f-496e-a1ae-7d4e5cbf3b86"
+	property ButtonComponent btnAccept = "a10ffb60-d47e-47a1-b9cb-93ab2689e867"
+	property ButtonComponent btnDecline = "35bd3f33-29be-44c4-862a-bd4cb9a0ebbd"
+	property ButtonComponent btnClose = "0102ea59-e89a-4b11-977c-082ff73b1258"
+
+	property any nextHandler = nil
+	property any acceptHandler = nil
+	property any declineHandler = nil
+	property any closeHandler = nil
+
+	property table pages = {}
+	property integer pageIndex = 1
+	property string speakerName = ""
+	property integer questId = 0
+	property string mode = "talk"
+	property boolean isOpen = false
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 버튼 핸들러 연결 + 초기 숨김.
+		self:HideAll()
+		if isvalid(self.btnNext) and isvalid(self.btnNext.Entity) then
+			self.nextHandler = self.btnNext.Entity:ConnectEvent(ButtonClickEvent, function()
+				self:OnNext()
+			end)
+		end
+		if isvalid(self.btnAccept) and isvalid(self.btnAccept.Entity) then
+			self.acceptHandler = self.btnAccept.Entity:ConnectEvent(ButtonClickEvent, function()
+				self:OnAccept()
+			end)
+		end
+		if isvalid(self.btnDecline) and isvalid(self.btnDecline.Entity) then
+			self.declineHandler = self.btnDecline.Entity:ConnectEvent(ButtonClickEvent, function()
+				self:OnDecline()
+			end)
+		end
+		if isvalid(self.btnClose) and isvalid(self.btnClose.Entity) then
+			self.closeHandler = self.btnClose.Entity:ConnectEvent(ButtonClickEvent, function()
+				self:Close()
+			end)
+		end
+		log("[DIALOG] UIDialogController ready")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 핸들러 해제.
+		if self.nextHandler ~= nil and isvalid(self.btnNext) and isvalid(self.btnNext.Entity) then
+			self.btnNext.Entity:DisconnectEvent(ButtonClickEvent, self.nextHandler)
+		end
+		if self.acceptHandler ~= nil and isvalid(self.btnAccept) and isvalid(self.btnAccept.Entity) then
+			self.btnAccept.Entity:DisconnectEvent(ButtonClickEvent, self.acceptHandler)
+		end
+		if self.declineHandler ~= nil and isvalid(self.btnDecline) and isvalid(self.btnDecline.Entity) then
+			self.btnDecline.Entity:DisconnectEvent(ButtonClickEvent, self.declineHandler)
+		end
+		if self.closeHandler ~= nil and isvalid(self.btnClose) and isvalid(self.btnClose.Entity) then
+			self.btnClose.Entity:DisconnectEvent(ButtonClickEvent, self.closeHandler)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenTalk(string speaker, table pageList)
+		-- 일반 대화(페이지 넘기기 → 닫기).
+		self.mode = "talk"
+		self.questId = 0
+		self:OpenInternal(speaker, pageList)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenQuestOffer(string speaker, table pageList, integer questId)
+		-- 퀘스트 수주 대화(마지막에 수락/거절).
+		self.mode = "offer"
+		self.questId = math.floor(tonumber(questId) or 0)
+		self:OpenInternal(speaker, pageList)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenInternal(string speaker, table pageList)
+		-- 공통 오픈.
+		if pageList == nil or #pageList == 0 then
+			log_warning("[DIALOG] empty pages")
+			return
+		end
+		self.speakerName = speaker or ""
+		self.pages = pageList
+		self.pageIndex = 1
+		self.isOpen = true
+		if isvalid(self.dimmer) then self.dimmer.Enable = true end
+		if isvalid(self.window) then self.window.Enable = true end
+		if isvalid(self.nameText) then self.nameText.Text = self.speakerName end
+		self:RefreshPage()
+		log("[DIALOG] open mode=" .. self.mode
+			.. " pages=" .. tostring(#self.pages)
+			.. " quest=" .. tostring(self.questId))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshPage()
+		-- 현재 페이지 텍스트·버튼 상태.
+		local text = ""
+		if self.pages ~= nil and self.pages[self.pageIndex] ~= nil then
+			text = tostring(self.pages[self.pageIndex])
+		end
+		if isvalid(self.bodyText) then self.bodyText.Text = text end
+
+		local last = self.pages ~= nil and self.pageIndex >= #self.pages
+		if self.mode == "offer" and last then
+			self:SetBtn(self.btnNext, false)
+			self:SetBtn(self.btnClose, false)
+			self:SetBtn(self.btnAccept, true)
+			self:SetBtn(self.btnDecline, true)
+		elseif last then
+			self:SetBtn(self.btnNext, false)
+			self:SetBtn(self.btnAccept, false)
+			self:SetBtn(self.btnDecline, false)
+			self:SetBtn(self.btnClose, true)
+		else
+			self:SetBtn(self.btnNext, true)
+			self:SetBtn(self.btnAccept, false)
+			self:SetBtn(self.btnDecline, false)
+			self:SetBtn(self.btnClose, false)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetBtn(ButtonComponent btn, boolean on)
+		-- Enable 토글.
+		if not isvalid(btn) then return end
+		btn.Enable = on
+		if isvalid(btn.Entity) then
+			btn.Entity.Enable = on
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnNext()
+		-- 다음 문장.
+		if not self.isOpen then return end
+		if self.pages == nil then return end
+		if self.pageIndex < #self.pages then
+			self.pageIndex = self.pageIndex + 1
+			self:RefreshPage()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnAccept()
+		-- 퀘스트 수락 RPC.
+		if not self.isOpen then return end
+		local qid = self.questId
+		self:Close()
+		if qid <= 0 then return end
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) or lp.PlayerQuest == nil then
+			log_warning("[DIALOG] PlayerQuest missing")
+			return
+		end
+		lp.PlayerQuest:RequestAcceptQuests({ qid })
+		log("[DIALOG] accept quest=" .. tostring(qid))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnDecline()
+		-- 거절 — 창만 닫음.
+		log("[DIALOG] decline quest=" .. tostring(self.questId))
+		self:Close()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		-- 대화창 닫기.
+		self.isOpen = false
+		self.pages = {}
+		self.pageIndex = 1
+		self.questId = 0
+		self.mode = "talk"
+		self:HideAll()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void HideAll()
+		-- 딤머·창 비활성.
+		if isvalid(self.dimmer) then self.dimmer.Enable = false end
+		if isvalid(self.window) then self.window.Enable = false end
+		self:SetBtn(self.btnNext, false)
+		self:SetBtn(self.btnAccept, false)
+		self:SetBtn(self.btnDecline, false)
+		self:SetBtn(self.btnClose, false)
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsOpen()
+		return self.isOpen == true
+	end
+
+end

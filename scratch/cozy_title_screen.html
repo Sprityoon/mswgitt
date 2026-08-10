@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>메이플월드 — 시작 화면 UI 프로토타입</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <style>
+    @font-face {
+      font-family: "Galmuri11";
+      src: url("https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri11.woff2") format("woff2");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Galmuri14";
+      src: url("https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri14.woff2") format("woff2");
+      font-display: swap;
+    }
+
+    :root {
+      --cream: #f7f0e0;
+      --paper: #f3e6c8;
+      --ink: #4a3728;
+      --ink-soft: #6b5344;
+      --moss: #7aa36a;
+      --leaf: #a8c97a;
+      --sky: #b8d9ef;
+      --sky-deep: #8ec4e0;
+      --wood-light: #c9956c;
+      --wood: #a56b3d;
+      --wood-dark: #6e4224;
+      --wood-bark: #5a341c;
+      --blush: #f0b8a0;
+      --gold: #e8c56a;
+      --shadow: rgba(74, 55, 40, 0.28);
+      --pixel: 4px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: "Galmuri11", "Galmuri14", "Press Start 2P", monospace;
+      color: var(--ink);
+      background: #2a3d2e;
+      overflow: hidden;
+      image-rendering: pixelated;
+      -webkit-font-smoothing: none;
+    }
+
+    /* ========== Scene ========== */
+    .scene {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse 90% 55% at 50% 18%, #fff6d8 0%, transparent 55%),
+        linear-gradient(180deg, var(--sky) 0%, var(--sky-deep) 38%, #cfe8b8 62%, #b5d48a 100%);
+    }
+
+    .sun {
+      position: absolute;
+      top: 7%;
+      right: 14%;
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, #fff4b8 20%, #ffd56a 55%, #f0a84a 100%);
+      box-shadow:
+        0 0 0 6px rgba(255, 230, 140, 0.35),
+        0 0 48px 18px rgba(255, 220, 120, 0.45);
+      animation: sun-breathe 6s ease-in-out infinite;
+      z-index: 1;
+    }
+    @keyframes sun-breathe {
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.04); filter: brightness(1.08); }
+    }
+
+    .hills {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hill {
+      position: absolute;
+      bottom: 0;
+      width: 140%;
+      height: 42%;
+      border-radius: 50% 50% 0 0;
+      background: linear-gradient(180deg, #9fc978 0%, #7aab5c 55%, #628f48 100%);
+    }
+    .hill.back { left: -20%; height: 48%; opacity: 0.85; background: linear-gradient(180deg, #8fbe72, #6a9a52); }
+    .hill.front { left: -10%; height: 36%; background: linear-gradient(180deg, #a8d07e, #7aad55 70%, #5f8c42); }
+
+    .meadow {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 28%;
+      z-index: 3;
+      background:
+        repeating-linear-gradient(90deg,
+          transparent 0 10px,
+          rgba(255,255,255,0.04) 10px 12px),
+        linear-gradient(180deg, #b6d882 0%, #8fba5c 45%, #6e9844 100%);
+      pointer-events: none;
+    }
+
+    /* Cabin silhouette (CSS) */
+    .cabin {
+      position: absolute;
+      left: 8%;
+      bottom: 22%;
+      width: 220px;
+      height: 160px;
+      z-index: 4;
+      pointer-events: none;
+    }
+    .cabin-body {
+      position: absolute;
+      bottom: 0; left: 20px;
+      width: 160px; height: 90px;
+      background: linear-gradient(180deg, #c48a5a, #8f5a36);
+      border: 3px solid var(--wood-bark);
+      border-radius: 2px;
+      box-shadow: inset 0 0 0 2px rgba(255,220,180,0.15);
+    }
+    .cabin-roof {
+      position: absolute;
+      bottom: 86px; left: 0;
+      width: 0; height: 0;
+      border-left: 110px solid transparent;
+      border-right: 110px solid transparent;
+      border-bottom: 70px solid #6b3d28;
+      filter: drop-shadow(0 2px 0 #4a2818);
+    }
+    .cabin-door {
+      position: absolute;
+      bottom: 0; left: 78px;
+      width: 36px; height: 52px;
+      background: #5a341c;
+      border: 2px solid #3d2212;
+      border-radius: 2px 2px 0 0;
+    }
+    .cabin-window {
+      position: absolute;
+      bottom: 38px; left: 40px;
+      width: 28px; height: 28px;
+      background: #ffe9a8;
+      border: 3px solid #5a341c;
+      box-shadow: inset 0 0 8px #ffd070, 0 0 12px rgba(255, 210, 100, 0.5);
+      animation: window-glow 4s ease-in-out infinite;
+    }
+    @keyframes window-glow {
+      0%, 100% { box-shadow: inset 0 0 8px #ffd070, 0 0 10px rgba(255,210,100,0.4); }
+      50% { box-shadow: inset 0 0 12px #ffe08a, 0 0 18px rgba(255,220,120,0.7); }
+    }
+
+    /* Trees */
+    .tree {
+      position: absolute;
+      z-index: 5;
+      transform-origin: 50% 100%;
+      animation: sway 5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .tree:nth-child(2) { animation-delay: -1.2s; animation-duration: 6.2s; }
+    .tree:nth-child(3) { animation-delay: -2.4s; animation-duration: 4.8s; }
+    @keyframes sway {
+      0%, 100% { transform: rotate(-1.2deg); }
+      50% { transform: rotate(1.6deg); }
+    }
+    .tree-trunk {
+      position: absolute;
+      bottom: 0; left: 50%;
+      width: 14px; height: 48px;
+      margin-left: -7px;
+      background: linear-gradient(90deg, #6b4228, #8a5834 50%, #5a341c);
+      border-radius: 2px;
+    }
+    .tree-crown {
+      position: absolute;
+      bottom: 36px; left: 50%;
+      width: 72px; height: 64px;
+      margin-left: -36px;
+      background: radial-gradient(circle at 40% 40%, #b6e08a, #6fa054 70%);
+      border-radius: 40% 45% 42% 48%;
+      border: 3px solid #4f7a3a;
+      box-shadow: inset -6px -8px 0 rgba(60, 90, 40, 0.25);
+    }
+
+    /* Flowers */
+    .flower {
+      position: absolute;
+      z-index: 6;
+      width: 10px; height: 10px;
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .flower.pink { background: #f2a0b8; box-shadow: 0 0 0 2px #d87898; }
+    .flower.yellow { background: #f2d66a; box-shadow: 0 0 0 2px #d4b040; }
+    .flower.white { background: #fff8ee; box-shadow: 0 0 0 2px #e0d0b8; }
+
+    /* Floating critters */
+    .critter {
+      position: absolute;
+      z-index: 7;
+      pointer-events: none;
+      font-size: 14px;
+      filter: drop-shadow(0 2px 0 rgba(0,0,0,0.15));
+      animation: flutter 9s linear infinite;
+    }
+    .critter.b2 { animation-duration: 12s; animation-delay: -3s; }
+    .critter.b3 { animation-duration: 10s; animation-delay: -6s; }
+    @keyframes flutter {
+      0%   { transform: translate(0, 0) scaleX(1); opacity: 0.9; }
+      25%  { transform: translate(80px, -30px) scaleX(1); }
+      50%  { transform: translate(160px, 10px) scaleX(-1); }
+      75%  { transform: translate(60px, -40px) scaleX(-1); }
+      100% { transform: translate(0, 0) scaleX(1); opacity: 0.9; }
+    }
+
+    /* ========== Logo ========== */
+    .logo-wrap {
+      position: absolute;
+      top: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      text-align: center;
+      filter: drop-shadow(0 6px 0 rgba(74, 55, 40, 0.25));
+    }
+    .logo {
+      font-family: "Galmuri14", "Galmuri11", monospace;
+      font-size: clamp(36px, 5.5vw, 64px);
+      letter-spacing: 0.06em;
+      color: #fff8e8;
+      text-shadow:
+        3px 0 0 var(--wood-bark),
+        -3px 0 0 var(--wood-bark),
+        0 3px 0 var(--wood-bark),
+        0 -3px 0 var(--wood-bark),
+        4px 4px 0 #3d2818,
+        0 0 24px rgba(255, 220, 140, 0.55);
+      line-height: 1.15;
+    }
+    .logo-moss {
+      display: inline-block;
+      position: relative;
+    }
+    .logo-moss::before,
+    .logo-moss::after {
+      content: "";
+      position: absolute;
+      width: 10px; height: 8px;
+      background: var(--moss);
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px #4f7a3a;
+    }
+    .logo-moss::before { top: -6px; left: 8%; transform: rotate(-18deg); }
+    .logo-moss::after { top: -4px; right: 12%; width: 14px; transform: rotate(12deg); background: var(--leaf); }
+    .logo-sub {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--ink-soft);
+      background: rgba(247, 240, 224, 0.72);
+      display: inline-block;
+      padding: 6px 14px;
+      border: 2px solid var(--wood);
+      border-radius: 4px;
+      box-shadow: 2px 2px 0 var(--shadow);
+    }
+
+    /* ========== Wooden signpost menu (diegetic) ========== */
+    .signpost {
+      position: absolute;
+      right: max(4%, 24px);
+      bottom: 14%;
+      z-index: 30;
+      width: min(320px, 86vw);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .sign-pole {
+      width: 18px;
+      height: 48px;
+      background: linear-gradient(90deg, #6e4224, #a56b3d 45%, #5a341c);
+      border: 2px solid #3d2212;
+      border-radius: 2px;
+      margin-bottom: -2px;
+      box-shadow: 3px 0 0 rgba(0,0,0,0.12);
+    }
+    .sign-board {
+      width: 100%;
+      background:
+        repeating-linear-gradient(90deg,
+          transparent 0 28px,
+          rgba(90, 52, 28, 0.08) 28px 30px),
+        linear-gradient(180deg, #d4a574 0%, #b87a48 55%, #96603a 100%);
+      border: 4px solid var(--wood-bark);
+      border-radius: 6px;
+      box-shadow:
+        inset 0 2px 0 rgba(255, 230, 200, 0.35),
+        inset 0 -3px 0 rgba(60, 30, 10, 0.2),
+        6px 8px 0 var(--shadow);
+      padding: 14px 12px 16px;
+      position: relative;
+    }
+    .sign-board::before {
+      content: "";
+      position: absolute;
+      top: -10px; left: 18%;
+      width: 22px; height: 14px;
+      background: #6fa054;
+      border-radius: 40% 60% 50% 50%;
+      border: 2px solid #4f7a3a;
+      transform: rotate(-20deg);
+    }
+    .sign-board::after {
+      content: "";
+      position: absolute;
+      top: -8px; right: 22%;
+      width: 16px; height: 10px;
+      background: #8fbe72;
+      border-radius: 50%;
+      border: 2px solid #4f7a3a;
+      transform: rotate(15deg);
+    }
+    .sign-rope {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      margin-bottom: 4px;
+    }
+    .sign-rope span {
+      width: 8px; height: 14px;
+      background: #c9a878;
+      border: 2px solid #8a6a40;
+      border-radius: 2px;
+    }
+
+    .menu-btn {
+      position: relative;
+      width: 100%;
+      margin: 6px 0;
+      padding: 12px 16px 12px 44px;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--cream);
+      text-align: left;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      border: 3px solid #4a2e18;
+      border-radius: 4px;
+      background:
+        linear-gradient(180deg, #8f5a36 0%, #6e4224 100%);
+      box-shadow:
+        inset 0 2px 0 rgba(255, 210, 160, 0.2),
+        0 3px 0 #3d2212;
+      transition: transform 0.12s steps(2), background 0.12s steps(2), color 0.12s;
+      image-rendering: pixelated;
+    }
+    .menu-btn .icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      line-height: 1;
+    }
+    .menu-btn .hover-fx {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%) scale(0);
+      font-size: 14px;
+      opacity: 0;
+      transition: transform 0.15s steps(3), opacity 0.15s steps(3);
+      pointer-events: none;
+    }
+    .menu-btn:hover,
+    .menu-btn:focus-visible {
+      outline: none;
+      transform: translateX(-4px) scale(1.02);
+      background: linear-gradient(180deg, #a56b3d 0%, #7a4a28 100%);
+      color: #fff8e0;
+      box-shadow:
+        inset 0 2px 0 rgba(255, 230, 180, 0.3),
+        0 3px 0 #3d2212,
+        0 0 0 2px var(--gold);
+    }
+    .menu-btn:hover .hover-fx,
+    .menu-btn:focus-visible .hover-fx {
+      transform: translateY(-50%) scale(1);
+      opacity: 1;
+      animation: perch 0.6s steps(3) infinite alternate;
+    }
+    @keyframes perch {
+      from { transform: translateY(-50%) translateX(0) scale(1); }
+      to   { transform: translateY(calc(-50% - 2px)) translateX(1px) scale(1.05); }
+    }
+    .menu-btn:active {
+      transform: translateX(-2px) translateY(2px);
+      box-shadow: inset 0 2px 0 rgba(0,0,0,0.2), 0 1px 0 #3d2212;
+    }
+    .menu-btn.primary {
+      background: linear-gradient(180deg, #7aaa58 0%, #5a8a3e 100%);
+      border-color: #3d5e2a;
+      box-shadow: inset 0 2px 0 rgba(220, 255, 180, 0.25), 0 3px 0 #2e4a1e;
+    }
+    .menu-btn.primary:hover {
+      background: linear-gradient(180deg, #8fbe6a 0%, #6a9a48 100%);
+      box-shadow: inset 0 2px 0 rgba(230,255,200,0.3), 0 3px 0 #2e4a1e, 0 0 0 2px var(--gold);
+    }
+
+    /* ========== HUD chips ========== */
+    .hud-chip {
+      position: absolute;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(247, 240, 224, 0.88);
+      border: 3px solid var(--wood);
+      border-radius: 6px;
+      box-shadow: 3px 3px 0 var(--shadow);
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+    .sound-toggle { top: 4%; left: 3%; cursor: pointer; }
+    .sound-toggle button {
+      font-family: inherit;
+      font-size: 12px;
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sound-toggle .glyph {
+      width: 28px; height: 28px;
+      display: grid;
+      place-items: center;
+      background: var(--leaf);
+      border: 2px solid #4f7a3a;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .version {
+      bottom: 3%;
+      left: 3%;
+      font-size: 11px;
+      opacity: 0.85;
+      letter-spacing: 0.02em;
+    }
+
+    /* ========== Notebook save slots ========== */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      background: rgba(42, 40, 30, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      backdrop-filter: blur(2px);
+    }
+    .overlay.open { display: flex; }
+
+    .notebook {
+      width: min(920px, 96vw);
+      max-height: 90vh;
+      overflow: auto;
+      background:
+        repeating-linear-gradient(0deg,
+          transparent 0 27px,
+          rgba(180, 140, 90, 0.12) 27px 28px),
+        linear-gradient(135deg, #f7ecd4 0%, #efe0bc 50%, #e8d4a8 100%);
+      border: 6px solid #6e4a2e;
+      border-radius: 4px 12px 8px 4px;
+      box-shadow:
+        inset 18px 0 0 #d4b888,
+        inset 22px 0 0 rgba(110, 70, 40, 0.15),
+        0 16px 0 rgba(0,0,0,0.2),
+        12px 20px 40px rgba(0,0,0,0.25);
+      padding: 28px 28px 28px 48px;
+      position: relative;
+    }
+    .notebook::before {
+      content: "";
+      position: absolute;
+      left: 36px; top: 12px; bottom: 12px;
+      width: 2px;
+      background: #e8a0a0;
+      opacity: 0.7;
+    }
+    .notebook-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 3px dashed rgba(110, 70, 40, 0.25);
+    }
+    .notebook-title {
+      font-family: "Galmuri14", monospace;
+      font-size: 22px;
+      color: var(--ink);
+    }
+    .notebook-meta {
+      font-size: 12px;
+      color: var(--ink-soft);
+      line-height: 1.6;
+      text-align: right;
+    }
+    .close-btn {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 8px 12px;
+      border: 3px solid var(--wood-bark);
+      background: var(--wood-light);
+      color: var(--cream);
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--shadow);
+    }
+    .close-btn:hover { filter: brightness(1.08); }
+
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+    .slot-card {
+      background: rgba(255, 252, 245, 0.75);
+      border: 3px solid #b89268;
+      border-radius: 6px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.12s steps(2), box-shadow 0.12s;
+      box-shadow: 3px 3px 0 rgba(110, 70, 40, 0.15);
+    }
+    .slot-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 4px 6px 0 rgba(110, 70, 40, 0.2), 0 0 0 2px var(--gold);
+    }
+    .slot-card.empty {
+      opacity: 0.72;
+      border-style: dashed;
+    }
+    .slot-avatar {
+      width: 72px; height: 88px;
+      background:
+        linear-gradient(180deg, #cfe8ff 0%, #e8f4c8 100%);
+      border: 3px solid #8a6a48;
+      border-radius: 4px;
+      display: grid;
+      place-items: end center;
+      font-size: 42px;
+      line-height: 1;
+      overflow: hidden;
+      image-rendering: pixelated;
+    }
+    .slot-info h3 {
+      font-size: 15px;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+    .slot-info p {
+      font-size: 11px;
+      color: var(--ink-soft);
+      line-height: 1.55;
+    }
+    .slot-badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 3px 8px;
+      font-size: 10px;
+      background: #e8f0c8;
+      border: 2px solid #8aaa60;
+      border-radius: 3px;
+      color: #3d5e2a;
+    }
+
+    .toast {
+      position: absolute;
+      bottom: 8%;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 60;
+      background: var(--paper);
+      border: 3px solid var(--wood);
+      padding: 10px 18px;
+      font-size: 13px;
+      border-radius: 4px;
+      box-shadow: 4px 4px 0 var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Mobile: stack signpost lower-center */
+    @media (max-width: 720px) {
+      .logo { font-size: 34px; }
+      .signpost {
+        right: 50%;
+        transform: translateX(50%);
+        bottom: 6%;
+        width: min(300px, 92vw);
+      }
+      .cabin { display: none; }
+      .hud-chip.version { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene" id="scene">
+    <div class="sun" aria-hidden="true"></div>
+    <div class="hills" aria-hidden="true">
+      <div class="hill back"></div>
+      <div class="hill front"></div>
+    </div>
+    <div class="meadow" aria-hidden="true"></div>
+
+    <div class="cabin" aria-hidden="true">
+      <div class="cabin-roof"></div>
+      <div class="cabin-body">
+        <div class="cabin-window"></div>
+        <div class="cabin-door"></div>
+      </div>
+    </div>
+
+    <div class="tree" style="left:62%; bottom:24%;" aria-hidden="true">
+      <div class="tree-crown"></div><div class="tree-trunk"></div>
+    </div>
+    <div class="tree" style="left:74%; bottom:26%; transform: scale(0.85);" aria-hidden="true">
+      <div class="tree-crown" style="width:60px;height:54px;margin-left:-30px;"></div>
+      <div class="tree-trunk" style="height:40px;"></div>
+    </div>
+    <div class="tree" style="left:22%; bottom:23%; transform: scale(0.9);" aria-hidden="true">
+      <div class="tree-crown"></div><div class="tree-trunk"></div>
+    </div>
+
+    <span class="flower pink" style="left:18%; bottom:18%;"></span>
+    <span class="flower yellow" style="left:28%; bottom:15%;"></span>
+    <span class="flower white" style="left:48%; bottom:17%;"></span>
+    <span class="flower pink" style="left:55%; bottom:14%;"></span>
+    <span class="flower yellow" style="left:85%; bottom:16%;"></span>
+
+    <span class="critter" style="left:30%; top:28%;">🦋</span>
+    <span class="critter b2" style="left:55%; top:22%;">✨</span>
+    <span class="critter b3" style="left:40%; top:35%;">🦋</span>
+
+    <header class="logo-wrap">
+      <h1 class="logo logo-moss">메이플월드</h1>
+      <p class="logo-sub">코지 라이프 · 천천히, 따뜻하게</p>
+    </header>
+
+    <div class="hud-chip sound-toggle" title="BGM / 효과음">
+      <button type="button" id="btnSound" aria-pressed="true">
+        <span class="glyph" id="soundGlyph">🍃</span>
+        <span id="soundLabel">소리 켜짐</span>
+      </button>
+    </div>
+    <div class="hud-chip version">v0.1.0 · 봄의 첫 씨앗</div>
+
+    <nav class="signpost" aria-label="메인 메뉴">
+      <div class="sign-rope" aria-hidden="true"><span></span><span></span></div>
+      <div class="sign-board">
+        <button class="menu-btn primary" data-action="new">
+          <span class="icon">🌱</span>
+          새로운 모험 시작
+          <span class="hover-fx" aria-hidden="true">🐦</span>
+        </button>
+        <button class="menu-btn" data-action="continue">
+          <span class="icon">📖</span>
+          이어서 하기
+          <span class="hover-fx" aria-hidden="true">🐦</span>
+        </button>
+        <button class="menu-btn" data-action="settings">
+          <span class="icon">🪴</span>
+          환경 설정
+          <span class="hover-fx" aria-hidden="true">🌿</span>
+        </button>
+        <button class="menu-btn" data-action="credits">
+          <span class="icon">🧺</span>
+          만든 사람들
+          <span class="hover-fx" aria-hidden="true">🌼</span>
+        </button>
+        <button class="menu-btn" data-action="quit">
+          <span class="icon">🚪</span>
+          작별하기
+          <span class="hover-fx" aria-hidden="true">🍂</span>
+        </button>
+      </div>
+      <div class="sign-pole" aria-hidden="true"></div>
+    </nav>
+
+    <div class="overlay" id="slotOverlay" role="dialog" aria-labelledby="slotTitle" aria-modal="true">
+      <div class="notebook">
+        <div class="notebook-header">
+          <div>
+            <h2 class="notebook-title" id="slotTitle">낡은 모험 수첩</h2>
+            <p style="font-size:12px;color:var(--ink-soft);margin-top:6px;">페이지를 넘겨 이어갈 이야기를 고르세요</p>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+            <div class="notebook-meta">
+              🌤️ 맑음 · 🌿 봄<br />
+              기록된 계절: 새싹의 달
+            </div>
+            <button type="button" class="close-btn" id="closeSlots">닫기 ✕</button>
+          </div>
+        </div>
+        <div class="slots" id="slots"></div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+
+  <script>
+    const slots = [
+      { occupied: true, name: "민들레", level: 7, play: "12시간 40분", season: "봄 · 맑음", avatar: "🧑‍🌾" },
+      { occupied: true, name: "이슬", level: 3, play: "4시간 05분", season: "봄 · 비", avatar: "👧" },
+      { occupied: false },
+      { occupied: false },
+      { occupied: false },
+    ];
+
+    const slotsEl = document.getElementById("slots");
+    slots.forEach((s, i) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "slot-card" + (s.occupied ? "" : " empty");
+      if (s.occupied) {
+        card.innerHTML = `
+          <div class="slot-avatar" aria-hidden="true">${s.avatar}</div>
+          <div class="slot-info">
+            <h3>${s.name}</h3>
+            <p>Lv.${s.level}<br/>플레이 ${s.play}<br/>${s.season}</p>
+            <span class="slot-badge">슬롯 ${i + 1}</span>
+          </div>`;
+      } else {
+        card.innerHTML = `
+          <div class="slot-avatar" aria-hidden="true">🪴</div>
+          <div class="slot-info">
+            <h3>빈 페이지</h3>
+            <p>아직 기록이 없어요.<br/>새로운 모험을 적어 보세요.</p>
+            <span class="slot-badge">슬롯 ${i + 1}</span>
+          </div>`;
+      }
+      card.addEventListener("click", () => {
+        playClick();
+        toast(s.occupied ? `${s.name}의 이야기를 펼칩니다…` : "빈 슬롯 — 새 모험을 시작해 보세요");
+      });
+      slotsEl.appendChild(card);
+    });
+
+    const overlay = document.getElementById("slotOverlay");
+    const toastEl = document.getElementById("toast");
+    let toastTimer;
+
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2200);
+    }
+
+    /* Lightweight wood-click via Web Audio (no asset required) */
+    let audioCtx;
+    let soundOn = true;
+    function playClick() {
+      if (!soundOn) return;
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const t = audioCtx.currentTime;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = "triangle";
+        o.frequency.setValueAtTime(420, t);
+        o.frequency.exponentialRampToValueAtTime(180, t + 0.08);
+        g.gain.setValueAtTime(0.12, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t); o.stop(t + 0.14);
+      } catch (_) {}
+    }
+
+    document.querySelectorAll(".menu-btn").forEach((btn) => {
+      btn.addEventListener("mouseenter", () => { if (soundOn) playClick(); });
+      btn.addEventListener("click", () => {
+        playClick();
+        const action = btn.dataset.action;
+        if (action === "new" || action === "continue") {
+          overlay.classList.add("open");
+          toast(action === "new" ? "빈 페이지를 골라 새 모험을 적어요" : "이어갈 기록을 고르세요");
+        } else if (action === "settings") {
+          toast("환경 설정 — 준비 중 (소리 · 언어 · 화면)");
+        } else if (action === "credits") {
+          toast("만든 사람들 — 흙을 만진 손들, 씨앗을 심은 마음들");
+        } else if (action === "quit") {
+          toast("작별 인사… 다음에 또 만나요 🍃");
+        }
+      });
+    });
+
+    document.getElementById("closeSlots").addEventListener("click", () => {
+      playClick();
+      overlay.classList.remove("open");
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.classList.remove("open");
+    });
+
+    const btnSound = document.getElementById("btnSound");
+    btnSound.addEventListener("click", () => {
+      soundOn = !soundOn;
+      btnSound.setAttribute("aria-pressed", String(soundOn));
+      document.getElementById("soundGlyph").textContent = soundOn ? "🍃" : "🍂";
+      document.getElementById("soundLabel").textContent = soundOn ? "소리 켜짐" : "소리 꺼짐";
+      if (soundOn) playClick();
+    });
+  </script>
+</body>
+</html>
+
+<!--
+================================================================================
+Midjourney / DALL·E 픽셀 아트 프롬프트 3종
+================================================================================
+
+[1] 배경 아트 (Title Key Art · 16:9)
+--------------------------------------------------------------------------------
+Prompt (EN):
+Cozy pixel art title screen background for a farming life simulation RPG,
+16:9 landscape, soft pastel palette, warm afternoon sunlight over a rural
+cottage front yard and meadow. Small wooden cabin with mossy roof, flower beds,
+swaying trees, butterflies and floating dust motes, gentle hills, no UI, no text,
+no characters in the foreground safe zone (center-right reserved for signpost).
+MapleStory-like chunky pixel shading with 2-3 cell shades, soft brown outlines
+(not pure black), Stardew Valley cozy mood, handmade warm atmosphere,
+high clarity pixel art, 1920x1080 composition, diegetic game title backdrop.
+
+Negative:
+sharp modern UI, metallic chrome, neon, cyberpunk, photorealistic, blurry,
+3D render, busy HUD, watermark, logo text, dark horror, purple glow
+
+Midjourney tips: --ar 16:9 --stylize 80 --v 6
+DALL·E tips: ask for "strict pixel art, visible pixels, limited palette"
+
+
+[2] 통나무 표지판 UI (Signpost Menu · 투명 배경)
+--------------------------------------------------------------------------------
+Prompt (EN):
+Game UI asset, vertical wooden signpost menu panel in chunky pixel art,
+transparent background. Weathered soft wood planks with visible grain,
+rope ties at the top, tiny moss and leaf accents, five blank rectangular
+wooden boards stacked for menu buttons, cozy pastel brown and cream tones,
+hand-painted village craft look, thick soft outline, no text, no letters,
+isolated UI element centered, suitable for 2D game HUD overlay,
+cute healing life-sim aesthetic, not metal, not stone, not sci-fi.
+
+Negative:
+text, letters, buttons with words, metal, stone, gothic, sharp edges,
+photoreal wood photo, 3D CGI, busy background scenery
+
+
+[3] 메뉴 프레임 / 수첩 팝업 (Notebook Frame · 투명 배경)
+--------------------------------------------------------------------------------
+Prompt (EN):
+Pixel art game UI window frame shaped like an open aged notebook / scrapbook
+spread for save slot selection, transparent background outside the book.
+Cream paper pages with faint ruled lines, stitched spine, soft wood-corner
+reinforcements, twine bookmark, tiny pressed flower sticker and seed doodles
+in margins, cozy pastel palette, handmade scrapbook vibe for a farming RPG,
+chunky pixels, warm lighting, empty content area in the center for slots,
+no readable text, MapleStory-adjacent cartoon pixel shading, healing cozy UI.
+
+Negative:
+modern flat card UI, glassmorphism, neon, dark mode chrome, photoreal paper,
+dense unreadable glyphs, cluttered stickers covering the center
+
+한글 요약 지시 (에이전트에 같이 붙여도 됨):
+「파스텔·우드·코지 픽셀. 금속/네온/모던 웹 UI 금지. 텍스트·글자 넣지 말 것.
+투명 배경(키아트 제외). 메이플식 셀 셰이딩 + 부드러운 갈색 아웃라인.」
+-->

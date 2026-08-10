@@ -291,7 +291,8 @@ The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, buil
   3) Error/Warning/Info 수 + 근거 발췌를 보고에 기재
   4) 이후 Play 시나리오는 "런타임 검증 보류(제작자 수행)"로 명시
   ```
-  - **Warning 급증도 보고 대상**: baseline 대비 늘었으면 원인과 소유 스크립트를 밝힌다(`LWA-4012`=모델에 프로퍼티 기본값 미명시 계열). **현재 baseline = 48** (2026-08-06 실측 — 내역·미해결 건은 [docs/workflow.md](./docs/workflow.md) §④).
+  - **Warning 급증도 보고 대상**: baseline 대비 늘었으면 원인과 소유 스크립트를 밝힌다(`LWA-4012`=모델에 프로퍼티 기본값 미명시 계열). **현재 baseline = 17** (2026-08-08 실측, HEAD `3126192` — 소유별 내역은 [docs/workflow.md](./docs/workflow.md) §④). 구 baseline 48은 폐기됐다.
+  - 🔴 **build 로그는 refresh마다 갱신되지 않는다** ([규칙 22](./docs/pitfalls.md)) — `maker_logs(kind="build")`가 직전 빌드 스냅샷을 그대로 재반환할 수 있고 `maker_clear_logs`로는 못 지운다(`normal`만 삭제). **로그의 `dateTime`이 이번 refresh 시각과 같은지 대조한 뒤에 `Error=0`을 근거로 쓸 것.**
   - **신규 `.mlua`를 만들었으면 refresh 후 `.codeblock` 생성을 반드시 확인**한다(8대 핵심 규칙 2 — 쌍이 없으면 스크립트가 등록조차 안 된다).
   - MCP 미연결 환경이면 LSP 진단까지만 수행하고 **"refresh 검증 보류"** 로 정확히 보고한다(허위 Error=0 기재 금지).
   - ⚠️ **"MCP 미연결"을 단정하기 전에 `MakerMCP_run.exe` 고아 프로세스부터 의심**한다(브리지 포트 점유). 대응은 [docs/workflow.md](./docs/workflow.md) §2 "연결이 이상할 때" 참조.

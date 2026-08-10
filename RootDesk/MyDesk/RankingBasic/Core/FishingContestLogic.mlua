@@ -25,17 +25,29 @@ script FishingContestLogic extends Logic
 
 		local playerComp = player.PlayerComponent
 		if playerComp == nil then return end
-		local profileCode = playerComp.ProfileCode
+		-- 캐릭터(슬롯) 단위 키 — 계정 ProfileCode가 아니라 CharacterId.
+		local profileCode = ""
+		if _PersistenceManager ~= nil then
+			profileCode = _PersistenceManager:GetCharacterId(tostring(playerComp.UserId or ""))
+		end
 		if profileCode == nil or profileCode == "" then
-			-- ProfileCode 부재 시 UserId 폴백 (패키지 Key 계약 유지).
-			profileCode = tostring(playerComp.UserId or "")
+			profileCode = tostring(playerComp.ProfileCode or "")
+			if profileCode == "" then
+				profileCode = tostring(playerComp.UserId or "")
+			end
 		end
 		if profileCode == "" then
 			log_warning("[T57][FISHRANK] empty profileCode")
 			return
 		end
 
-		local tag = playerComp.Nickname or ""
+		local tag = ""
+		if _PersistenceManager ~= nil then
+			tag = _PersistenceManager:GetCharacterName(tostring(playerComp.UserId or ""))
+		end
+		if tag == "" then
+			tag = playerComp.Nickname or ""
+		end
 		local curElapsed = 0
 		if _DateTimeLogic ~= nil then
 			curElapsed = _DateTimeLogic:GetTimeElapsed()

@@ -12,7 +12,11 @@
 
 - 데이터: `RootDesk/MyDesk/QuestAndAchievement/DataSets/QuestDataSet.csv` + `QuestConditionDataSet.csv`
 - 현행 콘텐츠: **튜토리얼 체인 101~107** (풀 뜯기 → 손도끼 → 벌목 → 곡괭이 → 채광 → 상자 설치 → 포탈 이동). 전부 `AutoAccept`, `LinkedPrevId`로 직렬 연결.
-- 보상: `RewardItems`(`아이템:수량|...`) + `RewardUnlockId`(레시피 해금 — T27, 107이 `quest_cooking_pot` 해금).
+- 보상: `RewardItems`(`아이템:수량|...`) + `RewardUnlockId`(레시피 해금 — T27, 107이 `quest_cooking_pot` 해금)
+  + **`RewardPortalId`**(영지 포탈 개통 — 2026-08-10 신설, **106이 `town` 개통**).
+  - ⚖️ **2026-08-10**: 신규 영지에는 포탈이 **없다.** 106(나무 상자 설치)을 깨야 마을 포탈이 나타나고,
+    그 직후 107(포탈 이동)이 AutoAccept되는 자연스러운 흐름이 된다.
+  - 값 = `PortalDestinationDataSet.DestinationId`. 지급은 `PersistenceManager:GrantEstatePortal`(멱등) 담당.
 - 퀘스트 스키마 (`QuestDataSet.csv`):
   `Id, Name, Desc, ProgressingDesc, CategoryEnum(Main/Sub), CycleEnum, IsRepeatable, LinkedPrevId, RequiredId, AutoAccept, CannotAbandon, ConsumeItems, RewardItems, Priority, Disable, RewardUnlockId`
 - 조건 스키마 (`QuestConditionDataSet.csv`): `Id(퀘스트 Id와 동일), Description, CondEnum, CondArg, CondExtra, Value, Disable`
@@ -94,10 +98,10 @@ QuestId, NpcId, Phase(offer|progress|complete), Seq(1..n), Text, Speaker(npc|pla
 
 ## 4. 제작자 결정 필요 (열린 판단)
 
-1. **스토리 톤**: 코지 힐링(스타듀밸리) vs 가벼운 모험 서사(메이플 튜토리얼풍) vs 미스터리 훅(연구소/보스 떡밥). — §5 브리프의 톤 항목에 반영할 것.
-2. **분량 단위**: 챕터 1개 = 퀘스트 몇 개짜리 아크로 갈지 (권장: 챕터당 4~6퀘, 첫 챕터는 마을 소개 아크).
-3. **주인공 설정**: 플레이어가 "영지에 정착한 이주민"이라는 암묵 전제를 명문화할지.
-4. 대화창 UI를 새로 만들지, 기존 토스트/팝업 스타일로 갈지.
+1. ⚖️ **스토리 톤 (2026-08-08)**: **기본 코지 + 미스터리 훅** (연구소/보스/마을의 가벼운 수수께끼). 죽음/공포/정치는 금지.
+2. **분량 단위**: 챕터당 4~6퀘, 첫 챕터는 마을 소개 아크 (유지).
+3. **주인공 설정**: 영지 이주민 전제 명문화 (유지).
+4. ⚖️ **대화창 (2026-08-08)**: **메이플스토리식 하단 대화창** 신설. F「대화하기」는 ChatBalloon이 아니라 이 창. 퀘스트 수락/거절 포함. HUD·퀵슬롯·모바일 버튼을 덮어도 됨. 자동 혼잣말(거리 트리거)만 기존 말풍선 유지.
 
 ---
 
@@ -135,7 +139,7 @@ QuestId, NpcId, Phase(offer|progress|complete), Seq(1..n), Text, Speaker(npc|pla
   (예: "Gather,Wood,,5" = 나무 5회 채집. 호위/타이머/대화만으로 완료되는 조건은 시스템에 없음 — 필요하면 "시스템 제안"으로 분리 표기.)
 - 아이템/몬스터 이름은 제공된 목록의 영문 Name을 그대로 (별도 첨부: item_dataset의 Name 컬럼, 몬스터 Name 목록).
 - 대사는 한국어, 한 문장 40자 내외, 이모지 금지. 말줄임표는 "…" 하나.
-- 톤: 따뜻하고 잔잔한 코지 톤 + 가벼운 유머. 죽음/공포/정치 소재 금지. (변경 시 제작자 지시 우선)
+- 톤: **코지 기본 + 가벼운 미스터리 훅**(연구소·보스·마을 수수께끼). 따뜻함·잔잔한 유머 유지. 죽음/공포/정치 소재 금지.
 - 챕터 1 분량: 퀘스트 4~6개 + NPC별 스토리 대사 시퀀스(offer 2~4문장, complete 1~3문장) + 앰비언트 10줄 내외.
 ```
 

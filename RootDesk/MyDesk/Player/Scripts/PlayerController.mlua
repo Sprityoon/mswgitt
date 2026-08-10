@@ -1963,6 +1963,66 @@ script PlayerController extends Component
 		end
 	end
 
+	@ExecSpace("Client")
+	method void ClientOpenMainMenu(string metaJson)
+		-- 슬롯 선택 화면 오픈 (spawnFade 유지).
+		local ent = _EntityService:GetEntityByPath("/ui/MainMenuGroup/Controller")
+		if not isvalid(ent) then
+			log_warning("[MAINMENU] Controller missing")
+			return
+		end
+		local c = ent:GetComponent("script.UIMainMenuController")
+		if isvalid(c) then
+			c:OpenWithMetaJson(metaJson or "{}")
+		end
+	end
+
+	@ExecSpace("Client")
+	method void ClientCloseMainMenu()
+		local ent = _EntityService:GetEntityByPath("/ui/MainMenuGroup/Controller")
+		if not isvalid(ent) then return end
+		local c = ent:GetComponent("script.UIMainMenuController")
+		if isvalid(c) then c:Close() end
+	end
+
+	@ExecSpace("Client")
+	method void ClientRefreshMainMenu(string metaJson)
+		local ent = _EntityService:GetEntityByPath("/ui/MainMenuGroup/Controller")
+		if not isvalid(ent) then return end
+		local c = ent:GetComponent("script.UIMainMenuController")
+		if isvalid(c) then c:ApplyMetaJson(metaJson or "{}") end
+	end
+
+	@ExecSpace("Client")
+	method void ClientMainMenuError(string msg)
+		local ent = _EntityService:GetEntityByPath("/ui/MainMenuGroup/Controller")
+		if not isvalid(ent) then return end
+		local c = ent:GetComponent("script.UIMainMenuController")
+		if isvalid(c) then c:ShowNameError(msg or "") end
+	end
+
+	@ExecSpace("Server")
+	method void ServerSelectSaveSlot(integer slot, boolean isNew, string nickname, string costumeJson)
+		-- 메인메뉴 슬롯 선택 (+ 새로하기 외형 JSON).
+		if _PersistenceManager == nil then return end
+		_PersistenceManager:SelectSaveSlot(self.Entity, slot, isNew, nickname or "", costumeJson or "")
+	end
+
+	@ExecSpace("Server")
+	method void ServerDeleteSaveSlot(integer slot)
+		if _PersistenceManager == nil then return end
+		_PersistenceManager:DeleteSaveSlot(self.Entity, slot)
+	end
+
+	@ExecSpace("Server")
+	method void ServerQuitWorld()
+		-- 타이틀 '종료하기' — 월드 콘텐츠 퇴장.
+		local userId = self.Entity.PlayerComponent.UserId
+		if userId == nil or userId == "" then return end
+		log("[MAINMENU] quit world user=" .. tostring(userId))
+		_UserService:KickUser(userId, KickReason.WorldContent)
+	end
+
 	@ExecSpace("Server")
 	method void ServerRequestOpenPermissionSettings()
 		local userId = senderUserId

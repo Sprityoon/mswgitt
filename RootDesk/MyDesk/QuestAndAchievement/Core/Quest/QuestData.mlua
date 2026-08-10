@@ -30,6 +30,13 @@ script QuestData
 	-- T27: 레시피 해금 키 (공란=없음). GrantRecipeUnlock 연동.
 	property string RewardUnlockId = ""
 
+	-- 2026-08-10: 완료 시 영지에 개통할 포탈 목적지 (PortalDestinationDataSet.DestinationId, 공란=없음).
+	property string RewardPortalId = ""
+
+	-- 스토리 수주/보고 NPC (공란=AutoAccept·자동완료 경로).
+	property string GiverNpcId = ""
+	property string TurnInNpcId = ""
+
 	property table ConditionDatas = nil
 
 	property integer ConditionCount = 0
@@ -93,6 +100,24 @@ script QuestData
 		local okRu, ru = pcall(function() return row:GetItem("RewardUnlockId") end)
 		if okRu and ru ~= nil and not _Util:IsNilorEmptyString(ru) then
 			self.RewardUnlockId = ru
+		end
+
+		-- 영지 포탈 개통 보상 (없는 컬럼 GetItem은 LEA-3011 — pcall)
+		self.RewardPortalId = ""
+		local okRp, rp = pcall(function() return row:GetItem("RewardPortalId") end)
+		if okRp and rp ~= nil and not _Util:IsNilorEmptyString(rp) then
+			self.RewardPortalId = tostring(rp)
+		end
+
+		self.GiverNpcId = ""
+		local okG, g = pcall(function() return row:GetItem("GiverNpcId") end)
+		if okG and g ~= nil and not _Util:IsNilorEmptyString(g) then
+			self.GiverNpcId = tostring(g)
+		end
+		self.TurnInNpcId = ""
+		local okT, t = pcall(function() return row:GetItem("TurnInNpcId") end)
+		if okT and t ~= nil and not _Util:IsNilorEmptyString(t) then
+			self.TurnInNpcId = tostring(t)
 		end
 		
 		return true

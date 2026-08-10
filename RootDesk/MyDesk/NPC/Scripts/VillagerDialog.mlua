@@ -1,15 +1,13 @@
 @Component
 script VillagerDialog extends Component
-	-- T56: 마을 주민 F 대화 + 선택 자동 혼잣말. ChatBalloonComponent 말풍선 미러.
-	-- dialog-package는 화면 UI 타이프라이터형이라 월드 말풍선 요구에 부적합 → 자작.
+	-- F「대화하기」→ 메이플식 하단 대화창 (UIDialogController).
+	-- 자동 혼잣말만 ChatBalloon 유지.
 
 	property string NpcId = "elder"
+	property string DisplayName = ""
 	property number InteractRange = 3.0
-	-- T67: 조준선 footprint
 	property integer AimFootprintW = 1
 	property integer AimFootprintH = 1
-
-	-- 조준 가이드 라벨 (PlayerController:ReadInteractLabel이 읽음)
 	property string InteractLabel = "대화하기"
 	property number BalloonDuration = 4.0
 	property number AutoTalkInterval = 15.0
@@ -20,23 +18,22 @@ script VillagerDialog extends Component
 	property any balloonClearTimer = nil
 
 	method void OnBeginPlay()
-		-- 클라: F KeyDown + InteractRequestEvent(T59). 서버: 자동 혼잣말 준비.
+		-- 클라: F/모바일 상호작용. 서버: 자동 혼잣말.
 		if self:IsClient() then
 			self.keyHandler = _InputService:ConnectEvent(KeyDownEvent, self.OnKeyDown)
 			local lp = _UserService.LocalPlayer
 			if isvalid(lp) then
-				-- LEA-4002: ClientOnly 메서드에 커스텀 Event 타입 파라미터 불가 → 클로저 구독.
 				self.interactRequestHandler = lp:ConnectEvent(InteractRequestEvent, function()
 					self:TryInteract()
 				end)
 			else
-				log_warning("[T56][DIALOG] LocalPlayer nil — InteractRequestEvent not connected")
+				log_warning("[DIALOG] LocalPlayer nil — InteractRequestEvent not connected")
 			end
-			log("[T56][DIALOG] client ready npc=" .. tostring(self.NpcId))
+			log("[DIALOG] client ready npc=" .. tostring(self.NpcId))
 		end
 		if self:IsServer() then
 			self.AutoTalkAccum = 0
-			log("[T56][DIALOG] server ready npc=" .. tostring(self.NpcId))
+			log("[DIALOG] server ready npc=" .. tostring(self.NpcId))
 		end
 	end
 
@@ -62,7 +59,7 @@ script VillagerDialog extends Component
 	end
 
 	method void OnUpdate(number delta)
-		-- 서버: 근처 플레이어 있을 때만 주기 자동 혼잣말.
+		-- 서버: 근처 플레이어 있을 때만 주기 자동 혼잣말(말풍선).
 		if not self:IsServer() then return end
 		local interval = self.AutoTalkInterval
 		if interval <= 0 then return end
@@ -70,7 +67,7 @@ script VillagerDialog extends Component
 		if self.AutoTalkAccum < interval then return end
 		self.AutoTalkAccum = 0
 		if not self:HasNearbyPlayer(self.AutoTalkRange) then return end
-		local text = self:PickDialogText(true)
+		local text = self:PickAmbientText()
 		if text ~= "" then
 			self:ShowBalloon(text, "auto")
 		end
@@ -85,31 +82,223 @@ script VillagerDialog extends Component
 
 	@ExecSpace("ClientOnly")
 	method void TryInteract()
-		-- T67: 조준선 게이트 (근접 거리 판정 폐지).
+		-- 조준 게이트 후 대화창 오픈.
 		local localPlayer = _UserService.LocalPlayer
 		if not isvalid(localPlayer) then return end
 		local pc = localPlayer:GetComponent("script.PlayerController")
 		if not isvalid(pc) then return end
 		if not pc:IsAimTarget(self.Entity) then return end
-		log("[T67][AIM] VillagerDialog aim-ok")
-		self:RequestTalk()
+
+		local dialog = self:GetDialogController()
+		if dialog ~= nil and dialog:IsOpen() then
+			return
+		end
+
+		local speaker = self:GetSpeakerName()
+		local offer = self:FindOfferQuest(localPlayer)
+		local questId = 0
+		local offerPages = nil
+		if offer ~= nil then
+			questId = math.floor(tonumber(offer.id) or 0)
+			offerPages = offer.pages
+		end
+		if questId > 0 and offerPages ~= nil and #offerPages > 0 then
+			if dialog ~= nil then
+				dialog:OpenQuestOffer(speaker, offerPages, questId)
+				log("[DIALOG] offer npc=" .. tostring(self.NpcId) .. " quest=" .. tostring(questId))
+				return
+			end
+		end
+
+		local talkPages = self:BuildTalkPages()
+		if #talkPages == 0 then
+			log_warning("[DIALOG] no talk pages npc=" .. tostring(self.NpcId))
+			return
+		end
+		if dialog ~= nil then
+			dialog:OpenTalk(speaker, talkPages)
+			log("[DIALOG] talk npc=" .. tostring(self.NpcId) .. " pages=" .. tostring(#talkPages))
+		end
 	end
 
 	@ExecSpace("ClientOnly")
-	method void RequestTalk()
-		-- 서버에 대화 요청.
-		self:ServerRequestTalk()
+	method any GetDialogController()
+		-- DialogGroup 컨트롤러 조회. (커스텀 script 반환 타입 금지 → any)
+		local ent = _EntityService:GetEntityByPath("/ui/DialogGroup/Controller")
+		if not isvalid(ent) then
+			log_warning("[DIALOG] DialogGroup/Controller missing")
+			return nil
+		end
+		local comp = ent:GetComponent("script.UIDialogController")
+		if not isvalid(comp) then
+			log_warning("[DIALOG] UIDialogController missing")
+			return nil
+		end
+		return comp
 	end
 
-	@ExecSpace("Server")
-	method void ServerRequestTalk()
-		-- F/터치 대화: 시간대·날씨 필터 후 Weight 추첨 → 말풍선.
-		local text = self:PickDialogText(false)
-		if text == "" then
-			log_warning("[T56][DIALOG] no dialog row npc=" .. tostring(self.NpcId))
-			return
+	method string GetSpeakerName()
+		-- DisplayName 우선, 없으면 NpcId 매핑.
+		if self.DisplayName ~= nil and self.DisplayName ~= "" then
+			return self.DisplayName
 		end
-		self:ShowBalloon(text, "interact")
+		local id = self.NpcId or ""
+		if id == "elder" then return "촌장" end
+		if id == "fisher" then return "낚시꾼" end
+		if id == "resident_a" then return "미나" end
+		if id == "resident_b" then return "유나" end
+		if id == "resident_c" then return "다은" end
+		if id == "resident_d" then return "토리" end
+		return id
+	end
+
+	@ExecSpace("ClientOnly")
+	method any FindOfferQuest(Entity player)
+		-- GiverNpcId 일치 + 수락 가능 퀘스트 1건.
+		-- 반환: { id=integer, pages=table } 또는 nil
+		-- ⚠ mlua는 method integer, table 다중 반환 시그니처 불가(LEA-3015).
+		if not isvalid(player) or player.PlayerQuest == nil then return nil end
+		local ds = _DataService:GetTable("QuestDataSet")
+		if ds == nil then return nil end
+		local rows = ds:GetAllRow()
+		if rows == nil then return nil end
+		local npcId = self.NpcId or ""
+		local elapsed = 0
+		if _DateTimeLogic ~= nil then
+			elapsed = _DateTimeLogic:GetTimeElapsed()
+		end
+
+		local bestId = 0
+		local bestPriority = -999999
+		for _, row in ipairs(rows) do
+			local disable = ""
+			local okD, rawD = pcall(function() return row:GetItem("Disable") end)
+			if okD and rawD ~= nil then disable = tostring(rawD) end
+			if disable ~= "" then continue end
+
+			local giver = ""
+			local okG, rawG = pcall(function() return row:GetItem("GiverNpcId") end)
+			if okG and rawG ~= nil then giver = tostring(rawG) end
+			if giver ~= npcId then continue end
+
+			local auto = ""
+			local okA, rawA = pcall(function() return row:GetItem("AutoAccept") end)
+			if okA and rawA ~= nil then auto = tostring(rawA) end
+			if auto ~= "" then continue end
+
+			local id = math.floor(tonumber(row:GetItem("Id")) or 0)
+			if id <= 0 then continue end
+			local data = _QuestDataSetLogic ~= nil and _QuestDataSetLogic:GetData(id) or nil
+			if data == nil then continue end
+			local userData = player.PlayerQuest:GetOrCreateUserData(id)
+			if not userData:IsAcceptable(player, data, elapsed) then continue end
+
+			local pri = math.floor(tonumber(row:GetItem("Priority")) or 0)
+			if pri > bestPriority then
+				bestPriority = pri
+				bestId = id
+			end
+		end
+
+		if bestId <= 0 then return nil end
+		local pages = self:LoadStoryPages(bestId, "offer")
+		if pages == nil or #pages == 0 then
+			local data = _QuestDataSetLogic:GetData(bestId)
+			local desc = data ~= nil and tostring(data.Desc or "") or ""
+			local name = data ~= nil and tostring(data.Name or "") or ""
+			pages = {}
+			if name ~= "" then table.insert(pages, "【" .. name .. "】") end
+			if desc ~= "" then table.insert(pages, desc) end
+			table.insert(pages, "이 부탁을 맡아 주겠나?")
+		end
+		return { id = bestId, pages = pages }
+	end
+
+	method table LoadStoryPages(integer questId, string phase)
+		-- StoryDialogDataSet에서 Seq 순 페이지.
+		local ds = _DataService:GetTable("StoryDialogDataSet")
+		if ds == nil then return {} end
+		local rows = ds:GetAllRow()
+		if rows == nil then return {} end
+		local list = {}
+		for _, row in ipairs(rows) do
+			local qid = math.floor(tonumber(row:GetItem("QuestId")) or 0)
+			if qid ~= questId then continue end
+			local ph = tostring(row:GetItem("Phase") or "")
+			if ph ~= phase then continue end
+			local seq = math.floor(tonumber(row:GetItem("Seq")) or 0)
+			local text = tostring(row:GetItem("Text") or "")
+			if text ~= "" then
+				table.insert(list, { seq = seq, text = text })
+			end
+		end
+		table.sort(list, function(a, b) return a.seq < b.seq end)
+		local pages = {}
+		for _, e in ipairs(list) do
+			table.insert(pages, e.text)
+		end
+		return pages
+	end
+
+	@ExecSpace("ClientOnly")
+	method table BuildTalkPages()
+		-- 앰비언트 한 줄 → 단페이지. (스토리 progress/complete는 후속)
+		local pages = {}
+		local progressPages = self:TryProgressOrCompletePages()
+		if progressPages ~= nil and #progressPages > 0 then
+			return progressPages
+		end
+		local text = self:PickAmbientText()
+		if text ~= "" then
+			table.insert(pages, text)
+		end
+		return pages
+	end
+
+	@ExecSpace("ClientOnly")
+	method table TryProgressOrCompletePages()
+		-- 진행 중/완료 보고 대사 (TurnInNpcId).
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) or lp.PlayerQuest == nil then return nil end
+		local ds = _DataService:GetTable("QuestDataSet")
+		if ds == nil then return nil end
+		local rows = ds:GetAllRow()
+		if rows == nil then return nil end
+		local npcId = self.NpcId or ""
+
+		for _, row in ipairs(rows) do
+			local turnIn = ""
+			local okT, rawT = pcall(function() return row:GetItem("TurnInNpcId") end)
+			if okT and rawT ~= nil then turnIn = tostring(rawT) end
+			if turnIn == "" then
+				local okG, rawG = pcall(function() return row:GetItem("GiverNpcId") end)
+				if okG and rawG ~= nil then turnIn = tostring(rawG) end
+			end
+			if turnIn ~= npcId then continue end
+			local id = math.floor(tonumber(row:GetItem("Id")) or 0)
+			if id <= 0 then continue end
+			local userData = lp.PlayerQuest.UserDataTable[id]
+			if userData == nil then continue end
+			local data = _QuestDataSetLogic ~= nil and _QuestDataSetLogic:GetData(id) or nil
+			if data == nil then continue end
+
+			if userData.State == _QuestStateEnum.InProgress and userData:IsCompletable(data) then
+				local pages = self:LoadStoryPages(id, "complete")
+				if #pages == 0 then
+					pages = { "수고했네. 보상을 받지.", tostring(data.Name or "") .. " 완료!" }
+				end
+				lp.PlayerQuest:RequestCompleteQuests({ id })
+				return pages
+			end
+			if userData.State == _QuestStateEnum.InProgress then
+				local pages = self:LoadStoryPages(id, "progress")
+				if #pages == 0 then
+					pages = { tostring(data.ProgressingDesc or "아직 끝나지 않은 것 같군.") }
+				end
+				return pages
+			end
+		end
+		return nil
 	end
 
 	method boolean HasNearbyPlayer(number range)
@@ -136,7 +325,7 @@ script VillagerDialog extends Component
 	end
 
 	method string GetTimeBand()
-		-- PersistenceManager.IsNight 읽기 전용 → day|night.
+		-- day|night.
 		local night = false
 		if _PersistenceManager ~= nil then
 			local ok, v = pcall(function() return _PersistenceManager:IsNight() end)
@@ -147,7 +336,7 @@ script VillagerDialog extends Component
 	end
 
 	method string GetWeatherId()
-		-- WeatherManager @Sync 읽기 전용.
+		-- WeatherManager.
 		if _WeatherManager == nil then return "clear" end
 		local ok, wid = pcall(function() return _WeatherManager:GetCurrentWeatherId() end)
 		if ok and wid ~= nil and tostring(wid) ~= "" then return tostring(wid) end
@@ -156,13 +345,10 @@ script VillagerDialog extends Component
 		return "clear"
 	end
 
-	method string PickDialogText(boolean autoOnly)
-		-- DialogDataSet에서 NpcId+TimeBand+WeatherId 필터 후 Weight 추첨.
+	method string PickAmbientText()
+		-- DialogDataSet Weight 추첨.
 		local ds = _DataService:GetTable("DialogDataSet")
-		if ds == nil then
-			log_warning("[T56][DIALOG] DialogDataSet missing")
-			return ""
-		end
+		if ds == nil then return "" end
 		local npcId = self.NpcId or ""
 		local band = self:GetTimeBand()
 		local weather = self:GetWeatherId()
@@ -194,15 +380,7 @@ script VillagerDialog extends Component
 				end
 			end
 		end
-
-		if totalW <= 0 or #pool == 0 then
-			log("[T56][DIALOG] empty pool npc=" .. npcId
-				.. " band=" .. band
-				.. " weather=" .. weather
-				.. " auto=" .. tostring(autoOnly))
-			return ""
-		end
-
+		if totalW <= 0 or #pool == 0 then return "" end
 		local rng = _UtilLogic:RandomDouble() * totalW
 		local acc = 0
 		local chosen = pool[1].text
@@ -213,22 +391,14 @@ script VillagerDialog extends Component
 				break
 			end
 		end
-		log("[T56][DIALOG] pick npc=" .. npcId
-			.. " band=" .. band
-			.. " weather=" .. weather
-			.. " text=" .. chosen)
 		return chosen
 	end
 
 	method void ShowBalloon(string text, string reason)
-		-- ChatBalloon은 AutoShowEnabled=true + 짧은 HideDuration일 때만 화면에 그려짐.
-		-- 서버에서 @Sync 값을 맞춘 뒤 클라 Multicast로 한 번 더 적용(동기화 덮어쓰기 방지).
+		-- 자동 혼잣말 말풍선 (F 대화와 분리).
 		if not self:IsServer() then return end
 		local balloon = self.Entity.ChatBalloonComponent
-		if not isvalid(balloon) then
-			log_warning("[T56][DIALOG] ChatBalloonComponent missing on " .. tostring(self.Entity.Name))
-			return
-		end
+		if not isvalid(balloon) then return end
 		local dur = self.BalloonDuration
 		if dur < 1 then dur = 3 end
 		if dur > 5 then dur = 5 end
@@ -236,18 +406,11 @@ script VillagerDialog extends Component
 		balloon.ChatModeEnabled = true
 		balloon.HideDuration = 0.05
 		balloon.AutoShowEnabled = true
-		if balloon.Offset < 0.5 then
-			balloon.Offset = 1.2
-		end
+		if balloon.Offset < 0.5 then balloon.Offset = 1.2 end
 		balloon.ShowDuration = dur
 		balloon.Message = ""
 		balloon.Message = text
-		log("[T56][DIALOG] balloon npc=" .. tostring(self.NpcId)
-			.. " reason=" .. tostring(reason)
-			.. " dur=" .. tostring(dur)
-			.. " msg=" .. text)
 		self:ClientShowBalloon(text, dur)
-
 		if self.balloonClearTimer ~= nil then
 			_TimerService:ClearTimer(self.balloonClearTimer)
 			self.balloonClearTimer = nil
@@ -265,28 +428,22 @@ script VillagerDialog extends Component
 
 	@ExecSpace("Multicast")
 	method void ClientShowBalloon(string text, number dur)
-		-- 클라 로컬 재적용 (서버→클라 Sync가 늦거나 덮여도 표시되게).
+		-- 클라 말풍선 재적용.
 		local balloon = self.Entity.ChatBalloonComponent
 		if not isvalid(balloon) then return end
 		balloon.Enable = true
 		balloon.ChatModeEnabled = true
 		balloon.HideDuration = 0.05
 		balloon.AutoShowEnabled = true
-		if balloon.Offset < 0.5 then
-			balloon.Offset = 1.2
-		end
+		if balloon.Offset < 0.5 then balloon.Offset = 1.2 end
 		balloon.ShowDuration = dur
-		if balloon.Message ~= text then
-			balloon.Message = ""
-			balloon.Message = text
-		else
-			balloon.Message = text
-		end
+		balloon.Message = ""
+		balloon.Message = text
 	end
 
 	@ExecSpace("Multicast")
 	method void ClientClearBalloon()
-		-- 표시 종료.
+		-- 말풍선 종료.
 		local balloon = self.Entity.ChatBalloonComponent
 		if not isvalid(balloon) then return end
 		balloon.Message = ""

@@ -6,6 +6,23 @@ script PersistenceManager extends Logic
 	property any PeriodicSaveTimerId = nil
 	-- T37 재작업: 세션 중 마지막 영지 좌표 캐시 (세이브 경로 GetAndWait 금지)
 	property table LastHomePos = {}
+	-- 슬롯 세이브 (⚖️ 2026-08-08): 유저별 활성 슬롯·캐릭터명
+	property table ActiveSlotByUser = {}
+	property table CharacterNameByUser = {}
+	property table CharacterCostumeByUser = {}
+	-- 새 슬롯 부팅 구간 표식. 슬롯을 확정한 순간 플레이어는 아직 시작맵(마을)에 서 있는데,
+	-- 그 상태로 SavePlayerData가 돌면 lastMapKind="town"이 박혀 LoadPlayerData가 영지 대신
+	-- 마을로 워프시킨다. 홈 워프가 끝날 때까지 이 표식으로 "home"을 강제한다.
+	property table PendingHomeWarp = {}
+	property integer MaxSaveSlots = 5
+	property string DefaultPantsRuid = "e6ff0ea602e043f48a7e231ed4f95daf"
+	-- 닉네임 길이 규약. UIMainMenuController(nickMinLen/nickMaxLen)와
+	-- MainMenuGroup.ui의 TextGUIRendererInputComponent.CharacterLimit도 같은 값이어야 한다.
+	property integer NickMinLen = 2
+	property integer NickMaxLen = 15
+	-- 영지 첫 포탈이 열리는 셀 (map01에 있던 TownPortal 자리). 퀘스트 보상으로 개통된다.
+	property integer EstatePortalCellX = -2
+	property integer EstatePortalCellY = 0
 
 	-- 월드 밤낮 시간 영속화 관련 속성
 	@HideFromInspector property number AccumulatedTime = 0
@@ -18,6 +35,10 @@ script PersistenceManager extends Logic
 		self.DirtyPlayers = {}
 		self.GuestPermissions = {}
 		self.LastHomePos = {}
+		self.ActiveSlotByUser = {}
+		self.CharacterNameByUser = {}
+		self.CharacterCostumeByUser = {}
+		self.PendingHomeWarp = {}
 
 		_UserService:ConnectEvent(UserEnterEvent, self.OnUserEnter)
 		_UserService:ConnectEvent(UserLeaveEvent, self.OnUserLeave)
@@ -104,23 +125,17 @@ script PersistenceManager extends Logic
 			end
 		end
 
-		-- Load saved data and warp the player straight to their saved home position.
-		-- (No pre-teleport to a fixed cell + delayed reposition — that caused a visible
-		--  double-jump. LoadPlayerData applies data, reconstructs the home, then warps once.)
+		-- 슬롯 선택 전: 홈맵만 준비. SaveData 로드·페이드아웃은 SelectSaveSlot에서.
 		local player = _UserService:GetUserEntityByUserId(userId)
 		if isvalid(player) then
-			self:LoadPlayerData(player)
-
-			-- Connect map changed event on server
 			player:ConnectEvent(EntityMapChangedEvent, self.OnPlayerMapChanged)
-
-			-- Reveal the world: fade out the spawn cover now that the player is placed.
+			self:EnsureLegacyMigrated(userId)
+			local metaJson = self:ReadSlotMetaJson(userId)
 			local pc = player:GetComponent("script.PlayerController")
 			if isvalid(pc) then
-				---@type PlayerController
-				local controller = pc
-				controller:ClientHideSpawnFade(player.PlayerComponent.UserId)
+				pc:ClientOpenMainMenu(metaJson)
 			end
+			log("PersistenceManager: waiting slot select for " .. userId)
 		else
 			log_warning("PersistenceManager: Player entity not found for teleport: " .. userId)
 		end
@@ -167,6 +182,357 @@ script PersistenceManager extends Logic
 	end
 
 	@ExecSpace("ServerOnly")
+	method integer GetActiveSlot(string userId)
+		-- 활성 슬롯(1~5). 미선택이면 0.
+		local n = self.ActiveSlotByUser[userId]
+		return math.floor(tonumber(n) or 0)
+	end
+
+	@ExecSpace("ServerOnly")
+	method string GetCharacterId(string userId)
+		-- 랭킹·영속 키용 캐릭터 Id.
+		local slot = self:GetActiveSlot(userId)
+		if slot < 1 then slot = 1 end
+		return tostring(userId) .. "_s" .. tostring(slot)
+	end
+
+	@ExecSpace("ServerOnly")
+	method string GetCharacterName(string userId)
+		-- 슬롯 닉네임.
+		local n = self.CharacterNameByUser[userId]
+		if n ~= nil and tostring(n) ~= "" then return tostring(n) end
+		return ""
+	end
+
+	method string SaveKeyForSlot(integer slot)
+		return "SaveData_s" .. tostring(slot)
+	end
+
+	@ExecSpace("ServerOnly")
+	method string ReadSlotMetaJson(string userId)
+		local storage = _DataStorageService:GetUserDataStorage(userId)
+		if not storage then return "{}" end
+		local err, raw = storage:GetAndWait("SlotMeta")
+		if err == 0 and raw ~= nil and raw ~= "" then return raw end
+		return "{}"
+	end
+
+	@ExecSpace("ServerOnly")
+	method table ReadSlotMetaTable(string userId)
+		local raw = self:ReadSlotMetaJson(userId)
+		local ok, decoded = pcall(function() return _HttpService:JSONDecode(raw) end)
+		if ok and type(decoded) == "table" then return decoded end
+		return {}
+	end
+
+	@ExecSpace("ServerOnly")
+	method void WriteSlotMetaTable(string userId, table meta)
+		local storage = _DataStorageService:GetUserDataStorage(userId)
+		if not storage then return end
+		local json = self:SafeEncodeJson(meta, "{}")
+		storage:SetAndWait("SlotMeta", json)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void EnsureLegacyMigrated(string userId)
+		-- 레거시 SaveData → 슬롯1 + SlotMeta (한 번).
+		local storage = _DataStorageService:GetUserDataStorage(userId)
+		if not storage then return end
+		local metaErr, metaRaw = storage:GetAndWait("SlotMeta")
+		if metaErr == 0 and metaRaw ~= nil and metaRaw ~= "" and metaRaw ~= "{}" then
+			return
+		end
+		local err, raw = storage:GetAndWait("SaveData")
+		if err ~= 0 or raw == nil or raw == "" or raw == "{}" then
+			return
+		end
+		storage:SetAndWait(self:SaveKeyForSlot(1), raw)
+		local level = 1
+		local fishLv = 1
+		local name = "슬롯1"
+		local ok, data = pcall(function() return _HttpService:JSONDecode(raw) end)
+		if ok and type(data) == "table" then
+			level = math.floor(tonumber(data.level) or 1)
+			fishLv = math.floor(tonumber(data.fishingLevel) or 1)
+			if data.characterName ~= nil and tostring(data.characterName) ~= "" then
+				name = tostring(data.characterName)
+			end
+		end
+		local meta = {
+			["1"] = { name = name, level = level, fishLv = fishLv, playSec = 0, lastSaveTicks = "0" }
+		}
+		self:WriteSlotMetaTable(userId, meta)
+		log("[SLOT] migrated legacy SaveData → s1 for " .. userId)
+	end
+
+	@ExecSpace("ServerOnly")
+	method integer Utf8Len(string s)
+		-- 닉네임 글자 수 (한글 1자 = UTF-8 3바이트). `#` 바이트 길이로 세면 안 됨.
+		if s == nil or s == "" then return 0 end
+		local n = 0
+		local i = 1
+		local len = #s
+		while i <= len do
+			local c = string.byte(s, i)
+			if c < 128 then
+				i = i + 1
+			elseif c < 224 then
+				i = i + 2
+			elseif c < 240 then
+				i = i + 3
+			else
+				i = i + 4
+			end
+			n = n + 1
+		end
+		return n
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsNicknameTaken(string nickname, string exceptUserId, integer exceptSlot)
+		-- 글로벌 레지스트리 + 동일 계정 타 슬롯.
+		local nick = string.lower(tostring(nickname or ""))
+		if nick == "" then return true end
+		local global = _DataStorageService:GetGlobalDataStorage("NicknameRegistry")
+		if global then
+			local err, owner = global:GetAndWait(nick)
+			if err == 0 and owner ~= nil and owner ~= "" then
+				local expect = tostring(exceptUserId) .. "_s" .. tostring(exceptSlot)
+				if owner ~= expect then return true end
+			end
+		end
+		local meta = self:ReadSlotMetaTable(exceptUserId)
+		for i = 1, self.MaxSaveSlots do
+			if i ~= exceptSlot then
+				local m = meta[tostring(i)]
+				if m ~= nil and m.name ~= nil and string.lower(tostring(m.name)) == nick then
+					return true
+				end
+			end
+		end
+		return false
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RegisterNickname(string nickname, string userId, integer slot)
+		local nick = string.lower(tostring(nickname or ""))
+		if nick == "" then return end
+		local global = _DataStorageService:GetGlobalDataStorage("NicknameRegistry")
+		if not global then return end
+		global:SetAndWait(nick, tostring(userId) .. "_s" .. tostring(slot))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void UnregisterNickname(string nickname)
+		local nick = string.lower(tostring(nickname or ""))
+		if nick == "" then return end
+		local global = _DataStorageService:GetGlobalDataStorage("NicknameRegistry")
+		if not global then return end
+		global:SetAndWait(nick, "")
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsAccountCostume(table costume)
+		-- true = 메이플 계정 아바타 유지 (UseCustomEquipOnly off).
+		if type(costume) ~= "table" then return true end
+		if costume.useAccount == true or costume.useAccount == "true" or costume.useAccount == 1 then
+			return true
+		end
+		if costume.useAccount == false or costume.useAccount == "false" or costume.useAccount == 0 then
+			return false
+		end
+		-- 레거시: hair 등 파츠가 있으면 커스텀으로 간주.
+		if costume.hair ~= nil and tostring(costume.hair) ~= "" then
+			return false
+		end
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method table NormalizeCostume(table raw)
+		-- costumeLook 정규화. 기본 = 계정 아바타 유지.
+		if type(raw) ~= "table" then
+			return { useAccount = true }
+		end
+		if raw.useAccount == true or raw.useAccount == "true" or raw.useAccount == 1 then
+			return { useAccount = true }
+		end
+		-- 명시적 커스텀이거나 레거시(hair 존재)
+		local wantCustom = (raw.useAccount == false or raw.useAccount == "false" or raw.useAccount == 0)
+			or (raw.hair ~= nil and tostring(raw.hair) ~= "")
+		if not wantCustom then
+			return { useAccount = true }
+		end
+		local c = {
+			useAccount = false,
+			-- 커스텀 폴백 = 메인메뉴 기본 세트 1번 (화려 코스튬 제외)
+			hair = "242e9d3ac440429b8dc35a268b16ab54",
+			face = "0030d40d6e654f4d8afc334383401303",
+			body = "3cf4cb29ae344577b9eed37e531688a4",
+			coat = "0f6cde6c490d4176988a9a4651459f0f",
+			pants = self.DefaultPantsRuid
+		}
+		if raw.hair ~= nil and tostring(raw.hair) ~= "" then c.hair = tostring(raw.hair) end
+		if raw.face ~= nil and tostring(raw.face) ~= "" then c.face = tostring(raw.face) end
+		if raw.body ~= nil and tostring(raw.body) ~= "" then c.body = tostring(raw.body) end
+		if raw.coat ~= nil and tostring(raw.coat) ~= "" then c.coat = tostring(raw.coat) end
+		if raw.pants ~= nil and tostring(raw.pants) ~= "" then c.pants = tostring(raw.pants) end
+		return c
+	end
+
+	@ExecSpace("ServerOnly")
+	method table ParseCostumeJson(string costumeJson)
+		if costumeJson == nil or costumeJson == "" then
+			return { useAccount = true }
+		end
+		local ok, decoded = pcall(function() return _HttpService:JSONDecode(costumeJson) end)
+		if ok and type(decoded) == "table" then
+			return self:NormalizeCostume(decoded)
+		end
+		return { useAccount = true }
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplyCostumeToPlayer(Entity player, table costume)
+		-- 계정 유지 or 슬롯 커스텀 외형.
+		if not isvalid(player) or type(costume) ~= "table" then return end
+		local cm = player.CostumeManagerComponent
+		if not isvalid(cm) then
+			log_warning("[SLOT] CostumeManager missing on player")
+			return
+		end
+		if self:IsAccountCostume(costume) then
+			cm.UseCustomEquipOnly = false
+			cm.DefaultEquipUserId = ""
+			log("[SLOT] costume = account look (UseCustomEquipOnly=false)")
+			return
+		end
+		cm.UseCustomEquipOnly = true
+		cm:SetEquip(MapleAvatarItemCategory.Hair, tostring(costume.hair or ""))
+		cm:SetEquip(MapleAvatarItemCategory.Face, tostring(costume.face or ""))
+		cm:SetEquip(MapleAvatarItemCategory.Body, tostring(costume.body or ""))
+		cm:SetEquip(MapleAvatarItemCategory.Longcoat, "")
+		cm:SetEquip(MapleAvatarItemCategory.Coat, tostring(costume.coat or ""))
+		cm:SetEquip(MapleAvatarItemCategory.Pants, tostring(costume.pants or self.DefaultPantsRuid))
+		log("[SLOT] costume applied custom hair=" .. tostring(costume.hair))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SelectSaveSlot(Entity player, integer slot, boolean isNew, string nickname, string costumeJson)
+		-- 메인메뉴에서 슬롯 확정.
+		if not isvalid(player) then return end
+		local userId = player.PlayerComponent.UserId
+		slot = math.floor(tonumber(slot) or 0)
+		if slot < 1 or slot > self.MaxSaveSlots then
+			log_warning("[SLOT] invalid slot " .. tostring(slot))
+			return
+		end
+		local pc = player:GetComponent("script.PlayerController")
+		local meta = self:ReadSlotMetaTable(userId)
+		local key = tostring(slot)
+		local existing = meta[key]
+
+		if isNew then
+			if existing ~= nil and existing.name ~= nil and tostring(existing.name) ~= "" then
+				if isvalid(pc) then pc:ClientMainMenuError("이미 데이터가 있는 슬롯입니다") end
+				return
+			end
+			local nick = string.match(tostring(nickname or ""), "^%s*(.-)%s*$") or ""
+			local nlen = self:Utf8Len(nick)
+			if nlen < self.NickMinLen or nlen > self.NickMaxLen then
+				if isvalid(pc) then
+					pc:ClientMainMenuError("닉네임은 " .. tostring(self.NickMinLen) .. "~" .. tostring(self.NickMaxLen) .. "글자로 입력하세요")
+				end
+				log_warning("[SLOT] nickname reject len=" .. tostring(nlen) .. " raw='" .. tostring(nick) .. "'")
+				return
+			end
+			if self:IsNicknameTaken(nick, userId, slot) then
+				if isvalid(pc) then pc:ClientMainMenuError("이미 존재하는 닉네임입니다") end
+				return
+			end
+			local costume = self:ParseCostumeJson(costumeJson)
+			self:RegisterNickname(nick, userId, slot)
+			self.ActiveSlotByUser[userId] = slot
+			self.CharacterNameByUser[userId] = nick
+			self.CharacterCostumeByUser[userId] = costume
+			self:SetDefaultPlayerData(player)
+			self:ApplyCostumeToPlayer(player, costume)
+			-- 첫 저장 전에 영지 초기 상태를 스포너에 심는다. 이걸 빼면 SavePlayerData가
+			-- homeFurniture="[]"를 기록해 버리고, LoadPlayerData의 "신규 플레이어" 분기가
+			-- 영영 실행되지 않아 영지가 텅 빈 채로 시작된다.
+			self:SeedNewEstate(player, userId)
+			self:SavePlayerData(player, true)
+			meta[key] = {
+				name = nick,
+				level = 1,
+				fishLv = 1,
+				playSec = 0,
+				lastSaveTicks = "0",
+				costume = costume
+			}
+			self:WriteSlotMetaTable(userId, meta)
+			-- 홈 워프·복원은 LoadPlayerData 경로 재사용
+			self:LoadPlayerData(player)
+		else
+			if existing == nil or existing.name == nil or tostring(existing.name) == "" then
+				if isvalid(pc) then pc:ClientMainMenuError("빈 슬롯입니다. 새로하기를 선택하세요") end
+				return
+			end
+			self.ActiveSlotByUser[userId] = slot
+			self.CharacterNameByUser[userId] = tostring(existing.name)
+			if type(existing.costume) == "table" then
+				self.CharacterCostumeByUser[userId] = self:NormalizeCostume(existing.costume)
+			else
+				self.CharacterCostumeByUser[userId] = { useAccount = true }
+			end
+			self:LoadPlayerData(player)
+		end
+
+		-- 퀘스트 DB 슬롯 로드
+		local db = player:GetComponent("script.PlayerDBManager")
+		if isvalid(db) then
+			db:LoadForActiveSlot()
+		end
+
+		if isvalid(pc) then
+			pc:ClientCloseMainMenu()
+			pc:ClientHideSpawnFade()
+		end
+		log("[SLOT] selected user=" .. userId
+			.. " slot=" .. tostring(slot)
+			.. " new=" .. tostring(isNew)
+			.. " name=" .. tostring(self.CharacterNameByUser[userId]))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void DeleteSaveSlot(Entity player, integer slot)
+		-- 슬롯 삭제 + 닉네임 레지스트리 해제.
+		if not isvalid(player) then return end
+		local userId = player.PlayerComponent.UserId
+		slot = math.floor(tonumber(slot) or 0)
+		if slot < 1 or slot > self.MaxSaveSlots then return end
+		local meta = self:ReadSlotMetaTable(userId)
+		local key = tostring(slot)
+		local existing = meta[key]
+		if existing ~= nil and existing.name ~= nil then
+			self:UnregisterNickname(tostring(existing.name))
+		end
+		meta[key] = nil
+		self:WriteSlotMetaTable(userId, meta)
+		local storage = _DataStorageService:GetUserDataStorage(userId)
+		if storage then
+			storage:SetAndWait(self:SaveKeyForSlot(slot), "{}")
+			storage:SetAndWait("Quest_s" .. tostring(slot), "")
+			storage:SetAndWait("Achievement_s" .. tostring(slot), "")
+		end
+		local pc = player:GetComponent("script.PlayerController")
+		if isvalid(pc) then
+			pc:ClientRefreshMainMenu(self:ReadSlotMetaJson(userId))
+		end
+		log("[SLOT] deleted user=" .. userId .. " slot=" .. tostring(slot))
+	end
+
+	@ExecSpace("ServerOnly")
 	method void LoadPlayerData(Entity player)
 		if not isvalid(player) then return end
 		local userId = player.PlayerComponent.UserId
@@ -183,15 +549,41 @@ script PersistenceManager extends Logic
 			return
 		end
 
-		local errorCode, raw = storage:GetAndWait("SaveData")
+		local slot = self:GetActiveSlot(userId)
+		if slot < 1 then slot = 1 end
+		local errorCode, raw = storage:GetAndWait(self:SaveKeyForSlot(slot))
+		if (errorCode ~= 0 or raw == nil or raw == "" or raw == "{}") and slot == 1 then
+			-- 슬롯1 폴백: 레거시 SaveData
+			errorCode, raw = storage:GetAndWait("SaveData")
+		end
 		if errorCode == 0 and raw and raw ~= "" and raw ~= "{}" then
-			log("PersistenceManager: Load successful for " .. userId .. ". Parsing data...")
+			log("PersistenceManager: Load successful for " .. userId .. " slot=" .. tostring(slot) .. ". Parsing data...")
 			local success, data = pcall(function() return _HttpService:JSONDecode(raw) end)
 			if not success or not data then
 				log_error("PersistenceManager: JSON decode failed for " .. userId)
 				self:SetDefaultPlayerData(player)
 				return
 			end
+
+			if data.characterName ~= nil and tostring(data.characterName) ~= "" then
+				self.CharacterNameByUser[userId] = tostring(data.characterName)
+			end
+
+			-- 슬롯 외형 복원
+			local costume = nil
+			if type(data.costumeLook) == "table" then
+				costume = self:NormalizeCostume(data.costumeLook)
+			elseif type(data.costumeLook) == "string" and data.costumeLook ~= "" then
+				costume = self:ParseCostumeJson(data.costumeLook)
+			end
+			if costume == nil then
+				costume = self.CharacterCostumeByUser[userId]
+			end
+			if costume == nil then
+				costume = { useAccount = true }
+			end
+			self.CharacterCostumeByUser[userId] = costume
+			self:ApplyCostumeToPlayer(player, costume)
 
 			-- Restore Guest Permissions
 			local permRaw = data.guestPermissions or "{}"
@@ -318,14 +710,13 @@ script PersistenceManager extends Logic
 				
 				-- 포탈 설정 보정 (구버전 세이브 호환성)
 				for _, furn in ipairs(furnList) do
-					local isPortal = false
-					local itemDs = _DataService:GetTable("item_dataset")
-					if itemDs ~= nil then
-						local row = itemDs:FindRow("Name", furn.itemName)
-						if row ~= nil then
-							isPortal = row:GetItem("FurnitureKind") == "portal"
-						end
+					-- 레거시 보정: map01의 PlaceableFurniture.ItemId가 비어 있던 시절의 세이브는
+					-- itemName을 엔티티 이름("TownPortal")으로 기록했다. 그대로 두면
+					-- Furniture_TownPortal 모델 조회에 실패해 포탈이 조용히 안 생긴다.
+					if furn.itemName == "TownPortal" then
+						furn.itemName = "Portal"
 					end
+					local isPortal = self:IsPortalItemName(furn.itemName)
 					if isPortal then
 						if furn.destinationGroup == nil or furn.destinationGroup == "" then
 							local targetMap = "town"
@@ -410,6 +801,10 @@ script PersistenceManager extends Logic
 			self.LastHomePos[userId] = { x = spawnX, y = spawnY }
 			-- 구세이브 폴백 or "home" = 현행 동작
 			local lastKind = data.lastMapKind or "home"
+			-- 새 캐릭터 부팅 중에는 무조건 영지에서 시작한다 (마을 복귀 분기 진입 금지).
+			if self.PendingHomeWarp[userId] == true then
+				lastKind = "home"
+			end
 			if lastKind == "town" or lastKind == "hunt" then
 				-- 마을·사냥터 종료 → 마을 기본 스폰 (IsDefault 행)
 				local dest = { mapName = "town", x = 3.0, y = 0.0 }
@@ -454,6 +849,8 @@ script PersistenceManager extends Logic
 		player.PlayerComponent:MoveToMapPosition(mapName, safePos)
 		log("PersistenceManager: Player warped to home " .. mapName .. " at (" .. safePos.x .. ", " .. safePos.y .. ") (original: " .. spawnX .. ", " .. spawnY .. ")")
 
+		-- 홈 워프까지 끝났으므로 부팅 표식 해제 (이후 저장은 실제 위치를 그대로 쓴다).
+		self.PendingHomeWarp[userId] = nil
 		self.DirtyPlayers[userId] = false
 	end
 
@@ -512,6 +909,10 @@ script PersistenceManager extends Logic
 		if not isvalid(player) then return end
 		-- §1.2 규칙 9: 진입 직후 컴포넌트 값 선캡처 — 세이브 경로 GetAndWait 금지 (T37 재작업)
 		local userId = player.PlayerComponent.UserId
+		if self:GetActiveSlot(userId) < 1 then
+			-- 슬롯 선택 전 저장 금지 (빈 데이터로 덮지 않음)
+			return
+		end
 		local mapName = "Home_" .. userId
 		
 		local pc = player:GetComponent("script.PlayerController")
@@ -523,6 +924,11 @@ script PersistenceManager extends Logic
 			currentMapName = player.CurrentMap.Name or ""
 		end
 		local mapKind = self:ClassifyMapKind(currentMapName)
+		-- 새 슬롯 부팅 중이면 아직 시작맵(마을)에 서 있을 뿐 영지 캐릭터다. 실제 위치를 믿지 않는다.
+		local bootstrapping = (self.PendingHomeWarp[userId] == true)
+		if bootstrapping then
+			mapKind = "home"
+		end
 		local livePosX = player.TransformComponent.WorldPosition.x
 		local livePosY = player.TransformComponent.WorldPosition.y
 
@@ -557,7 +963,7 @@ script PersistenceManager extends Logic
 
 		local posX = livePosX
 		local posY = livePosY
-		if mapKind == "home" then
+		if mapKind == "home" and not bootstrapping then
 			self.LastHomePos[userId] = { x = posX, y = posY }
 		else
 			local cached = self.LastHomePos[userId]
@@ -637,6 +1043,8 @@ script PersistenceManager extends Logic
 		local animalsJson = self:CollectHomeAnimalsJson(mapName)
 
 		local data = {
+			characterName = self.CharacterNameByUser[userId] or "",
+			costumeLook = self.CharacterCostumeByUser[userId] or self:NormalizeCostume(nil),
 			level = capLevel,
 			xp = capXp,
 			maxRawXp = capMaxXp,
@@ -715,18 +1123,46 @@ script PersistenceManager extends Logic
 		end
 
 		if isSynchronous then
-			local errorCode = storage:SetAndWait("SaveData", jsonStr)
+			local slot = self:GetActiveSlot(userId)
+			if slot < 1 then slot = 1 end
+			local saveKey = self:SaveKeyForSlot(slot)
+			local errorCode = storage:SetAndWait(saveKey, jsonStr)
 			if errorCode ~= 0 then
 				log_warning("PersistenceManager: Sync save failed for " .. userId .. ", error: " .. tostring(errorCode))
 			else
-				log("PersistenceManager: Sync save completed for " .. userId)
+				log("PersistenceManager: Sync save completed for " .. userId .. " key=" .. saveKey)
+				-- SlotMeta 요약 갱신
+				local meta = self:ReadSlotMetaTable(userId)
+				local nick = self.CharacterNameByUser[userId] or ""
+				if nick == "" then nick = "슬롯" .. tostring(slot) end
+				local costume = self.CharacterCostumeByUser[userId]
+				if costume == nil then
+					local prev = meta[tostring(slot)]
+					if prev ~= nil and type(prev.costume) == "table" then
+						costume = prev.costume
+					else
+						costume = self:NormalizeCostume(nil)
+					end
+				end
+				meta[tostring(slot)] = {
+					name = nick,
+					level = capLevel,
+					fishLv = capFishingLevel,
+					playSec = 0,
+					lastSaveTicks = "0",
+					costume = costume
+				}
+				self:WriteSlotMetaTable(userId, meta)
 			end
 		else
-			storage:SetAsync("SaveData", jsonStr, function(errorCode, key)
+			local slot = self:GetActiveSlot(userId)
+			if slot < 1 then slot = 1 end
+			local saveKey = self:SaveKeyForSlot(slot)
+			storage:SetAsync(saveKey, jsonStr, function(errorCode, key)
 				if errorCode ~= 0 then
 					log_warning("PersistenceManager: Async save failed for " .. userId .. ", error: " .. tostring(errorCode))
 				else
-					log("PersistenceManager: Async save completed for " .. userId)
+					log("PersistenceManager: Async save completed for " .. userId .. " key=" .. tostring(key))
 				end
 			end)
 		end
@@ -1020,55 +1456,179 @@ script PersistenceManager extends Logic
 		log("PersistenceManager: homeAnimals reconstructed for " .. tostring(ownerUserId))
 	end
 
+	method boolean IsPortalItemName(string itemName)
+		-- 포탈 판별은 item_dataset.FurnitureKind 기준 (규칙 1: 이름 하드코딩 분기 금지).
+		if itemName == nil or itemName == "" then return false end
+		local itemDs = _DataService:GetTable("item_dataset")
+		if itemDs == nil then return false end
+		local row = itemDs:FindRow("Name", itemName)
+		if row == nil then return false end
+		local ok, kind = pcall(function() return row:GetItem("FurnitureKind") end)
+		return ok and kind == "portal"
+	end
+
 	@ExecSpace("ServerOnly")
-	method string GetDefaultFurnitureJson(Component inv)
+	method table CollectMap01FurnitureRecords()
+		-- map01(영지 원본)에 배치된 PlaceableFurniture를 세이브 델타 레코드 형태로 수집한다.
 		local furnList = {}
 		local map01 = _EntityService:GetEntityByPath("/maps/map01")
-		if isvalid(map01) then
-			local placeableComps = map01:GetChildComponentsByTypeName("script.PlaceableFurniture", true)
-			if placeableComps then
-				for _, comp in ipairs(placeableComps) do
-					local ent = comp.Entity
-					if isvalid(ent) then
-						local pos = ent.TransformComponent.WorldPosition
-						local fx, fy = math.floor(pos.x), math.floor(pos.y)
-						local itemName = comp.ItemId
-						if itemName == nil or itemName == "" then
-							local name = ent.Name
-							if string.sub(name, 1, 10) == "Furniture_" then
-								itemName = string.sub(name, 11)
-							else
-								itemName = name
-							end
-						end
-						local fData = { itemName = itemName, x = fx, y = fy }
-						local pg = ent:GetComponent("script.PortalGate")
-						if isvalid(pg) then
-							fData.targetMapName = pg.TargetMapName
-							fData.targetPositionX = pg.TargetPosition.x
-							fData.targetPositionY = pg.TargetPosition.y
-							fData.destinationGroup = pg.DestinationGroup
-							fData.portalColor = pg.PortalColor
-						end
-						table.insert(furnList, fData)
+		if not isvalid(map01) then return furnList end
+		local placeableComps = map01:GetChildComponentsByTypeName("script.PlaceableFurniture", true)
+		if not placeableComps then return furnList end
+		for _, comp in ipairs(placeableComps) do
+			local ent = comp.Entity
+			if isvalid(ent) then
+				local pos = ent.TransformComponent.WorldPosition
+				local fx, fy = math.floor(pos.x), math.floor(pos.y)
+				local itemName = comp.ItemId
+				if itemName == nil or itemName == "" then
+					local name = ent.Name
+					if string.sub(name, 1, 10) == "Furniture_" then
+						itemName = string.sub(name, 11)
+					else
+						itemName = name
 					end
 				end
+				local fData = { itemName = itemName, x = fx, y = fy }
+				local pg = ent:GetComponent("script.PortalGate")
+				if isvalid(pg) then
+					fData.targetMapName = pg.TargetMapName
+					fData.targetPositionX = pg.TargetPosition.x
+					fData.targetPositionY = pg.TargetPosition.y
+					fData.destinationGroup = pg.DestinationGroup
+					fData.portalColor = pg.PortalColor
+				end
+				table.insert(furnList, fData)
 			end
 		end
-		
-		if #furnList == 0 then
-			local ownsPortal = false
-			if isvalid(inv) and inv.Items ~= nil and (inv.Items["Portal"] or 0) > 0 then
-				ownsPortal = true
-			end
-			if not ownsPortal then
-				table.insert(furnList, {
-					itemName = "Portal", x = -3, y = 0, destinationGroup = "town", portalColor = "white",
-					targetMapName = "town", targetPositionX = 3, targetPositionY = 0
-				})
+		return furnList
+	end
+
+	@ExecSpace("ServerOnly")
+	method string GetDefaultFurnitureJson(Component inv)
+		-- ⚖️ 2026-08-10: 신규 영지에는 포탈을 두지 않는다.
+		-- 첫 포탈은 퀘스트 106(나만의 창고 짓기) 완료 보상으로 GrantEstatePortal이 설치한다.
+		local furnList = {}
+		for _, f in ipairs(self:CollectMap01FurnitureRecords()) do
+			if not self:IsPortalItemName(f.itemName) then
+				table.insert(furnList, f)
 			end
 		end
 		return _HttpService:JSONEncode(furnList)
+	end
+
+	@ExecSpace("ServerOnly")
+	method table BuildEstatePortalRecord(string destinationId)
+		-- 설치 셀은 EstatePortalCell* 프로퍼티, 목적지 정보는 PortalDestinationDataSet에서 읽는다
+		-- (규칙 1: 좌표/맵명 하드코딩 대신 프로퍼티 + 데이터셋).
+		local rec = {
+			itemName = "Portal",
+			x = self.EstatePortalCellX,
+			y = self.EstatePortalCellY,
+			targetMapName = "town", targetPositionX = 3, targetPositionY = 0,
+			destinationGroup = "town", portalColor = "white"
+		}
+
+		local destDs = _DataService:GetTable("PortalDestinationDataSet")
+		if destDs ~= nil then
+			local row = destDs:FindRow("DestinationId", destinationId)
+			if row ~= nil then
+				local okMap, mapName = pcall(function() return row:GetItem("MapName") end)
+				if okMap and mapName ~= nil and mapName ~= "" then rec.targetMapName = mapName end
+				local okG, grp = pcall(function() return row:GetItem("Group") end)
+				if okG and grp ~= nil and grp ~= "" then rec.destinationGroup = grp end
+				local okX, ax = pcall(function() return row:GetItem("ArriveX") end)
+				if okX then rec.targetPositionX = tonumber(ax) or rec.targetPositionX end
+				local okY, ay = pcall(function() return row:GetItem("ArriveY") end)
+				if okY then rec.targetPositionY = tonumber(ay) or rec.targetPositionY end
+			else
+				log_warning("[PORTAL] destination '" .. tostring(destinationId) .. "' not in PortalDestinationDataSet; using town default")
+			end
+		end
+		return rec
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SeedNewEstate(Entity player, string userId)
+		-- 새 슬롯 확정 직후, 첫 SavePlayerData가 빈 값을 기록하지 않도록 영지 기본 상태를 미리 심는다.
+		local mapName = "Home_" .. userId
+		local inv = player:GetComponent("script.PlayerInventory")
+		_ResourceSpawner:SetPlacedTilesJson(mapName, "[]")
+		_ResourceSpawner:SetPlacedFurnitureJson(mapName, self:GetDefaultFurnitureJson(inv))
+		_ResourceSpawner:SetTerrainEditsJson(mapName, "[]")
+		_ResourceSpawner:LoadDestroyedResourcesFromJson(mapName, "[]")
+		self.LastHomePos[userId] = { x = -3.0, y = 0.0 }
+		self.PendingHomeWarp[userId] = true
+		log("[SLOT] new estate seeded for " .. userId)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void GrantEstatePortal(Entity player, string destinationId)
+		-- 퀘스트 보상으로 영지에 첫 포탈을 개통한다. 멱등 — 이미 있으면 아무것도 하지 않는다.
+		if not isvalid(player) then return end
+		local userId = player.PlayerComponent.UserId
+		if userId == nil or userId == "" then return end
+		local mapName = "Home_" .. userId
+
+		local json = _ResourceSpawner:GetPlacedFurnitureJson(mapName)
+		local furnList = {}
+		if json ~= nil and json ~= "" then
+			local ok, decoded = pcall(function() return _HttpService:JSONDecode(json) end)
+			if ok and type(decoded) == "table" then furnList = decoded end
+		end
+		for _, f in ipairs(furnList) do
+			if self:IsPortalItemName(f.itemName) then
+				log("[PORTAL] estate portal already present for " .. userId .. " — skip")
+				return
+			end
+		end
+
+		local rec = self:BuildEstatePortalRecord(destinationId)
+		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
+		local spawned = false
+		if isvalid(map) then
+			spawned = _ResourceSpawner:SpawnAndRegisterFurniture(map, rec)
+		end
+		if not spawned then
+			-- 영지 맵이 안 떠 있으면 델타만 적어두고 다음 로드 때 재구성되게 한다.
+			table.insert(furnList, rec)
+			_ResourceSpawner:SetPlacedFurnitureJson(mapName, _HttpService:JSONEncode(furnList))
+			log_warning("[PORTAL] estate map not loaded; portal recorded as delta for " .. userId)
+		end
+
+		self.DirtyPlayers[userId] = true
+		local pc = player:GetComponent("script.PlayerController")
+		if isvalid(pc) then
+			pc:ClientShowMineFeedback("영지에 포탈이 열렸습니다! F로 바깥 세계로 떠나보세요.")
+		end
+		log("[PORTAL] estate portal granted to " .. userId
+			.. " dest=" .. tostring(destinationId)
+			.. " cell=(" .. tostring(rec.x) .. "," .. tostring(rec.y) .. ")"
+			.. " live=" .. tostring(spawned))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BackfillEarnedPortals(Entity player)
+		-- 로그인 보정: 이미 완료한 퀘스트의 포탈 보상이 세이브에 반영돼 있지 않으면 지금 개통한다.
+		-- (포탈 보상 코드가 없던 시절의 세이브 + 포탈이 조용히 안 생겼던 세이브 구제)
+		-- GrantEstatePortal이 멱등이므로 이미 포탈이 있으면 아무 일도 하지 않는다.
+		if not isvalid(player) then return end
+		---@type PlayerQuest
+		local pq = player:GetComponent("script.PlayerQuest")
+		if not isvalid(pq) then return end
+		local ds = _DataService:GetTable("QuestDataSet")
+		if ds == nil then return end
+		local n = ds:GetRowCount()
+		for i = 1, n do
+			local okP, pid = pcall(function() return ds:GetCell(i, "RewardPortalId") end)
+			if okP and pid ~= nil and pid ~= "" then
+				local qid = math.floor(tonumber(ds:GetCell(i, "Id")) or 0)
+				local ud = pq.UserDataTable[qid]
+				if ud ~= nil and ud.State == _QuestStateEnum.Completed then
+					self:GrantEstatePortal(player, pid)
+				end
+			end
+		end
 	end
 
 end

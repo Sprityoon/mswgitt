@@ -316,7 +316,14 @@ script UserQuestData
 			inv:GrantRecipeUnlock(unlockId)
 			log(string.format("[QUEST] RewardUnlockId granted: %s (Quest %d)", unlockId, data.Id))
 		end
-		
+
+		-- 2026-08-10: RewardPortalId → 영지에 첫 포탈 개통 (멱등). 퀘스트 106 완료 시 마을 포탈이 열린다.
+		local portalId = data.RewardPortalId
+		if portalId ~= nil and portalId ~= "" and _PersistenceManager ~= nil then
+			_PersistenceManager:GrantEstatePortal(userEntity, portalId)
+			log(string.format("[QUEST] RewardPortalId granted: %s (Quest %d)", portalId, data.Id))
+		end
+
 		if data.IsRepeatable then
 			self.State = _QuestStateEnum.Stored
 		else

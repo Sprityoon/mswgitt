@@ -1,0 +1,310 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <!-- Sky Gradient -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8bd4ff"/>
+      <stop offset="45%" stop-color="#c5edff"/>
+      <stop offset="70%" stop-color="#e8f7ff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+
+    <!-- Morning Sun Glow -->
+    <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff8d0" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#ffe890" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Grass Hill Gradients (MapleStory Henesys Palette) -->
+    <linearGradient id="farHillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#72d650"/>
+      <stop offset="100%" stop-color="#48a02c"/>
+    </linearGradient>
+
+    <linearGradient id="midHillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8ce63c"/>
+      <stop offset="100%" stop-color="#42a820"/>
+    </linearGradient>
+
+    <linearGradient id="foreGroundGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a2f046"/>
+      <stop offset="40%" stop-color="#6bc826"/>
+      <stop offset="100%" stop-color="#3d8e18"/>
+    </linearGradient>
+
+    <linearGradient id="pondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#46c8ff"/>
+      <stop offset="50%" stop-color="#2898f0"/>
+      <stop offset="100%" stop-color="#1460c8"/>
+    </linearGradient>
+
+    <linearGradient id="soilGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#94623c"/>
+      <stop offset="100%" stop-color="#633d20"/>
+    </linearGradient>
+
+    <!-- Mushroom House Cap Gradient -->
+    <radialGradient id="shroomCapGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ff7b39"/>
+      <stop offset="60%" stop-color="#e63c00"/>
+      <stop offset="100%" stop-color="#991a00"/>
+    </radialGradient>
+
+    <!-- Cel-shading Shadows & Highlights Filters -->
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="4" flood-color="#1e3010" flood-opacity="0.25"/>
+    </filter>
+
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="8" flood-color="#142408" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <style>
+    .outline { stroke: #261a10; stroke-width: 4px; stroke-linejoin: round; stroke-linecap: round; }
+    .bold-outline { stroke: #20120a; stroke-width: 6px; stroke-linejoin: round; stroke-linecap: round; }
+    .thin-outline { stroke: #2a1c12; stroke-width: 2.5px; stroke-linejoin: round; stroke-linecap: round; }
+    .cel-dark { fill: #1c1008; opacity: 0.15; }
+    .maple-text { font-family: 'Arial Rounded MT Bold', '맑은 고딕', sans-serif; font-weight: bold; }
+  </style>
+
+  <!-- ==================== 1. BACKGROUND & SKY ==================== -->
+  <rect width="1920" height="1080" fill="url(#skyGrad)"/>
+
+  <!-- Sun Glow in Top Center -->
+  <circle cx="960" cy="220" r="420" fill="url(#sunGlow)"/>
+
+  <!-- Soft Distant Clouds -->
+  <g fill="#ffffff" opacity="0.85">
+    <path d="M 200 180 Q 250 140 310 160 Q 370 130 430 170 Q 480 160 510 190 Q 530 230 480 250 L 220 250 Z"/>
+    <path d="M 1350 140 Q 1400 100 1470 120 Q 1530 90 1600 130 Q 1660 115 1700 150 Q 1730 190 1670 210 L 1380 210 Z"/>
+    <path d="M 800 110 Q 840 80 890 95 Q 940 75 990 105 Q 1030 95 1060 120 L 780 120 Z" opacity="0.6"/>
+  </g>
+
+  <!-- Far Distant Henesys Hills & Windmills Silhouette -->
+  <path d="M 0 520 Q 350 420 700 480 Q 1100 410 1500 470 Q 1750 430 1920 480 L 1920 1080 L 0 1080 Z" fill="url(#farHillGrad)"/>
+  <!-- Distant Windmill Silhouette -->
+  <g transform="translate(1420, 390)" fill="#3d8220" opacity="0.7">
+    <polygon points="40,90 30,170 50,170"/>
+    <circle cx="40" cy="90" r="8"/>
+    <line x1="40" y1="90" x2="10" y2="60" stroke="#3d8220" stroke-width="4"/>
+    <line x1="40" y1="90" x2="70" y2="120" stroke="#3d8220" stroke-width="4"/>
+    <line x1="40" y1="90" x2="70" y2="60" stroke="#3d8220" stroke-width="4"/>
+    <line x1="40" y1="90" x2="10" y2="120" stroke="#3d8220" stroke-width="4"/>
+  </g>
+
+  <!-- Midground Hills -->
+  <path d="M 0 610 Q 450 510 960 590 Q 1450 500 1920 570 L 1920 1080 L 0 1080 Z" fill="url(#midHillGrad)"/>
+
+  <!-- Main Foreground Grassy Terrain (Top-Down ¾ View Ridge) -->
+  <path d="M -50 680 Q 400 600 960 670 Q 1520 590 1970 660 L 1970 1130 L -50 1130 Z" fill="url(#foreGroundGrad)"/>
+
+  <!-- Ground Cel-Shading Accents & Grass Tufts -->
+  <g fill="#4ca818" opacity="0.6">
+    <!-- Left tufts -->
+    <path d="M 120 710 Q 125 690 130 710 Q 140 685 145 710 Z"/>
+    <path d="M 380 670 Q 385 650 390 670 Q 400 645 405 670 Z"/>
+    <!-- Right tufts -->
+    <path d="M 1520 660 Q 1525 640 1530 660 Q 1540 635 1545 660 Z"/>
+    <path d="M 1780 710 Q 1785 690 1790 710 Q 1800 685 1805 710 Z"/>
+  </g>
+
+
+  <!-- ==================== 2. LEFT 1/3: HENESYS ORANGE MUSHROOM HOUSE & FARM ==================== -->
+  <g transform="translate(180, 440)" filter="url(#softShadow)">
+
+    <!-- Farm Fence -->
+    <g transform="translate(-80, 240)">
+      <path d="M 0 30 L 280 30 M 0 60 L 280 60" stroke="#6e4624" stroke-width="8" class="outline"/>
+      <!-- Fence Posts -->
+      <path d="M 20 10 L 40 10 L 40 80 L 20 80 Z M 100 10 L 120 10 L 120 80 L 100 80 Z M 180 10 L 200 10 L 200 80 L 180 80 Z M 260 10 L 280 10 L 280 80 L 260 80 Z" fill="#b07848" class="outline"/>
+    </g>
+
+    <!-- Tilled Soil Vegetable Garden Bed -->
+    <g transform="translate(160, 260)">
+      <rect x="0" y="0" width="260" height="110" rx="20" fill="url(#soilGrad)" class="outline"/>
+      <!-- Rows -->
+      <line x1="20" y1="35" x2="240" y2="35" stroke="#482810" stroke-width="6"/>
+      <line x1="20" y1="75" x2="240" y2="75" stroke="#482810" stroke-width="6"/>
+      <!-- Carrots growing -->
+      <g fill="#ff6600">
+        <!-- Leaves -->
+        <path d="M 45 20 Q 40 5 35 20 M 45 20 Q 45 0 45 20 M 45 20 Q 50 5 55 20" stroke="#33cc33" stroke-width="4"/>
+        <ellipse cx="45" cy="30" rx="10" ry="6" fill="#ff6600" class="thin-outline"/>
+
+        <path d="M 125 20 Q 120 5 115 20 M 125 20 Q 125 0 125 20 M 125 20 Q 130 5 135 20" stroke="#33cc33" stroke-width="4"/>
+        <ellipse cx="125" cy="30" rx="10" ry="6" fill="#ff6600" class="thin-outline"/>
+
+        <path d="M 205 20 Q 200 5 195 20 M 205 20 Q 205 0 205 20 M 205 20 Q 210 5 215 20" stroke="#33cc33" stroke-width="4"/>
+        <ellipse cx="205" cy="30" rx="10" ry="6" fill="#ff6600" class="thin-outline"/>
+      </g>
+      <!-- Cabbages growing -->
+      <g fill="#40d030">
+        <circle cx="85" cy="75" r="14" class="thin-outline"/>
+        <circle cx="165" cy="75" r="14" class="thin-outline"/>
+      </g>
+    </g>
+
+    <!-- HENESYS ORANGE MUSHROOM COTTAGE -->
+    <!-- House Base Shadow -->
+    <ellipse cx="160" cy="280" rx="150" ry="40" fill="#1e3310" opacity="0.4"/>
+
+    <!-- Stalk / Wall Base -->
+    <path d="M 60 170 Q 50 270 70 280 Q 160 300 250 280 Q 270 270 260 170 Z" fill="#fff5d6" class="bold-outline"/>
+    <!-- Stalk Texture & Shading -->
+    <path d="M 60 170 Q 50 270 70 280 Q 160 300 250 280 Q 270 270 260 170 Z" fill="#ebd6a0" opacity="0.3"/>
+
+    <!-- Wooden Front Door -->
+    <path d="M 125 200 Q 160 185 195 200 L 195 285 L 125 285 Z" fill="#8b5226" class="outline"/>
+    <!-- Door Window & Handle -->
+    <circle cx="160" cy="225" r="12" fill="#ffe066" class="thin-outline"/>
+    <circle cx="185" cy="250" r="4" fill="#ffd700"/>
+
+    <!-- Cozy Windows with Yellow Glow -->
+    <rect x="75" y="190" width="34" height="34" rx="8" fill="#ffe666" class="outline"/>
+    <line x1="92" y1="190" x2="92" y2="224" stroke="#261a10" stroke-width="3"/>
+    <line x1="75" y1="207" x2="109" y2="207" stroke="#261a10" stroke-width="3"/>
+
+    <rect x="210" y="190" width="34" height="34" rx="8" fill="#ffe666" class="outline"/>
+    <line x1="227" y1="190" x2="227" y2="224" stroke="#261a10" stroke-width="3"/>
+    <line x1="210" y1="207" x2="244" y2="207" stroke="#261a10" stroke-width="3"/>
+
+    <!-- Stone Chimney with Puffs of Smoke -->
+    <rect x="210" y="30" width="36" height="100" fill="#888888" class="outline"/>
+    <rect x="206" y="22" width="44" height="16" fill="#666666" class="outline"/>
+    <!-- Smoke Puffs -->
+    <g fill="#ffffff" opacity="0.75">
+      <circle cx="228" cy="-5" r="14"/>
+      <circle cx="242" cy="-30" r="20"/>
+      <circle cx="260" cy="-65" r="28"/>
+    </g>
+
+    <!-- Orange Mushroom Cap (Roof) -->
+    <path d="M 15 175 Q 160 -15 305 175 Q 160 215 15 175 Z" fill="url(#shroomCapGrad)" class="bold-outline"/>
+
+    <!-- White Spots on Cap (Classic Maple Story Orange Mushroom Roof) -->
+    <ellipse cx="90" cy="110" rx="22" ry="16" fill="#ffffff" opacity="0.95"/>
+    <ellipse cx="160" cy="65" rx="30" ry="20" fill="#ffffff" opacity="0.95"/>
+    <ellipse cx="230" cy="115" rx="24" ry="16" fill="#ffffff" opacity="0.95"/>
+    <ellipse cx="160" cy="145" rx="18" ry="12" fill="#ffffff" opacity="0.9"/>
+
+    <!-- Roof Rim Highlight -->
+    <path d="M 30 170 Q 160 200 290 170" stroke="#ffa466" stroke-width="6" fill="none"/>
+  </g>
+
+
+  <!-- ==================== 3. RIGHT 1/3: POND, MAPLE CREATURES & COZY CRAFT AREA ==================== -->
+  <g transform="translate(1320, 520)" filter="url(#softShadow)">
+
+    <!-- Sparkling Blue Water Pond -->
+    <ellipse cx="260" cy="240" rx="210" ry="110" fill="url(#pondGrad)" class="bold-outline"/>
+    <!-- Pond Inner Shimmer & Water Lily -->
+    <ellipse cx="240" cy="230" rx="170" ry="80" fill="#5cd6ff" opacity="0.3"/>
+    <!-- Lily Pads -->
+    <g fill="#33b324" class="thin-outline">
+      <ellipse cx="160" cy="220" rx="24" ry="14"/>
+      <ellipse cx="320" cy="260" rx="30" ry="16"/>
+      <ellipse cx="230" cy="280" rx="20" ry="12"/>
+    </g>
+    <!-- Pink Lotus Flower -->
+    <circle cx="325" cy="255" r="8" fill="#ff66b2"/>
+
+    <!-- Wooden Dock / Pier -->
+    <g transform="translate(70, 160)">
+      <rect x="0" y="0" width="110" height="50" fill="#995c2e" class="outline"/>
+      <line x1="28" y1="0" x2="28" y2="50" stroke="#5c3317" stroke-width="3"/>
+      <line x1="56" y1="0" x2="56" y2="50" stroke="#5c3317" stroke-width="3"/>
+      <line x1="84" y1="0" x2="84" y2="50" stroke="#5c3317" stroke-width="3"/>
+      <!-- Dock Pilings -->
+      <rect x="5" y="45" width="12" height="35" fill="#5c3317" class="outline"/>
+      <rect x="92" y="45" width="12" height="35" fill="#5c3317" class="outline"/>
+    </g>
+
+    <!-- Crafting Wooden Chest -->
+    <g transform="translate(-40, 190)">
+      <rect x="0" y="15" width="70" height="50" rx="4" fill="#a6622b" class="outline"/>
+      <path d="M 0 15 Q 35 0 70 15 Z" fill="#8c4e1d" class="outline"/>
+      <!-- Iron Bands & Lock -->
+      <rect x="12" y="15" width="8" height="50" fill="#4d4d4d"/>
+      <rect x="50" y="15" width="8" height="50" fill="#4d4d4d"/>
+      <rect x="30" y="32" width="10" height="14" rx="2" fill="#ffd700" class="thin-outline"/>
+    </g>
+
+    <!-- Maple Wood Barrel & Farming Tools -->
+    <g transform="translate(45, 120)">
+      <ellipse cx="25" cy="20" rx="22" ry="12" fill="#7a471c" class="outline"/>
+      <rect x="3" y="20" width="44" height="45" fill="#945723" class="outline"/>
+      <line x1="3" y1="32" x2="47" y2="32" stroke="#333333" stroke-width="4"/>
+      <line x1="3" y1="52" x2="47" y2="52" stroke="#333333" stroke-width="4"/>
+      <!-- Hoe & Watering Can leaning -->
+      <line x1="-10" y1="65" x2="25" y2="0" stroke="#593b1d" stroke-width="6" stroke-linecap="round"/>
+      <path d="M -15 65 L -5 60 L -10 75 Z" fill="#888888" class="thin-outline"/>
+    </g>
+
+    <!-- ================= MAPLESTORY MASCOTS ================= -->
+
+    <!-- 1. CUTE ORANGE MUSHROOM (주황버섯) MASCOT resting on grass -->
+    <g transform="translate(30, 260)">
+      <!-- Shadow -->
+      <ellipse cx="40" cy="65" rx="35" ry="12" fill="#1e3310" opacity="0.4"/>
+      <!-- Stalk Body -->
+      <path d="M 20 40 Q 15 62 25 65 Q 40 68 55 65 Q 65 62 60 40 Z" fill="#fff2d4" class="outline"/>
+      <!-- Cute Eyes & Blush -->
+      <ellipse cx="32" cy="48" rx="3" ry="6" fill="#1a0d00"/>
+      <ellipse cx="48" cy="48" rx="3" ry="6" fill="#1a0d00"/>
+      <ellipse cx="25" cy="54" rx="5" ry="3" fill="#ff9999" opacity="0.7"/>
+      <ellipse cx="55" cy="54" rx="5" ry="3" fill="#ff9999" opacity="0.7"/>
+      <!-- Mushroom Cap -->
+      <path d="M 5 42 Q 40 0 75 42 Q 40 50 5 42 Z" fill="#ff5500" class="bold-outline"/>
+      <!-- Spots -->
+      <circle cx="25" cy="25" r="6" fill="#ffffff"/>
+      <circle cx="42" cy="16" r="8" fill="#ffffff"/>
+      <circle cx="58" cy="28" r="5" fill="#ffffff"/>
+    </g>
+
+    <!-- 2. CUTE SLIME (슬라임) MASCOT jumping near pond -->
+    <g transform="translate(230, 120)">
+      <!-- Shadow -->
+      <ellipse cx="35" cy="55" rx="30" ry="10" fill="#1e3310" opacity="0.35"/>
+      <!-- Translucent Green Slime Body -->
+      <path d="M 10 40 Q 5 15 35 10 Q 65 15 60 40 Q 65 52 35 55 Q 5 52 10 40 Z" fill="#4ade80" fill-opacity="0.9" class="bold-outline"/>
+      <!-- Slime Head Leaf/Nub -->
+      <path d="M 35 10 Q 30 -5 35 -10 Q 42 -5 35 10 Z" fill="#22c55e" class="outline"/>
+      <!-- Eyes & Happy Mouth -->
+      <circle cx="25" cy="30" r="4" fill="#0f172a"/>
+      <circle cx="45" cy="30" r="4" fill="#0f172a"/>
+      <path d="M 31 36 Q 35 42 39 36" stroke="#0f172a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- Highlight -->
+      <ellipse cx="22" cy="20" rx="6" ry="4" fill="#ffffff" opacity="0.8"/>
+    </g>
+
+    <!-- Lush Apple Tree on Right Edge -->
+    <g transform="translate(320, -100)">
+      <!-- Trunk -->
+      <path d="M 60 160 Q 40 280 80 320 L 110 320 Q 90 260 100 160 Z" fill="#6e4423" class="outline"/>
+      <!-- Foliage Spheres -->
+      <circle cx="50" cy="120" r="75" fill="#42b825" class="bold-outline"/>
+      <circle cx="120" cy="90" r="85" fill="#52cb30" class="bold-outline"/>
+      <circle cx="100" cy="160" r="70" fill="#369d1b" class="bold-outline"/>
+      <!-- Shiny Red Apples -->
+      <circle cx="40" cy="110" r="10" fill="#ff3333" class="thin-outline"/>
+      <circle cx="110" cy="70" r="12" fill="#ff3333" class="thin-outline"/>
+      <circle cx="140" cy="120" r="11" fill="#ff3333" class="thin-outline"/>
+      <circle cx="80" cy="160" r="10" fill="#ff3333" class="thin-outline"/>
+    </g>
+  </g>
+
+
+  <!-- ==================== 4. FLOATING MAPLE LEAVES & ATMOSPHERE ==================== -->
+  <g fill="#ff3333" class="thin-outline" opacity="0.95">
+    <!-- Leaf 1 -->
+    <path d="M 480 220 Q 490 200 500 220 Q 520 225 505 235 Q 515 250 495 245 Q 485 260 480 240 Q 465 245 475 230 Q 460 220 480 220 Z" transform="rotate(15 480 220)"/>
+    <!-- Leaf 2 -->
+    <path d="M 1120 180 Q 1130 160 1140 180 Q 1160 185 1145 195 Q 1155 210 1135 205 Q 1125 220 1120 200 Q 1105 205 1115 190 Q 1100 180 1120 180 Z" transform="rotate(-25 1120 180) scale(0.8)"/>
+    <!-- Leaf 3 -->
+    <path d="M 1450 280 Q 1460 260 1470 280 Q 1490 285 1475 295 Q 1485 310 1465 305 Q 1455 320 1450 300 Q 1435 305 1445 290 Q 1430 280 1450 280 Z" transform="rotate(35 1450 280) scale(1.1)"/>
+    <!-- Leaf 4 -->
+    <path d="M 820 320 Q 830 300 840 320 Q 860 325 845 335 Q 855 350 835 345 Q 825 360 820 340 Q 805 345 815 330 Q 800 320 820 320 Z" transform="rotate(-10 820 320) scale(0.7)"/>
+  </g>
+
+</svg>

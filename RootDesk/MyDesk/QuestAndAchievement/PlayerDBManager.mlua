@@ -13,82 +13,6 @@ script PlayerDBManager extends Component
 	property boolean IsLoadSuccess = false
 
 	@ExecSpace("ServerOnly")
-	method void SaveToDB(boolean isLeaving)
-		-- 업적/퀘스트 유저 데이터를 배치로 저장한다 (300초 주기 + 퇴장 시 동기 저장).
-		if not self.IsLoadSuccess then
-			return
-		end
-
-		local saveData = {}
-		-------------------------------------------------------------------
-		local playerEntity = self.Entity
-		playerEntity.PlayerAchievement:SaveToDB(saveData)
-		playerEntity.PlayerQuest:SaveToDB(saveData)
-		-------------------------------------------------------------------
-
-		local userID = self.Entity.PlayerComponent.UserId
-		local ds = _DataStorageService:GetUserDataStorage(userID)
-		if isLeaving == true then
-			ds:BatchSetAndWait(saveData)
-		else
-			local callback = function(errorCode, values)
-				if errorCode == 0 then
-					return
-				end
-
-				log_error("PlayerDBManager: BatchSetAsync failed. errorCode=" .. tostring(errorCode))
-			end
-			ds:BatchSetAsync(saveData, callback)
-		end
-	end
-
-	@ExecSpace("ServerOnly")
-	method boolean LoadFromDB()
-		-- 업적/퀘스트 유저 데이터를 배치로 로드하고 각 컴포넌트에 전달한다.
-		local playerEntity = self.Entity
-		local userID = playerEntity.PlayerComponent.UserId
-		local ds = _DataStorageService:GetUserDataStorage(userID)
-		local loadKey = {}
-		local loadedData = {}
-
-		-------------------------------------------------------------------
-		playerEntity.PlayerAchievement:LoadFromDB(loadKey)
-		playerEntity.PlayerQuest:LoadFromDB(loadKey)
-		-------------------------------------------------------------------
-
-		local returnCode, itemPages = ds:BatchGetAndWait(loadKey)
-		if returnCode ~= 0 then
-			return false
-		end
-
-		while true do
-			local datas = itemPages:GetCurrentPageDatas()
-			if datas == nil then
-				break
-			end
-
-			for i=1, #datas do
-				loadedData[datas[i].KeyInfo.Key] = datas[i]
-			end
-
-			if itemPages.IsLastPage == true then
-				break
-			end
-			itemPages:MoveToNextPageAndWait()
-		end
-
-		if not self:OnLoadedDataFromDB(loadedData) then
-			return false
-		end
-
-		if not self:PostOnLoadedDataFromDB() then
-			return false
-		end
-
-		return true
-	end
-
-	@ExecSpace("ServerOnly")
 	method boolean OnLoadedDataFromDB(table datas)
 		local playerEntity = self.Entity
 
@@ -115,35 +39,165 @@ script PlayerDBManager extends Component
 			return false
 		end
 
+		-- 퀘스트 상태가 메모리에 올라온 뒤에만 판정 가능한 보정 — 이미 완료한 퀘스트의 영지 포탈 개통.
+		if _PersistenceManager ~= nil then
+			_PersistenceManager:BackfillEarnedPortals(playerEntity)
+		end
+
 		return true
 	end
 
 	@ExecSpace("Server")
 	method void NotifyWorldDataLoadCompleted()
-		-- 클라이언트의 DataLoadLogic이 월드 데이터셋 로드 완료를 알리면 유저 데이터를 로드한다.
+		-- 클라이언트의 DataLoadLogic이 월드 데이터셋 로드 완료를 알린다.
+		-- 슬롯 선택 전에는 퀘스트 DB를 읽지 않는다 (LoadForActiveSlot에서 로드).
 		if self.IsLoadAttempted then
 			return
 		end
-		self.IsLoadAttempted = true
-
+		-- World dataset ready flag만 — 실제 유저 퀘스트 로드는 슬롯 확정 후.
 		if not _DataLoadLogic:IsLoadSuccessAndWait(self) then
 			return
 		end
+		log("[SLOT] PlayerDBManager world data ready — waiting slot select")
+	end
 
-		if not self:LoadFromDB() then
+	@ExecSpace("ServerOnly")
+	method void LoadForActiveSlot()
+		-- PersistenceManager 슬롯 확정 후 호출. Quest/Achievement를 슬롯 키로 로드.
+		if self.IsLoadSuccess then
 			return
 		end
-
+		if not _DataLoadLogic:IsLoadSuccessAndWait(self) then
+			log_warning("[SLOT] world dataset not ready yet")
+			return
+		end
+		self.IsLoadAttempted = true
+		if not self:LoadFromDB() then
+			log_warning("[SLOT] PlayerDBManager LoadFromDB failed")
+			return
+		end
 		self.IsLoadSuccess = true
-
-		-- Database save interval
 		local period = 300
-
 		local dbfunction = function()
 			self:SaveToDB(false)
 		end
-
 		self.TimerId = _TimerService:SetTimerRepeat(dbfunction, period, period)
+		log("[SLOT] PlayerDBManager loaded for active slot")
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SaveToDB(boolean isLeaving)
+		-- 업적/퀘스트 유저 데이터를 배치로 저장한다 (300초 주기 + 퇴장 시 동기 저장).
+		if not self.IsLoadSuccess then
+			return
+		end
+
+		local saveData = {}
+		-------------------------------------------------------------------
+		local playerEntity = self.Entity
+		playerEntity.PlayerAchievement:SaveToDB(saveData)
+		playerEntity.PlayerQuest:SaveToDB(saveData)
+		-------------------------------------------------------------------
+
+		local userID = self.Entity.PlayerComponent.UserId
+		local slot = 1
+		if _PersistenceManager ~= nil then
+			slot = _PersistenceManager:GetActiveSlot(userID)
+			if slot < 1 then slot = 1 end
+		end
+		-- 패키지 키(Quest/Achievement) → 슬롯 접미사 키로 재매핑
+		local remapped = {}
+		for k, v in pairs(saveData) do
+			remapped[tostring(k) .. "_s" .. tostring(slot)] = v
+		end
+
+		local ds = _DataStorageService:GetUserDataStorage(userID)
+		if isLeaving == true then
+			ds:BatchSetAndWait(remapped)
+		else
+			local callback = function(errorCode, values)
+				if errorCode == 0 then
+					return
+				end
+				log_error("PlayerDBManager: BatchSetAsync failed. errorCode=" .. tostring(errorCode))
+			end
+			ds:BatchSetAsync(remapped, callback)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean LoadFromDB()
+		-- 업적/퀘스트 유저 데이터를 배치로 로드하고 각 컴포넌트에 전달한다.
+		local playerEntity = self.Entity
+		local userID = playerEntity.PlayerComponent.UserId
+		local ds = _DataStorageService:GetUserDataStorage(userID)
+		local loadKey = {}
+		local loadedData = {}
+
+		-------------------------------------------------------------------
+		playerEntity.PlayerAchievement:LoadFromDB(loadKey)
+		playerEntity.PlayerQuest:LoadFromDB(loadKey)
+		-------------------------------------------------------------------
+
+		local slot = 1
+		if _PersistenceManager ~= nil then
+			slot = _PersistenceManager:GetActiveSlot(userID)
+			if slot < 1 then slot = 1 end
+		end
+		local slotKeys = {}
+		for i = 1, #loadKey do
+			slotKeys[#slotKeys + 1] = tostring(loadKey[i]) .. "_s" .. tostring(slot)
+		end
+		-- 슬롯1: 레거시 키도 후보로
+		if slot == 1 then
+			for i = 1, #loadKey do
+				slotKeys[#slotKeys + 1] = tostring(loadKey[i])
+			end
+		end
+
+		local returnCode, itemPages = ds:BatchGetAndWait(slotKeys)
+		if returnCode ~= 0 then
+			return false
+		end
+
+		while true do
+			local datas = itemPages:GetCurrentPageDatas()
+			if datas == nil then
+				break
+			end
+
+			for i=1, #datas do
+				loadedData[datas[i].KeyInfo.Key] = datas[i]
+			end
+
+			if itemPages.IsLastPage == true then
+				break
+			end
+			itemPages:MoveToNextPageAndWait()
+		end
+
+		-- 패키지가 StorageName("Quest")으로 조회하도록 슬롯 키 → 논리 키 별칭
+		for i = 1, #loadKey do
+			local logical = tostring(loadKey[i])
+			local slotted = logical .. "_s" .. tostring(slot)
+			if loadedData[logical] == nil and loadedData[slotted] ~= nil then
+				loadedData[logical] = loadedData[slotted]
+			end
+			if loadedData[logical] == nil then
+				-- 신규 슬롯: 빈 스텁 (PlayerQuest가 nil.Value로 죽지 않게)
+				loadedData[logical] = { Value = "" }
+			end
+		end
+
+		if not self:OnLoadedDataFromDB(loadedData) then
+			return false
+		end
+
+		if not self:PostOnLoadedDataFromDB() then
+			return false
+		end
+
+		return true
 	end
 
 	@ExecSpace("ServerOnly")
