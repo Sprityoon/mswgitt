@@ -48,10 +48,7 @@ subweapon 69 / shield 102 / glove 476 / cap 3,125 / hair 11,746 / face 8,255 등
 
 ### 재생성
 
-```bash
-node -e "require('c:/minho/메이플월드/.claude/skills/msw-search/scripts/msw_resource_api.cjs')
-  .listAvatars({canonicalOnly:false}).then(r=>console.log(r.items.length))"
-```
-
-덤프 스크립트는 일회성이라 저장소에 두지 않았다. 다시 떠야 하면 위 API로 `Ruid,Category,Dname,NameKo,NameEn,ColorHex,GroupId`
-순서로 쓰면 된다(엑셀 한글 깨짐 방지를 위해 **BOM 포함 UTF-8**).
+덤프 스크립트는 일회성이라 저장소에 두지 않았다. 다시 떠야 하면 `msw-search` 스킬에서 현재 환경의
+아바타 카탈로그 조회 도구를 확인한 뒤 `canonicalOnly=false`로 전량 조회한다. 결과는
+`Ruid,Category,Dname,NameKo,NameEn,ColorHex,GroupId` 순서와 **BOM 포함 UTF-8**을 유지한다.
+개인 PC의 절대 경로를 문서에 복사하지 않는다.

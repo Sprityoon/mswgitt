@@ -276,7 +276,7 @@ script UIWarpController extends Component
 			if isvalid(pc) then
 				---@type PlayerController
 				local controller = pc
-				controller:ServerRequestWarpTo(dest.mapName, dest.x, dest.y)
+				controller:ServerRequestWarpTo(dest.mapName)
 			end
 		end
 		self:Close()

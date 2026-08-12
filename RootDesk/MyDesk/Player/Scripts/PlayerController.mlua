@@ -125,6 +125,7 @@ script PlayerController extends Component
 
 	-- T66: 시전 이펙트 전방 오프셋(월드 유닛)·스케일 (CSV EffectOffset/EffectScale 공란 시 폴백)
 	property number SkillEffectForwardOffset = 0.8
+	property number SkillEffectScale = 1.0
 
 	-- 상호작용 가이드: 조준 대상 하이라이트 틴트 (SpriteRenderer 한정 — 아바타 NPC는 라벨만)
 	property Color InteractHighlightColor = Color(1.0, 0.85, 0.45, 1.0)
@@ -470,8 +471,16 @@ script PlayerController extends Component
 			return
 		end
 		
-		self.LastDirectionX = dirX
-		self.LastDirectionY = dirY
+		-- 클라이언트 입력은 반드시 4방향 단위 벡터로 정규화한다.
+		if math.abs(dirX) >= math.abs(dirY) and dirX ~= 0 then
+			self.LastDirectionX = dirX > 0 and 1 or -1
+			self.LastDirectionY = 0
+		elseif dirY ~= 0 then
+			self.LastDirectionX = 0
+			self.LastDirectionY = dirY > 0 and 1 or -1
+		else
+			return
+		end
 		log("Player facing updated on server: " .. self.LastDirectionX .. ", " .. self.LastDirectionY)
 	end
 
@@ -485,10 +494,10 @@ script PlayerController extends Component
 		local movement = self.Entity.MovementComponent
 		if isvalid(movement) then movement:Stop() end
 		
-		-- 50% resource loss on death (only raw materials like wood, stone, copper_ore, iron_ore)
+		-- 사망 시 핵심 원재료 50% 손실. 인벤토리 키는 item_dataset.Name과 정확히 맞춘다.
 		local inv = self.Entity:GetComponent("script.PlayerInventory")
 		if isvalid(inv) then
-			local resources = { "wood", "stone", "copper_ore", "iron_ore" }
+			local resources = { "Wood", "Stone", "Copper Ore", "Iron Ore" }
 			for _, resName in ipairs(resources) do
 				local count = inv:GetItemCount(resName)
 				if count > 0 then
@@ -627,8 +636,7 @@ script PlayerController extends Component
 		-- T65: 채집/공격 스윙음 (허공 포함 — 매 Ctrl 스윙)
 		self:ClientPlaySwingSound()
 		
-		local myPos = self.Entity.TransformComponent.WorldPosition
-		self:RequestMine(myPos, targetCell.x, targetCell.y)
+		self:RequestMine(targetCell.x, targetCell.y)
 	end
 
 	@ExecSpace("ClientOnly")
@@ -718,9 +726,6 @@ script PlayerController extends Component
 		elseif key == KeyboardKey.F then
 			-- T59: F 본문은 TryInteract로 추출(로직 변경 없음). 분산 핸들러는 기존 KeyDown 동시 리슨 유지.
 			self:TryInteract()
-		elseif key == KeyboardKey.G then
-			-- 임시(2026-08-07): 조준 셀을 Soil+FullGrass로 덮는다 (물/프린지 꼬임 수동 복구).
-			self:ServerRequestForceGrassCell(self.LastDirectionX, self.LastDirectionY)
 		else
 			-- Numeric Keys (1 to 0)
 			local slotIndex = 0
@@ -862,40 +867,7 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("Server")
-	method void ServerRequestForceGrassCell(integer dirX, integer dirY)
-		-- G키 복구: 조준 셀 기준 3×3 → L1=Soil, L2=FullGrass, L4 scrub.
-		-- 지형 델타(forceGrass)로 영속 — 재접속/재실행 후에도 ReconstructTerrainEdits가 재생.
-		-- 팝업 없음. 로그 `[TEMP][G]`만.
-		local playerComp = self.Entity.PlayerComponent
-		if playerComp == nil or senderUserId ~= playerComp.UserId then
-			return
-		end
-		local currentMap = self.Entity.CurrentMap
-		if not isvalid(currentMap) then return end
-		local mapName = currentMap.Name
-		if string.sub(mapName, 1, 5) ~= "Home_" then
-			return
-		end
-		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
-		if not isvalid(tilemap) then return end
-		local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
-		if playerCell == nil then return end
-		local dx = dirX
-		local dy = dirY
-		if dx == nil then dx = 0 end
-		if dy == nil then dy = 0 end
-		local cx = playerCell.x + dx
-		local cy = playerCell.y + dy
-		local ok = _ResourceSpawner:ApplyTerrainEdit(mapName, currentMap, "forceGrass", cx, cy, "", "", true)
-		if not ok then return end
-		log(string.format("[TEMP][G] forceGrass 3x3 center=(%d,%d) map=%s persist=1", cx, cy, mapName))
-		if _PersistenceManager then
-			_PersistenceManager:MarkPlayerDirty(playerComp.UserId)
-		end
-	end
-
-	@ExecSpace("Server")
-	method void RequestMine(Vector3 playerWorldPos, integer targetCellX, integer targetCellY)
+	method void RequestMine(integer targetCellX, integer targetCellY)
 		-- description: Execute mining verification and execution on the server.
 		local playerComp = self.Entity.PlayerComponent
 		if playerComp == nil or senderUserId ~= playerComp.UserId then
@@ -921,12 +893,13 @@ script PlayerController extends Component
 			return
 		end
 		
-		-- Validate range to prevent exploitation
-		local cellPos = tilemap:ToCellPosition(playerWorldPos)
+		-- 서버 위치와 서버가 보관한 방향으로 바라보는 인접 셀만 허용한다.
+		local cellPos = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
 		if cellPos == nil then return end
-		local dist = math.max(math.abs(cellPos.x - targetCellX), math.abs(cellPos.y - targetCellY))
-		if dist > 2 then
-			log_warning("Player " .. self.Entity.Name .. " attempted to mine too far: dist " .. dist)
+		local expectedX = cellPos.x + self.LastDirectionX
+		local expectedY = cellPos.y + self.LastDirectionY
+		if targetCellX ~= expectedX or targetCellY ~= expectedY then
+			log_warning("Player " .. self.Entity.Name .. " attempted invalid mine target.")
 			return
 		end
 		
@@ -998,7 +971,7 @@ script PlayerController extends Component
 		return nil
 	end
 
-	@ExecSpace("Server")
+	@ExecSpace("ServerOnly")
 	method void AddXP(integer amount)
 		self.XP = self.XP + amount
 		local leveledUp = false
@@ -1865,7 +1838,7 @@ script PlayerController extends Component
 		end
 	end
 
-	@ExecSpace("Server")
+	@ExecSpace("ServerOnly")
 	method boolean UnlockWaypoint(string waypointId, string displayName)
 		if not waypointId or waypointId == "" then return false end
 		
@@ -1912,11 +1885,16 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("Server")
-	method void ServerRequestWarpTo(string mapName, number arriveX, number arriveY)
+	method void ServerRequestWarpTo(string mapName)
 		-- Server-validated warp to a destination chosen in the estate list portal. Only maps present
 		-- in PortalDestinationDataSet are allowed (no arbitrary map jumps from a spoofed client).
 		local playerComp = self.Entity.PlayerComponent
 		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) or string.sub(currentMap.Name, 1, 5) ~= "Home_" then return end
+		if not isvalid(self.ActivePortal) or self.ActivePortal.CurrentMap ~= currentMap then return end
+		if not isvalid(self.ActivePortal:GetComponent("script.PortalGate")) then return end
+		if not self:IsAimTarget(self.ActivePortal) then return end
 		
 		local ds = _DataService:GetTable("PortalDestinationDataSet")
 		if ds == nil then return end
@@ -1939,6 +1917,8 @@ script PlayerController extends Component
 		if target == "Home" then
 			target = "Home_" .. playerComp.UserId
 		end
+		local arriveX = tonumber(row:GetItem("ArriveX")) or 0
+		local arriveY = tonumber(row:GetItem("ArriveY")) or 0
 		playerComp:MoveToMapPosition(target, Vector2(arriveX, arriveY))
 		log("PlayerController: List-warped " .. playerComp.UserId .. " to " .. target)
 		-- 업적/퀘스트 진행: 포탈 이동 액션 발행
@@ -2004,12 +1984,14 @@ script PlayerController extends Component
 	@ExecSpace("Server")
 	method void ServerSelectSaveSlot(integer slot, boolean isNew, string nickname, string costumeJson)
 		-- 메인메뉴 슬롯 선택 (+ 새로하기 외형 JSON).
+		if senderUserId ~= self.Entity.PlayerComponent.UserId then return end
 		if _PersistenceManager == nil then return end
 		_PersistenceManager:SelectSaveSlot(self.Entity, slot, isNew, nickname or "", costumeJson or "")
 	end
 
 	@ExecSpace("Server")
 	method void ServerDeleteSaveSlot(integer slot)
+		if senderUserId ~= self.Entity.PlayerComponent.UserId then return end
 		if _PersistenceManager == nil then return end
 		_PersistenceManager:DeleteSaveSlot(self.Entity, slot)
 	end
@@ -2018,6 +2000,7 @@ script PlayerController extends Component
 	method void ServerQuitWorld()
 		-- 타이틀 '종료하기' — 월드 콘텐츠 퇴장.
 		local userId = self.Entity.PlayerComponent.UserId
+		if senderUserId ~= userId then return end
 		if userId == nil or userId == "" then return end
 		log("[MAINMENU] quit world user=" .. tostring(userId))
 		_UserService:KickUser(userId, KickReason.WorldContent)
@@ -2414,6 +2397,17 @@ script PlayerController extends Component
 		local playerComp = self.Entity.PlayerComponent
 		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
 		if self.IsDead then return end
+		-- 방향은 서버 기준 4방향 값만 사용한다. 큰 클라이언트 벡터로 원거리 시전할 수 없게 한다.
+		if math.abs(dirX) >= math.abs(dirY) and dirX ~= 0 then
+			dirX = dirX > 0 and 1 or -1
+			dirY = 0
+		elseif dirY ~= 0 then
+			dirX = 0
+			dirY = dirY > 0 and 1 or -1
+		else
+			dirX = self.LastDirectionX
+			dirY = self.LastDirectionY
+		end
 		
 		local ds = _DataService:GetTable("SkillDataSet")
 		if not ds then return end

@@ -755,7 +755,7 @@ script PlayerInventory extends Component
 		self:TryCompleteActiveResearch()
 	end
 
-	@ExecSpace("Server")
+	@ExecSpace("ServerOnly")
 	method string AddItem(string itemName, integer count)
 		-- Adds count items and pushes the synced JSON snapshot to clients.
 		if count <= 0 then return "" end
@@ -1614,12 +1614,14 @@ script PlayerInventory extends Component
 			return
 		end
 		
-		-- Validate distance (Chebyshev distance <= 4)
+		-- 서버 위치와 서버 방향 기준으로 바라보는 인접 셀만 허용한다.
 		local playerPos = self.Entity.TransformComponent.WorldPosition
 		local playerCell = tilemap:ToCellPosition(playerPos)
-		local dist = math.max(math.abs(cellPos.x - playerCell.x), math.abs(cellPos.y - playerCell.y))
-		if dist > 4 then
-			log_warning("Placement distance too far: " .. dist)
+		if playerCell == nil or not isvalid(pc) then return end
+		local expectedX = playerCell.x + pc.LastDirectionX
+		local expectedY = playerCell.y + pc.LastDirectionY
+		if cellPos.x ~= expectedX or cellPos.y ~= expectedY then
+			log_warning("Rejected placement outside the aimed adjacent cell.")
 			return
 		end
 		
@@ -1739,6 +1741,7 @@ script PlayerInventory extends Component
 			log_warning("Failed to remove item: " .. itemName)
 			return
 		end
+		local placementSucceeded = false
 		
 		if isTile then
 			-- Paint tile on RectTileMap3 (Layer 3)
@@ -1746,8 +1749,11 @@ script PlayerInventory extends Component
 			if isvalid(layer3) and isvalid(layer3.RectTileMapComponent) then
 				layer3.RectTileMapComponent:SetTile(placedTileName, cellPos.x, cellPos.y)
 				log("[PLACE] Painted tile " .. placedTileName .. " at cell " .. tostring(cellPos))
+				resourceSpawner:AddPlacedTile(currentMap.Name, placedTileName, cellPos.x, cellPos.y)
+				placementSucceeded = true
+			else
+				log_error("[PLACE] RectTileMap3 unavailable; refunding " .. itemName)
 			end
-			resourceSpawner:AddPlacedTile(currentMap.Name, placedTileName, cellPos.x, cellPos.y)
 		else
 			-- Spawn furniture or crop entity
 			local modelId = nil
@@ -1821,9 +1827,15 @@ script PlayerInventory extends Component
 				-- so TargetMapName/DestinationGroup are irrelevant here (C-1 design).
 
 				resourceSpawner:AddPlacedFurniture(currentMap.Name, itemName, cellPos.x, cellPos.y, spawnedEntity)
+				placementSucceeded = true
 			else
 				log_error("Failed to spawn placeable entity: " .. itemName)
 			end
+		end
+
+		if not placementSucceeded then
+			self:AddItem(itemName, 1)
+			return
 		end
 
 		-- 업적/퀘스트 진행: 설치 액션 발행
@@ -1874,15 +1886,16 @@ script PlayerInventory extends Component
 		if ok and v ~= nil then action = v end
 		if action == "" then return end   -- 편집 도구/아이템이 아님
 
-		-- 사거리 검증 (설치와 동일: 체비쇼프 거리 ≤ 4).
+		-- 서버 위치와 서버 방향 기준으로 바라보는 인접 셀만 허용한다.
 		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
 		if not isvalid(tilemap) then return end
 		local playerPos = self.Entity.TransformComponent.WorldPosition
 		local playerCell = tilemap:ToCellPosition(playerPos)
-		if playerCell == nil then return end
-		local dist = math.max(math.abs(cellX - playerCell.x), math.abs(cellY - playerCell.y))
-		if dist > 4 then
-			log_warning("Terrain edit distance too far: " .. dist)
+		if playerCell == nil or not isvalid(pc) then return end
+		dirX = pc.LastDirectionX
+		dirY = pc.LastDirectionY
+		if cellX ~= playerCell.x + dirX or cellY ~= playerCell.y + dirY then
+			log_warning("Rejected terrain edit outside the aimed adjacent cell.")
 			return
 		end
 

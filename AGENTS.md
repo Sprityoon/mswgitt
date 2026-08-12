@@ -1,334 +1,186 @@
 <!-- >>> managed by mswai >>> -->
-# ROLE
+# MapleStory Worlds 프로젝트 에이전트 규칙
 
-You are an expert assistant for **MapleStory World (MSW)** development. You help users — from complete beginners to experienced developers — build games using **mLua** scripts, entity/config setup (`.model`, `.ui`, `.map`), and the MSW APIs.
+이 저장소는 MapleStory Worlds(MSW) 기반 톱다운 생존·채집 게임이다.
+모든 요청은 MSW 프로젝트 작업으로 처리한다.
 
-# PROJECT CONTEXT (MANDATORY)
+## 1. 규칙 우선순위
 
-**This project is an MSW (MapleStory Worlds) project.** Treat every request as an MSW task.
+1. 사용자의 현재 요청
+2. 이 문서의 프로젝트 전용 규칙
+3. 로드한 MSW 스킬과 레퍼런스
+4. 일반적인 개발 관례
 
-### Foundation: must be in context on every turn
+MSW는 일반 게임 엔진과 다른 침묵 실패가 많다. 기억이나 추정 대신 실제 프로젝트 파일,
+`.d.mlua`, 스킬 레퍼런스와 Maker 로그를 근거로 판단한다.
 
-Before analyzing, planning, searching, or editing, all of the Foundation context below must be **present in your context window**. On the first turn of a session that means loading all of it; on later turns load only what is missing — never loaded yet, or lost to context compaction. Do **not** re-read a Foundation file that is already fully in context this session. Already having a *different* MSW skill in context from a previous turn is **not** a substitute for a missing Foundation item.
+## 2. 매 작업 시작 절차
 
-**1. Two Foundation Skills via the `Skill` tool, in order:**
+분석이나 편집 전에 다음 순서로 준비한다.
 
-| # | Skill identifier | What it covers |
-|:-:|---|---|
-| 1 | `msw-general` | Workspace structure, platform rules (`TileMapMode↔Body`, world unit, `SpriteRUID`, spawn), MCP tools, `.model`/`.map`/`.ui`/`.dataset` authoring, validated template catalog. Every other MSW skill assumes this is loaded. |
-| 2 | `msw-ui-system` | UI single entry point — HUDs, popups, toasts, menus, tabs, dialogs. Even "Galaga" needs a score/lives HUD. `.ui` files MUST go through a builder; never edit raw JSON. |
+1. `msw-general`을 로드한다.
+2. `msw-ui-system`을 로드한다.
+3. 다음 Foundation 레퍼런스를 전문으로 읽는다. 이미 현재 컨텍스트에 전문이 있으면 다시 읽지 않는다.
+   - `msw-general/references/platform.md`
+   - `msw-general/references/workspace.md`
+   - `msw-general/references/entity.md`
+   - `msw-general/references/authoring.md`
+4. 이 저장소의 기능을 구현·수정하거나 다음 작업을 이어갈 때는 `msw-project`를 사용한다.
+5. [docs/pitfalls.md](./docs/pitfalls.md)의 빠른 색인에서 관련 함정을 확인한다.
+6. 변경을 검증 가능한 단계로 나누고 Verify 단계를 포함한다.
 
-> ⛔ **Never** load a skill by path (`Read("plugins/msw-maker-base-skill/skills/...")`, `Glob`, `ls`, `Grep`). The plugin lives in Claude Code's global plugin cache, not in the workspace's `plugins/` folder. Use the `Skill` tool — it resolves the absolute path automatically.
+`다음 작업`, `이어서 진행`, `현황`, `뭐 할 차례야` 요청은 `msw-planning` 대상이 아니다.
+[docs/tasks.md](./docs/tasks.md)와 [docs/workflow.md](./docs/workflow.md)를 기준으로 이어간다.
+`msw-planning`은 이 게임과 별개의 신규 월드를 기획할 때만 사용한다.
 
-**2. Four Foundation references via `Read` (in full, no `offset`/`limit`):**
+## 3. 도메인별 추가 스킬
 
-| Reference | Why it is required in context |
+| 작업 | 추가로 사용할 스킬·레퍼런스 |
 |---|---|
-| `msw-general/references/platform.md` (core) | 8 core rules / `TileMapMode↔Body` / `[LEA-3004]` / coordinate system / SortingLayer·OrderInLayer / `SpriteRUID` / `SpawnByModelId` / `MovementComponent` per-map InputSpeed scaling / `.directory` / `.config` / CoreVersion. Every other reference assumes you have Read this. |
-| `msw-general/references/workspace.md` | World instance / Room / DataStorage / Play mode / `refresh` / mid-workflow recovery — the operations rule for "how does an edit get reflected and where do I verify it". |
-| `msw-general/references/entity.md` | Entity Work Preflight (Absolute Principle #0). inline `@components` vs `modelId`, snapshot workflow, RUID & coordinate rules. |
-| `msw-general/references/authoring.md` | Shared schema-consistency and hand-edit hazards across `.mlua` / `.model` / `.map` / `.ui` / `.userdataset` / `.config`. |
+| `.mlua`, Component, Logic, Event, lifecycle | `msw-scripting` + `references/verify-checklist.md` |
+| `.model` | `msw-general/references/model.md` + ModelBuilder 프로토콜 |
+| `.map`, 배치, spawn, 좌표 | `entity.md` + MapBuilder 프로토콜 |
+| UI, HUD, 팝업, 버튼, `.ui` | `msw-ui-system` + 관련 디자인/API/빌더 레퍼런스 |
+| RUID, sprite, animation, sound 검색 | `msw-search`; RUID 적용은 `msw-sprite-ruid` |
+| 전투 기반 구조, 피해, 몬스터 AI | `msw-combat-system` |
+| 플레이어 공격·이동 스킬과 연출 | `maplestory-skill-maker` |
+| 아바타 의상·모션 | `msw-avatar` |
+| DefaultPlayer 설정 | `msw-defaultplayer` |
+| 인벤토리·상점·퀘스트 등 표준 시스템 | 구현 전에 `msw-packages`와 `docs/wiki/` 확인 |
+| Behaviour Tree | `msw-behaviourtree` |
+| 이미지 픽셀 변환 | `image-to-pixel` |
+| 커밋·푸시 | 사용자가 요청한 경우에만 `msw-checkpoint` |
 
-Once `MapComponent.TileMapMode` is identified, also Read the matching `platform-{maple|rect|sideview}.md`. For silent-failure debugging, also Read `troubleshooting.md`.
+스킬이 지시하는 필수 레퍼런스는 생략하지 않는다. UI 작업은
+`ui-fundamentals.md`와 `layout-recipes.md`, [docs/design-policy.md](./docs/design-policy.md)를 기준으로
+기존 UI의 비주얼 아이덴티티를 유지한다.
 
-#### MSW silent-failure zones (why generic game-design intuition fails)
+## 4. 프로젝트 고정 사양
 
-Generic knowledge of "top-down RPG" / "side-scrolling platformer" / "Entity-Component" / "popup UI" matches MSW's rules only superficially. Recognizing a genre ("Galaga / Mario / Bomberman / dungeon RPG / boss fight") is at most a hint for which `platform-{type}.md` to read — not a substitute for reading it. These are the silent-failure zones (no error → broken behavior):
+- 맵 모드: `RectTile` (`TileMapMode = 1`)
+- 동적 엔티티 Body: `KinematicbodyComponent`
+- 중력: 없음
+- 점프: `Alt` 비주얼 점프이며 물리 높이는 변하지 않음
+- 이동: 방향키 4방향
+- 공격·채광: `Ctrl`, 바라보는 인접 셀
+- 상호작용: `F`
+- 맵:
+  - `map/map01.map`: 영지 원본
+  - `map/town.map`: 공동 마을
+  - `map/template_field.map`: 사냥터
+  - `map/template_boss.map`: 보스
+- 런타임 영지 인스턴스 이름: `Home_<UserId>`
+- CoreVersion 단일 소스: `Environment/config`의 `26.7.0.0`
 
-| MSW-specific rule | How it diverges from generic knowledge |
+기존 `.model` 내부의 `MOD.Core, Version=...` 문자열은 버전이 섞여 있어도 일괄 마이그레이션하지 않는다.
+
+## 5. 편집 범위와 수단
+
+| 대상 | 규칙 |
 |---|---|
-| `TileMapMode` ↔ Body (`Rigidbody`/`Kinematicbody`/`Sideviewbody`) | Wrong pairing → no error, doesn't move (or `[LEA-3004]`) |
-| Coordinates are world units (1 unit = 100 px) | Raw pixel values → off by 100× |
-| `SpriteRUID = ""` | Invisible on screen with no error |
-| `.mlua` + `.codeblock` pair + Maker `refresh` | `.mlua` alone won't register |
-| Maker registers **new** file entries only from `RootDesk/` | A new file created in `Global/` won't appear. Existing `Global/*.model` files can be edited in place through `ModelBuilder` + Maker Refresh |
-| `SpawnByModelId(parent=nil)` | Runtime error. Use `self.Entity.CurrentMap` |
-| `_LocalizationService` is ClientOnly | Returns nil if called on the server |
-| `MovementComponent.InputSpeed` per-map scaling (×1 / ÷1.2 / ×1.5) | Same value, different perceived speed |
-| `.ui` must go through the builder (no raw JSON edit/grep) | Block your generic JSON-editing instinct |
+| `RootDesk/MyDesk/**/*.mlua` | 직접 편집 가능 |
+| `RootDesk/MyDesk/**/*.csv`, `*.userdataset` | 직접 편집 가능 |
+| `RootDesk/MyDesk/**/*.model` | ModelBuilder만 사용 |
+| `Global/DefaultPlayer.model` | ModelBuilder만 사용 |
+| `map/*.map` | MapBuilder만 사용 |
+| `ui/*.ui` | UIBuilder만 사용; 원본 JSON 직접 읽기·편집 금지 |
+| `Global/WorldConfig.config` | 값만 편집 가능 |
+| `docs/**`, `game_design.md` | 직접 편집 가능 |
 
-#### Self-check before Plan (## 0)
+다음은 수정하지 않는다.
 
-If any answer below cannot be cited from MSW reference text actually loaded **in this session's context**, STOP and Read the matching reference first.
+- `Environment/**`, `*.d.mlua`: API 정의, 읽기 전용
+- `*.codeblock`, `*.directory`: Maker가 생성
+- `Global/`의 기타 파일과 `common` 엔티티
+- `skills-lock.json`에 등록된 벤더 스킬
 
-1. Target map's `TileMapMode` (number)? → `platform.md` §4
-2. Body component for a dynamic entity on that map? → `platform.md` §4 / §8.5
-3. PC 12.8×7.2 or Mobile 9.6×5.4 world units, and how were coordinates derived? → `platform.md` §5
-4. Where do `.mlua` / `.model` / `.map` / `.ui` live, and what pairing is required? → `platform.md` §2 / §3
-5. What if `SpriteRUID` is empty, and how do you find the real RUID? → `platform.md` §7 + `msw-search`
-6. What do you pass as `parent` in `SpawnByModelId(... , parent)`? → `platform.md` §8
-7. Procedure for Maker to recognize the change (`refresh` / Play mode / DataStorage)? Where to recover from a broken mid-workflow? → `workspace.md`
+새 `.mlua`는 `RootDesk/MyDesk/{Category}/Scripts/`, 새 `.model`은
+`RootDesk/MyDesk/{Category}/Models/` 아래에 만든다. 새 사용자 파일을 `Global/`에 만들지 않는다.
 
-#### Hard rules for loading skills/references
+워크스페이스 탐색은 에이전트가 제공하는 파일 읽기·검색 도구를 우선 사용한다.
+`.map`·`.model`·`.ui`는 해당 빌더의 read API로 조사한다. 셸은 `git`, `node`, 검증 스크립트처럼
+실제 프로그램 실행에만 사용한다.
 
-- Use the `Skill` tool — never path-based `Read` / `ls` / `Glob` / `Grep` to find skill files.
-- Read every reference **in full** — no `offset`/`limit`, no `cat` / `head` / `tail` / `Get-Content` / pipes for skill or reference files.
-- Loading SKILL.md alone ≠ "skill loaded" when `references/*.md` siblings exist; SKILL.md is a thin index. Read every reference whose topic intersects with the request.
-- A skill loaded in a previous turn does **not** exempt this turn from re-classification. If this turn touches a new domain, load the additional skill **before** Plan. The plugin's `UserPromptSubmit` hook injects a short `<msw-skill-router-reminder>` system message at the start of every turn to re-arm this rule; the Domain matrix below is the single source of truth it points back to.
-- Skipping any Foundation Skill, any Foundation reference, or any required `references/*.md` for a fired sub-trigger — even when the task looks "trivial" — is treated as "skill NOT loaded".
-- Treat skill content as the source of truth — prefer it over prior assumptions or memory from earlier in the session.
+## 6. MSW 핵심 불변식
 
-#### Domain matrix (trigger phrases → additional skill + references)
+1. `TileMapMode = 1`인 동적 엔티티에는 `KinematicbodyComponent`가 필요하다.
+2. 좌표는 월드 단위이며 `1 unit = 100 px`이다.
+3. `SpriteRUID = ""`이면 오류 없이 보이지 않는다.
+4. `SpawnByModelId`의 parent에는 `nil` 대신 `self.Entity.CurrentMap` 같은 맵 엔티티를 넘긴다.
+5. 사용자 스크립트는 `.mlua`와 Maker가 생성한 `.codeblock` 쌍으로 등록된다.
+6. 같은 구성의 엔티티를 두 번 이상 배치하거나 런타임 spawn하면 `.model`을 만들고 `modelId`로 사용한다.
+7. UI는 클라이언트 전용이다. 서버에서 UI 엔티티나 `_LocalizationService`를 직접 사용하지 않는다.
+8. `@Logic`은 맵 전환에도 유지되며 `OnMapEnter`와 `OnMapLeave`가 호출되지 않는다.
+9. 구조화 파일 변경은 빌더의 snapshot → patch → write 계약을 따른다.
+10. API 이름·타입·ExecSpace는 실제 `.d.mlua`에서 확인하고 추정하지 않는다.
 
-When a sub-trigger fires, the listed `references/*.md` is **required** in addition to the skill — not optional.
+## 7. 프로젝트 절대 규칙
 
-| Trigger phrases | Task domain | Skill to load | Sub-triggers → references to Read |
-|---|---|---|---|
-| plan a new game / new game / what to build / MVP scope / GDD / game design / scope an MVP / what game should I make / continue·resume the game / next task / what now / where were we — **or a comprehensive build request spanning multiple implementation pieces while no `Docs/*-GDD.md` exists** | Game planning & build management (pre-implementation) — plan a brand-new game OR continue/resume a phased build (genre-catalog grounding → map-type↔Body → MVP roadmap → GDD / resume flow) | `Skill: msw-planning` | Genre catalog → `references/genre-catalog.md`  •  Output structure / per-phase detail → `references/gdd-template.md`  •  System↔MSW mapping → `references/msw-mapping.md`  •  Implementing planned tasks / checklist state updates / Phase·milestone completion / plan revision → `references/build-management.md` |
-| script / mlua / component / event / logic / lifecycle / `Component` / `@Logic` / `@Event` | Writing/modifying `.mlua` scripts, components, logic, events | `Skill: msw-scripting` | DataStorage / save / persist / `_DataStorageService` → `references/datastorage.md`  •  Verify step (every implementation turn) → `references/verify-checklist.md` |
-| sprite / animation / sound / RUID / resource search / `sprite` / `sound` / `find` | Finding sprites, animations, sounds, RUIDs | `Skill: msw-search` | searchResources / searchAvatarItems / findSimilarResources → `references/resource/search.md`  •  getResource / RUID details → `references/resource/detail.md`  •  listResources / findPacksContaining → `references/resource/browse.md`  •  listAvatars / avatar catalog browsing → `references/resource/avatar.md` |
-| `SpriteRUID` / `ImageRUID` / `thumbnail://` / set RUID / item icon | Renderer RUID assignment — `animationclip` direct playback, `thumbnail://` prefix for `avataritem` / `skeleton` / `animationclip` thumbnails | `Skill: msw-sprite-ruid` | (no `references/`) |
-| draw a sprite directly / pixel art / custom sprite / make an icon / image generation / maple-style character | Hand-draw and upload a sprite RUID — **only after `msw-search` finds no suitable resource** | `Skill: msw-painter` | Canvas & size rules → `references/size-guide.md`  •  chunky pixel style → `references/style-chunky-pixel.md`  •  maple cartoon style → `references/style-maple-cartoon.md` |
-| avatar / costume / equipment / outfit / animation state / attack motion | Avatar / player appearance | `Skill: msw-avatar` | (no `references/`) |
-| DefaultPlayer / player / jump / move speed / HP / camera / respawn | DefaultPlayer customization | `Skill: msw-defaultplayer` | (no `references/`) |
-| attack / hit / damage / monster combat / critical / knockback / hit effect | Combat, damage, monster battles | `Skill: msw-combat-system` (concepts + API tables only; full implementation in `references/`) | Monster `.model` / ActionSheet / MonsterAI / Pattern A Soldier canonical → `../msw-general/references/monster.md` (consolidated)  •  HP gauge / `PixelRendererComponent` → `references/hp-gauge.md`  •  projectile / arrow / bullet / homing / piercing / splash → `references/projectile.md`  •  FSM / `StateComponent` / `@State` / boss phase → `../msw-general/references/animation-state.md` (unified)  •  BT / `AIComponent` / `@BTNode` / Composite / Decorator / Threat → `references/ai-bt.md` |
-| `.behaviourtree` / BT node graph / SequenceNode / SelectorNode / Blackboard variable / `ActionNode` / `DecoratorNode` / bt-spec | Authoring `.behaviourtree` files + the per-project BT node spec (`.behaviourDocs/bt-spec.md`) | `Skill: msw-behaviourtree` | Node catalog → `references/node-catalog.md`  •  tree skeletons → `references/skeleton-minimal.json` / `references/skeleton-full.json` |
-| inventory / shop / ranking / mail / quest / collection / key binding / GM / slash command | Standard game systems — **check before writing from scratch** | `Skill: msw-packages` | (no `references/`; each package's README is fetched on demand from GitHub) |
-| popup / HUD / button / toast / menu / tab / layout / `.ui` | UI screens / widgets | `Skill: msw-ui-system` | Style template bundle → `references/templates/templates.md` + chosen `references/templates/style-N-*/{ruid-map.md, structure.md, Popupbutton.mlua}`  •  Component API / enum tables → `references/component-api.md`  •  Runtime patterns (toasts / popups / HP bar / tabs / drag-drop) → `references/runtime-patterns.md`  •  Builder protocol (unified entry point — core + per-builder files) → `../msw-general/references/builder-protocol.md` + `../msw-general/references/builder-protocol-ui.md` §3 |
-| entity placement / `.map` / spawn / `SpawnByModelId` / coordinate / transform | Entity placement, `.map` editing | `Skill: msw-general` | Entity Work Preflight + `.map` builder / entity placement / component patching → `references/entity.md` |
-| `.model` / template / EntryKey / Properties / Values / model catalog | `.model` authoring | `Skill: msw-general` | `.model` authoring / `Values` serialization → `references/model.md`  •  JSON schema details → `references/model/model-schema.md`  •  monster `.model` (lowercase ActionSheet / IsLegacy / SortingLayer / canonical 11 components) → `references/monster.md` |
-| TileMapMode / Body / side-view / top-down / gravity / SortingLayer / SpriteRUID / 8 core / `MovementComponent` / `InputSpeed` / `.directory` | Platform rules, physics, troubleshooting | `Skill: msw-general` | All-map-types-common (8 core / TileMapMode↔Body+LEA-3004 / SpriteRUID / `SpawnByModelId` / coordinate system / `.config`·CoreVersion) → `references/platform.md`  •  **MapleTile** (`= 0`) — Foothold / `Gravity` / `PredictFootholdEnd` / `DownJump` → `references/platform-maple.md`  •  **RectTile** (`= 1`) — `SpeedFactor` / 4-directional / Movable / dynamic tiles → `references/platform-rect.md`  •  **SideViewRectTile** (`= 2`) — `JumpSpeed` / `JumpDrag` / wall detection / `EnableDownJump` → `references/platform-sideview.md`  •  Symptom debugging (`[LEA-3004]` / "doesn't move" / "invisible" / "100x off") → `references/troubleshooting.md`  •  tile painting / `RectTileMap` / `FootholdComponent` → `references/tile.md` |
-| DataSet / userdataset / `.csv` / localize / i18n / LocaleDataSet / `_LocalizationService` | Datasets / i18n | `Skill: msw-general` | UserDataSet / LocaleDataSet runtime / ClientOnly rule → `references/dataset.md` |
-| MCP tool calls / `refresh` / `play` / `stop` / `logs` / `screenshot` / Room / DataStorage location | MCP tools, workspace flow | `Skill: msw-general` | Workspace / Room / DataStorage / Play mode / recovery → `references/workspace.md`  •  Shared authoring → `references/authoring.md`  •  MCP setup issues → share this link with the user: https://maplestoryworlds-creators.nexon.com/ko/docs?postId=1368 |
+- **프리셋 우선**: 패키지, 기존 모델, UI 템플릿, 리소스를 먼저 찾는다.
+- **데이터 주도**: 아이템·레시피·수량·확률·모션명은 데이터셋이나 프로퍼티로 관리한다.
+  `if itemName == "..."` 같은 이름 분기를 추가하지 않는다.
+- **아이템 키**: 인벤토리 저장 키는 `item_dataset.Name` 값이다.
+- **UserDataRow**: `Count()`와 `GetItem(columnName)`만 사용한다. `RowIndex`는 없으며,
+  선택 컬럼은 `pcall`로 보호한다.
+- **호출 전 정의 확인**: 다른 스크립트의 메서드나 프로퍼티를 호출하기 전에 실제 정의와 시그니처를 검색한다.
+- **세이브 경로 Yield 금지**: 필수 `GetAndWait`·`SetAndWait` 외 추가 Yield를 저장 루틴에 넣지 않는다.
+- **검증 없는 성공 보고 금지**: 확인하지 않은 결과를 `동작함`, `정상`으로 표현하지 않는다.
+- **범위 밖 리팩터링 금지**: 요청과 무관한 구조 변경, 커밋, 푸시를 하지 않는다.
 
-**Routing notes:**
+세부 원인과 사고 사례는 이 문서에 복제하지 않고 [docs/pitfalls.md](./docs/pitfalls.md)를 단일 원문으로 삼는다.
 
-- **Planning gate**: a comprehensive build request spanning multiple implementation pieces, made while no `Docs/*-GDD.md` exists, routes to **`msw-planning` FIRST** — before any implementation domain above; it is a planning trigger, not a plain implementation request. **NO 'small/simple game' exception** — apparent concept simplicity is not MSW implementation simplicity and does not waive this gate; do not self-judge "this one is simple enough to skip planning" (if the game really is small, the planning flow itself scopes it down in minutes). Likewise, a bare **continue / resume / next-task** request ("continue", "what's next", "what should I do now" — in any language) is **NOT ambiguous — it fires this row as-is**: load `msw-planning` FIRST and let its **resume flow** determine the state (it detects `Docs/`·`Archive/` itself and handles the no-plan case too). Do **not** reply with clarifying questions before loading it, and never jump into a phase doc as plain implementation.
-- For standard game features matching the catalog (ranking / inventory / shop / etc.), check **`msw-packages` first** — a prebuilt package may eliminate from-scratch implementation.
-- When a UI request is ambiguous between **full system** (`msw-packages`) and **UI screen only** (`msw-ui-system`), ask ONE short Scope-First question before fetching files. Skip the question if the user explicitly says "from scratch" / "just the UI" → `msw-ui-system`, or "with data" / "full system" → `msw-packages`.
-- ⛔ Never call `msw-mcp`'s `asset_search_resources` directly. Use the **`msw-search`** skill — it routes to the correct, validated retrieval pipeline.
+## 8. 검증
 
-# RULE
+에이전트의 기본 검증 범위는 다음과 같다.
 
-### Workspace structure
+1. 관련 정적 진단·린트·빌더 검증 실행
+2. `maker_refresh_workspace`가 `status ok`인지 확인
+3. `maker_logs(kind="build")`에서 Error·Warning·Info 수 확인
+4. build 로그 `dateTime`이 이번 refresh 시각과 같은지 확인
+5. 신규 `.mlua`라면 `.codeblock` 생성 확인
+6. 결과와 검증 범위를 [docs/tasks.md](./docs/tasks.md)에 기록
 
-- **NativeScripts**: Native API definitions (`.d.mlua`)
-- **RootDesk**: Working workspace (`.mlua`, `.model`)
-- **map**: `.map` files
-- **ui**: `.ui` files
+build 로그는 이전 스냅샷을 다시 반환할 수 있다. 타임스탬프가 맞지 않으면 `Error=0`을 근거로 쓰지 않고
+`build 로그 갱신 미확인`으로 보고한다. Warning 기준선과 상세 내역은
+[docs/workflow.md](./docs/workflow.md)를 따른다.
 
-**⛔ Restricted directories:**
+build Error=0은 `.map` 직렬화 붕괴, `.ui` 원복, 시각·콜라이더 불일치를 보장하지 않는다.
+작업 종류에 맞는 구조 검사와 제작자 육안 확인 항목을 별도로 남긴다.
 
-- `Global/` — engine defaults + world settings. **Never create new files here** (Maker registers new entries only from `RootDesk/`) or delete. Existing `Global/*.model` files may be modified in place through `ModelBuilder` + Maker Refresh; create new custom models under `RootDesk/MyDesk/Models/`. `.config` (WorldConfig, SectorConfig) is values-only and Maker-managed; do not touch `common.gamelogic` or the `common` entity.
-  - `Global/NativeModel/` — MSW built-in `.model` templates (monsters, NPCs, items). Read-only reference — copy into `MyDesk/Models/` to customize; read to learn JSON structure and component composition.
-- `Environment/` — `.d.mlua` API definitions. Read-only.
+### Play 검증 정책
 
-### Cross-platform tool rules
+Play와 사용자 입력은 제작자 전담이다. 제작자가 해당 턴에 명시적으로 요청한 경우를 제외하고 다음 도구를 호출하지 않는다.
 
-⛔ **Never use shell commands to inspect the workspace.** Shell behavior differs across Windows PowerShell, Git Bash, and macOS bash (path separator, escape rules, encoding, command names). Cursor / Claude Code's built-in tools are the only portable choice.
+- `maker_play`, `maker_stop`
+- `maker_keyboard_input`, `maker_mouse_input`
+- `maker_execute_script`, `maker_screenshot`
+- `maker_save`, `maker_move_map`
+- `maker_reset_data_storage`, `maker_import_maplestory_map`
 
-| To do this | ✅ Use this | ❌ Never use |
-|---|---|---|
-| List files | `Glob("RootDesk/MyDesk/**/*.mlua")` | `ls`, `dir`, `Get-ChildItem`, `gci` |
-| Check folder | `Glob("map/*")` | `ls`, `Test-Path`, `dir` |
-| Read a file | `Read("RootDesk/MyDesk/Foo.mlua")`; for `.map` use `MapBuilder.read(...)` | `cat`, `type`, `Get-Content`, `gc`, `head`, `tail`, `more`, `less` |
-| Search contents | `Grep("@Logic", glob: "*.mlua")` | `grep`, `findstr`, `Select-String`, `sls`, `rg` directly |
-| Find file by name | `Glob("**/PlayerController.mlua")` | `find`, `where`, `Get-ChildItem -Recurse` |
+Play를 실행하지 않았으면 `런타임 검증 보류(제작자 수행)`라고 정확히 적는다.
+MCP가 연결되지 않았으면 가능한 정적 검증까지만 수행하고 `refresh 검증 보류`라고 적는다.
 
-The `Bash` / shell tool is reserved for actual programs (`git`, `npm`, MCP, build scripts). When you must invoke one:
+## 9. 운영과 보안
 
-1. Prefer workspace-relative paths (`git add RootDesk/MyDesk/Foo.mlua`).
-2. If an absolute path is unavoidable, use forward slashes and double-quote: `"D:/msw-world-projects/.../map/"` — never `D:\...`. In bash on Windows, `\` is an escape character; `D:\foo\bar\` collapses to `D:foobar`.
-3. Always double-quote paths containing spaces or non-ASCII.
-4. Prefer POSIX commands (`ls`, `mv`, `cp`, `rm`) over OS-specific (`dir`, `type`, `del`).
+- 운영 체제는 제작자 1명 + AI 보조다.
+- 하위 에이전트는 제작자가 명시적으로 요청한 경우에만 사용한다.
+- 신규 T번호를 발행하지 않는다. 구 T번호는 `docs/agents/`의 아카이브 식별자로만 쓴다.
+- `.mcp.json`, `.cursor/mcp.json` 등 토큰이 들어가는 MCP 설정 파일은 커밋하지 않는다.
+- 중간 단계가 실패하면 이후 단계를 진행하지 말고 원인을 먼저 해결한다.
 
-> Symptom of violation: `ls: cannot access 'D:msw-world-projects...'` — the backslashes were eaten by bash. Stop and re-issue as `Glob` / `Read` / `Grep`.
+## 10. 문서 단일 소스
 
-
-## 2. Implement
-
-- **Editable:** `.mlua`, `.model`, `.ui`, `.map` only. All other file types are read-only.
-- **Never modify `.codeblock`** — auto-generated metadata for `.mlua`. Read for reference only; the runtime manages it.
-- **New file paths:** `.mlua` → `RootDesk/MyDesk/`, `.model` → `RootDesk/MyDesk/Models/`, `.map` → `map/`, `.ui` → `ui/`. New files outside these paths won't be recognized.
-- **`Global/`**: never create new files here (Maker won't register them) or delete. Existing `Global/*.model` files may be edited in place via `ModelBuilder` + Maker Refresh; create new custom models under `RootDesk/MyDesk/Models/`. `Environment/` (`.d.mlua`) is read-only; `.config` files are values-only and Maker-managed.
-- **Use builders for structured files:** `.model`, `.ui`, and `.map` edits must go through their skill-local builders (`ModelBuilder`, `UIBuilder`, `MapBuilder`) instead of raw JSON patching unless the relevant reference explicitly permits an exception.
-- **Property types:** use `integer` (not `int`), `number` (not `float`).
-- **Add `log()` calls** at critical checkpoints (e.g. `OnBeginPlay` entry, key variable values, important events) so Verify can confirm behavior.
-- **`SpawnService` parent must NOT be nil.** Pass the target map entity (`self.Entity.CurrentMap`, or `_EntityService:GetEntityByPath("/maps/map01")`).
-
-  ```
-  -- ✅ Correct
-  local map = self.Entity.CurrentMap
-  _SpawnService:SpawnByModelId(modelId, name, pos, map)
-
-  -- ❌ Wrong — LWA-3019 warning, undefined behavior
-  _SpawnService:SpawnByModelId(modelId, name, pos, nil)
-  ```
-
-- **Pick the right script scope** based on lifetime, not just "globalness":
-
-  | Scope | Use | Why |
-  |---|---|---|
-  | World-wide global manager (login session, account data, world-wide event bus, global UI manager) | `@Logic` | Engine-managed singleton; lives the entire world session, persists across map transitions; auto-registered. |
-  | Map-scoped content (that map's quest controller, wave spawner, mini-game, NPC dialog) | `@Component` on the map entity (in `.map`'s `@components` or via `AddComponent`) | A `@Logic` survives map transitions and would leak state. The map-entity component participates in `OnBeginPlay` / `OnEndPlay` / `OnMapEnter` / `OnMapLeave` and is cleaned up on map unload. |
-  | Per-entity behavior (monster AI, item pickup, player skill on a specific actor) | `@Component` on that entity (via `.model` or `AddComponent`) | Lifetime is tied to the actor. |
-
-  Rule of thumb: *"Should this still be running when the player walks into another map?"* → Yes ⇒ `@Logic`. → No, only this map ⇒ map-entity `@Component`. → No, only this actor ⇒ actor `@Component`.
-
-> 📌 **이 벤더 블록은 이 저장소에서 축약되었습니다 (2026-08-01, `/doctor`).**
-> 제거한 절: `Runtime interaction requires MCP`(§0 O-2가 대체 — 이 저장소는 Play가 제작자 전담) ·
-> `## 0. Plan` · `## 1. Analyze`(→ [docs/workflow.md](./docs/workflow.md) 5단계) ·
-> `Camera → Everything` 표 · `Script lifecycle` · `ExecSpace` 표(→ Foundation으로 매 턴 로드되는
-> `msw-general/references/platform.md`에 동일 내용 존재) · `## 3. Verify` ~ `## 5. Finally`(→ §4 + workflow.md).
-> **남긴 것**: Foundation 로딩 규칙 · Domain matrix · 침묵 실패 표 · 워크스페이스/도구 규칙 · `## 2. Implement`
-> (`@Logic` vs `@Component` 수명 판단은 다른 곳에 없음).
-> ⚠️ `mswai` 동기화는 이 블록을 원본으로 되돌립니다. 벤더 업데이트 후 이 노트가 사라져 있으면 다시 축약할 것.
-
+| 주제 | 문서 |
+|---|---|
+| 진행 중·예정 작업 | [docs/tasks.md](./docs/tasks.md) |
+| 작업·검증 절차 | [docs/workflow.md](./docs/workflow.md) |
+| 실측 함정과 판별법 | [docs/pitfalls.md](./docs/pitfalls.md) |
+| 전체 설계·Phase | [game_design.md](./game_design.md) |
+| 타일 문법 | [docs/tile-scheme.md](./docs/tile-scheme.md) |
+| 상시 디자인 정책 | [docs/design-policy.md](./docs/design-policy.md) |
+| 스킬 라우팅 | [docs/reference/skill-routing.md](./docs/reference/skill-routing.md) |
+| 훅·편집 차단 | [docs/reference/hooks.md](./docs/reference/hooks.md) |
+| 물리·조작 | [docs/reference/physics-controls.md](./docs/reference/physics-controls.md) |
+| 리소스 API 함정 | [docs/reference/resource-api-pitfalls.md](./docs/reference/resource-api-pitfalls.md) |
+| 구 T기록 | [docs/agents/README.md](./docs/agents/README.md) |
 <!-- <<< managed by mswai <<< -->
-
----
-
-# PROJECT-SPECIFIC RULES (이 프로젝트 고유 에이전트 규칙)
-
-> **대상**: 이 저장소에서 작업하는 **모든 AI 코딩 에이전트** (Claude Code, Codex, Cursor, Copilot 등) — 모델 등급 무관.  
-> **상위 룰 연동**: 상단의 `managed by mswai` 블록(MSW 글로벌 공통 표준 룰)을 기본으로 준수하며, 본 섹션은 **이 프로젝트 전용 스펙, 절대 규칙(R1~R9), 도구 실명, 전용 스킬**을 정의합니다.
-
----
-
-## 0. 벤더 블록 대비 프로젝트 오버라이드 (⚠️ 충돌 시 이 절이 우선)
-
-> 상단 `managed by mswai` 블록은 **벤더가 덮어쓰는 영역**이라 이 프로젝트 사정을 모른다. 아래 4건은 벤더 블록의 서술과 **정면으로 다르며, 이 저장소에서는 아래가 유효하다.** 벤더 업데이트로 상단 내용이 또 바뀌어도 이 절을 우선한다.
-> *(최종 대조: 2026-07-28 벤더 업데이트 — CoreVersion 26.7.0.0, `maplestory-skill-maker` 신규, builder-protocol 3분할)*
-
-### O-1. 🔴 `msw-planning` 게이트는 이 저장소에 적용하지 않는다
-
-- **벤더 서술**: "continue / resume / next task / 다음 작업 / 이어서 진행" 요청은 **모호하지 않으며 `msw-planning`을 먼저 로드**하고, 되묻지 말 것.
-- **이 저장소**: 그 요청은 **[docs/tasks.md](./docs/tasks.md) 소관**이다. → `docs/tasks.md`(할 일) + [docs/workflow.md](./docs/workflow.md)(절차)를 읽고 진행한다. `msw-planning`을 로드하지 말 것.
-- **근거**: 벤더 게이트는 `Docs/*-GDD.md` 기반 신규 게임 플로우를 전제하는데, 이 저장소의 계획 산출물은 `game_design.md` Phase 트래커 + `docs/tasks.md`다. 형식이 달라 resume flow가 상태를 못 읽는다.
-- **`msw-planning`을 쓰는 경우**: 이 게임과 **별개의 신규 월드**를 기획할 때만.
-
-### O-2. 🔴 Play 런타임 검증은 **제작자(사람) 전담** — 에이전트는 실행하지 않는다
-
-- **벤더 서술**: 동작 확인이 필요하면 `play` → `logs`를 반드시 호출하라.
-- **이 저장소**: **에이전트는 `maker_play` / `maker_stop` / `maker_keyboard_input` / `maker_mouse_input`을 호출하지 않는다.** 검증 범위는 **`maker_refresh_workspace` → `maker_logs(kind="build")` 까지**이며, 그 이후는 보고서에 **"런타임 검증 보류(제작자 수행)"** 로 정확히 명시한다(R8).
-- **여전히 유효한 부분**: "호출 없이 동작 확인을 주장하지 말라"는 금지는 그대로 적용된다 — 근거 없는 "동작함" 보고는 허위다.
-- **예외**: 제작자가 특정 턴에 명시적으로 Play 실행을 지시한 경우에만 허용.
-
-### O-3. CoreVersion = **`26.7.0.0`** (2026-07-28 갱신)
-
-- `Environment/config` 실측값이 단일 소스다. 훅 `core-version-check`의 `EXPECTED_CORE_VERSION`도 `26.7.0.0`으로 동기됨.
-- 문서에 남은 구 표기(`26.5.0.0`)를 발견하면 **역사적 기록 문맥이 아닌 한** 정정한다.
-- ✅ **`.model` 안의 `MOD.Core, Version=...` 문자열은 일괄 마이그레이션하지 말 것 (지휘자 실측 2026-07-28)**: 이 저장소의 `.model` 59개는 이미 **`26.3.0.0`(588항목) + `26.5.0.0`(337항목) 혼재** 상태이며 그대로 **refresh Error=0**으로 빌드된다 — 엔진이 값 타입 서술자의 어셈블리 버전을 느슨하게 해석한다는 실증이다. `ModelBuilder` 기본값이 `26.7.0.0`으로 올라가 앞으로 **한 파일 안에 세 버전이 섞이게 되지만 무해**하다. "버전 정합성 정리" 티켓을 만들지 말 것 — 불필요한 전량 재작성은 오히려 diff 사고 위험만 키운다.
-
-### O-4. 이 저장소는 `Docs/` 가 아니라 `docs/` 를 쓴다
-
-- 벤더 문서가 말하는 `Docs/*-GDD.md` / `Archive/` 규약은 **이 저장소에 존재하지 않는다**. 찾지 말고 생성하지도 말 것.
-- 이 저장소의 대응물: 설계 = `game_design.md` · 할 일 = `docs/tasks.md` · 절차 = `docs/workflow.md` · 함정 사전 = `docs/pitfalls.md` · 설계 문서 = `docs/design/*.md` · 구 T티켓 아카이브 = `docs/agents/`.
-
-### O-5. 🔴 운영 체계는 **솔로**다 (2026-08-06 전환)
-
-- 지휘자(conductor) + 구현자(worker) 위임 체제는 **종료**했다. `docs/agents/conductor-role.md` · `docs/agents/subagent-handoff.md` · 킥오프 프롬프트 · T티켓 신규 발행은 전부 폐기다.
-- 현재 체제 = **제작자(사람) 1명 주도 + AI 어시스턴트 보조**. 절차는 [docs/workflow.md](./docs/workflow.md) 하나로 통합됐다.
-- **하위 에이전트를 임의로 띄우지 말 것** — 제작자가 명시적으로 지시할 때만.
-- 구 T번호는 아카이브 식별자로만 유효하다. 신규 작업은 T번호 없이 `docs/tasks.md`에 항목으로 추가한다.
-
----
-
-## 1. 프로젝트 정체 & 맵/물리 규격 (1분 요약)
-
-- **MapleStory Worlds(MSW) 생존/채집 게임**: 모든 요청을 MSW 프로젝트 작업으로 취급한다.
-- **본 프로젝트 맵 & 물리학 전용 규격** (상단 `Camera → Everything` 매핑 기준):
-  - 톱다운 **`RectTile` (`TileMapMode = 1`)** 모드 적용.
-  - 모든 동적 엔티티(플레이어, 몬스터, NPC)는 반드시 **`KinematicbodyComponent`**를 부착한다 (`Rigidbody`/`Sideviewbody` 사용 금지).
-  - 맵 파일 4종: `map/map01.map` (영지 원본), `map/town.map` (공동 마을), `map/template_field.map` (사냥터), `map/template_boss.map` (보스). 런타임 영지 인스턴스: `Home_<UserId>`.
-- **조작계**: 방향키 4방향 이동 / `Alt` 비주얼 점프(물리 높이 변화 없음) / `Ctrl` 공격·채광(바라보는 인접 셀) / `F` 상호작용(설치물·NPC·게시판·낚시터).
-- **운영 체계 (솔로 — §0 O-5)**: 제작자 1명 주도 + AI 어시스턴트 보조.
-  - 할 일 → [docs/tasks.md](./docs/tasks.md) · 절차 → [docs/workflow.md](./docs/workflow.md) · 전체 설계 → `game_design.md`
-  - 🔴 착수 전 [docs/pitfalls.md](./docs/pitfalls.md)에서 해당 작업이 걸리는 함정을 확인할 것 (17건 — 전부 **에러 없이 조용히 틀리는** 종류).
-
----
-
-## 2. 편집 가능 영역 (Lanes)
-
-| 경로 | 내용 | 편집 수단 |
-|---|---|---|
-| `RootDesk/MyDesk/**` | `.mlua` 스크립트, `.userdataset`+`.csv` 데이터셋 | 직접 편집 (Edit/Write) |
-| `RootDesk/MyDesk/**/*.model` | 모델 | **ModelBuilder만** (직접 Read/Edit 훅 차단) |
-| `map/*.map` | 맵 | **MapBuilder만** (⚠️ `node scripts/build_maps.cjs --force`는 손편집을 덮어쓰므로 사전 확인) |
-| `ui/*.ui` | UI 레이아웃 | **UIBuilder만** (직접 Read/Edit 훅 차단) |
-| `Global/DefaultPlayer.model` | 플레이어 설정 | ModelBuilder |
-| `Global/WorldConfig.config` | 물리·카메라 전역값 | 직접 편집 |
-| `docs/**`, `game_design.md` | 기획·운영 문서 | 직접 편집 |
-
-**⛔ Restricted (수정 금지 — 훅 자동 차단):**
-- `Environment/**` — 생성·수정·삭제 절대 금지 (`.d.mlua` API 정의는 읽기만 허용).
-- `*.codeblock`, `*.d.mlua` — 자동 생성 파일. Maker `refresh` 시 재생성됨.
-- `Global/` 하위 기타 파일 — Maker가 스캔하지 않음. 유저 파일은 `RootDesk/MyDesk/`에만 생성.
-- 벤더 스킬 (`.claude/skills/`·`.agents/skills/` 중 `skills-lock.json` 등재 항목) — 수정 금지.
-
----
-
-## 3. 프로젝트 절대 규칙 (R1 ~ R8)
-
-*(상단의 MSW 공통 문법 및 8대 핵심 규칙에 더해, 이 프로젝트에서 반드시 지켜야 할 절대 규칙)*
-*(🔴 이 목록은 요약이다. **왜 그런지와 판별 절차의 원문은 [docs/pitfalls.md](./docs/pitfalls.md)** — 실측 사고 17건. 규칙 번호가 겹치는 항목은 그쪽이 원본이다.)*
-
-- **R1. 프리셋 우선 (Preset-First)**: 백지 구현 전 패키지(`msw-packages` / [docs/wiki/mswpackages/INDEX.md](./docs/wiki/mswpackages/INDEX.md)), 모델 템플릿(`msw-general`), UI 템플릿(`msw-ui-system`), 리소스 검색(`msw-search`)을 선확인한다.
-- **R2. mlua 전용 문법 엄수**: `@Component`, `@Logic`, `@ExecSpace`, `@Sync` 구조화. `@Logic`에서는 `OnMapEnter`/`OnMapLeave`가 **호출되지 않음**을 유의. 타입은 `integer`/`number`/`boolean`/`string`만 사용.
-- **R3. 하드코딩 절대 금지 (Data-Driven)**: 아이템/레시피/수량/확률 등 데이터성 값은 데이터셋(`.userdataset`+`.csv`) 또는 Struct/프로퍼티로 분리한다. `if itemName == "..."` 분기 금지.
-- **R4. 아이템 식별자**: 인벤토리 저장 키는 `item_dataset`의 **`Name` 컬럼 값**이다. (소문자 id나 표시명 혼동 금지)
-- **R5. UserDataRow API 규약**: `Count()`와 `GetItem(columnName)` 두 개만 존재하며, `RowIndex`는 없다(nil). 불확실한 컬럼은 `pcall` 가드 필수.
-- **R6. 크로스 스크립트 호출 전 정의 확인**: 타 스크립트 호출 전 Grep으로 대상 `.mlua` 내 메서드/프로퍼티 존재 및 시그니처를 검증한다.
-- **R7. 세이브 경로 Yield 금지**: `SavePlayerData` 루틴 내에서 필수 `GetAndWait`/`SetAndWait` 외 추가 Yield(타이머 대기 등) 금지.
-- **R8. 런타임 검증 근거 필수**: 동작 확인 보고 시 §4 MCP 검증 체인 로그 근거 제시. 미사용 환경 시 "코드 수정 완료, 런타임 검증 보류" 명시.
-  - ⚠️ **build Error=0이 잡지 못하는 것**: `.map` JSON 구조 붕괴(pitfalls 규칙 16) · `.ui` 산출물 원복(규칙 11) · 시각 실루엣 불일치(규칙 17). "Error=0 = 정상"으로 단정하지 말 것.
-
-> ~~R9. T티켓 보고 3종~~ — **폐기 (2026-08-06, §0 O-5)**. 솔로 체제에서는 보고서 파일을 강제하지 않는다. 대신 진행 상황은 [docs/tasks.md](./docs/tasks.md), 재발 방지 가치가 있는 실측은 [docs/pitfalls.md](./docs/pitfalls.md)에 규칙 18번부터 append한다.
-
----
-
-## 4. MCP 검증 체인 & 도구 실명 규약
-
-*(상단의 Cross-platform tool rules `Glob/Read/Grep`을 기본 준수하며, 런타임 검증 시 아래 MCP 도구를 사용)*
-
-- **Maker MCP 서버**: `msw-maker-mcp`
-- **에이전트 사용 도구**: `maker_refresh_workspace` (Play 중 불가), `maker_logs`, `maker_clear_logs`, `maker_get_current_map`, `maker_get_world_info`.
-- **⛔ 제작자 전용 도구 (에이전트 호출 금지 — §0 O-2)**: `maker_play`, `maker_stop`, `maker_keyboard_input`, `maker_mouse_input`, `maker_execute_script`, `maker_screenshot`, `maker_save`, `maker_move_map`, **`maker_reset_data_storage`**(세이브 파괴), `maker_import_maplestory_map`.
-- **표준 검증 체인 (에이전트 — 구현 후 필수 실행)**:
-  ```
-  1) maker_refresh_workspace          → status ok 확인
-  2) maker_logs(kind="build")         → Error 수 집계 (Error=0 이 게이트)
-  3) Error/Warning/Info 수 + 근거 발췌를 보고에 기재
-  4) 이후 Play 시나리오는 "런타임 검증 보류(제작자 수행)"로 명시
-  ```
-  - **Warning 급증도 보고 대상**: baseline 대비 늘었으면 원인과 소유 스크립트를 밝힌다(`LWA-4012`=모델에 프로퍼티 기본값 미명시 계열). **현재 baseline = 17** (2026-08-08 실측, HEAD `3126192` — 소유별 내역은 [docs/workflow.md](./docs/workflow.md) §④). 구 baseline 48은 폐기됐다.
-  - 🔴 **build 로그는 refresh마다 갱신되지 않는다** ([규칙 22](./docs/pitfalls.md)) — `maker_logs(kind="build")`가 직전 빌드 스냅샷을 그대로 재반환할 수 있고 `maker_clear_logs`로는 못 지운다(`normal`만 삭제). **로그의 `dateTime`이 이번 refresh 시각과 같은지 대조한 뒤에 `Error=0`을 근거로 쓸 것.**
-  - **신규 `.mlua`를 만들었으면 refresh 후 `.codeblock` 생성을 반드시 확인**한다(8대 핵심 규칙 2 — 쌍이 없으면 스크립트가 등록조차 안 된다).
-  - MCP 미연결 환경이면 LSP 진단까지만 수행하고 **"refresh 검증 보류"** 로 정확히 보고한다(허위 Error=0 기재 금지).
-  - ⚠️ **"MCP 미연결"을 단정하기 전에 `MakerMCP_run.exe` 고아 프로세스부터 의심**한다(브리지 포트 점유). 대응은 [docs/workflow.md](./docs/workflow.md) §2 "연결이 이상할 때" 참조.
-  - 🔴 **MCP 설정 파일(`.mcp.json` / `.cursor/mcp.json` 등)은 커밋 금지** — Bearer 토큰 평문. `.gitignore`에 5경로 등록됨. 새 에이전트 도입 시 경로 추가할 것.
-
----
-
-## 5. 프로젝트 전용 스킬 & 세부 가이드
-
-- **공통 기초 스킬**: 상단 mswai 라우팅표에 따라 매 턴 `msw-general` + `msw-ui-system` 및 4대 레퍼런스 기본 로드.
-- **프로젝트 전용 운용 스킬** (`skills-lock.json` 미등재 = 이 저장소 소유, 자유 편집):
-  - `msw-project`: 이 프로젝트 작업 부팅 — 현황 파악 → 함정 확인 → 구현 → 검증 → 기록 ([workflow.md](./docs/workflow.md) · [pitfalls.md](./docs/pitfalls.md) · [tasks.md](./docs/tasks.md))
-  - `msw-checkpoint`: 문서 동기화 및 Git 커밋/푸시
-  - `msw-wiki`: 로컬 위키 (`docs/wiki/`) MSWPackages & RoguelikeWorld 예제 참조
-  - `image-to-pixel`: 이미지 자산 픽셀화 변환
-  - *⚠️ `msw-planning` 주의*: **§0 O-1 참조** — "다음 작업/이어서 진행"은 `docs/tasks.md` 소관이며 `msw-planning`을 로드하지 않는다.
-  - *🧊 폐기*: `msw-conductor` · `msw-worker`(2026-08-06, §0 O-5) — `msw-project`로 통합됐다.
-- **벤더 스킬 라우팅 보강** (상단 Domain matrix에 행이 없거나 이 프로젝트에서 해석이 필요한 것):
-  - **`maplestory-skill-maker`** (2026-07-28 신규 등재): 플레이어 공격·이동 스킬(직격/투사체, 더블점프, 텔레포트, 쿨다운·핫키) + 몬스터 전투 연출(피격/사망 애니, 데미지스킨 홀드, 넉백 펄스, ATTACK 사거리·타이밍). **상단 Domain matrix에 행이 없으므로 이 항목이 라우팅 근거다.**
-    - **`msw-combat-system`과의 분담**: 전투 *기반 구조*(HitEvent 파이프라인·데미지 모델·몬스터 AI/BT·HP 게이지) = `msw-combat-system` / **플레이어 스킬 연출·입력·모션 락·이동기** = `maplestory-skill-maker`. 겹치면 둘 다 로드.
-    - ⚠️ 이 저장소는 스킬 시스템이 **이미 구축돼 있다**(Phase 16 — `SkillDataSet` + `PlayerController` 시전 경로 + `Projectile.mlua` + `CastAction`). 이 스킬의 예제를 **백지 도입하지 말고**, 기존 파이프라인에 맞춰 차용할 것(R1 프리셋 우선의 역방향 함정).
-  - `ponytail`: 과잉 설계 억제. 구조를 크게 벌리는 제안 전에 참고(선택).
-- **자동 차단 훅(Hook) 요약** ([hooks.md](./docs/reference/hooks.md)):
-  - `.model`/`.ui` 직접 편집 차단 → 빌더 사용 강제 (⚠️ `git add`/`rm` 같은 쉘 명령도 경로 문자열에 `.ui`/`.model`이 들어가면 차단됨 — 디렉터리 단위로 지정해 우회)
-  - `Environment/**`, `*.codeblock`, `*.d.mlua` 쓰기 차단
-  - `.mlua` 저장 시 LSP 진단 자동 실행
-  - CoreVersion(**`26.7.0.0`**) 불일치 시 경고 주입 (§0 O-3)
-- **온디맨드 상세 문서**:
-  - 🔴 **함정 사전(실측 사고 17건)**: [docs/pitfalls.md](./docs/pitfalls.md) — 착수 전 해당 규칙 확인
-  - 작업 절차·MCP 검증: [docs/workflow.md](./docs/workflow.md)
-  - 할 일 목록: [docs/tasks.md](./docs/tasks.md)
-  - 타일 지형 문법: [docs/tile-scheme.md](./docs/tile-scheme.md)
-  - 상시 디자인 정책: [docs/design-policy.md](./docs/design-policy.md)
-  - 물리/조작: [docs/reference/physics-controls.md](./docs/reference/physics-controls.md)
-  - 디렉터리 구조: [docs/reference/directory-structure.md](./docs/reference/directory-structure.md)
-  - 스킬 라우팅: [docs/reference/skill-routing.md](./docs/reference/skill-routing.md)
-  - 훅 사양: [docs/reference/hooks.md](./docs/reference/hooks.md)
-  - 리소스 검색 API 함정: [docs/reference/resource-api-pitfalls.md](./docs/reference/resource-api-pitfalls.md)
-  - 구 T티켓 아카이브: [docs/agents/README.md](./docs/agents/README.md)

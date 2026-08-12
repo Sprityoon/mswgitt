@@ -93,11 +93,15 @@ script PlayerDBManager extends Component
 		end
 
 		local saveData = {}
+		local savedGenerations = {}
 		-------------------------------------------------------------------
 		local playerEntity = self.Entity
-		playerEntity.PlayerAchievement:SaveToDB(saveData)
-		playerEntity.PlayerQuest:SaveToDB(saveData)
+		playerEntity.PlayerAchievement:SaveToDB(saveData, savedGenerations)
+		playerEntity.PlayerQuest:SaveToDB(saveData, savedGenerations)
 		-------------------------------------------------------------------
+		if _Util:TableLen(saveData) == 0 then
+			return
+		end
 
 		local userID = self.Entity.PlayerComponent.UserId
 		local slot = 1
@@ -112,16 +116,36 @@ script PlayerDBManager extends Component
 		end
 
 		local ds = _DataStorageService:GetUserDataStorage(userID)
-		if isLeaving == true then
-			ds:BatchSetAndWait(remapped)
-		else
-			local callback = function(errorCode, values)
-				if errorCode == 0 then
-					return
-				end
-				log_error("PlayerDBManager: BatchSetAsync failed. errorCode=" .. tostring(errorCode))
+		if ds == nil then
+			log_error("PlayerDBManager: UserDataStorage unavailable for " .. tostring(userID))
+			return
+		end
+
+		local onSaved = function(errorCode, successKeys)
+			if not isvalid(playerEntity) then
+				return
 			end
-			ds:BatchSetAsync(remapped, callback)
+			local logicalSuccess = {}
+			local suffix = "_s" .. tostring(slot)
+			for _, storedKey in pairs(successKeys or {}) do
+				local key = tostring(storedKey)
+				if string.sub(key, -string.len(suffix)) == suffix then
+					key = string.sub(key, 1, string.len(key) - string.len(suffix))
+				end
+				logicalSuccess[key] = true
+			end
+			playerEntity.PlayerAchievement:OnSavedToDB(logicalSuccess, savedGenerations)
+			playerEntity.PlayerQuest:OnSavedToDB(logicalSuccess, savedGenerations)
+			if errorCode ~= 0 then
+				log_error("PlayerDBManager: batch save failed. errorCode=" .. tostring(errorCode))
+			end
+		end
+
+		if isLeaving == true then
+			local errorCode, successKeys = ds:BatchSetAndWait(remapped)
+			onSaved(errorCode, successKeys)
+		else
+			ds:BatchSetAsync(remapped, onSaved)
 		end
 	end
 

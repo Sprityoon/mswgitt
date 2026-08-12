@@ -19,7 +19,7 @@
 
 | 문서 | 내용 |
 |---|---|
-| 🔴 [docs/pitfalls.md](./docs/pitfalls.md) | **이 프로젝트에서 실제로 사고를 낸 함정 17건** — 착수 전 확인 |
+| 🔴 [docs/pitfalls.md](./docs/pitfalls.md) | **이 프로젝트에서 실제로 사고를 낸 함정 27건** — 착수 전 확인 |
 | [docs/workflow.md](./docs/workflow.md) | 작업 절차 5단계 · MCP 검증 체인 |
 | [docs/tasks.md](./docs/tasks.md) | 지금 할 일 · Play 확인 대기 목록 |
 | [docs/design-policy.md](./docs/design-policy.md) | 상시 적용 디자인 결정 (톤·입력·복잡도) |
@@ -221,7 +221,7 @@ graph TD
 - **전투 (사냥터)**:
   - 플레이어가 무기를 휘둘러 피격 판정 범위 내의 몬스터에게 데미지 부여.
   - 체력(HP) 컴포넌트 및 피격 애니메이션(주황색 깜빡임 등) 적용.
-- **현재 구현 상태**: 전투 파이프라인(`Monster`/`MonsterAI`/`MonsterMeleeAttack`/`MonsterSpawner`, 플레이어 `PlayerCombat`)은 이미 동작하나, **현재 단일 맵(개인 영지=동적 map01)에서 구동 중**이다. 전환 작업으로 이를 **사냥터 맵으로 이전**하고 영지에서는 비활성화한다.
+- **현재 구현 상태**: 전투 파이프라인(`Monster`/`MonsterAI`/`MonsterMeleeAttack`/`MonsterSpawner`, 플레이어 `PlayerCombat`)은 사냥터·보스 맵에서 가동한다. `MonsterSpawner`는 `green_island` 강제 바이옴인 개인 영지를 건너뛰므로 영지와 마을은 비전투 공간으로 유지된다.
 
 ---
 
@@ -485,7 +485,7 @@ graph TD
 - [x] 유저 플레이 테스트 (바이옴 경계/대형 맵 성능/미니맵 스크롤/툴팁 가독성 확인)
 - [x] 사막/설원/바위지대 전용 지형 타일 확보 및 `BiomeTerrainDataSet` 교체
 
-### Phase 5: 제련 시스템, 테크 확장, 몬스터 AI 및 기지 빌딩 (진행 중)
+### Phase 5: 제련 시스템, 테크 확장, 몬스터 AI 및 기지 빌딩 (기반 완료 · Play 회귀 확인 대기)
 - [x] **인벤토리 아이템 버리기 및 드롭 시스템 구현 (완료)**:
   - 툴팁 하단 "버리기" 버튼 및 수량 스테퍼 모달 추가 (build_ui.js 패치 및 UIInventoryController.mlua 연동).
   - 서버 권위 검증 로직 `ServerRequestDiscard(itemName, count, mode)` 추가 (PlayerInventory.mlua).
@@ -512,7 +512,7 @@ graph TD
   - [x] 등급 잠금(Tech Lock) 적용: `Iron Node` 채광 시 구리 곡괭이(Tier 3, ToolPower 3) 이상의 도구 장착 필수 조건 부여 (낮은 등급의 도구 사용 시 내구도 데미지 0 처리 및 "You need a stronger Pickaxe to gather this!" 말풍선 출력).
   - [x] **도구 스윙 모션·장착 슬롯 정합 (2026-07-08)**: 스윙 모션은 `item_dataset.SwingAction` 컬럼이 단일 소스(`MineState`가 조회 — 곡괭이 `swingT1`, 도끼 `swingO2`). 곡괭이가 `swingT1`(두손 액션) 재생 중 손에서 사라지던 문제 수정 — 원인은 곡괭이 `WeaponRUID`가 한손(weapon) 아바타 아이템이라 두손 액션의 무기 파츠 프레임이 없던 것. `WeaponSlot` 컬럼 신설(`twohand`면 `PlayerInventory:ApplyHeldToolCostume`가 TwoHandedWeapon 슬롯에 장착하고 반대 슬롯은 해제 — 액션 계열과 슬롯이 항상 일치)하고 곡괭이 3종 `WeaponRUID`를 양손(twohandweapon) 곡괭이 아이템으로 교체(stone=`곡괭이`·copper=`Golden Pickaxe`·iron=`Pickaxe`, copper/iron `IconRUID`도 `thumbnail://` 동기화). refresh 빌드 무에러 — 스윙 중 도구 렌더 육안 검증은 제작자.
   - [x] **바이옴별 드롭 차등화**: 자원이 파괴되는 위치의 바이옴 ID를 동적으로 판별하고, 해당 바이옴에 특화된 드롭 아이템 및 확률로 드롭 롤링이 진행되도록 구현 (예: Rocky 바이옴의 Big Stone 채집 시 Stone 대신 더 높은 확률의 Copper/Iron Ore 드롭).
-- [ ] **탑다운 격자형 몬스터 AI 및 전투 통합** (🔶 진행 중):
+- [x] **탑다운 격자형 몬스터 AI 및 전투 통합** (기반 완료, 개별 Play 회귀 확인 대기):
   - ✅ M1 완료: 제네릭 몬스터 행동 스크립트 3종(`Monster`/`MonsterAI`/`MonsterMeleeAttack`, `RootDesk/MyDesk/Monster/Scripts/`), `Slime.model`(Pattern A·RectTile·Kinematicbody, modelId `slime`, 녹색 슬라임 `mob/0210100.img`), map01 테스트 배치(SlimeTest01). 빌드 클린.
   - ✅ M2a 완료: 플레이어 Ctrl 공격→몬스터 데미지. `PlayerCombat`(AttackComponent, BaseDamage 8) DefaultPlayer에 부착, `PlayerController:RequestMine`이 조준 셀의 몬스터 감지 시 채광 대신 공격(`FindMonsterAt`). Slime에 `DamageSkinComponent` 추가(피격 숫자). 빌드 클린.
   - ✅ M2b 완료:
@@ -532,7 +532,7 @@ graph TD
     - **복귀(Return)**: 플레이어가 10칸 이상 멀어지면 스폰 포인트로 복귀.
   - ✅ 귀환(Return) 중 플레이어 무시 현상 해결: RETURN 상태가 무조건 복귀만 하던 락을 제거하고 **중단 가능**하게 변경. ①리쉬 반경 안에서 플레이어가 감지 범위에 들어오면 즉시 CHASE 재전환, ②피격 시 `AggroGraceTimer`(모델 프로퍼티 `AggroGraceDuration` 기본 4초)를 갱신해 넉백 종료 후 귀환을 버리고 돌아서서 추격/반격(유예 동안 리쉬 보류). 데이터 주도(`MonsterAI.ApplyKnockback`/`OnUpdate`).
   - ✅ 몬스터 반투명/깜빡임 현상 해결: Slime 모델이 Pattern A `MonsterAI`(수동 SpriteRUID 스왑)와 레거시 `StateAnimationComponent`(ActionSheet) 애니메이션 파이프라인을 **동시 보유**해, HitComponent+StateComponent로 자동 등록된 `HIT` 상태 전이 시 ActionSheet에 없는 `hit` 키를 재생하려다 스프라이트를 비우던 충돌이 원인. 중복 `StateAnimationComponent`(+고아 `ActionSheet` 값) 제거로 `MonsterAI`를 스프라이트 단독 제어자로 일원화.
-  - 플레이어 체력 컴포넌트 (`PlayerHealth.mlua`) 도입 및 UI 연동:
+  - 플레이어 기본 `HitComponent`/HP와 `UIMyInfo` HUD 연동:
     - 피격 시 적색 깜빡임 화면 연출, 넉백(바라보는 반대 방향 격자로 밀림), 피격 무적 시간(i-frame) 1초 동안 반투명 깜빡임 연출 적용.
     - 사망 시 3초 후 중앙(0,0)에 전체 체력으로 리스폰 및 원자재 인벤토리 자원 50% 유실 처리.
 - **그리드 기반 기지 건설 및 보관 시스템 (일부 구현)**:

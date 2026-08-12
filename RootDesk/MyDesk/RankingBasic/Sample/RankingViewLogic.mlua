@@ -1,5 +1,6 @@
 @Logic
 script RankingViewLogic extends Logic
+	property number LastPublicRefreshAt = -999.0
 
 	@ExecSpace("Server")
 	method void RequestDataList(integer cycleIndex, integer pageNo, integer pageSize)
@@ -47,6 +48,8 @@ script RankingViewLogic extends Logic
 	@ExecSpace("ServerOnly")
 	method void ProcessDataListWithSenderData(string userId, integer pageNo, integer pageSize)
 		-- 목록+내 점수 조회 후 클라로 전달. RankingData를 any로 넘기면 LEA-3036 → 원시 필드 RPC.
+		pageNo = math.max(1, math.floor(tonumber(pageNo) or 1))
+		pageSize = math.clamp(math.floor(tonumber(pageSize) or 10), 1, 50)
 		local userEntity = _UserService:GetUserEntityByUserId(userId)
 		if not isvalid(userEntity) then
 			return
@@ -128,7 +131,10 @@ script RankingViewLogic extends Logic
 
 	@ExecSpace("Server")
 	method void RequestRegisterRanking(integer score, boolean force)
-		-- A request to register the ranking is made.
+		-- 샘플 수동 점수 등록은 운영 점수 경로가 아니다. 관리자 진단에만 허용한다.
+		if not _AdminLogic:IsAdmin(senderUserId) then
+			return
+		end
 		local userEntity = _UserService:GetUserEntityByUserId(senderUserId)
 		if not isvalid(userEntity) then
 			return
@@ -160,12 +166,18 @@ script RankingViewLogic extends Logic
 
 	@ExecSpace("Server")
 	method void RequestFreshDataListWithSenderData(integer pageNo, integer pageSize)
-		-- T63: UI Open — 스냅샷+캐시 강제 갱신 후 목록/내 점수 응답 (비어드민 허용).
+		-- UI Open: 공용 스냅샷 강제 갱신은 서버 전체 30초에 한 번만 허용한다.
+		local userEntity = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(userEntity) then return end
 		local dsLogic = _RankingDataStorageLogic
 		if not dsLogic.IsInit then
 			return
 		end
-		dsLogic:ForceRefreshSnapshot()
+		local now = _UtilLogic.ServerElapsedSeconds
+		if now - self.LastPublicRefreshAt >= 30.0 then
+			self.LastPublicRefreshAt = now
+			dsLogic:ForceRefreshSnapshot()
+		end
 		self:ProcessDataListWithSenderData(senderUserId, pageNo, pageSize)
 		log("[T63][FISHRANK] RequestFreshDataList page=" .. tostring(pageNo)
 			.. " size=" .. tostring(pageSize)

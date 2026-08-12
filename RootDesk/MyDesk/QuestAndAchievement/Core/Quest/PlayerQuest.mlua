@@ -8,9 +8,16 @@ script PlayerQuest extends Component
 	property table ProgressingIdTable = {}
 
 	property boolean IsSaveDB = false
+	property integer SaveGeneration = 0
 
 	@ExecSpace("ServerOnly")
-	method boolean SaveToDB(table saveData)
+	method void MarkSaveDirty()
+		self.SaveGeneration = self.SaveGeneration + 1
+		self.IsSaveDB = true
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean SaveToDB(table saveData, table savedGenerations)
 		if not self.IsSaveDB then
 			return true
 		end
@@ -54,9 +61,17 @@ script PlayerQuest extends Component
 		end
 		
 		saveData[_GMQuestToolLogic.StorageName] = sds
-		self.IsSaveDB = false
+		savedGenerations[_GMQuestToolLogic.StorageName] = self.SaveGeneration
 		
 		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnSavedToDB(table successKeys, table savedGenerations)
+		local key = _GMQuestToolLogic.StorageName
+		if successKeys[key] == true and savedGenerations[key] == self.SaveGeneration then
+			self.IsSaveDB = false
+		end
 	end
 
 	@ExecSpace("ServerOnly")
@@ -107,10 +122,10 @@ script PlayerQuest extends Component
 			
 			if resetTime == nil then
 				cycleResetTimeTable[cycleEnum] = 0
-				self.IsSaveDB = true
+				self:MarkSaveDirty()
 			elseif curElapsed < resetTime then
 				cycleResetTimeTable[cycleEnum] = curElapsed
-				self.IsSaveDB = true
+				self:MarkSaveDirty()
 			end
 		end
 		
@@ -177,7 +192,7 @@ script PlayerQuest extends Component
 			resetUserDataTable[id] = userData
 		end
 		
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		if sync then
 			self:SyncDataChanged(resetUserDataTable, self.Entity.PlayerComponent.UserId)
@@ -247,7 +262,7 @@ script PlayerQuest extends Component
 		if _Util:TableLen(idValuesTable) == 0 then
 			return
 		end
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		local userId = userEntity.PlayerComponent.UserId
 		self:SyncValuesChanged(idValuesTable, userId)
@@ -269,6 +284,7 @@ script PlayerQuest extends Component
 
 	@ExecSpace("Server")
 	method void RequestAcceptQuests(table ids)
+		if senderUserId ~= self.Entity.PlayerComponent.UserId then return end
 		self:AcceptQuests(ids, true)
 	end
 
@@ -299,7 +315,7 @@ script PlayerQuest extends Component
 		if _Util:IsNilorEmptyTable(acceptUserDataTable) then
 			return
 		end
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		if sync then
 			self:SyncDataChanged(acceptUserDataTable, self.Entity.PlayerComponent.UserId)
@@ -314,6 +330,7 @@ script PlayerQuest extends Component
 
 	@ExecSpace("Server")
 	method void RequestAbandonQuests(table ids)
+		if senderUserId ~= self.Entity.PlayerComponent.UserId then return end
 		self:AbandonQuests(ids, true)
 	end
 
@@ -344,7 +361,7 @@ script PlayerQuest extends Component
 		if _Util:IsNilorEmptyTable(changeUserDataTable) then
 			return
 		end
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		if sync then
 			self:SyncDataChanged(changeUserDataTable, self.Entity.PlayerComponent.UserId)
@@ -355,6 +372,7 @@ script PlayerQuest extends Component
 
 	@ExecSpace("Server")
 	method void RequestCompleteQuests(table ids)
+		if senderUserId ~= self.Entity.PlayerComponent.UserId then return end
 		self:CompleteQuests(ids)
 	end
 
@@ -405,7 +423,7 @@ script PlayerQuest extends Component
 		if _Util:IsNilorEmptyTable(changedUserDataTable) then
 			return true
 		end
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		local userId = userEntity.PlayerComponent.UserId
 		self:SyncDataChanged(changedUserDataTable, userId)
@@ -433,7 +451,7 @@ script PlayerQuest extends Component
 		end
 		
 		if dirty then
-			self.IsSaveDB = true
+			self:MarkSaveDirty()
 		end
 	end
 
@@ -554,7 +572,7 @@ script PlayerQuest extends Component
 		nextValue = math.clamp(nextValue, 0, condValue)
 		userData.Values[index] = nextValue
 		
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		return true
 	end
@@ -607,15 +625,15 @@ script PlayerQuest extends Component
 				return false
 			end
 			progressingIdTable[id] = nil
-			self.IsSaveDB = true
+			self:MarkSaveDirty()
 		elseif nextState == _QuestStateEnum.InProgress then
 			userData:Accept(self.Entity, data, curElapsed)
 			progressingIdTable[id] = true
-			self.IsSaveDB = true
+			self:MarkSaveDirty()
 		elseif nextState == _QuestStateEnum.Stored then
 			userData:Abandon(curElapsed)
 			progressingIdTable[id] = nil
-			self.IsSaveDB = true
+			self:MarkSaveDirty()
 		end
 		
 		return true

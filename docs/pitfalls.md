@@ -55,7 +55,7 @@
 편집 허용: `RootDesk/MyDesk/**` · `Global/DefaultPlayer.model` · `Global/WorldConfig.config` · `map/*.map` · `ui/*.ui`(빌더 경유).
 절대 수정 금지: `.codeblock` · `.d.mlua` · `Environment/**`.
 
-전체 표는 [AGENTS.md §2 편집 가능 영역](../AGENTS.md)에 있다.
+전체 표는 [AGENTS.md §5 편집 레인](../AGENTS.md)에 있다.
 
 ### 규칙 3. 좌표는 월드 단위 / spawn parent nil 금지
 
@@ -133,7 +133,10 @@ Play 런타임 검증 없이 "동작함"이라고 적지 않는다. AI 어시스
 
 ### 규칙 6. UI 작업은 미학 루브릭을 통과해야 끝난다
 
-`.ui` 파일이나 UI 스크립트를 만지는 **모든** 작업은 착수 전에 `msw-ui-system` 스킬의 SKILL.md와 **`references/ui-aesthetics.md`(디자인 철학) 전문**을 로드한다 — 특히 §0 Gray Box Syndrome 회피, §1 비주얼 아이덴티티 선결정, §2 패널 해부, §5 간격·정렬 리듬.
+`.ui` 파일이나 UI 스크립트를 만지는 **모든** 작업은 착수 전에 `msw-ui-system`의
+`references/ui-fundamentals.md`와 `references/layout-recipes.md`, 그리고
+[design-policy.md](./design-policy.md)를 읽는다. 기존 화면의 색·패널·간격·폰트 패턴을 재사용하고
+화면마다 새 스타일을 만들지 않는다.
 
 - 납품 전 **동 문서 §7 자가 리뷰 루브릭을 실측 좌표 근거로 평가**해 결과를 남긴다. 누락 시 작업 미완료로 본다.
 - 기존 게임 UI(인벤토리/HUD/상점)와 **같은 비주얼 아이덴티티를 유지**하고, 화면마다 새 스타일을 발명하지 않는다.

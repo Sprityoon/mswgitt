@@ -138,7 +138,7 @@
 
 - [ ] Foundation 스킬·레퍼런스가 컨텍스트에 있는가 ([AGENTS.md](../AGENTS.md) 상단)
 - [ ] 이 작업이 [pitfalls.md](./pitfalls.md)의 어느 규칙에 걸리는가
-- [ ] 편집 대상이 [AGENTS.md §2 레인](../AGENTS.md) 안에 있는가 — `.model`/`.ui`는 빌더 경유
+- [ ] 편집 대상이 [AGENTS.md §5 편집 레인](../AGENTS.md) 안에 있는가 — `.model`/`.ui`는 빌더 경유
 - [ ] 지형을 만진다면 [tile-scheme.md](./tile-scheme.md) 문법과 `--force` 위험을 확인했는가
 - [ ] Maker가 스테일 상태는 아닌가 — 빌더 편집 전후로 `git status` 확인
 - [ ] 기존 패키지/템플릿으로 해결되는가 (R1 프리셋 우선 — [wiki/](./wiki/))

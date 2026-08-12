@@ -6,9 +6,16 @@ script PlayerAchievement extends Component
 	property table CycleResetTimeTable = {}
 
 	property boolean IsSaveDB = false
+	property integer SaveGeneration = 0
 
 	@ExecSpace("ServerOnly")
-	method boolean SaveToDB(table saveData)
+	method void MarkSaveDirty()
+		self.SaveGeneration = self.SaveGeneration + 1
+		self.IsSaveDB = true
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean SaveToDB(table saveData, table savedGenerations)
 		if not self.IsSaveDB then
 			return true
 		end
@@ -52,9 +59,17 @@ script PlayerAchievement extends Component
 		end
 		
 		saveData[_GMAchievementToolLogic.StorageName] = sds
-		self.IsSaveDB = false
+		savedGenerations[_GMAchievementToolLogic.StorageName] = self.SaveGeneration
 		
 		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnSavedToDB(table successKeys, table savedGenerations)
+		local key = _GMAchievementToolLogic.StorageName
+		if successKeys[key] == true and savedGenerations[key] == self.SaveGeneration then
+			self.IsSaveDB = false
+		end
 	end
 
 	@ExecSpace("ServerOnly")
@@ -105,10 +120,10 @@ script PlayerAchievement extends Component
 			
 			if resetTime == nil then 
 				cycleResetTimeTable[cycleEnum] = 0
-				self.IsSaveDB = true
+				self:MarkSaveDirty()
 			elseif curElapsed < resetTime then
 				cycleResetTimeTable[cycleEnum] = curElapsed
-				self.IsSaveDB = true
+				self:MarkSaveDirty()
 			end
 		end
 		
@@ -169,7 +184,7 @@ script PlayerAchievement extends Component
 			resetUserDataTable[id] = userData
 		end
 		
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		if sync then
 			self:SyncDataChanged(resetUserDataTable, self.Entity.PlayerComponent.UserId)
@@ -238,7 +253,7 @@ script PlayerAchievement extends Component
 		if _Util:TableLen(idValueTable) == 0 then
 			return
 		end
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		local userId = userEntity.PlayerComponent.UserId
 		self:SyncValueChanged(idValueTable, userId)
@@ -246,6 +261,7 @@ script PlayerAchievement extends Component
 
 	@ExecSpace("Server")
 	method void RequestCompleteAchievements(table ids)
+		if senderUserId ~= self.Entity.PlayerComponent.UserId then return end
 		self:CompleteAchievements(ids)
 	end
 
@@ -334,7 +350,7 @@ script PlayerAchievement extends Component
 		if not isDirty then
 			return true
 		end
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		if _Util:TableLen(changedUserDataTable) == 0 then
 			return true
@@ -370,7 +386,7 @@ script PlayerAchievement extends Component
 		end
 		
 		if isDirty then
-			self.IsSaveDB = true
+			self:MarkSaveDirty()
 		end
 	end
 
@@ -395,7 +411,7 @@ script PlayerAchievement extends Component
 		end
 		
 		if dirty then
-			self.IsSaveDB = true
+			self:MarkSaveDirty()
 		end
 	end
 
@@ -495,7 +511,7 @@ script PlayerAchievement extends Component
 				userData:SetValue(math.max(0, userValue - 1), curElapsed)
 			end
 			
-			self.IsSaveDB = true
+			self:MarkSaveDirty()
 			return true
 		end
 		
@@ -513,7 +529,7 @@ script PlayerAchievement extends Component
 		end
 		
 		userData:SetValue(nextValue, curElapsed)
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		return true
 	end
@@ -550,13 +566,13 @@ script PlayerAchievement extends Component
 				return false
 			end
 			
-			self.IsSaveDB = true
+			self:MarkSaveDirty()
 			return true
 		end
 		
 		if userData.State == _AchievementStateEnum.Completed then
 			userData.State = _AchievementStateEnum.InProgress
-			self.IsSaveDB = true
+			self:MarkSaveDirty()
 			return true
 		end
 		
@@ -566,7 +582,7 @@ script PlayerAchievement extends Component
 		end
 		
 		userData.Step = step - 1
-		self.IsSaveDB = true
+		self:MarkSaveDirty()
 		
 		return true
 	end

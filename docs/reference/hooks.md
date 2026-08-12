@@ -1,6 +1,6 @@
 # 훅 목록·계약·타사 에이전트 적용 (Hooks)
 
-> 이 문서는 [AGENTS.md](../../AGENTS.md) §6의 온디맨드 세부 가이드입니다.
+> 이 문서는 [AGENTS.md](../../AGENTS.md) §5 편집 레인을 자동으로 보조하는 훅의 상세 기록입니다.
 > 활성 배선은 `.claude/settings.json`의 `hooks` 블록이 단일 소스입니다.
 
 ## 레이어 구분
@@ -55,7 +55,7 @@
 
 ### 2026-07-13 정리에서 제거·변경된 것
 
-- **제거**: PostToolUse의 `mcp_tool: maker_refresh_workspace` (편집마다 전체 워크스페이스 refresh → "refresh 진행 중" 충돌 유발, 티켓 단위 refresh 규약과 중복). refresh는 이제 **검증 체인(AGENTS.md §4.3)에서 명시적으로 호출**한다 — 새 `.mlua`를 만들면 refresh 전까지 `.codeblock`이 생성되지 않음을 잊지 말 것.
+- **제거**: PostToolUse의 `mcp_tool: maker_refresh_workspace` (편집마다 전체 워크스페이스 refresh → "refresh 진행 중" 충돌 유발). refresh는 이제 **AGENTS.md §8 검증 체인에서 명시적으로 호출**한다 — 새 `.mlua`를 만들면 refresh 전까지 `.codeblock`이 생성되지 않음을 잊지 말 것.
 - **교체**: `skill-router-reminder`(매 턴 20KB) → `skill-router-lite`(첫 턴만 전문). 항상 전문을 원하면 `MSW_SKILL_ROUTER_FULL=1`.
 - **추가**: `readonly-path-guard`, 확장판 `skill-read-guard`, `MCP_LOG_MAX_OUTPUT_BYTES=2048`.
 - **삭제**: 워크스페이스 `plugins/` 폴더 전체 (스킬·훅의 중간 사본 — 활성 배선은 `.claude/hooks/`·`.claude/skills/`·`.agents/skills/`만 사용. 이를 참조하던 `scripts/*.cjs`·`scratch/dump_ui.js`의 require는 `.claude/skills/` 경로로 교체 완료).
@@ -78,6 +78,6 @@
 |---|---|
 | Claude Code | `.claude/settings.json` (이미 배선됨) |
 | Cursor (Hooks 지원 버전) | `beforeShellExecution`/`beforeReadFile` 훅에서 위 CLI 모드 호출, exit 2 → 차단으로 매핑 |
-| Codex / Copilot CLI (훅 미지원) | 강제 불가 — AGENTS.md §1·§6 규칙 준수에 의존. 커밋 전 `node .claude/hooks-project/readonly-path-guard.cjs --path <변경파일>`를 스스로 실행해 자가 검사 가능. 추가 방어선: git pre-commit 훅으로 보호 경로 diff 거부 가능(미설치 — 필요 시 요청) |
+| Codex / Copilot CLI (훅 미지원) | 강제 불가 — AGENTS.md §5 편집 레인 준수에 의존. 커밋 전 `node .claude/hooks-project/readonly-path-guard.cjs --path <변경파일>`로 자가 검사 가능. 추가 방어선: git pre-commit 훅으로 보호 경로 diff 거부 가능(미설치 — 필요 시 요청) |
 
 로그(`.mswai/logs/`)와 LSP 훅은 관측·품질 보조라 타사 미적용이어도 안전성에 영향 없음. **안전에 필수적인 것은 위 표의 가드 3종(structured-file-guard, readonly-path-guard, skill-read-guard)이다.**

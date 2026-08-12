@@ -8,6 +8,6 @@
     "smoke": "node render.cjs --type svg --in samples/red-circle.svg --out /tmp/painter-smoke.png --width 128 --height 128"
   },
   "dependencies": {
-    "puppeteer": "^23.11.1"
+    "puppeteer": "^23.0.0"
   }
 }
