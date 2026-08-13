@@ -35,6 +35,9 @@ script ResourceSpawner extends Logic
 	-- is max(|x|,|y|) < MapRadius-WallThickness+1. Thick so knockback/clipping can't escape.
 	-- Layer 4 is the canonical impassable-wall layer (game_design.md §2.2).
 	property integer WallThickness = 3
+	-- 영지 밖 좌표 가드의 폴백 스폰. PersistenceManager 로드 기본값·사냥터→홈 포탈 도착점과 같다.
+	property number DefaultHomeSpawnX = -3.0
+	property number DefaultHomeSpawnY = 0.0
 	property integer SpawnZoneRadius = 5
 	-- 물삽 1회가 파는 정사각 블록의 한 변(셀). ⚖️ 2026-08-06 = 2.
 	-- 🔴 1로 내리지 말 것: 물가 오버행 문법(docs/tile-scheme.md §4-bis)상 사방이 잔디인 1×1 물은
@@ -2290,10 +2293,28 @@ script ResourceSpawner extends Logic
 
 	@ExecSpace("ServerOnly")
 	method boolean IsInsidePlayable(number x, number y)
-		-- True when cell (x, y) is inside the playable interior (not the boundary wall band).
+		-- True when (x, y) is inside the playable interior (not the boundary wall band).
+		-- MapRadius=30, WallThickness=3 → wallInner=28 → |x|<28 and |y|<28, i.e. X/Y -27~27.
 		-- Resources may only generate/respawn here; the wall band and anything beyond are excluded.
+		-- Player home save/load/warp uses the same box via ClampHomeWorldPosition.
 		local wallInner = self.MapRadius - self.WallThickness + 1
 		return math.abs(x) < wallInner and math.abs(y) < wallInner
+	end
+
+	@ExecSpace("ServerOnly")
+	method Vector2 ClampHomeWorldPosition(number worldX, number worldY)
+		-- 영지 플레이어블 박스(X/Y -27~27) 밖이면 기본 스폰으로 되돌린다.
+		-- 구 MapRadius 세이브, 벽 너머 클리핑, 오염된 lastPos가 벽 밖에 플레이어를 두는 것을 막는다.
+		local x = tonumber(worldX) or 0.0
+		local y = tonumber(worldY) or 0.0
+		if self:IsInsidePlayable(x, y) then
+			return Vector2(x, y)
+		end
+		local fx = self.DefaultHomeSpawnX
+		local fy = self.DefaultHomeSpawnY
+		log("[HOME] out-of-bounds pos (" .. string.format("%.2f, %.2f", x, y)
+			.. ") clamped to default spawn (" .. tostring(fx) .. ", " .. tostring(fy) .. ")")
+		return Vector2(fx, fy)
 	end
 
 	@ExecSpace("ServerOnly")
@@ -2850,8 +2871,13 @@ script ResourceSpawner extends Logic
 		
 		local cx = math.floor(startX)
 		local cy = math.floor(startY)
+		local isHome = mapName ~= nil and string.sub(mapName, 1, 5) == "Home_"
 		
 		local function isSafe(tx, ty)
+			-- 영지에서는 벽 밴드·바깥 셀을 안전 후보에서 제외한다 (점유만 보던 구 경로의 구멍).
+			if isHome and not self:IsInsidePlayable(tx, ty) then
+				return false
+			end
 			local gKey = tx .. "_" .. ty
 			local occupant = gridToEntity[gKey]
 			if occupant ~= nil then

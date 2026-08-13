@@ -10,6 +10,7 @@ script UIMainMenuController extends Component
 	property ButtonComponent btnContinue = "add9c6c2-82c4-4608-acd3-d0695f18982e"
 	property ButtonComponent btnQuit = "241f788d-36f4-4ef4-8d60-1740d019bd9e"
 	property TextGUIRendererComponent titleHint = "dca47c27-479a-4f20-a856-e2dcba7e2ce3"
+	property Entity titleHintPlate = "4438e7c8-9e1c-46ad-bb09-7bcde1f25c2b"
 
 	property Entity slotPanel = "5759b110-6221-4759-a72f-bd3cd107ab5a"
 	property TextGUIRendererComponent slotSubtitle = "d463b57e-818f-41b8-aba7-f5d55b14c257"
@@ -56,6 +57,7 @@ script UIMainMenuController extends Component
 	-- TextInputComponent(별개 타입)로 선언하면 바인딩이 nil이 되어 입력값이 항상 ""로 읽힌다.
 	property TextGUIRendererInputComponent customNameInput = "a8d2274f-d6a4-4e38-8b24-c13efdb21bd5"
 	property TextGUIRendererComponent customError = "13cbdb02-3040-4447-ae87-8f3a73f95231"
+	property Entity customErrorPlate = "7e2cdf58-f225-4ceb-8736-b6ba1fefd467"
 	property ButtonComponent btnHairPrev = "ca2563a2-5508-4646-88ab-3a96325d3dbd"
 	property ButtonComponent btnHairNext = "ecde9af8-8ae1-43ce-8a32-c5dfc3a61142"
 	property TextGUIRendererComponent hairName = "472557a9-373b-4316-8990-9fa3c130011c"
@@ -132,6 +134,8 @@ script UIMainMenuController extends Component
 
 		self:BindBtn(self.btnNameOk, function() self:OnNameOk() end)
 		self:BindBtn(self.btnNameCancel, function() self:CloseNamePrompt() end)
+		self:SetTitleHint("")
+		self:SetCustomError("")
 		-- 입력 컴포넌트 바인딩은 조용히 실패하면 "글자수가 안 맞는다"로만 보인다 → 시작 시 명시 검증.
 		log("[MAINMENU] controller ready — customNameInput="
 			.. tostring(isvalid(self.customNameInput))
@@ -237,8 +241,38 @@ script UIMainMenuController extends Component
 		self:SetRootEnable(true)
 		self:CloseNamePrompt()
 		self:ShowPanel("title")
-		if isvalid(self.titleHint) then self.titleHint.Text = "" end
+		self:SetTitleHint("")
 		log("[MAINMENU] open title")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetTitleHint(string msg)
+		-- 힌트 문구가 있을 때만 아래 플레이트·텍스트를 켠다.
+		local has = msg ~= nil and msg ~= ""
+		if isvalid(self.titleHint) then
+			self.titleHint.Text = has and msg or ""
+			if isvalid(self.titleHint.Entity) then
+				self.titleHint.Entity.Enable = has
+			end
+		end
+		if isvalid(self.titleHintPlate) then
+			self.titleHintPlate.Enable = has
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetCustomError(string msg)
+		-- 에러 문구가 있을 때만 커스텀 화면의 플레이트·텍스트를 켠다.
+		local has = msg ~= nil and msg ~= ""
+		if isvalid(self.customError) then
+			self.customError.Text = has and msg or ""
+			if isvalid(self.customError.Entity) then
+				self.customError.Entity.Enable = has
+			end
+		end
+		if isvalid(self.customErrorPlate) then
+			self.customErrorPlate.Enable = has
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -261,6 +295,9 @@ script UIMainMenuController extends Component
 		if isvalid(self.titlePanel) then self.titlePanel.Enable = (which == "title") end
 		if isvalid(self.slotPanel) then self.slotPanel.Enable = (which == "slot") end
 		if isvalid(self.customizePanel) then self.customizePanel.Enable = (which == "customize") end
+		if which == "title" then
+			self:SetTitleHint("")
+		end
 		if which == "slot" then
 			self:RefreshSlots()
 		elseif which == "customize" then
@@ -270,7 +307,7 @@ script UIMainMenuController extends Component
 			self.coatIdx = 1
 			self.useAccountLook = true
 			if isvalid(self.customNameInput) then self.customNameInput.Text = "" end
-			if isvalid(self.customError) then self.customError.Text = "" end
+			self:SetCustomError("")
 			self:SetLookMode(true)
 		end
 	end
@@ -291,7 +328,7 @@ script UIMainMenuController extends Component
 			if self:IsOccupied(i) then any = true break end
 		end
 		if not any then
-			if isvalid(self.titleHint) then self.titleHint.Text = "저장된 캐릭터가 없습니다. 새로하기를 선택하세요." end
+			self:SetTitleHint("저장된 캐릭터가 없습니다. 새로하기를 선택하세요.")
 			return
 		end
 		self.pendingAction = "continue"
@@ -308,9 +345,7 @@ script UIMainMenuController extends Component
 		if isvalid(pc) then
 			pc:ServerQuitWorld()
 		end
-		if isvalid(self.titleHint) then
-			self.titleHint.Text = "월드를 나가는 중…"
-		end
+		self:SetTitleHint("월드를 나가는 중…")
 	end
 
 	@ExecSpace("ClientOnly")
@@ -601,21 +636,19 @@ script UIMainMenuController extends Component
 		if isvalid(self.customNameInput) then
 			raw = tostring(self.customNameInput.Text or "")
 		else
-			if isvalid(self.customError) then self.customError.Text = "닉네임 입력창을 찾을 수 없습니다 (UI 바인딩 오류)" end
+			self:SetCustomError("닉네임 입력창을 찾을 수 없습니다 (UI 바인딩 오류)")
 			log_error("[MAINMENU] customNameInput binding is nil — check .ui entity component type")
 			return
 		end
 		raw = string.match(raw, "^%s*(.-)%s*$") or ""
 		local nlen = self:Utf8Len(raw)
 		if nlen < self.nickMinLen or nlen > self.nickMaxLen then
-			if isvalid(self.customError) then
-				self.customError.Text = "닉네임은 " .. tostring(self.nickMinLen) .. "~" .. tostring(self.nickMaxLen) .. "글자로 입력하세요"
-			end
+			self:SetCustomError("닉네임은 " .. tostring(self.nickMinLen) .. "~" .. tostring(self.nickMaxLen) .. "글자로 입력하세요")
 			log("[MAINMENU] nickname reject len=" .. tostring(nlen) .. " bytes=" .. tostring(#raw))
 			return
 		end
 		if self.pendingSlot < 1 or self.pendingSlot > 5 then
-			if isvalid(self.customError) then self.customError.Text = "슬롯을 다시 선택해 주세요" end
+			self:SetCustomError("슬롯을 다시 선택해 주세요")
 			return
 		end
 		local costume = nil
@@ -627,10 +660,10 @@ script UIMainMenuController extends Component
 		end
 		local ok, json = pcall(function() return _HttpService:JSONEncode(costume) end)
 		if not ok or json == nil or json == "" then
-			if isvalid(self.customError) then self.customError.Text = "외형 저장에 실패했습니다" end
+			self:SetCustomError("외형 저장에 실패했습니다")
 			return
 		end
-		if isvalid(self.customError) then self.customError.Text = "" end
+		self:SetCustomError("")
 		log("[MAINMENU] start new slot=" .. tostring(self.pendingSlot) .. " nickLen=" .. tostring(nlen))
 		self:RequestSelect(self.pendingSlot, true, raw, json)
 	end
@@ -716,13 +749,13 @@ script UIMainMenuController extends Component
 	method void ShowNameError(string msg)
 		local m = msg or "사용할 수 없는 닉네임입니다"
 		if self.menuMode == "customize" then
-			if isvalid(self.customError) then self.customError.Text = m end
+			self:SetCustomError(m)
 			return
 		end
 		if isvalid(self.namePrompt) then self.namePrompt.Enable = true end
 		if isvalid(self.nameError) then self.nameError.Text = m end
-		if isvalid(self.titleHint) and self.menuMode == "title" then
-			self.titleHint.Text = m
+		if self.menuMode == "title" then
+			self:SetTitleHint(m)
 		end
 	end
 

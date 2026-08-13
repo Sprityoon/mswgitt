@@ -537,7 +537,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 1,
+          "displayOrder": 0,
           "pathConstraints": "////",
           "revision": 0,
           "origin": {
@@ -734,7 +734,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 0,
+          "displayOrder": 1,
           "pathConstraints": "////",
           "revision": 0,
           "origin": {
@@ -1617,10 +1617,10 @@
           "name": "Hint",
           "path": "/ui/MainMenuGroup/TitlePanel/Hint",
           "nameEditable": true,
-          "enable": true,
+          "enable": false,
           "visible": true,
           "localize": true,
-          "displayOrder": 6,
+          "displayOrder": 5,
           "pathConstraints": "////",
           "revision": 0,
           "origin": {
@@ -1672,9 +1672,14 @@
                 "x": 0,
                 "y": 46
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": -494,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -1688,6 +1693,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -1695,6 +1701,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -1731,8 +1738,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -1806,10 +1812,10 @@
           "name": "HintPlate",
           "path": "/ui/MainMenuGroup/TitlePanel/HintPlate",
           "nameEditable": true,
-          "enable": true,
+          "enable": false,
           "visible": true,
           "localize": true,
-          "displayOrder": 5,
+          "displayOrder": 4,
           "pathConstraints": "////",
           "revision": 0,
           "origin": {
@@ -1861,9 +1867,14 @@
                 "x": 0,
                 "y": 42
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": -498,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -1877,6 +1888,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -2097,9 +2109,14 @@
                 "x": 0,
                 "y": -40
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": -40,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -2113,6 +2130,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -2242,9 +2260,14 @@
                 "x": 0,
                 "y": 380
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 380,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -2258,6 +2281,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -2335,7 +2359,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 2,
+          "displayOrder": 20,
           "pathConstraints": "////",
           "revision": 0,
           "origin": {
@@ -2387,9 +2411,14 @@
                 "x": 0,
                 "y": 380
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 380,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -2403,6 +2432,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -2410,11 +2440,12 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.2,
               "Font": "Default",
               "FontColor": {
-                "r": 0.35,
-                "g": 0.24,
-                "b": 0.16,
+                "r": 1,
+                "g": 0.9098039,
+                "b": 0.6392157,
                 "a": 1
               },
               "FontSize": 30,
@@ -2446,8 +2477,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.2
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -2576,9 +2606,14 @@
                 "x": -560,
                 "y": 380
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -560,
+                "y": 380,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -2592,6 +2627,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -2709,6 +2745,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -2745,8 +2782,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -2815,9 +2851,14 @@
                 "x": 0,
                 "y": 181
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 181,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -2831,6 +2872,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -2960,9 +3002,14 @@
                 "x": -292,
                 "y": 2
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -292,
+                "y": 2,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -2976,6 +3023,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -3066,9 +3114,14 @@
                 "x": -100,
                 "y": 24
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": 24,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -3082,6 +3135,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -3089,6 +3143,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -3125,8 +3180,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -3255,9 +3309,14 @@
                 "x": -100,
                 "y": -20
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": -20,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -3271,6 +3330,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -3278,6 +3338,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.4,
@@ -3314,8 +3375,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -3444,8 +3504,13 @@
                 "x": 150,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 150,
                 "y": 0,
                 "z": 0
               },
@@ -3460,6 +3525,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -3577,6 +3643,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -3613,8 +3680,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -3683,8 +3749,13 @@
                 "x": 296,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 296,
                 "y": 0,
                 "z": 0
               },
@@ -3699,6 +3770,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -3816,6 +3888,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.16,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -3852,8 +3925,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.16
+              "Enable": true
             }
           ],
           "@version": 1
@@ -3922,9 +3994,14 @@
                 "x": 0,
                 "y": 75
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 75,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -3938,6 +4015,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -4067,9 +4145,14 @@
                 "x": -292,
                 "y": 2
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -292,
+                "y": 2,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -4083,6 +4166,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -4173,9 +4257,14 @@
                 "x": -100,
                 "y": 24
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": 24,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -4189,6 +4278,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -4196,6 +4286,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -4232,8 +4323,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -4362,9 +4452,14 @@
                 "x": -100,
                 "y": -20
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": -20,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -4378,6 +4473,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -4385,6 +4481,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.4,
@@ -4421,8 +4518,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -4551,8 +4647,13 @@
                 "x": 150,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 150,
                 "y": 0,
                 "z": 0
               },
@@ -4567,6 +4668,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -4684,6 +4786,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -4720,8 +4823,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -4790,8 +4892,13 @@
                 "x": 296,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 296,
                 "y": 0,
                 "z": 0
               },
@@ -4806,6 +4913,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -4923,6 +5031,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.16,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -4959,8 +5068,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.16
+              "Enable": true
             }
           ],
           "@version": 1
@@ -5029,9 +5137,14 @@
                 "x": 0,
                 "y": -31
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": -31,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -5045,6 +5158,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -5174,9 +5288,14 @@
                 "x": -292,
                 "y": 2
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -292,
+                "y": 2,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -5190,6 +5309,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -5280,9 +5400,14 @@
                 "x": -100,
                 "y": 24
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": 24,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -5296,6 +5421,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -5303,6 +5429,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -5339,8 +5466,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -5469,9 +5595,14 @@
                 "x": -100,
                 "y": -20
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": -20,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -5485,6 +5616,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -5492,6 +5624,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.4,
@@ -5528,8 +5661,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -5658,8 +5790,13 @@
                 "x": 150,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 150,
                 "y": 0,
                 "z": 0
               },
@@ -5674,6 +5811,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -5791,6 +5929,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -5827,8 +5966,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -5897,8 +6035,13 @@
                 "x": 296,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 296,
                 "y": 0,
                 "z": 0
               },
@@ -5913,6 +6056,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -6030,6 +6174,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.16,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -6066,8 +6211,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.16
+              "Enable": true
             }
           ],
           "@version": 1
@@ -6136,9 +6280,14 @@
                 "x": 0,
                 "y": -137
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": -137,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -6152,6 +6301,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -6281,9 +6431,14 @@
                 "x": -292,
                 "y": 2
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -292,
+                "y": 2,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -6297,6 +6452,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -6387,9 +6543,14 @@
                 "x": -100,
                 "y": 24
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": 24,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -6403,6 +6564,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -6410,6 +6572,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -6446,8 +6609,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -6576,9 +6738,14 @@
                 "x": -100,
                 "y": -20
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": -20,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -6592,6 +6759,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -6599,6 +6767,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.4,
@@ -6635,8 +6804,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -6765,8 +6933,13 @@
                 "x": 150,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 150,
                 "y": 0,
                 "z": 0
               },
@@ -6781,6 +6954,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -6898,6 +7072,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -6934,8 +7109,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -7004,8 +7178,13 @@
                 "x": 296,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 296,
                 "y": 0,
                 "z": 0
               },
@@ -7020,6 +7199,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -7137,6 +7317,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.16,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -7173,8 +7354,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.16
+              "Enable": true
             }
           ],
           "@version": 1
@@ -7243,9 +7423,14 @@
                 "x": 0,
                 "y": -243
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": -243,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -7259,6 +7444,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -7388,9 +7574,14 @@
                 "x": -292,
                 "y": 2
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -292,
+                "y": 2,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -7404,6 +7595,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -7494,9 +7686,14 @@
                 "x": -100,
                 "y": 24
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": 24,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -7510,6 +7707,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -7517,6 +7715,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -7553,8 +7752,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -7683,9 +7881,14 @@
                 "x": -100,
                 "y": -20
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -100,
+                "y": -20,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -7699,6 +7902,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -7706,6 +7910,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.4,
@@ -7742,8 +7947,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -7872,8 +8076,13 @@
                 "x": 150,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 150,
                 "y": 0,
                 "z": 0
               },
@@ -7888,6 +8097,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -8005,6 +8215,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -8041,8 +8252,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -8111,8 +8321,13 @@
                 "x": 296,
                 "y": 0
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 296,
                 "y": 0,
                 "z": 0
               },
@@ -8127,6 +8342,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -8244,6 +8460,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.16,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -8280,8 +8497,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.16
+              "Enable": true
             }
           ],
           "@version": 1
@@ -8441,9 +8657,14 @@
                 "x": 0,
                 "y": -20
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": -20,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -8457,6 +8678,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -8486,7 +8708,7 @@
                 "r": 1,
                 "g": 1,
                 "b": 1,
-                "a": 1
+                "a": 0
               },
               "DropShadow": false,
               "DropShadowAngle": 120,
@@ -8534,7 +8756,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 2,
+          "displayOrder": 32,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -8586,9 +8808,14 @@
                 "x": 0,
                 "y": 370
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 370,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -8602,6 +8829,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -8609,6 +8837,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.25,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -8645,8 +8874,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.25
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -8723,7 +8951,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 3,
+          "displayOrder": 2,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -8775,9 +9003,14 @@
                 "x": -235,
                 "y": 105
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -235,
+                "y": 105,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -8791,6 +9024,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -8829,7 +9063,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 7,
+          "displayOrder": 2,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -8855,11 +9089,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 36,
+                "x": 92,
                 "y": 227
               },
               "OffsetMin": {
-                "x": -60,
+                "x": -4,
                 "y": 193
               },
               "Pivot": {
@@ -8878,7 +9112,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": -12,
+                "x": 44,
                 "y": 210
               },
               "Position": {
@@ -8904,6 +9138,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.4,
@@ -8940,8 +9175,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -9018,7 +9252,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 8,
+          "displayOrder": 3,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -9044,11 +9278,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 92,
+                "x": 148,
                 "y": 236
               },
               "OffsetMin": {
-                "x": 40,
+                "x": 96,
                 "y": 184
               },
               "Pivot": {
@@ -9067,7 +9301,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 66,
+                "x": 122,
                 "y": 210
               },
               "Position": {
@@ -9203,6 +9437,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -9239,8 +9474,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -9257,7 +9491,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 9,
+          "displayOrder": 4,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -9283,11 +9517,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 289,
+                "x": 345,
                 "y": 230
               },
               "OffsetMin": {
-                "x": 111,
+                "x": 167,
                 "y": 190
               },
               "Pivot": {
@@ -9306,7 +9540,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 200,
+                "x": 256,
                 "y": 210
               },
               "Position": {
@@ -9332,6 +9566,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -9368,8 +9603,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -9446,7 +9680,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 10,
+          "displayOrder": 5,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -9472,11 +9706,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 364,
+                "x": 420,
                 "y": 236
               },
               "OffsetMin": {
-                "x": 312,
+                "x": 368,
                 "y": 184
               },
               "Pivot": {
@@ -9495,7 +9729,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 338,
+                "x": 394,
                 "y": 210
               },
               "Position": {
@@ -9631,6 +9865,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -9667,8 +9902,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -9685,7 +9919,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 12,
+          "displayOrder": 6,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -9711,11 +9945,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 36,
+                "x": 92,
                 "y": 157
               },
               "OffsetMin": {
-                "x": -60,
+                "x": -4,
                 "y": 123
               },
               "Pivot": {
@@ -9734,7 +9968,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": -12,
+                "x": 44,
                 "y": 140
               },
               "Position": {
@@ -9760,6 +9994,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.4,
@@ -9796,8 +10031,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -9874,7 +10108,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 13,
+          "displayOrder": 7,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -9900,11 +10134,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 92,
+                "x": 148,
                 "y": 166
               },
               "OffsetMin": {
-                "x": 40,
+                "x": 96,
                 "y": 114
               },
               "Pivot": {
@@ -9923,7 +10157,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 66,
+                "x": 122,
                 "y": 140
               },
               "Position": {
@@ -10059,6 +10293,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -10095,8 +10330,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -10113,7 +10347,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 14,
+          "displayOrder": 8,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -10139,11 +10373,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 289,
+                "x": 345,
                 "y": 160
               },
               "OffsetMin": {
-                "x": 111,
+                "x": 167,
                 "y": 120
               },
               "Pivot": {
@@ -10162,7 +10396,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 200,
+                "x": 256,
                 "y": 140
               },
               "Position": {
@@ -10188,6 +10422,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -10224,8 +10459,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -10302,7 +10536,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 15,
+          "displayOrder": 9,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -10328,11 +10562,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 364,
+                "x": 420,
                 "y": 166
               },
               "OffsetMin": {
-                "x": 312,
+                "x": 368,
                 "y": 114
               },
               "Pivot": {
@@ -10351,7 +10585,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 338,
+                "x": 394,
                 "y": 140
               },
               "Position": {
@@ -10487,6 +10721,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -10523,8 +10758,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -10541,7 +10775,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 17,
+          "displayOrder": 10,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -10567,11 +10801,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 36,
+                "x": 92,
                 "y": 87
               },
               "OffsetMin": {
-                "x": -60,
+                "x": -4,
                 "y": 53
               },
               "Pivot": {
@@ -10590,7 +10824,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": -12,
+                "x": 44,
                 "y": 70
               },
               "Position": {
@@ -10616,6 +10850,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.4,
@@ -10652,8 +10887,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -10730,7 +10964,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 18,
+          "displayOrder": 11,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -10756,11 +10990,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 92,
+                "x": 148,
                 "y": 96
               },
               "OffsetMin": {
-                "x": 40,
+                "x": 96,
                 "y": 44
               },
               "Pivot": {
@@ -10779,7 +11013,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 66,
+                "x": 122,
                 "y": 70
               },
               "Position": {
@@ -10915,6 +11149,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -10951,8 +11186,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -10969,7 +11203,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 19,
+          "displayOrder": 12,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -10995,11 +11229,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 289,
+                "x": 345,
                 "y": 90
               },
               "OffsetMin": {
-                "x": 111,
+                "x": 167,
                 "y": 50
               },
               "Pivot": {
@@ -11018,7 +11252,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 200,
+                "x": 256,
                 "y": 70
               },
               "Position": {
@@ -11044,6 +11278,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -11080,8 +11315,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -11158,7 +11392,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 20,
+          "displayOrder": 13,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -11184,11 +11418,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 364,
+                "x": 420,
                 "y": 96
               },
               "OffsetMin": {
-                "x": 312,
+                "x": 368,
                 "y": 44
               },
               "Pivot": {
@@ -11207,7 +11441,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 338,
+                "x": 394,
                 "y": 70
               },
               "Position": {
@@ -11343,6 +11577,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -11379,8 +11614,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -11397,7 +11631,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 22,
+          "displayOrder": 14,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -11423,11 +11657,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 36,
+                "x": 92,
                 "y": 17
               },
               "OffsetMin": {
-                "x": -60,
+                "x": -4,
                 "y": -17
               },
               "Pivot": {
@@ -11446,7 +11680,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": -12,
+                "x": 44,
                 "y": 0
               },
               "Position": {
@@ -11472,6 +11706,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.4,
@@ -11508,8 +11743,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -11586,7 +11820,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 23,
+          "displayOrder": 15,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -11612,11 +11846,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 92,
+                "x": 148,
                 "y": 26
               },
               "OffsetMin": {
-                "x": 40,
+                "x": 96,
                 "y": -26
               },
               "Pivot": {
@@ -11635,7 +11869,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 66,
+                "x": 122,
                 "y": 0
               },
               "Position": {
@@ -11771,6 +12005,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -11807,8 +12042,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -11825,7 +12059,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 24,
+          "displayOrder": 16,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -11851,11 +12085,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 289,
+                "x": 345,
                 "y": 20
               },
               "OffsetMin": {
-                "x": 111,
+                "x": 167,
                 "y": -20
               },
               "Pivot": {
@@ -11874,7 +12108,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 200,
+                "x": 256,
                 "y": 0
               },
               "Position": {
@@ -11900,6 +12134,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -11936,8 +12171,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -12014,7 +12248,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 25,
+          "displayOrder": 17,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -12040,11 +12274,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 364,
+                "x": 420,
                 "y": 26
               },
               "OffsetMin": {
-                "x": 312,
+                "x": 368,
                 "y": -26
               },
               "Pivot": {
@@ -12063,7 +12297,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 338,
+                "x": 394,
                 "y": 0
               },
               "Position": {
@@ -12199,6 +12433,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -12235,8 +12470,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -12253,7 +12487,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 26,
+          "displayOrder": 18,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -12305,9 +12539,14 @@
                 "x": 150,
                 "y": -80
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 150,
+                "y": -80,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -12321,6 +12560,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -12388,6 +12628,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -12424,8 +12665,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.TextGUIRendererInputComponent",
@@ -12461,10 +12701,10 @@
           "name": "Error",
           "path": "/ui/MainMenuGroup/CustomizePanel/Frame/Error",
           "nameEditable": true,
-          "enable": true,
+          "enable": false,
           "visible": true,
           "localize": true,
-          "displayOrder": 28,
+          "displayOrder": 19,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -12516,9 +12756,14 @@
                 "x": 150,
                 "y": -145
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 150,
+                "y": -145,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -12532,6 +12777,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -12539,6 +12785,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.16,
               "Font": "Default",
               "FontColor": {
                 "r": 0.62,
@@ -12575,8 +12822,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.16
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -12653,7 +12899,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 30,
+          "displayOrder": 20,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -12705,9 +12951,14 @@
                 "x": 250,
                 "y": -225
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 250,
+                "y": -225,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -12721,6 +12972,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -12838,6 +13090,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.2,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -12874,8 +13127,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.2
+              "Enable": true
             }
           ],
           "@version": 1
@@ -12892,7 +13144,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 29,
+          "displayOrder": 21,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -12944,9 +13196,14 @@
                 "x": 30,
                 "y": -225
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 30,
+                "y": -225,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -12960,6 +13217,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -13077,6 +13335,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -13113,8 +13372,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -13131,7 +13389,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 1,
+          "displayOrder": 0,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -13183,9 +13441,14 @@
                 "x": 0,
                 "y": 370
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 370,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -13199,6 +13462,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -13276,7 +13540,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 4,
+          "displayOrder": 23,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -13328,9 +13592,14 @@
                 "x": -235,
                 "y": -95
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -235,
+                "y": -95,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -13344,6 +13613,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -13461,6 +13731,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -13497,8 +13768,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -13515,7 +13785,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 5,
+          "displayOrder": 24,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -13567,9 +13837,14 @@
                 "x": -235,
                 "y": -165
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -235,
+                "y": -165,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -13583,6 +13858,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -13700,6 +13976,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -13736,8 +14013,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -13754,7 +14030,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 6,
+          "displayOrder": 3,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -13780,11 +14056,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 295,
+                "x": 351,
                 "y": 233
               },
               "OffsetMin": {
-                "x": 105,
+                "x": 161,
                 "y": 187
               },
               "Pivot": {
@@ -13803,7 +14079,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 200,
+                "x": 256,
                 "y": 210
               },
               "Position": {
@@ -13899,7 +14175,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 11,
+          "displayOrder": 7,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -13925,11 +14201,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 295,
+                "x": 351,
                 "y": 163
               },
               "OffsetMin": {
-                "x": 105,
+                "x": 161,
                 "y": 117
               },
               "Pivot": {
@@ -13948,7 +14224,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 200,
+                "x": 256,
                 "y": 140
               },
               "Position": {
@@ -14044,7 +14320,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 16,
+          "displayOrder": 11,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -14070,11 +14346,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 295,
+                "x": 351,
                 "y": 93
               },
               "OffsetMin": {
-                "x": 105,
+                "x": 161,
                 "y": 47
               },
               "Pivot": {
@@ -14093,7 +14369,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 200,
+                "x": 256,
                 "y": 70
               },
               "Position": {
@@ -14189,7 +14465,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 21,
+          "displayOrder": 15,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -14215,11 +14491,11 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 295,
+                "x": 351,
                 "y": 23
               },
               "OffsetMin": {
-                "x": 105,
+                "x": 161,
                 "y": -23
               },
               "Pivot": {
@@ -14238,7 +14514,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 200,
+                "x": 256,
                 "y": 0
               },
               "Position": {
@@ -14331,10 +14607,10 @@
           "name": "ErrorPlate",
           "path": "/ui/MainMenuGroup/CustomizePanel/Frame/ErrorPlate",
           "nameEditable": true,
-          "enable": true,
+          "enable": false,
           "visible": true,
           "localize": true,
-          "displayOrder": 27,
+          "displayOrder": 18,
           "pathConstraints": "/////",
           "revision": 0,
           "origin": {
@@ -14386,9 +14662,14 @@
                 "x": 150,
                 "y": -145
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 150,
+                "y": -145,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -14402,6 +14683,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -14531,6 +14813,11 @@
                 "x": 0,
                 "y": 0
               },
+              "Rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
               "Position": {
                 "x": 0,
                 "y": 0,
@@ -14547,6 +14834,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -14624,7 +14912,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 1,
+          "displayOrder": 6,
           "pathConstraints": "////",
           "revision": 0,
           "origin": {
@@ -14676,9 +14964,14 @@
                 "x": 0,
                 "y": 140
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 140,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -14692,6 +14985,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -14699,6 +14993,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.22,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -14735,8 +15030,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.22
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -14813,7 +15107,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 3,
+          "displayOrder": 1,
           "pathConstraints": "////",
           "revision": 0,
           "origin": {
@@ -14865,9 +15159,14 @@
                 "x": 0,
                 "y": -10
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": -10,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -14881,6 +15180,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -14948,6 +15248,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.15,
               "Font": "Default",
               "FontColor": {
                 "r": 0.22,
@@ -14984,8 +15285,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.15
+              "Enable": true
             },
             {
               "@type": "MOD.Core.TextGUIRendererInputComponent",
@@ -15000,10 +15300,10 @@
               "OverrideSorting": false,
               "PlaceHolder": "닉네임 재입력",
               "PlaceHolderColor": {
-                "r": 0.1953125,
-                "g": 0.1953125,
-                "b": 0.1953125,
-                "a": 0.5
+                "r": 0.219,
+                "g": 0.149,
+                "b": 0.09,
+                "a": 0.78
               },
               "SortingLayer": "UI",
               "Text": "",
@@ -15076,9 +15376,14 @@
                 "x": 0,
                 "y": 62
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 62,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -15092,6 +15397,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -15099,6 +15405,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.16,
               "Font": "Default",
               "FontColor": {
                 "r": 0.62,
@@ -15135,8 +15442,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.16
+              "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteGUIRendererComponent",
@@ -15213,7 +15519,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 4,
+          "displayOrder": 3,
           "pathConstraints": "////",
           "revision": 0,
           "origin": {
@@ -15265,9 +15571,14 @@
                 "x": -110,
                 "y": -105
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": -110,
+                "y": -105,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -15281,6 +15592,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -15398,6 +15710,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -15434,8 +15747,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -15452,7 +15764,7 @@
           "enable": true,
           "visible": true,
           "localize": true,
-          "displayOrder": 5,
+          "displayOrder": 4,
           "pathConstraints": "////",
           "revision": 0,
           "origin": {
@@ -15504,9 +15816,14 @@
                 "x": 110,
                 "y": -105
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 110,
+                "y": -105,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -15520,6 +15837,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -15637,6 +15955,7 @@
               "BestFit": true,
               "ConstraintX": 100,
               "ConstraintY": 100,
+              "FaceDilate": 0.18,
               "Font": "Default",
               "FontColor": {
                 "r": 1,
@@ -15673,8 +15992,7 @@
               "UseConstraintX": false,
               "UseConstraintY": false,
               "VerticalAlignment": 512,
-              "Enable": true,
-              "FaceDilate": 0.18
+              "Enable": true
             }
           ],
           "@version": 1
@@ -15743,9 +16061,14 @@
                 "x": 0,
                 "y": 140
               },
-              "Position": {
+              "Rotation": {
                 "x": 0,
                 "y": 0,
+                "z": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 140,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -15759,6 +16082,7 @@
                 "y": 1,
                 "z": 1
               },
+              "ZRotation": 0,
               "Enable": true
             },
             {
@@ -15914,6 +16238,441 @@
             },
             {
               "@type": "script.UIMainMenuController",
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "a53dd0d5-cfaf-4cc5-ae8a-b74615655b8f",
+        "path": "/ui/MainMenuGroup/SlotPanel/PageTint",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
+        "jsonString": {
+          "name": "PageTint",
+          "path": "/ui/MainMenuGroup/SlotPanel/PageTint",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 2,
+          "pathConstraints": "////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UISprite",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uisprite",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 364,
+                "y": 243
+              },
+              "OffsetMin": {
+                "x": -364,
+                "y": -305
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 728,
+                "y": 548
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0,
+                "y": -31
+              },
+              "Position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteGUIRendererComponent",
+              "AnimClipPlayType": 0,
+              "EndFrameIndex": 2147483647,
+              "ImageRUID": {
+                "DataId": "2860136c06ab075439721c027de365af"
+              },
+              "IgnoreMapLayerCheck": false,
+              "LocalPosition": {
+                "x": 0,
+                "y": 0
+              },
+              "LocalScale": {
+                "x": 1,
+                "y": 1
+              },
+              "MaterialId": "",
+              "OrderInLayer": 0,
+              "OverrideSorting": false,
+              "PlayRate": 1,
+              "PreserveSprite": 0,
+              "SortingLayer": "UI",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 0.18039216,
+                "g": 0.12156863,
+                "b": 0.07843137,
+                "a": 0.32
+              },
+              "DropShadow": false,
+              "DropShadowAngle": 120,
+              "DropShadowColor": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0.72
+              },
+              "DropShadowDistance": 3,
+              "FillAmount": 1,
+              "FillCenter": true,
+              "FillClockWise": true,
+              "FillMethod": 0,
+              "FillOrigin": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "FrameColumn": 1,
+              "FrameRate": 0,
+              "FrameRow": 1,
+              "Outline": false,
+              "OutlineColor": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 1
+              },
+              "OutlineWidth": 3,
+              "RaycastTarget": false,
+              "Type": 1,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "52d2520e-a31a-4a7d-807d-8ac617da2cf9",
+        "path": "/ui/MainMenuGroup/CustomizePanel/Frame/PageTint",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
+        "jsonString": {
+          "name": "PageTint",
+          "path": "/ui/MainMenuGroup/CustomizePanel/Frame/PageTint",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 1,
+          "pathConstraints": "/////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UISprite",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uisprite",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 434,
+                "y": 249.5
+              },
+              "OffsetMin": {
+                "x": -374,
+                "y": -271.5
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 808,
+                "y": 521
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 30,
+                "y": -11
+              },
+              "Position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteGUIRendererComponent",
+              "AnimClipPlayType": 0,
+              "EndFrameIndex": 2147483647,
+              "ImageRUID": {
+                "DataId": "2860136c06ab075439721c027de365af"
+              },
+              "IgnoreMapLayerCheck": false,
+              "LocalPosition": {
+                "x": 0,
+                "y": 0
+              },
+              "LocalScale": {
+                "x": 1,
+                "y": 1
+              },
+              "MaterialId": "",
+              "OrderInLayer": 0,
+              "OverrideSorting": false,
+              "PlayRate": 1,
+              "PreserveSprite": 0,
+              "SortingLayer": "UI",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 0.1803921568627451,
+                "g": 0.12156862745098039,
+                "b": 0.0784313725490196,
+                "a": 0.32
+              },
+              "DropShadow": false,
+              "DropShadowAngle": 120,
+              "DropShadowColor": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0.72
+              },
+              "DropShadowDistance": 3,
+              "FillAmount": 1,
+              "FillCenter": true,
+              "FillClockWise": true,
+              "FillMethod": 0,
+              "FillOrigin": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "FrameColumn": 1,
+              "FrameRate": 0,
+              "FrameRow": 1,
+              "Outline": false,
+              "OutlineColor": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 1
+              },
+              "OutlineWidth": 3,
+              "RaycastTarget": false,
+              "Type": 1,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "d197f3a6-0795-43a9-87ad-bbed1cc6b15d",
+        "path": "/ui/MainMenuGroup/CustomizePanel/Frame/Notebook",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
+        "jsonString": {
+          "name": "Notebook",
+          "path": "/ui/MainMenuGroup/CustomizePanel/Frame/Notebook",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 0,
+          "pathConstraints": "/////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UISprite",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uisprite",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 480,
+                "y": 480
+              },
+              "OffsetMin": {
+                "x": -480,
+                "y": -480
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 960,
+                "y": 960
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0,
+                "y": 0
+              },
+              "Position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteGUIRendererComponent",
+              "AnimClipPlayType": 0,
+              "EndFrameIndex": 2147483647,
+              "ImageRUID": {
+                "DataId": "59a330fa4cd44a5583d05d2109cd7f14"
+              },
+              "IgnoreMapLayerCheck": false,
+              "LocalPosition": {
+                "x": 0,
+                "y": 0
+              },
+              "LocalScale": {
+                "x": 1,
+                "y": 1
+              },
+              "MaterialId": "",
+              "OrderInLayer": 0,
+              "OverrideSorting": false,
+              "PlayRate": 1,
+              "PreserveSprite": 1,
+              "SortingLayer": "UI",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DropShadow": false,
+              "DropShadowAngle": 120,
+              "DropShadowColor": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0.72
+              },
+              "DropShadowDistance": 3,
+              "FillAmount": 1,
+              "FillCenter": true,
+              "FillClockWise": true,
+              "FillMethod": 0,
+              "FillOrigin": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "FrameColumn": 1,
+              "FrameRate": 0,
+              "FrameRow": 1,
+              "Outline": false,
+              "OutlineColor": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 1
+              },
+              "OutlineWidth": 3,
+              "RaycastTarget": false,
+              "Type": 0,
               "Enable": true
             }
           ],

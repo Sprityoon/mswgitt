@@ -19,7 +19,7 @@
 
 | 문서 | 내용 |
 |---|---|
-| 🔴 [docs/pitfalls.md](./docs/pitfalls.md) | **이 프로젝트에서 실제로 사고를 낸 함정 27건** — 착수 전 확인 |
+| 🔴 [docs/pitfalls.md](./docs/pitfalls.md) | **이 프로젝트에서 실제로 사고를 낸 함정 28건** — 착수 전 확인 |
 | [docs/workflow.md](./docs/workflow.md) | 작업 절차 5단계 · MCP 검증 체인 |
 | [docs/tasks.md](./docs/tasks.md) | 지금 할 일 · Play 확인 대기 목록 |
 | [docs/design-policy.md](./docs/design-policy.md) | 상시 적용 디자인 결정 (톤·입력·복잡도) |

@@ -176,6 +176,13 @@ script PlayerController extends Component
 			log("PlayerController initialized on client. Facing: " .. self.LastDirectionX .. ", " .. self.LastDirectionY)
 		else
 			log("PlayerController initialized on server for player: " .. self.Entity.Name)
+			-- 이미 영지 맵에 서 있는 채 박스 밖이면 (구 세이브·클리핑) 한 틱 뒤 스냅.
+			-- LoadPlayerData 워프보다 먼저/나중에 돌아도 양쪽 다 가드하므로 순서는 상관없다.
+			_TimerService:SetTimerOnce(function()
+				if isvalid(self) and isvalid(self.Entity) then
+					self:GuardHomeBounds()
+				end
+			end, 0.5)
 			self._T.StaminaTimer = _TimerService:SetTimerRepeat(function()
 				if self.IsDead then return end
 				local playerComp = self.Entity.PlayerComponent
@@ -1745,6 +1752,46 @@ script PlayerController extends Component
 		-- Optionally, could add interaction logic here in the future
 	end
 
+	method void OnMapEnter()
+		-- 맵 진입 시 영지 밖 좌표 가드. 세이브 오염·포탈 타깃 오류가 벽 너머로 워프시키는 것을 차단한다.
+		if self:IsServer() then
+			self:GuardHomeBounds()
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void GuardHomeBounds()
+		-- 영지(Home_*)에 있는데 플레이어블 박스(X/Y -27~27) 밖이면 기본 스폰으로 스냅한다.
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) or string.sub(currentMap.Name, 1, 5) ~= "Home_" then return end
+		if _ResourceSpawner == nil then return end
+		local transform = self.Entity.TransformComponent
+		if not isvalid(transform) then return end
+		local pos = transform.WorldPosition
+		if _ResourceSpawner:IsInsidePlayable(pos.x, pos.y) then return end
+		local clamped = _ResourceSpawner:ClampHomeWorldPosition(pos.x, pos.y)
+		if clamped == nil then return end
+		local playerComp = self.Entity.PlayerComponent
+		if isvalid(playerComp) then
+			playerComp:SetWorldPosition(Vector3(clamped.x, clamped.y, pos.z))
+		end
+	end
+
+	method Vector2 ResolveHomeWarpPosition(string targetMap, number x, number y)
+		-- Home_* 워프 좌표가 영지 밖이면 기본 스폰으로 치환한다. 그 외 맵은 그대로.
+		if targetMap == nil or string.sub(targetMap, 1, 5) ~= "Home_" then
+			return Vector2(x, y)
+		end
+		if _ResourceSpawner == nil then
+			return Vector2(x, y)
+		end
+		local clamped = _ResourceSpawner:ClampHomeWorldPosition(x, y)
+		if clamped == nil then
+			return Vector2(x, y)
+		end
+		return clamped
+	end
+
 	@ExecSpace("Server")
 	method void ServerRequestWarp()
 		local playerComp = self.Entity.PlayerComponent
@@ -1782,8 +1829,9 @@ script PlayerController extends Component
 			end
 			
 			local targetPos = portalGate.TargetPosition
-			playerComp:MoveToMapPosition(targetMap, targetPos)
-			log("PlayerController: Warped player " .. playerComp.UserId .. " to " .. targetMap .. " at " .. tostring(targetPos))
+			local safe = self:ResolveHomeWarpPosition(targetMap, targetPos.x, targetPos.y)
+			playerComp:MoveToMapPosition(targetMap, safe)
+			log("PlayerController: Warped player " .. playerComp.UserId .. " to " .. targetMap .. " at " .. tostring(safe))
 
 			-- 업적/퀘스트 진행: 포탈 이동 액션 발행
 			if _ActionSignals ~= nil then
@@ -1808,7 +1856,8 @@ script PlayerController extends Component
 			end
 			
 			local targetMap = "Home_" .. ownerId .. "_Sub_" .. subIndex
-			playerComp:MoveToMapPosition(targetMap, Vector2(-3, 0))
+			local safe = self:ResolveHomeWarpPosition(targetMap, -3, 0)
+			playerComp:MoveToMapPosition(targetMap, safe)
 			log("PlayerController: Warped player " .. playerComp.UserId .. " to sub-territory " .. targetMap)
 		end
 	end
@@ -1919,7 +1968,8 @@ script PlayerController extends Component
 		end
 		local arriveX = tonumber(row:GetItem("ArriveX")) or 0
 		local arriveY = tonumber(row:GetItem("ArriveY")) or 0
-		playerComp:MoveToMapPosition(target, Vector2(arriveX, arriveY))
+		local safe = self:ResolveHomeWarpPosition(target, arriveX, arriveY)
+		playerComp:MoveToMapPosition(target, safe)
 		log("PlayerController: List-warped " .. playerComp.UserId .. " to " .. target)
 		-- 업적/퀘스트 진행: 포탈 이동 액션 발행
 		if _ActionSignals ~= nil then
@@ -2084,7 +2134,8 @@ script PlayerController extends Component
 		local mapName = "Home_" .. targetUserId
 		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
 		if isvalid(map) then
-			playerComp:MoveToMapPosition(mapName, Vector2(-3, 0))
+			local safe = self:ResolveHomeWarpPosition(mapName, -3, 0)
+			playerComp:MoveToMapPosition(mapName, safe)
 			self:ClientShowWarpFeedback(targetPlayerName .. "님의 영지에 입장했습니다.")
 		else
 			self:ClientShowWarpFeedback("해당 유저가 오프라인이거나 영지가 열려있지 않습니다.")

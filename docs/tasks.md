@@ -10,7 +10,43 @@
 
 | 대상 | 내용 |
 |---|---|
+| `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
+| `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-13 UI 정합성 감사
+
+| 판정 | 내용 |
+|---|---|
+| ✅ 바인딩 | `.mlua` UUID 314건 → `.ui` 엔티티 대조. **ERROR=0.** 규칙 24 입력창 타입 정상. 중첩 UIGroup 0 |
+| ✅ **타이틀 HintPlate** | 빈 힌트일 때 아래 막대 숨김 (`SetTitleHint` + 기본 Enable=false). Play 캡처로 막대 소거 확인 2026-08-13 |
+| ✅ **플레이트 회귀** | 커스텀/삭제확인 `*Plate` displayOrder를 짝 텍스트 뒤로. 삭제확인 플레이스홀더 대비 상향. Play 캡처 2026-08-13 20:01·20:02 |
+| ✅ **커스텀 라벨** | 헤어/얼굴/피부/상의 행을 오른쪽 페이지로 +56px. 스프링 겹침 완화. Play 캡처 확인 |
+| ✅ **빈 ErrorPlate** | `SetCustomError` — 문구 있을 때만 Error+Plate Enable. Play 캡처로 빈 막대 소거 확인 2026-08-13 20:11 |
+| ✅ **슬롯 자막** | `Subtitle` displayOrder 20 + 글자색 `#ffe8a3`(커스텀 제목과 동일). 「빈 슬롯을 선택하세요」「이어할 캐릭터를 선택하세요」 Play 캡처 확인 |
+| ✅ **슬롯 페이지 틴트** | `SlotPanel/PageTint` 728×548 @ (0,-31), 슬롯 5줄+14px. `#2e1f14` a=0.32. Play 캡처 2026-08-13 20:21 |
+| ✅ **커스텀 페이지 틴트** | `CustomizePanel/Frame/PageTint` 808×521 @ (30,-11). Frame 스프라이트는 투명, `Frame/Notebook` 형제로 노트 표시(슬롯과 동일 스택). Play 캡처 2026-08-13 20:24 |
+| 🔴 **SignBoard** | `515×891` + `PreserveSprite=AspectOnly` → 짧은 변 정사각 렌더(규칙 25). 종료 버튼이 표지판 밖으로 떨어질 수 있음 |
+| ⚠ GroupType | 5파일 전부 `GroupType=1`. 팝업/대화/메인메뉴는 규약상 `2`. 지금은 `GroupOrder`만으로 쌓음 (HUD0 · Preview1 · Popup2 · Dialog3 · MainMenu4) |
+| ⚠ DefaultShow | `MainMenuGroup.DefaultShow=false` — 그룹 안 컨트롤러 `OnBeginPlay`(버튼 배선)가 안 돌 수 있음. PreviewTool은 컨트롤러를 root 밖에 두는 패턴 |
+| ⚠ 잔여 | `customParts=""` 빈 바인딩. 대화 `BodyText`↔버튼 L023 겹침. 타이틀 버튼 좌표 소수 드리프트 |
+| ℹ️ 노이즈 | 터치 타겟 &lt;88 · PC 예약영역(UIMyInfo/미니맵) · 템플릿 빈 RUID — 기존 베이스라인 |
+| 파일 | `ui_lint` Error=0. 워킹트리 `MainMenuGroup.ui`/`PopupGroup.ui` 더티 — Popup은 줄 수 대칭 재직렬화(규칙 11) 의심 |
+
+- 검증: UIBuilder write + `ui_lint` Error=0. `maker_refresh_workspace` status ok. build 로그 dateTime=`2026-08-13T20:08:06`(이번 refresh와 일치). Error=1 = 기존 `LEA-4004 PlayerController.OnMapEnter`(무관). Warning=47. Play 캡처로 슬롯 자막·빈 ErrorPlate 소거 확인. SignBoard·GroupType·DefaultShow는 미수정.
+
 | `PersistenceManager` · `PlayerDBManager` · `UIMainMenuController` · `ui/MainMenuGroup.ui` | **5슬롯 세이브** + **타이틀→슬롯→외모커스텀** (2026-08-09) |
+
+### 2026-08-13 영지 밖 좌표 가드 — Play 확인 필요
+
+| 항목 | 내용 |
+|---|---|
+| 🐛 **영지 복귀 불가** | 개발 중 출시 테스트 세이브의 `posX`/`posY`가 영지 플레이어블 박스(`X/Y -27~27`) 밖이라, 접속 시 경계 벽 너머로 워프되어 영지로 걸어 들어올 수 없었음. `FindSafeSpawnPosition`은 가구 점유만 보고 박스 밖을 통과시킴. ([pitfalls 규칙 28](./pitfalls.md)) |
+| 🛑 **가드** | `ResourceSpawner:ClampHomeWorldPosition` 단일 소스. 박스 밖이면 기본 스폰 `(-3, 0)`. 적용 지점: 로드 · 세이브(`LastHomePos`) · 홈 워프 · `OnMapEnter` · 서버 `OnBeginPlay` 0.5s 스냅 |
+| ⚖️ 박스 정의 | `MapRadius=30` / `WallThickness=3` → `|x|<28` and `|y|<28` = 셀 X/Y -27~27. 하드코딩 금지 |
+
+- 변경: `ResourceSpawner`(Clamp + FindSafeSpawn Home 이웃 제외) · `PersistenceManager`(로드/세이브) · `PlayerController`(워프·맵진입·부팅 스냅)
+- 검증: **refresh 검증 보류(MCP 미연결)**. LSP 진단 수정 3파일 errors=0. **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 영지 밖 좌표 세이브로 접속 → `(-3, 0)` 근처에서 시작 ② 콘솔 `[HOME] out-of-bounds pos (...) clamped to default spawn` ③ 박스 안 좌표는 그대로 복원 ④ 마을/사냥터 워프 회귀 없음 ⑤ 재접속 후에도 벽 밖에 안 떨어짐
 | `UIDialogController` · `VillagerDialog` · `ui/DialogGroup.ui` · `StoryDialogDataSet` · Quest 201 | **메이플식 대화창 + 퀘스트 수락** (2026-08-08) |
 | `FishingContestLogic` | 낚시왕 랭킹 = 캐릭터/슬롯 단위 |
 | `item_dataset.csv` · `.userdataset` | 주먹도끼 외형·모션 조정 후속 (커밋 `af6f676` 계열) |

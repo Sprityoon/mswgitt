@@ -37,7 +37,7 @@ Phase 21까지 진행. 구현 완료된 주요 시스템:
 |---|---|
 | **[AGENTS.md](AGENTS.md)** | AI 어시스턴트 규칙·스킬 라우팅·편집 레인. **모든 작업의 출발점** |
 | **[docs/workflow.md](docs/workflow.md)** | 작업 절차 5단계 · MCP 검증 체인 · 도구 실명 규약 |
-| **[docs/pitfalls.md](docs/pitfalls.md)** | 🔴 **이 프로젝트에서 실제로 사고를 낸 함정 27건.** 대부분 에러 없이 조용히 틀린다 |
+| **[docs/pitfalls.md](docs/pitfalls.md)** | 🔴 **이 프로젝트에서 실제로 사고를 낸 함정 28건.** 대부분 에러 없이 조용히 틀린다 |
 | **[docs/tasks.md](docs/tasks.md)** | 지금 할 일 · Play 확인 대기 목록 |
 
 ### 설계
