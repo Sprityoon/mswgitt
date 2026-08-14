@@ -34,6 +34,9 @@
 | `DamagePerLevel` | 레벨당 DamageMultiplier 증가량 |
 | `CooldownPerLevel` | 레벨당 쿨다운 감소량 (음수) |
 | `TreeRow` / `TreeCol` | 스킬트리 UI 배치 좌표 |
+| `ConsumeItem` / `ConsumeCount` | 시전 소모 아이템 `Name`과 개수 (공란=소모 없음) |
+| `ProjectileRUID` | Projectile 타입 발사체 스프라이트 |
+| `UnlockOwnedItem` | 해금 OR 게이트 — 해당 `Name` 보유/도감 획득 시 통과 (`UnlockAchievementId`와 함께면 OR) |
 
 목표(퀘스트) 정의 = 패키지의 Achievement 데이터 (다단계·반복 지원). 처치/채집/제작/제련 훅에서 패키지 ActionEvent 발행 → ActionCondition이 카운트.
 
@@ -53,7 +56,7 @@ SP 지급: `PlayerController.AddXP`의 레벨업 루프에서 `SP += n` (n도 �
 클라: RequestSkillLevelUp(skillId)
 서버(@ExecSpace Server, senderUserId 검증):
   ① ParentSkillId 보유? ② RequiredLevel 충족?
-  ③ UnlockAchievementId 완료? (패키지 API 조회)
+  ③ UnlockAchievementId 완료 또는 UnlockOwnedItem 보유? (둘 다 있으면 OR)
   ④ SP >= SPCost? ⑤ level < MaxLevel?
   → 통과 시 skillLevels[skillId] += 1, SP -= cost, @Sync 반영
 스킬 사용 시: 실효 배율 = DamageMultiplier + DamagePerLevel × (level-1)

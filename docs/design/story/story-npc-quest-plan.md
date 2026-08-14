@@ -14,7 +14,7 @@
 ### 1.1 퀘스트 — `QuestAndAchievement` 패키지 (데이터 주도, 가동 중)
 
 - 데이터: `RootDesk/MyDesk/QuestAndAchievement/DataSets/QuestDataSet.csv` + `QuestConditionDataSet.csv`
-- 현행 콘텐츠: **튜토리얼 체인 101~107** (풀 뜯기 → 손도끼 → 벌목 → 곡괭이 → 채광 → 상자 설치 → 포탈 이동). 전부 `AutoAccept`, `LinkedPrevId`로 직렬 연결.
+- 현행 콘텐츠: **튜토리얼 체인 101~108** (풀 뜯기 → 주먹도끼 → 벌목 / **108 주먹도끼 던지기 습득** → 곡괭이 → 채광 → 상자 설치 → 포탈 이동). 전부 `AutoAccept`, `LinkedPrevId`로 연결 (108은 102에서 분기).
 - 보상: `RewardItems`(`아이템:수량|...`) + `RewardUnlockId`(레시피 해금 — T27, 107이 `quest_cooking_pot` 해금)
   + **`RewardPortalId`**(영지 포탈 개통 — 2026-08-10 신설, **106이 `town` 개통**).
   - ⚖️ **2026-08-10**: 신규 영지에는 포탈이 **없다.** 106(나무 상자 설치)을 깨야 마을 포탈이 나타나고,
@@ -23,16 +23,17 @@
 - 퀘스트 스키마 (`QuestDataSet.csv`):
   `Id, Name, Desc, ProgressingDesc, CategoryEnum(Main/Sub), CycleEnum, IsRepeatable, LinkedPrevId, RequiredId, AutoAccept, CannotAbandon, ConsumeItems, RewardItems, Priority, Disable, RewardUnlockId`
 - 조건 스키마 (`QuestConditionDataSet.csv`): `Id(퀘스트 Id와 동일), Description, CondEnum, CondArg, CondExtra, Value, Disable`
-- **지원 조건 타입 (`ActionEnum.mlua` 실측)**: `Attend`(출석) · `StateChange` · `MesoChange` · `StaminaChange` · `Kill`(몬스터 처치) · `Gather`(채집) · `Craft`(제작) · `Smelt`(제련) · `Place`(설치) · `Warp`(포탈 이동). **이 10종 밖의 조건은 현재 구현이 없다.**
+- **지원 조건 타입 (`ActionEnum.mlua` 실측)**: `Attend`(출석) · `StateChange` · `MesoChange` · `StaminaChange` · `Kill`(몬스터 처치) · `Gather`(채집) · `Craft`(제작) · `Smelt`(제련) · `Place`(설치) · `Warp`(포탈 이동) · `LearnSkill`(스킬 첫 습득, 2026-08-14). **이 11종 밖의 조건은 현재 구현이 없다.**
 
 ### 1.2 NPC — 마을 상주 (T77) + 상호작용 가이드(2026-08-08)
 
-| NPC | 스크립트 | 역할 | 대사 소스 |
-|---|---|---|---|
-| 촌장 elder | `VillagerDialog` | 분위기 대사 | `DialogDataSet.csv` |
-| 낚시꾼 fisher | `VillagerDialog` | 분위기 대사 | 〃 |
-| 주민 resident_a~d | `VillagerDialog` | 분위기 대사 | 〃 |
-| 상인 | `MerchantInteract` | 상점 (`ShopItemDataSet`) | — |
+| 촌장 elder | `VillagerDialog` | 분위기 대사 · 퀘스트 수주 | `DialogDataSet.csv` |
+| 낚시꾼 fisher | `VillagerDialog` | 분위기 대사 · 낚시 퀘스트 | 〃 |
+| 연구원 researcher | `VillagerDialog` | 표본/연구 퀘스트 (구 resident_a) | 〃 |
+| 노점상 vendor | `VillagerDialog` | 의상/소문 퀘스트 (구 resident_b) | 〃 |
+| 대장장이 blacksmith | `VillagerDialog` | 도구/무기 퀘스트 (구 resident_c) | 〃 |
+| 헛간지기 barnkeeper | `VillagerDialog` | 가축/펫 퀘스트 (구 resident_d) | 〃 |
+| 상인 merchant | `MerchantInteract` | 상점 (`ShopItemDataSet`) | — |
 | 낚시왕 순위 | `FishingLeaderboardInteract` | 주간 낚시왕 | — |
 | (건물) 연구소 | `ResearchLab` | 연구/해금 (`ResearchDataSet`) | — |
 | (건물) 게시판 | `BulletinBoard` | 의뢰 보드 (`RequestPoolDataSet`) | — |
@@ -120,12 +121,14 @@ QuestId, NpcId, Phase(offer|progress|complete), Seq(1..n), Text, Speaker(npc|pla
 
 ## 등장 NPC (기존 로스터 — 이 이름/역할을 유지하고 성격을 부여할 것)
 - elder(촌장): 마을 안내자. / fisher(낚시꾼): 연못가, 낚시 사부.
-- resident_a~d(주민 4인): 광장·노점·골목·헛간 근처의 생활인.
+- researcher(연구원 엘렌): 연구소 곁, 고대 두루마리 해독 및 잠식 표본 연구.
+- vendor(노점상 마리): 시장 노점, 생활 소문 및 의상/치장.
+- blacksmith(대장장이 로체): 대장간, 도구/무기 제작 및 금속/심지 가공 (남성 장인).
+- barnkeeper(헛간지기 토리): 헛간/목장, 가축 돌봄 및 펫.
 - merchant(상인): 상점 운영. / 연구소(무인 시설): 소재 연구→기술 해금. / 게시판: 주민 의뢰 보드.
-- 신규 NPC 제안 가능하나 "제안" 섹션으로 분리해 표기할 것 (배치·아트 비용 판단은 제작 측).
 
 ## 이미 있는 이야기 뼈대 (충돌 금지)
-- 튜토리얼 퀘스트 101~107: 풀 뜯기→손도끼→벌목→곡괭이→채광→상자 설치→포탈로 첫 외출.
+- 튜토리얼 퀘스트 101~108: 풀 뜯기→주먹도끼→벌목(+108 던지기 습득)→곡괭이→채광→상자 설치→포탈로 첫 외출.
 - 스토리는 107(첫 외출) 이후, 마을 도착 시점부터 시작하는 챕터 구조를 권장.
 
 ## 산출물 형식 (반드시 이 3종)
@@ -138,7 +141,7 @@ QuestId, NpcId, Phase(offer|progress|complete), Seq(1..n), Text, Speaker(npc|pla
    DialogDataSet(앰비언트 증분): NpcId,Text,TimeBand(any|day|night),WeatherId(빈칸|rain|fog),Weight
 
 ## 하드 제약 (지키지 않으면 반려)
-- 퀘스트 조건은 이 10종만: Attend / StateChange / MesoChange / StaminaChange / Kill / Gather / Craft / Smelt / Place / Warp.
+- 퀘스트 조건은 이 11종만: Attend / StateChange / MesoChange / StaminaChange / Kill / Gather / Craft / Smelt / Place / Warp / LearnSkill.
   (예: "Gather,Wood,,5" = 나무 5회 채집. 호위/타이머/대화만으로 완료되는 조건은 시스템에 없음 — 필요하면 "시스템 제안"으로 분리 표기.)
 - 아이템/몬스터 이름은 제공된 목록의 영문 Name을 그대로 (별도 첨부: item_dataset의 Name 컬럼, 몬스터 Name 목록).
 - 대사는 한국어, 한 문장 40자 내외, 이모지 금지. 말줄임표는 "…" 하나.

@@ -145,10 +145,10 @@ script VillagerDialog extends Component
 		local id = self.NpcId or ""
 		if id == "elder" then return "촌장" end
 		if id == "fisher" then return "낚시꾼" end
-		if id == "resident_a" then return "미나" end
-		if id == "resident_b" then return "유나" end
-		if id == "resident_c" then return "다은" end
-		if id == "resident_d" then return "토리" end
+		if id == "researcher" or id == "resident_a" then return "연구원 엘렌" end
+		if id == "vendor" or id == "resident_b" then return "노점상 마리" end
+		if id == "blacksmith" or id == "resident_c" then return "대장장이 로체" end
+		if id == "barnkeeper" or id == "rancher" or id == "resident_d" then return "헛간지기 토리" end
 		return id
 	end
 

@@ -146,6 +146,8 @@ script PlayerQuest extends Component
 
 	@ExecSpace("ServerOnly")
 	method boolean PostOnLoadedDataFromDB()
+		-- 세이브 로드 후 AutoAccept 재평가 (이미 깬 LinkedPrevId 뒤에 붙은 신규 퀘스트 수주)
+		self:AutoAcceptQuests(true)
 		return true
 	end
 

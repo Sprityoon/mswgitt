@@ -698,6 +698,7 @@ script PersistenceManager extends Logic
 				inv.DexItemsJson = data.dexItems or "{}"
 				inv.DexMonstersJson = data.dexMonsters or "{}"
 				inv.ActivePetId = data.activePetId or ""
+				inv:FoldAllStackableToolKeys()
 				inv:ApplyHeldToolCostume()
 				inv:MigrateLegacyRecipeUnlocks()
 				-- 통화 스택→Coin 프로퍼티 흡수 (IsCurrency 미기입 사고 복구)

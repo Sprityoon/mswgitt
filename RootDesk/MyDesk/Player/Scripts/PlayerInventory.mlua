@@ -773,17 +773,8 @@ script PlayerInventory extends Component
 			return itemName
 		end
 		
-		local isTool = false
-		local ds = _DataService:GetTable("item_dataset")
-		if ds ~= nil then
-			local row = ds:FindRow("Name", itemName)
-			if row ~= nil and row:GetItem("Category") == "tool" then
-				isTool = true
-			end
-		end
-		
 		local addedKey = itemName
-		if isTool then
+		if self:IsUniqueKeyedItem(itemName) then
 			local keys = {}
 			for i = 1, count do
 				local uniqueId = tostring(math.floor(_UtilLogic.ServerElapsedSeconds * 1000)) .. "_" .. tostring(math.random(100000, 999999))
@@ -798,11 +789,15 @@ script PlayerInventory extends Component
 			addedKey = keys[1] or itemName
 		else
 			local current = self.Items[itemName] or 0
+			if type(current) == "table" then
+				current = current.count or 1
+			end
 			self.Items[itemName] = current + count
+			self:FoldStackableToolKeys(itemName)
 			self.InventoryDataJson = self:SafeEncodeJson(self.Items, "{}")
 			
-			log("Inventory updated: added " .. count .. " " .. itemName .. ". Total: " .. self.Items[itemName])
-			self:ClientShowPickupMessage(itemName, count, self.Items[itemName])
+			log("Inventory updated: added " .. count .. " " .. itemName .. ". Total: " .. tostring(self.Items[itemName]))
+			self:ClientShowPickupMessage(itemName, count, self:GetItemCount(itemName))
 			addedKey = itemName
 		end
 
@@ -943,6 +938,10 @@ script PlayerInventory extends Component
 
 	@ExecSpace("ServerOnly")
 	method string AddToolInstanceWithDurability(string itemName, integer durability)
+		-- MaxStack>1 기믹 도구는 내구도 인스턴스가 아니라 AddItem 중첩 경로를 탄다.
+		if not self:IsUniqueKeyedItem(itemName) then
+			return self:AddItem(itemName, 1)
+		end
 		local uniqueId = tostring(math.floor(_UtilLogic.ServerElapsedSeconds * 1000)) .. "_" .. tostring(math.random(100000, 999999))
 		local uniqueKey = itemName .. "_" .. uniqueId
 		self.Items[uniqueKey] = { name = itemName, count = 1, durability = durability }
@@ -989,6 +988,10 @@ script PlayerInventory extends Component
 				self.Items[itemName] = entry - count
 				if self.Items[itemName] <= 0 then
 					self.Items[itemName] = nil
+					if self.EquippedTool == itemName then
+						self.EquippedTool = ""
+						self:ApplyHeldToolCostume()
+					end
 				end
 				self.InventoryDataJson = self:SafeEncodeJson(self.Items, "{}")
 				if _PersistenceManager and self.Entity.PlayerComponent then
@@ -1206,6 +1209,89 @@ script PlayerInventory extends Component
 		return count
 	end
 
+	method boolean IsUniqueKeyedItem(string itemName)
+		-- Category=tool 이면서 MaxStack<=1(공란 포함)이면 인스턴스별 고유 키. MaxStack>1이면 자원처럼 한 슬롯에 중첩.
+		if itemName == nil or itemName == "" then return false end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return false end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return false end
+		if (row:GetItem("Category") or "") ~= "tool" then return false end
+		local ok, raw = pcall(function() return row:GetItem("MaxStack") end)
+		if ok and raw ~= nil and tostring(raw) ~= "" then
+			local maxStack = tonumber(raw) or 1
+			if maxStack > 1 then return false end
+		end
+		return true
+	end
+
+	method boolean HasAcquiredItem(string itemName)
+		-- 현재 보유하거나 도감 누적 획득이 있으면 true (첫 제작 해금 게이트용).
+		if itemName == nil or itemName == "" then return false end
+		if self:GetItemCount(itemName) > 0 then return true end
+		local items = self:DecodeFlatJson(self.DexItemsJson)
+		local n = math.floor(tonumber(items[itemName]) or 0)
+		return n > 0
+	end
+
+	@ExecSpace("ServerOnly")
+	method void FoldStackableToolKeys(string itemName)
+		-- 구세이브 고유키(Hand Axe_ts_rand)를 MaxStack>1 정수 스택으로 합친다.
+		if itemName == nil or itemName == "" then return end
+		if self:IsUniqueKeyedItem(itemName) then return end
+		local extra = 0
+		local keys = {}
+		for k, v in pairs(self.Items) do
+			if k ~= itemName and type(v) == "table" and v.name == itemName then
+				extra = extra + (v.count or 1)
+				table.insert(keys, k)
+			end
+		end
+		if extra <= 0 then return end
+		for _, k in ipairs(keys) do
+			if self.EquippedTool == k then
+				self.EquippedTool = itemName
+			end
+			self.Items[k] = nil
+		end
+		local slots = self:SafeDecodeJson(self.QuickSlotsJson, {})
+		local slotChanged = false
+		for i = 1, 10 do
+			for _, k in ipairs(keys) do
+				if slots[i] == k then
+					slots[i] = itemName
+					slotChanged = true
+				end
+			end
+		end
+		if slotChanged then
+			self.QuickSlotsJson = self:SafeEncodeJson(slots, "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]")
+		end
+		local current = self.Items[itemName] or 0
+		if type(current) == "table" then
+			current = current.count or 1
+		end
+		self.Items[itemName] = current + extra
+		log("[INV] Folded " .. tostring(extra) .. " unique keys into stack " .. itemName)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void FoldAllStackableToolKeys()
+		-- 로드 직후: 중첩 가능한 도구 고유키를 한 슬롯으로 합친다.
+		local names = {}
+		for k, v in pairs(self.Items) do
+			if type(v) == "table" and v.name ~= nil then
+				names[v.name] = true
+			end
+		end
+		for itemName, _ in pairs(names) do
+			if not self:IsUniqueKeyedItem(itemName) then
+				self:FoldStackableToolKeys(itemName)
+			end
+		end
+		self.InventoryDataJson = self:SafeEncodeJson(self.Items, "{}")
+	end
+
 	@ExecSpace("ServerOnly")
 	method void Equip(string itemName)
 		-- Toggle off when re-equipping the same tool
@@ -1402,19 +1488,28 @@ script PlayerInventory extends Component
 					local cat = itemRow:GetItem("Category")
 					if cat == "tool" or cat == "furniture" then
 						local slots = self:SafeDecodeJson(self.QuickSlotsJson, {})
-						local emptySlotIndex = -1
+						local alreadySlotted = false
 						for i = 1, 10 do
-							if slots[i] == nil or slots[i] == "" then
-								emptySlotIndex = i
+							if slots[i] == craftedKey then
+								alreadySlotted = true
 								break
 							end
 						end
-						if emptySlotIndex ~= -1 then
-							self.SelectedQuickSlotIndex = emptySlotIndex
-							slots[emptySlotIndex] = craftedKey
-							self.QuickSlotsJson = self:SafeEncodeJson(slots, "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]")
-							log("[QUICKSLOT] Auto-registered crafted item " .. craftedKey .. " to slot " .. emptySlotIndex)
-							self:SyncEquippedToolToSelectedSlot()
+						if not alreadySlotted then
+							local emptySlotIndex = -1
+							for i = 1, 10 do
+								if slots[i] == nil or slots[i] == "" then
+									emptySlotIndex = i
+									break
+								end
+							end
+							if emptySlotIndex ~= -1 then
+								self.SelectedQuickSlotIndex = emptySlotIndex
+								slots[emptySlotIndex] = craftedKey
+								self.QuickSlotsJson = self:SafeEncodeJson(slots, "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]")
+								log("[QUICKSLOT] Auto-registered crafted item " .. craftedKey .. " to slot " .. emptySlotIndex)
+								self:SyncEquippedToolToSelectedSlot()
+							end
 						end
 					end
 				end

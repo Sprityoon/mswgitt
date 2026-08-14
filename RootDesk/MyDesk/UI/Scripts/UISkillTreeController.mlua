@@ -313,9 +313,17 @@ script UISkillTreeController extends Component
 		local parentId = row:GetItem("ParentSkillId")
 		local parentNeed = self:GetParentRequiredLevelFromRow(row)
 		local reqLevel = tonumber(row:GetItem("RequiredLevel")) or 1
-		local achId = tonumber(row:GetItem("UnlockAchievementId"))
 		local level = controller:GetSkillLevel(skillId)
 		local label = "레벨업 (SP " .. tostring(spCost) .. ")"
+		if level < 1 then
+			if spCost <= 0 then
+				label = "해금"
+			else
+				label = "해금 (SP " .. tostring(spCost) .. ")"
+			end
+		elseif spCost <= 0 then
+			label = "레벨업"
+		end
 
 		if level >= maxLevel then
 			result.label = "MAX"
@@ -343,13 +351,11 @@ script UISkillTreeController extends Component
 				result.reason = "Lv." .. tostring(reqLevel) .. " 필요"
 				return result
 			end
-			if achId ~= nil and achId > 0 and not self:IsAchievementDoneClient(achId) then
-				local pct = math.floor(self:GetAchievementPctClient(achId) * 100)
+			if not self:IsUnlockGateOpenClient(row, controller) then
 				result.label = label
-				result.reason = "목표 진행 중 " .. tostring(pct) .. "%"
+				result.reason = self:UnlockGateReasonClient(row, controller)
 				return result
 			end
-			label = "해금 (SP " .. tostring(spCost) .. ")"
 		end
 		if controller.SP < spCost then
 			result.label = label
@@ -463,6 +469,14 @@ script UISkillTreeController extends Component
 		self:SetTextSafe(self._T.dName, name, true)
 		local typeLv = self:TypeDisplayLabel(typeStr) .. " · Lv " .. tostring(level) .. "/" .. tostring(maxLevel)
 		self:SetTextSafe(self._T.dTypeLv, typeLv, true)
+		local consumeLine = self:FormatConsumeLine(row)
+		if consumeLine ~= "" then
+			if desc ~= "" then
+				desc = desc .. "\n" .. consumeLine
+			else
+				desc = consumeLine
+			end
+		end
 		self:SetTextSafe(self._T.dDesc, desc, true)
 
 		-- T58: 선행 조건 줄 (Description 아래). 선행 없으면 숨김.
@@ -511,9 +525,15 @@ script UISkillTreeController extends Component
 
 		local costLine = "레벨업: SP " .. tostring(spCost)
 		if level < 1 then
-			costLine = "해금: SP " .. tostring(spCost)
+			if spCost <= 0 then
+				costLine = "해금"
+			else
+				costLine = "해금: SP " .. tostring(spCost)
+			end
 		elseif level >= maxLevel then
 			costLine = "MAX"
+		elseif spCost <= 0 then
+			costLine = "레벨업"
 		end
 		self:SetTextSafe(self._T.dCost, costLine, true)
 	end
@@ -583,6 +603,75 @@ script UISkillTreeController extends Component
 				end
 			end
 		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsUnlockGateOpenClient(any row, any pc)
+		-- UnlockAchievementId OR UnlockOwnedItem (둘 다 있으면 OR). 게이트 없으면 true.
+		if row == nil then return true end
+		local achId = tonumber(row:GetItem("UnlockAchievementId"))
+		local hasAch = achId ~= nil and achId > 0
+		local ok, raw = pcall(function() return row:GetItem("UnlockOwnedItem") end)
+		local hasOwned = ok and raw ~= nil and tostring(raw) ~= ""
+		if not hasAch and not hasOwned then return true end
+		local achOk = false
+		if hasAch then
+			achOk = self:IsAchievementDoneClient(achId)
+		end
+		local ownedOk = false
+		if hasOwned and pc ~= nil then
+			ownedOk = pc:IsUnlockOwnedItemSatisfied(row)
+		end
+		if hasAch and hasOwned then return achOk or ownedOk end
+		if hasAch then return achOk end
+		return ownedOk
+	end
+
+	@ExecSpace("ClientOnly")
+	method string UnlockGateReasonClient(any row, any pc)
+		-- 해금 게이트 미충족 시 상세 패널/버튼 사유.
+		if row == nil then return "해금 목표를 먼저 달성해야 합니다." end
+		local achId = tonumber(row:GetItem("UnlockAchievementId"))
+		if achId ~= nil and achId > 0 then
+			local pct = math.floor(self:GetAchievementPctClient(achId) * 100)
+			return "목표 진행 중 " .. tostring(pct) .. "%"
+		end
+		local ok, raw = pcall(function() return row:GetItem("UnlockOwnedItem") end)
+		if ok and raw ~= nil and tostring(raw) ~= "" then
+			local disp = tostring(raw)
+			if pc ~= nil then
+				local inv = pc.Entity:GetComponent("script.PlayerInventory")
+				if isvalid(inv) then
+					disp = inv:GetItemDisplayName(tostring(raw))
+				end
+			end
+			return disp .. " 제작 후 해금"
+		end
+		return "해금 목표를 먼저 달성해야 합니다."
+	end
+
+	method string FormatConsumeLine(any row)
+		-- ConsumeItem이 있으면 "소모: 표시명 xN".
+		if row == nil then return "" end
+		local ok, raw = pcall(function() return row:GetItem("ConsumeItem") end)
+		if not ok or raw == nil or tostring(raw) == "" then return "" end
+		local consumeItem = tostring(raw)
+		local n = 1
+		local okC, rawC = pcall(function() return row:GetItem("ConsumeCount") end)
+		if okC and rawC ~= nil and tostring(rawC) ~= "" then
+			n = math.floor(tonumber(rawC) or 1)
+		end
+		if n < 1 then n = 1 end
+		local disp = consumeItem
+		local ds = _DataService:GetTable("item_dataset")
+		if ds ~= nil then
+			local irow = ds:FindRow("Name", consumeItem)
+			if irow ~= nil then
+				local okD, v = pcall(function() return irow:GetItem("DisplayName") end)
+				if okD and v ~= nil and tostring(v) ~= "" then disp = tostring(v) end
+			end
+		end
+		return "소모: " .. disp .. " x" .. tostring(n)
 	end
 
 	@ExecSpace("ClientOnly")
@@ -793,7 +882,6 @@ script UISkillTreeController extends Component
 		local parentId = ds:GetCell(rowIndex, "ParentSkillId")
 		local parentNeed = self:GetParentRequiredLevelFromDs(ds, rowIndex)
 		local reqLevel = tonumber(ds:GetCell(rowIndex, "RequiredLevel")) or 1
-		local achId = tonumber(ds:GetCell(rowIndex, "UnlockAchievementId"))
 		local iconRuid = ds:GetCell(rowIndex, "IconRUID") or ""
 
 		local level = controller:GetSkillLevel(skillId)
@@ -813,7 +901,8 @@ script UISkillTreeController extends Component
 			parentOk = (controller:GetSkillLevel(parentId) >= parentNeed)
 		end
 		local levelOk = (controller.Level >= reqLevel)
-		local achOk = (achId == nil or achId <= 0 or self:IsAchievementDoneClient(achId))
+		local row = ds:FindRow("SkillId", skillId)
+		local achOk = self:IsUnlockGateOpenClient(row, controller)
 
 		if parentOk and levelOk and achOk then
 			-- 해금 가능: 금색 하이라이트 (트리 진행감, §8.4)

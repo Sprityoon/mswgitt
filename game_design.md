@@ -374,6 +374,26 @@ graph TD
 
 ---
 
+#### 3.12.3. 마법 스킬 해금 체계 — 푸른빛(불씨) 연동 (⚖️ 2026-08-14 확정)
+- **서사-성장 일체형 해금**: 마법 관련 스킬은 단순 레벨업이 아니라, **스토리를 진행하며 맵 곳곳의 '푸른빛(푸른 불씨·빛의 조각)'을 하나씩 발견/회수할 때마다 각성·해금**된다.
+- **스킬 라인업 (5단계)**:
+  1. `Gale Dash` (바람 질주 - 1장): 순간 가속/회피 기동 마법.
+  2. `Spark Shot` (정화의 불꽃 - 2장): 전방 원거리 투사체 및 넉백 마법.
+  3. `Resonance Wave` (공명 파동 - 3장): 주변 360도 충격파 광역 넉백 및 기절.
+  4. `Luminous Aegis` (빛의 장막 - 4장): 피해 흡수 보호막 및 넉백 면역.
+  5. `Garden Rebirth` (정원의 숨결 - 5장): 정원사의 등불 완제 궁극기 — 화면 전체 광역 정화 및 공격.
+
+### 3.13. 몬스터 사냥 희귀 특수 장비 드롭 (Unique Equipment — ⚖️ 2026-08-14 확정)
+- **이원화된 장비 구조**:
+  - **크래프팅 장비 (Crafting Table)**: 안정적인 자원 수급을 통해 확정 제작하는 기본 도구/무기 (기본 공격력, 채광/벌목 파워 위주).
+  - **사냥 희귀 장비 (Monster Unique Drops)**: 몬스터 사냥 시 낮은 확률(1~2.5%)로 드롭되는 장비. 크래프팅 장비에는 없는 **고유 특수 효과(옵션/발동 효과)** 부여.
+- **초기 드롭 라인업**:
+  - `Slime Core Wand` (말랑한 푸른 지팡이): 슬라임 드롭 — 타격 시 20% 확률로 둔화 거품 발사.
+  - `Boar Horn Mace` (멧돼지 뿔 둔기): 멧돼지 드롭 — 물리 공격력 + 타격 시 15% 확률로 3셀 강력 넉백.
+  - `Wild Runner Boots` (야생 질주 장화): 멧돼지 드롭 — 이동속도 +15% / 피격 시 3초간 30% 추가 가속.
+  - `Spore Echo Ring` (포자 공명 반지): 뿔버섯 드롭 — 스킬 쿨타임 12% 감소 + 채집/채광 시 10% 확률로 2배 드롭.
+  - `Warden's Blue Blade` (뜰지기의 푸른 도검): 슬라임 킹(보스) 드롭 — 일반 공격 시 푸른빛 검기 방출 (광역 피해).
+
 ## 4. 자원 및 제작 테크 트리 (Progression Tiers)
 
 > **부트스트랩(시작 자원)**: 작은 Stone은 곡괭이를, Tree는 도끼를 요구하므로(아래 표) 첫 도구를 만들 "씨앗 돌"이 필요하다:
@@ -391,7 +411,7 @@ graph TD
 | **T3** | **Copper Ore** | 곡괭이 | 화로 제련 → Copper Bar (2 Copper Ore→1, 5초) → 구리 곡괭이/도끼 | 제련 ✅ / 구리 장비 ⏳ |
 | **T4** | **Iron Ore** | 구리 곡괭이(Tech Lock 예정) | 화로 제련 → Iron Bar (2 Iron Ore→1, 8초) → 철 곡괭이/도끼·철제 장비 | Iron 노드·장비 ⏳ |
 
-- **도구 효율 값**(`item_dataset`): Hand Axe(axe, ToolPower 0) / Stone Pickaxe(pickaxe, ToolPower 2) / Stone Axe(axe, ToolPower 2). 데미지 = `1 + ToolPower`.
+- **도구 효율 값**(`item_dataset`): Hand Axe(axe, ToolPower 0, **MaxStack 99 기믹 무기**) / Stone Pickaxe(pickaxe, ToolPower 2) / Stone Axe(axe, ToolPower 2). 데미지 = `1 + ToolPower`. 주먹도끼 던지기 = `SkillDataSet.hand_axe_throw`.
 - **연료**(`FurnaceFuelDataSet`): 현재 Wood(10초/개).
 - ⚠️ 기존 표의 **흙(Dirt) 채광·흙벽/돌담/횃불/제작대**는 미구현이며, 지반·풀밭 타일은 채집 불가 배경이다(§3.2).
 - ⚠️ **광석 공급원 전환 (2026-06)**: 개인 영지를 green_island로 전면화하면 **Copper/Iron Ore·Big Stone은 영지에서 더 이상 스폰되지 않는다**(이들은 earth_field/rocky/desert/snowfield 전용 자원이었고, 해당 바이옴은 사냥터로 이관됨). 따라서 **T3/T4 금속 테크는 사냥터(또는 마을 상점/연구소) 출시 이후 본격 가동**되는 것을 정식 진행 곡선으로 본다. 그전까지 영지 테크는 T1(Wood)·T2(Stone) 중심이다. (영지에서도 소량 금속을 원하면 green_island `BiomeResourceDataSet`에 낮은 확률로 광맥을 추가하는 것은 가능하나, 기본 방향은 사냥터 보상으로 둔다.)

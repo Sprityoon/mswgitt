@@ -3,7 +3,7 @@ script ActionSignals extends Logic
 
 	@ExecSpace("ServerOnly")
 	method void EmitToPlayer(Entity playerEntity, integer actionEnum, string targetName, integer count)
-		-- 게임 로직(처치/채집/제작/제련 훅)에서 업적/퀘스트 진행용 ActionEvent를 플레이어 엔티티로 발행한다.
+		-- 게임 로직(처치/채집/제작/제련/스킬습득 훅)에서 업적/퀘스트 진행용 ActionEvent를 플레이어 엔티티로 발행한다.
 		if not isvalid(playerEntity) then
 			return
 		end

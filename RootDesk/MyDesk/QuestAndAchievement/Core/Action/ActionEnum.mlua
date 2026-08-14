@@ -22,4 +22,6 @@ script ActionEnum extends Logic
 
 	property integer Warp = 10
 
+	property integer LearnSkill = 11
+
 end

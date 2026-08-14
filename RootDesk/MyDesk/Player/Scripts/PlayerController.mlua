@@ -2437,6 +2437,9 @@ script PlayerController extends Component
 			log("[SKILL] Client stamina low for " .. skillId)
 			return
 		end
+		if not self:ConsumeSkillItemIfNeeded(row, false) then
+			return
+		end
 		
 		log("[SKILL] Requesting cast " .. skillId .. " (slot " .. slotIndex .. ") dir " .. self.LastDirectionX .. "," .. self.LastDirectionY)
 		self:ServerRequestCastSkill(skillId, self.LastDirectionX, self.LastDirectionY)
@@ -2480,6 +2483,8 @@ script PlayerController extends Component
 		local lastCast = self.CooldownMap[skillId] or -999.0
 		if now - lastCast < cd then return end
 		if self.Stamina < cost then return end
+		-- 소모 아이템은 스태미나/쿨다운보다 먼저 검사·차감한다. 실패해도 자원이 깎이지 않게.
+		if not self:ConsumeSkillItemIfNeeded(row, true) then return end
 		
 		self.Stamina = math.max(0, self.Stamina - cost)
 		self.CooldownMap[skillId] = now
@@ -2659,6 +2664,79 @@ script PlayerController extends Component
 		return base
 	end
 
+	method boolean ConsumeSkillItemIfNeeded(any row, boolean doRemove)
+		-- SkillDataSet ConsumeItem/ConsumeCount. doRemove=false면 보유만 검사 (클라 프리체크).
+		if row == nil then return true end
+		local consumeItem = ""
+		local okI, rawI = pcall(function() return row:GetItem("ConsumeItem") end)
+		if okI and rawI ~= nil then consumeItem = tostring(rawI) end
+		if consumeItem == "" then return true end
+		local consumeCount = 1
+		local okC, rawC = pcall(function() return row:GetItem("ConsumeCount") end)
+		if okC and rawC ~= nil and tostring(rawC) ~= "" then
+			consumeCount = math.floor(tonumber(rawC) or 1)
+		end
+		if consumeCount < 1 then consumeCount = 1 end
+
+		local inv = self.Entity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return false end
+		---@type PlayerInventory
+		local p = inv
+		if p:GetItemCount(consumeItem) < consumeCount then
+			local disp = p:GetItemDisplayName(consumeItem)
+			local playerComp = self.Entity.PlayerComponent
+			local msg = disp .. "이(가) 부족합니다."
+			if playerComp ~= nil then
+				self:ClientShowMineFeedback(msg, playerComp.UserId)
+			else
+				self:ShowMineFeedback(msg)
+			end
+			return false
+		end
+		if doRemove then
+			if not p:RemoveItem(consumeItem, consumeCount) then
+				return false
+			end
+			p:SyncEquippedToolToSelectedSlot()
+			log("[SKILL] Consume " .. consumeItem .. " x" .. tostring(consumeCount))
+		end
+		return true
+	end
+
+	method boolean IsUnlockOwnedItemSatisfied(any row)
+		-- UnlockOwnedItem 컬럼: 현재 보유 또는 도감 누적 획득이면 통과.
+		if row == nil then return false end
+		local ok, raw = pcall(function() return row:GetItem("UnlockOwnedItem") end)
+		if not ok or raw == nil or tostring(raw) == "" then return false end
+		local inv = self.Entity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return false end
+		---@type PlayerInventory
+		local p = inv
+		return p:HasAcquiredItem(tostring(raw))
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsSkillUnlockGateSatisfied(any row)
+		-- UnlockAchievementId와 UnlockOwnedItem이 둘 다 있으면 OR, 하나만 있으면 그 조건.
+		if row == nil then return true end
+		local achId = tonumber(row:GetItem("UnlockAchievementId"))
+		local hasAch = achId ~= nil and achId > 0
+		local ok, raw = pcall(function() return row:GetItem("UnlockOwnedItem") end)
+		local hasOwned = ok and raw ~= nil and tostring(raw) ~= ""
+		if not hasAch and not hasOwned then return true end
+		local achOk = false
+		if hasAch then
+			achOk = self:IsUnlockAchievementSatisfied(achId)
+		end
+		local ownedOk = false
+		if hasOwned then
+			ownedOk = self:IsUnlockOwnedItemSatisfied(row)
+		end
+		if hasAch and hasOwned then return achOk or ownedOk end
+		if hasAch then return achOk end
+		return ownedOk
+	end
+
 	@ExecSpace("ServerOnly")
 	method boolean IsUnlockAchievementSatisfied(integer achievementId)
 		-- 패키지 업적 게이트 판정: Completed 상태이거나, 최종 스텝을 달성 가능(진행도 충족)한 경우 통과.
@@ -2731,9 +2809,8 @@ script PlayerController extends Component
 				self:ClientShowMineFeedback("레벨 " .. reqLevel .. " 이상 필요합니다.", playerComp.UserId)
 				return
 			end
-			-- ③ 목표(업적) 게이트
-			local achId = tonumber(row:GetItem("UnlockAchievementId"))
-			if achId ~= nil and achId > 0 and not self:IsUnlockAchievementSatisfied(achId) then
+			-- ③ 해금 게이트: UnlockAchievementId 또는 UnlockOwnedItem (둘 다 있으면 OR)
+			if not self:IsSkillUnlockGateSatisfied(row) then
 				self:ClientShowMineFeedback("해금 목표를 먼저 달성해야 합니다.", playerComp.UserId)
 				return
 			end
@@ -2753,6 +2830,9 @@ script PlayerController extends Component
 		-- T45④: 최초 해금 시 빈 슬롯 자동 장착 (액티브만)
 		if curLevel == 0 then
 			self:TryAutoEquipOnUnlock(skillId)
+			if _ActionSignals ~= nil then
+				_ActionSignals:EmitToPlayer(self.Entity, _ActionEnum.LearnSkill, skillId, 1)
+			end
 		end
 		
 		if _PersistenceManager then
@@ -2896,6 +2976,17 @@ script PlayerController extends Component
 			sprite.IgnoreMapLayerCheck = true
 			sprite.SortingLayer = _RenderLayers.EntityLayer
 			sprite.OrderInLayer = 500
+			sprite.FlipX = dirX > 0
+			local ds = _DataService:GetTable("SkillDataSet")
+			if ds ~= nil then
+				local row = ds:FindRow("SkillId", skillId)
+				if row ~= nil then
+					local okR, rawR = pcall(function() return row:GetItem("ProjectileRUID") end)
+					if okR and rawR ~= nil and tostring(rawR) ~= "" then
+						sprite.SpriteRUID = tostring(rawR)
+					end
+				end
+			end
 		end
 		
 		local projComp = proj:GetComponent("script.Projectile")
@@ -2907,7 +2998,7 @@ script PlayerController extends Component
 			---@type Projectile
 			local p = projComp
 			p:Initialize(self.Entity, Vector2(dirX, dirY), finalDmg, 6.0, hitEffectRUID or "")
-			log("[SKILL] Fireball spawned dmg " .. finalDmg)
+			log("[SKILL] Projectile spawned skill=" .. skillId .. " dmg " .. finalDmg)
 		end
 	end
 
