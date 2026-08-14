@@ -16,10 +16,66 @@ script UIQuestController extends Component
 
 	property number ToastAccum = 0.0
 
+	property any trackerClickHandler = nil
+
+	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
+
+	property number uiSfxVolume = 1.0
+
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
-		self:SetInfoVisible(false)
 		self:HideToast()
+		self:ShowIdleTracker()
+		self:WireTrackerClick()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		local btn = self.Entity:GetChildByName("BtnOpen", true)
+		if isvalid(btn) and self.trackerClickHandler then
+			btn:DisconnectEvent(ButtonClickEvent, self.trackerClickHandler)
+		end
+		self.trackerClickHandler = nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method void WireTrackerClick()
+		local btn = self.Entity:GetChildByName("BtnOpen", true)
+		if not isvalid(btn) then
+			log_warning("[QUEST] QuestTracker BtnOpen missing")
+			return
+		end
+		if isvalid(btn.SpriteGUIRendererComponent) then
+			btn.SpriteGUIRendererComponent.RaycastTarget = true
+		end
+		self.trackerClickHandler = btn:ConnectEvent(ButtonClickEvent, function()
+			_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume)
+			self:ToggleQuestLog()
+		end)
+		log("[QUEST] tracker click wired")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ToggleQuestLog()
+		local popup = _EntityService:GetEntityByPath("/ui/PopupGroup/QuestPopup")
+		if not isvalid(popup) then
+			log_warning("[QUEST] QuestPopup missing")
+			return
+		end
+		local controller = popup:GetComponent("script.UIQuestLogController")
+		if isvalid(controller) then
+			controller:Toggle()
+		else
+			log_warning("[QUEST] UIQuestLogController missing on QuestPopup")
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowIdleTracker()
+		self:SetChromeVisible(true)
+		self:SetText("QuestName", "진행 중인 퀘스트 없음")
+		self:SetText("Guide", "클릭하면 목록을 엽니다")
+		self:SetText("Progress", "")
 	end
 
 	@ExecSpace("ClientOnly")
@@ -82,11 +138,11 @@ script UIQuestController extends Component
 		end
 
 		if activeId == nil then
-			self:SetInfoVisible(false)
+			self:ShowIdleTracker()
 			return
 		end
 
-		self:SetInfoVisible(true)
+		self:SetChromeVisible(true)
 		local userData = userDataTable[activeId]
 		self:SetText("QuestName", activeData.Name or "")
 		self:SetText("Guide", activeData.ProgressingDesc or "")
@@ -155,8 +211,9 @@ script UIQuestController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
-	method void SetInfoVisible(boolean vis)
-		local names = { "Bg", "Header", "QuestName", "Guide", "Progress" }
+	method void SetChromeVisible(boolean vis)
+		-- Bg·헤더·클릭 오버레이는 목록을 열 수 있게 항상 켠다.
+		local names = { "Bg", "Header", "BtnOpen", "QuestName", "Guide", "Progress" }
 		for i = 1, #names do
 			local ent = self.Entity:GetChildByName(names[i], true)
 			if isvalid(ent) then

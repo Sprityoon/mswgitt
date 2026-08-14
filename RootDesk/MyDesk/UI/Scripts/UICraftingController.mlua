@@ -215,8 +215,8 @@ script UICraftingController extends Component
 		-- 티어 칩
 		if isvalid(self.tierChipTemplate) then
 			for i, tierVal in ipairs(self.tierOptions) do
-				local label = "All"
-				if tierVal ~= 0 then label = "T" .. tostring(tierVal) end
+				local label = "전체"
+				if tierVal ~= 0 then label = tostring(tierVal) .. "단계" end
 				local chip = self.tierChipTemplate:Clone("TierChip_" .. tostring(tierVal))
 				chip.Enable = true
 				local x = startX + (i - 1) * (chipW + gap)
@@ -253,7 +253,7 @@ script UICraftingController extends Component
 				end
 				local textComp = chip.TextComponent
 				if isvalid(textComp) then
-					textComp.Text = tostring(catVal)
+					textComp.Text = self:GetFilterLabel(tostring(catVal))
 					textComp.FontSize = 15
 				end
 				local idx = i
@@ -405,6 +405,31 @@ script UICraftingController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method string GetItemDisplayName(string itemName)
+		-- item_dataset.DisplayName. Name 키는 바꾸지 않는다.
+		if itemName == nil or itemName == "" then return "" end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return itemName end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return itemName end
+		local ok, v = pcall(function() return row:GetItem("DisplayName") end)
+		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		return itemName
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetFilterLabel(string catVal)
+		-- 카테고리 칩 표시명. 필터 키(all/tool/…)는 그대로 둔다.
+		if catVal == "all" or catVal == "All" then return "전체" end
+		if catVal == "tool" then return "도구" end
+		if catVal == "furniture" then return "가구" end
+		if catVal == "resource" then return "자원" end
+		if catVal == "consumable" then return "소모품" end
+		if catVal == "misc" then return "기타" end
+		return catVal
+	end
+
+	@ExecSpace("ClientOnly")
 	method Color GetRarityColor(string rarity)
 		-- Returns the UI display color corresponding to the rarity grade.
 		if rarity == "Uncommon" then
@@ -439,7 +464,7 @@ script UICraftingController extends Component
 				local nameText = item:GetChildByName("Name").TextComponent
 				if isvalid(nameText) then
 					if unlocked then
-						nameText.Text = recipe.name
+						nameText.Text = self:GetItemDisplayName(recipe.name)
 						local rarity = self:GetItemRarity(recipe.name)
 						nameText.FontColor = self:GetRarityColor(rarity)
 					else
@@ -607,7 +632,7 @@ script UICraftingController extends Component
 		if not recipe then return end
 		
 		if isvalid(self.detailName) then
-			self.detailName.Text = recipe.name
+			self.detailName.Text = self:GetItemDisplayName(recipe.name)
 			local rarity = self:GetItemRarity(recipe.name)
 			self.detailName.FontColor = self:GetRarityColor(rarity)
 		end
@@ -697,22 +722,22 @@ script UICraftingController extends Component
 				self.btnCraft.Entity.SpriteGUIRendererComponent.Color = Color(0.3, 0.3, 0.3, 1) -- Gray
 				self.btnCraft.Enable = false
 				local textComp = self.btnCraft.Entity.TextComponent
-				if isvalid(textComp) then textComp.Text = "Crafting..." end
+				if isvalid(textComp) then textComp.Text = "제작 중..." end
 			elseif not unlocked then
 				self.btnCraft.Entity.SpriteGUIRendererComponent.Color = Color(0.25, 0.25, 0.25, 1)
 				self.btnCraft.Enable = false
 				local textComp = self.btnCraft.Entity.TextComponent
-				if isvalid(textComp) then textComp.Text = "Locked" end
+				if isvalid(textComp) then textComp.Text = "잠김" end
 			elseif canCraft then
 				self.btnCraft.Entity.SpriteGUIRendererComponent.Color = Color(0.18, 0.34, 0.15, 1) -- Forest Green
 				self.btnCraft.Enable = true
 				local textComp = self.btnCraft.Entity.TextComponent
-				if isvalid(textComp) then textComp.Text = "CRAFT (Space)" end
+				if isvalid(textComp) then textComp.Text = "제작 (스페이스)" end
 			else
 				self.btnCraft.Entity.SpriteGUIRendererComponent.Color = Color(0.3, 0.1, 0.1, 1) -- Dark Red
 				self.btnCraft.Enable = false
 				local textComp = self.btnCraft.Entity.TextComponent
-				if isvalid(textComp) then textComp.Text = "Insufficient Materials" end
+				if isvalid(textComp) then textComp.Text = "재료 부족" end
 			end
 		end
 	end

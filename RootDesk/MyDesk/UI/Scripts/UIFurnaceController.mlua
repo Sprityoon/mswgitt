@@ -240,7 +240,7 @@ script UIFurnaceController extends Component
 		
 		local fuelTextEnt = self.fuelText
 		if isvalid(fuelTextEnt) and isvalid(fuelTextEnt.TextComponent) then
-			fuelTextEnt.TextComponent.Text = string.format("Fuel: %.1fs", furnace.FuelTimeRemaining)
+			fuelTextEnt.TextComponent.Text = string.format("연료: %.1f초", furnace.FuelTimeRemaining)
 		end
 	end
 

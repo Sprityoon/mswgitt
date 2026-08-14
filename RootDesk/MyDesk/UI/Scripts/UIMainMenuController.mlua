@@ -98,6 +98,9 @@ script UIMainMenuController extends Component
 	-- 닉네임 길이 규약. 서버(PersistenceManager.SelectSaveSlot)와 .ui의 CharacterLimit도 같은 값이어야 한다.
 	property integer nickMinLen = 2
 	property integer nickMaxLen = 15
+	property string uiHoverSfx = "159bf70a74634bfc8e91a29e527a4be5"
+	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
+	property number uiSfxVolume = 0.8
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
@@ -139,14 +142,39 @@ script UIMainMenuController extends Component
 		-- 입력 컴포넌트 바인딩은 조용히 실패하면 "글자수가 안 맞는다"로만 보인다 → 시작 시 명시 검증.
 		log("[MAINMENU] controller ready — customNameInput="
 			.. tostring(isvalid(self.customNameInput))
-			.. " nameInput=" .. tostring(isvalid(self.nameInput)))
+			.. " nameInput=" .. tostring(isvalid(self.nameInput))
+			.. " sfx=on")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlayUiClick()
+		if self.uiClickSfx ~= nil and self.uiClickSfx ~= "" then
+			_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlayUiHover()
+		if self.uiHoverSfx ~= nil and self.uiHoverSfx ~= "" then
+			_SoundService:PlaySound(self.uiHoverSfx, self.uiSfxVolume)
+		end
 	end
 
 	@ExecSpace("ClientOnly")
 	method void BindBtn(ButtonComponent btn, any fn)
-		if isvalid(btn) and isvalid(btn.Entity) then
-			btn.Entity:ConnectEvent(ButtonClickEvent, fn)
+		if isvalid(btn) == false or isvalid(btn.Entity) == false then
+			return
 		end
+		local ent = btn.Entity
+		ent:ConnectEvent(ButtonClickEvent, function()
+			self:PlayUiClick()
+			fn()
+		end)
+		ent:ConnectEvent(ButtonStateChangeEvent, function(ev)
+			if ev ~= nil and ev.state == ButtonState.Hover then
+				self:PlayUiHover()
+			end
+		end)
 	end
 
 	@ExecSpace("ClientOnly")

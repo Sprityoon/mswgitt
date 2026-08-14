@@ -201,7 +201,7 @@ script PlayerInventory extends Component
 		if not self:HasItem(reqItem, reqCnt) then
 			local pc = self.Entity:GetComponent("script.PlayerController")
 			if isvalid(pc) then
-				pc:ShowMineFeedback("재료가 부족합니다: " .. reqItem .. " x" .. tostring(reqCnt))
+				pc:ShowMineFeedback("재료가 부족합니다: " .. self:GetItemDisplayName(reqItem) .. " x" .. tostring(reqCnt))
 			end
 			return
 		end
@@ -224,7 +224,7 @@ script PlayerInventory extends Component
 
 		local pc = self.Entity:GetComponent("script.PlayerController")
 		if isvalid(pc) then
-			pc:ShowMineFeedback("의뢰 완료! " .. rewItem .. " x" .. tostring(rewCnt))
+			pc:ShowMineFeedback("의뢰 완료! " .. self:GetItemDisplayName(rewItem) .. " x" .. tostring(rewCnt))
 		end
 		log("[REQUEST] deliver " .. requestId .. " by " .. tostring(userId)
 			.. " day=" .. tostring(self.DailyRequestDay))
@@ -633,7 +633,7 @@ script PlayerInventory extends Component
 			end
 		end
 		if not isvalid(bestPen) then
-			if isvalid(pc) then pc:ShowMineFeedback("우리(Animal Pen) 근처에서 사용하세요.") end
+			if isvalid(pc) then pc:ShowMineFeedback("가축우리 근처에서 사용하세요.") end
 			return false
 		end
 		if bestDist > 4.0 then
@@ -683,7 +683,10 @@ script PlayerInventory extends Component
 			ac:InitializeFromSave(animalId, penCellX, penCellY, penPos.x, penPos.y, 0, 0, false, userId)
 		end
 		_PersistenceManager:MarkPlayerDirty(userId)
-		if isvalid(pc) then pc:ShowMineFeedback(animalId .. "을(를) 우리에 들였습니다!") end
+		local animalDn = animalId
+		local okA, vA = pcall(function() return arow:GetItem("DisplayName") end)
+		if okA and vA ~= nil and tostring(vA) ~= "" then animalDn = tostring(vA) end
+		if isvalid(pc) then pc:ShowMineFeedback(animalDn .. "을(를) 우리에 들였습니다!") end
 		log("[ANIMAL] spawn " .. animalId .. " by " .. userId .. " pen=(" .. tostring(penCellX) .. "," .. tostring(penCellY) .. ")")
 		return true
 	end
@@ -1166,6 +1169,18 @@ script PlayerInventory extends Component
 		return itemKey
 	end
 
+	method string GetItemDisplayName(string itemName)
+		-- 플레이어에게 보이는 한글 표시명. 인벤/레시피/상점 키는 Name 컬럼 그대로 둔다.
+		if itemName == nil or itemName == "" then return "" end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return itemName end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return itemName end
+		local ok, v = pcall(function() return row:GetItem("DisplayName") end)
+		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		return itemName
+	end
+
 	method integer GetItemCount(string itemName)
 		-- Returns the owned count; on the client it reads the synced JSON snapshot.
 		if self:IsCurrencyItem(itemName) then
@@ -1423,7 +1438,7 @@ script PlayerInventory extends Component
 		
 		if success then
 			log("Crafting successful for: " .. recipeName)
-			_ScreenMessageLogic:PrivateMsg(string.format("[%s] 제작 및 획득 완료!", recipeName))
+			_ScreenMessageLogic:PrivateMsg(string.format("[%s] 제작 및 획득 완료!", self:GetItemDisplayName(recipeName)))
 			if isvalid(craftingCtrl) then
 				craftingCtrl:UpdateDetails()
 			end

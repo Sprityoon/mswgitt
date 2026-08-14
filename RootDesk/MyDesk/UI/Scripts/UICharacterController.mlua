@@ -179,7 +179,7 @@ script UICharacterController extends Component
 			local name = controller.PlayerName or player.Name
 			local lvl = controller.Level or 12
 			if isvalid(self.charName) then
-				self.charName.Text = "Lv. " .. lvl .. " Explorer " .. name
+				self.charName.Text = "Lv. " .. lvl .. " 탐험가 " .. name
 			end
 		
 			local sta = controller.Stamina or 60
@@ -218,16 +218,16 @@ script UICharacterController extends Component
 				else
 					self.weaponIcon.ImageRUID = ""
 					if isvalid(self.weaponIcon.Entity.TextComponent) then
-						self.weaponIcon.Entity.TextComponent.Text = "None"
+						self.weaponIcon.Entity.TextComponent.Text = "없음"
 					end
 				end
 			end
 		
 			if isvalid(self.atkVal) then
 				if equippedTool ~= "" then
-					self.atkVal.Text = tostring(controller.Attack or 15) .. " (" .. equippedTool .. ")"
+					self.atkVal.Text = tostring(controller.Attack or 15) .. " (" .. self:GetItemDisplayName(equippedTool) .. ")"
 				else
-					self.atkVal.Text = tostring(controller.Attack or 15) .. " (Bare hands)"
+					self.atkVal.Text = tostring(controller.Attack or 15) .. " (맨손)"
 				end
 			end
 			if isvalid(self.defVal) then
@@ -236,12 +236,12 @@ script UICharacterController extends Component
 			if isvalid(self.gatherVal) then
 				if equippedTool ~= "" then
 					local stats = self:GetToolStats(equippedTool)
-					local toolType = stats.Type
+					local toolType = self:GetToolTypeLabel(stats.Type)
 					local toolPower = stats.Power
-					if toolType ~= "" then
+					if stats.Type ~= "" then
 						self.gatherVal.Text = toolType .. " · +" .. tostring(toolPower)
 					else
-						self.gatherVal.Text = "Boosted (" .. equippedTool .. ")"
+						self.gatherVal.Text = "강화 (" .. self:GetItemDisplayName(equippedTool) .. ")"
 					end
 				else
 					self.gatherVal.Text = "+" .. tostring(controller.GatheringSpeed or 10) .. "%"
@@ -281,6 +281,29 @@ script UICharacterController extends Component
 			end
 		end
 		return ""
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetItemDisplayName(string itemName)
+		if itemName == nil or itemName == "" then return "" end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return itemName end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return itemName end
+		local ok, v = pcall(function() return row:GetItem("DisplayName") end)
+		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		return itemName
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetToolTypeLabel(string toolType)
+		if toolType == "axe" then return "도끼" end
+		if toolType == "pickaxe" then return "곡괭이" end
+		if toolType == "shovel" then return "삽" end
+		if toolType == "hoe" then return "호미" end
+		if toolType == "rod" then return "낚싯대" end
+		if toolType == "water_spade" then return "물삽" end
+		return toolType
 	end
 
 	@ExecSpace("ClientOnly")

@@ -121,6 +121,7 @@ script UIRequestController extends Component
 				local rewCnt = math.floor(tonumber(cell("RewardCount", "1")) or 1)
 				local owned = inv:GetItemCount(reqItem)
 				local done = inv:IsDailyRequestCompleted(reqId)
+				local reqDisp = inv:GetItemDisplayName(reqItem)
 
 				-- Clone(name) 문자열 인자 — Entity parent 전달 시 LEA-1103 (Research BuildList 선례)
 				local clone = self.requestTemplate:Clone("ReqRow_" .. tostring(i))
@@ -135,10 +136,10 @@ script UIRequestController extends Component
 					local nameEnt = clone:GetChildByName("Name")
 					if isvalid(nameEnt) and isvalid(nameEnt.TextComponent) then
 						if done then
-							nameEnt.TextComponent.Text = "[완료] " .. reqItem .. " x" .. tostring(reqCnt)
+							nameEnt.TextComponent.Text = "[완료] " .. reqDisp .. " x" .. tostring(reqCnt)
 							nameEnt.TextComponent.FontColor = Color(0.52, 0.49, 0.43, 1)
 						else
-							nameEnt.TextComponent.Text = reqItem .. " x" .. tostring(reqCnt)
+							nameEnt.TextComponent.Text = reqDisp .. " x" .. tostring(reqCnt)
 							nameEnt.TextComponent.FontColor = Color(0.96, 0.94, 0.90, 1)
 						end
 					end

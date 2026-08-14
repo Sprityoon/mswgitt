@@ -409,7 +409,7 @@ script UIInventoryController extends Component
 		
 		-- Update Capacity
 		if isvalid(self.capacityText) then
-			self.capacityText.Text = totalCount .. " / 24 items"
+			self.capacityText.Text = totalCount .. " / 24개"
 		end
 
 		self:UpdateCoinDisplay(inv)
@@ -468,16 +468,28 @@ script UIInventoryController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method string GetItemDisplayName(string itemName)
+		if itemName == nil or itemName == "" then return "" end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return itemName end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return itemName end
+		local ok, v = pcall(function() return row:GetItem("DisplayName") end)
+		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		return itemName
+	end
+
+	@ExecSpace("ClientOnly")
 	method string GetItemDescription(string itemName)
 		-- Looks up the item's description from item_dataset.
 		local ds = _DataService:GetTable("item_dataset")
 		if ds ~= nil then
 			local row = ds:FindRow("Name", itemName)
 			if row ~= nil then
-				return row:GetItem("Description") or "A mysterious item of unknown utility."
+				return row:GetItem("Description") or "정체를 알 수 없는 물건입니다."
 			end
 		end
-		return "A mysterious item of unknown utility."
+		return "정체를 알 수 없는 물건입니다."
 	end
 
 	@ExecSpace("ClientOnly")
@@ -887,7 +899,7 @@ script UIInventoryController extends Component
 		local baseName = isvalid(inv) and inv:GetBaseItemName(itemKey) or itemKey
 		
 		if isvalid(self.tooltipName) then
-			self.tooltipName.Text = baseName
+			self.tooltipName.Text = self:GetItemDisplayName(baseName)
 			local rarity = self:GetItemRarity(baseName)
 			self.tooltipName.FontColor = self:GetRarityColor(rarity)
 		end
@@ -897,11 +909,11 @@ script UIInventoryController extends Component
 		if isvalid(self.tooltipCount) then
 			local suffix = ""
 			if itemKey == self:GetEquippedToolName() then
-				suffix = "  (Equipped)"
+				suffix = "  (장착 중)"
 			elseif self:GetItemCategory(baseName) == "Equipment" then
-				suffix = "  (Double-click to register)"
+				suffix = "  (더블클릭으로 등록)"
 			end
-			self.tooltipCount.Text = "Owned: " .. count .. suffix
+			self.tooltipCount.Text = "보유: " .. count .. suffix
 		end
 	end
 

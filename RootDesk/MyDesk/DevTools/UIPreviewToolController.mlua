@@ -35,20 +35,21 @@ script UIPreviewToolController extends Component
 		-- no-op — see docs/agents/resource-api-pitfalls.md §5-quater), so judge the
 		-- colour here and reject the item if it does not fit.
 		--
-		-- These mirror item_dataset's current tools; keep them in sync when the
-		-- WeaponRUID / WeaponSlot / SwingAction of a tool changes.
+		-- 평시(도구 5종 미러) — 도끼 샘플 라운드가 끝나면 이 목록으로 되돌린다.
+		-- { ruid = "f1b86bd8137f42ee99847b0079a16bce", label = "Shovel (사각 강철 야삽)", slot = "onehand", action = "stabO1" },
+		-- { ruid = "5803e76509014a149c11c07022ffae1c", label = "Water Spade (삼각 강철 야삽)", slot = "onehand", action = "stabO1" },
+		-- { ruid = "db5c8f98b77f4f1a9e7505eac4d5f496", label = "Hoe (호프만)", slot = "twohand", action = "swingT1" },
+		-- { ruid = "384de1d5a70747a4b356484cf2753b5f", label = "주먹도끼 (빨간 벽돌)", slot = "onehand", action = "swingO1" },
+		-- { ruid = "18a44a9f39a94633b56902492e5b7da6", label = "돌곡괭이 (곡괭이)", slot = "twohand", action = "swingT1" },
 		--
-		-- ⚖️ 2026-08-06 삽 모션 확정 = `stabO1`. 2라운드 비교 후 제작자 선택.
-		--    실측으로 알아낸 것(문서에 없는 내용):
-		--      · `*F` 계열(swingOF/stabOF)은 **모션이 훨씬 크다** — 치명타 연출 후보로 쓸 만하다.
-		--      · **폴암 계열(swingP1/P2/PF)은 한손 아이템에 프레임이 없어 무기가 사라진다.**
-		--      · `swingO1`은 내려찍기가 아니라 휘두르기에 가깝다(구 주석이 틀렸음 — MineState.mlua 참조).
+		-- 2026-08-14 도끼 8라운드. 철=강철 확정. 망치/톱 철회. 전투 도끼 허용, 미공개만.
+		-- 제외: 네오코라·Chief·호크헤드·당커·파이어잭·콘트라·한손 Commerci·6라운드 5종.
 		return {
-			{ ruid = "f1b86bd8137f42ee99847b0079a16bce", label = "Shovel (사각 강철 야삽)", slot = "onehand", action = "stabO1" },
-			{ ruid = "5803e76509014a149c11c07022ffae1c", label = "Water Spade (삼각 강철 야삽)", slot = "onehand", action = "stabO1" },
-			{ ruid = "db5c8f98b77f4f1a9e7505eac4d5f496", label = "Hoe (호프만)", slot = "twohand", action = "swingT1" },
-			{ ruid = "384de1d5a70747a4b356484cf2753b5f", label = "주먹도끼 (빨간 벽돌)", slot = "onehand", action = "swingO1" },
-			{ ruid = "18a44a9f39a94633b56902492e5b7da6", label = "돌곡괭이 (곡괭이)", slot = "twohand", action = "swingT1" },
+			{ ruid = "1c6f881add794853b9a87ab071c38848", label = "1 메이플 스틸 엑스 (한손)", slot = "onehand", action = "swingO2" },
+			{ ruid = "4f1e6bbc72564929bc20ca0f41928dbd", label = "2 드래곤 엑스 (한손)", slot = "onehand", action = "swingO2" },
+			{ ruid = "53a4e34028824c3b96dd2b6ce5732fb9", label = "3 클로니안 엑스 (양손)", slot = "twohand", action = "swingT1" },
+			{ ruid = "504f8169ab464ccfbcf053595be84e3e", label = "4 Commerci 양손 엑스", slot = "twohand", action = "swingT1" },
+			{ ruid = "34de2b5f5306487091f823c71bad3f6b", label = "5 스칼렛 배틀엑스 (양손)", slot = "twohand", action = "swingT1" },
 		}
 	end
 

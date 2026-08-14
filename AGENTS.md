@@ -176,6 +176,7 @@ MCP가 연결되지 않았으면 가능한 정적 검증까지만 수행하고 `
 | 작업·검증 절차 | [docs/workflow.md](./docs/workflow.md) |
 | 실측 함정과 판별법 | [docs/pitfalls.md](./docs/pitfalls.md) |
 | 전체 설계·Phase | [game_design.md](./game_design.md) |
+| 스토리·맵 컨셉·퀘스트 콘텐츠 설계 | [docs/design/story/README.md](./docs/design/story/README.md) |
 | 타일 문법 | [docs/tile-scheme.md](./docs/tile-scheme.md) |
 | 상시 디자인 정책 | [docs/design-policy.md](./docs/design-policy.md) |
 | 스킬 라우팅 | [docs/reference/skill-routing.md](./docs/reference/skill-routing.md) |

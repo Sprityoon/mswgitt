@@ -1,0 +1,608 @@
+@Component
+script UIQuestLogController extends Component
+	-- 퀘스트 로그 팝업 (좌목록 + 우상세). 수락/거절은 DialogGroup, HUD 트래커는 별도.
+	-- 목록·문구·보상은 QuestDataSet / PlayerQuest 상태만 사용한다.
+
+	property ButtonComponent btnClose = "d8f2df32-1db0-4d14-a64d-6751e9381cb2"
+	property ButtonComponent tabProgress = "a9894158-9f13-4b49-8cc8-33871fe81824"
+	property ButtonComponent tabReady = "ae3dc69e-22f9-449a-8018-5a8ab675f2ba"
+	property ButtonComponent tabDone = "0acc2062-65ad-4161-a47c-9344defb4020"
+	property Entity listScroll = "33154196-ac96-4e3f-80c4-a1fe25c1b1d3"
+	property Entity rowTemplate = "91dc43a3-c516-455b-8a5f-a7d09f6d7bc9"
+	property Entity detailName = "8427cbc5-62fa-481f-bcd0-bba1a9ea27d3"
+	property Entity detailDesc = "9826af9f-163f-4fe8-9472-81055d008689"
+	property Entity detailGoal = "39918cc9-9071-44eb-a7df-a6ab9caaabf9"
+	property Entity detailHint = "ac88fa1b-4ed3-43aa-886a-d62ae81b7a92"
+	property Entity rewardSlot1 = "5565ca2c-1ad5-4766-8d83-6a7f2655ce20"
+	property Entity rewardSlot2 = "f94ab98a-f6fb-4925-8098-6f5a9a3fd578"
+	property Entity rewardSlot3 = "d1909f52-bd91-479f-b147-cfd00472d1f0"
+	property Entity rewardSlot4 = "f00250cb-ddc5-4420-9c11-c2c050311085"
+	property ButtonComponent btnAbandon = "2cd5b252-55c6-4055-b2bf-f1075579297e"
+
+	property string currentTab = "progress"
+	property integer selectedId = 0
+	property table rows = {}
+	property table rowHandlers = {}
+	property table rowIds = {}
+	property any closeHandler = nil
+	property any tabProgressHandler = nil
+	property any tabReadyHandler = nil
+	property any tabDoneHandler = nil
+	property any abandonHandler = nil
+	property number CurrentScale = 1.0
+	property number TargetScale = 1.0
+	property any ScaleTimer = nil
+	property number LastToggleTime = 0
+	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
+	property string uiHoverSfx = "159bf70a74634bfc8e91a29e527a4be5"
+	property number uiSfxVolume = 1.0
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		self:ResolveRefs()
+		self.Entity.Enable = false
+		if isvalid(self._T.rowTemplate) then self._T.rowTemplate.Enable = false end
+		self:BindChrome()
+		log("[QUEST-LOG] ready template=" .. tostring(isvalid(self._T.rowTemplate))
+			.. " list=" .. tostring(isvalid(self._T.listScroll)))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		self:UnbindChrome()
+		self:ClearRows()
+		if self.ScaleTimer then
+			_TimerService:ClearTimer(self.ScaleTimer)
+			self.ScaleTimer = nil
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ResolveRefs()
+		self._T.rowTemplate = self.Entity:GetChildByName("RowTemplate", true)
+		self._T.listScroll = self.Entity:GetChildByName("ListScroll", true)
+		self._T.closeE = self.Entity:GetChildByName("BtnClose", true)
+		self._T.tabProgressE = self.Entity:GetChildByName("TabProgress", true)
+		self._T.tabReadyE = self.Entity:GetChildByName("TabReady", true)
+		self._T.tabDoneE = self.Entity:GetChildByName("TabDone", true)
+		self._T.abandonE = self.Entity:GetChildByName("BtnAbandon", true)
+		self._T.detailName = self.Entity:GetChildByName("DetailName", true)
+		self._T.detailDesc = self.Entity:GetChildByName("DetailDesc", true)
+		self._T.detailGoal = self.Entity:GetChildByName("DetailGoal", true)
+		self._T.detailHint = self.Entity:GetChildByName("DetailHint", true)
+		self._T.slot1 = self.Entity:GetChildByName("RewardSlot1", true)
+		self._T.slot2 = self.Entity:GetChildByName("RewardSlot2", true)
+		self._T.slot3 = self.Entity:GetChildByName("RewardSlot3", true)
+		self._T.slot4 = self.Entity:GetChildByName("RewardSlot4", true)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BindChrome()
+		if isvalid(self._T.closeE) then
+			self.closeHandler = self._T.closeE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:Close()
+			end)
+			self:BindHover(self._T.closeE)
+		end
+		if isvalid(self._T.tabProgressE) then
+			self.tabProgressHandler = self._T.tabProgressE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:SelectTab("progress")
+			end)
+			self:BindHover(self._T.tabProgressE)
+		end
+		if isvalid(self._T.tabReadyE) then
+			self.tabReadyHandler = self._T.tabReadyE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:SelectTab("ready")
+			end)
+			self:BindHover(self._T.tabReadyE)
+		end
+		if isvalid(self._T.tabDoneE) then
+			self.tabDoneHandler = self._T.tabDoneE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:SelectTab("done")
+			end)
+			self:BindHover(self._T.tabDoneE)
+		end
+		if isvalid(self._T.abandonE) then
+			self.abandonHandler = self._T.abandonE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:OnAbandon()
+			end)
+			self:BindHover(self._T.abandonE)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UnbindChrome()
+		if isvalid(self._T.closeE) and self.closeHandler then
+			self._T.closeE:DisconnectEvent(ButtonClickEvent, self.closeHandler)
+		end
+		if isvalid(self._T.tabProgressE) and self.tabProgressHandler then
+			self._T.tabProgressE:DisconnectEvent(ButtonClickEvent, self.tabProgressHandler)
+		end
+		if isvalid(self._T.tabReadyE) and self.tabReadyHandler then
+			self._T.tabReadyE:DisconnectEvent(ButtonClickEvent, self.tabReadyHandler)
+		end
+		if isvalid(self._T.tabDoneE) and self.tabDoneHandler then
+			self._T.tabDoneE:DisconnectEvent(ButtonClickEvent, self.tabDoneHandler)
+		end
+		if isvalid(self._T.abandonE) and self.abandonHandler then
+			self._T.abandonE:DisconnectEvent(ButtonClickEvent, self.abandonHandler)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BindHover(Entity ent)
+		if not isvalid(ent) then return end
+		ent:ConnectEvent(ButtonStateChangeEvent, function(ev)
+			if ev ~= nil and ev.state == ButtonState.Hover then
+				self:PlayHover()
+			end
+		end)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlayClick()
+		_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlayHover()
+		_SoundService:PlaySound(self.uiHoverSfx, self.uiSfxVolume)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Toggle()
+		local now = _UtilLogic.ElapsedSeconds
+		if now - self.LastToggleTime < 0.15 then return end
+		self.LastToggleTime = now
+		if self.TargetScale > 0.9 and self.Entity.Enable then
+			self:Close()
+		else
+			self:Open()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Open()
+		self:ResolveRefs()
+		self.Entity.Enable = true
+		local transform = self.Entity.UITransformComponent
+		if isvalid(transform) then
+			self.CurrentScale = 0.8
+			transform.Scale = Vector3(0.8, 0.8, 1.0)
+			transform.anchoredPosition = Vector2(0, 0)
+		end
+		self:ApplyScaleTween(1.0)
+		self:RefreshTabHighlight()
+		self:RebuildList()
+		self:ResetListScroll()
+		log("[QUEST-LOG] Open tab=" .. tostring(self.currentTab) .. " rows=" .. tostring(#self.rows)
+			.. " selected=" .. tostring(self.selectedId))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		self:ApplyScaleTween(0.8)
+		log("[QUEST-LOG] Close")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyScaleTween(number targetScale)
+		self.TargetScale = targetScale
+		if self.ScaleTimer then
+			_TimerService:ClearTimer(self.ScaleTimer)
+			self.ScaleTimer = nil
+		end
+		local transform = self.Entity.UITransformComponent
+		if not isvalid(transform) then return end
+		self.ScaleTimer = _TimerService:SetTimerRepeat(function()
+			if not isvalid(transform) then
+				if self.ScaleTimer then _TimerService:ClearTimer(self.ScaleTimer) self.ScaleTimer = nil end
+				return
+			end
+			local diff = self.TargetScale - self.CurrentScale
+			if math.abs(diff) < 0.01 then
+				self.CurrentScale = self.TargetScale
+				transform.Scale = Vector3(self.CurrentScale, self.CurrentScale, 1.0)
+				_TimerService:ClearTimer(self.ScaleTimer)
+				self.ScaleTimer = nil
+				if self.TargetScale < 0.9 then
+					self.Entity.Enable = false
+				end
+			else
+				self.CurrentScale = self.CurrentScale + diff * 0.3
+				transform.Scale = Vector3(self.CurrentScale, self.CurrentScale, 1.0)
+			end
+		end, 1 / 60)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ResetListScroll()
+		local scrollEnt = self._T.listScroll
+		if not isvalid(scrollEnt) then return end
+		local sl = scrollEnt.ScrollLayoutGroupComponent
+		if not isvalid(sl) then return end
+		local ok = pcall(function()
+			sl:SetScrollNormalizedPosition(UITransformAxis.Vertical, 1.0)
+		end)
+		if not ok then
+			pcall(function()
+				sl:SetScrollNormalizedPosition(UITransformAxis.Vertical, 0.0)
+			end)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SelectTab(string tab)
+		if tab == self.currentTab and #self.rows > 0 then return end
+		self.currentTab = tab
+		self.selectedId = 0
+		self:RefreshTabHighlight()
+		self:RebuildList()
+		self:ResetListScroll()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshTabHighlight()
+		local selBg = Color(0.94, 0.66, 0.19, 1.0)
+		local idleBg = Color(0.18, 0.20, 0.16, 1.0)
+		local selText = Color(0.15, 0.12, 0.08, 1.0)
+		local idleText = Color(0.79, 0.75, 0.70, 1.0)
+		self:StyleTabEntity(self._T.tabProgressE, self.currentTab == "progress", selBg, idleBg, selText, idleText)
+		self:StyleTabEntity(self._T.tabReadyE, self.currentTab == "ready", selBg, idleBg, selText, idleText)
+		self:StyleTabEntity(self._T.tabDoneE, self.currentTab == "done", selBg, idleBg, selText, idleText)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void StyleTabEntity(Entity tabEnt, boolean selected, Color selBg, Color idleBg, Color selText, Color idleText)
+		if not isvalid(tabEnt) then return end
+		local spr = tabEnt.SpriteGUIRendererComponent
+		if isvalid(spr) then
+			if selected then spr.Color = selBg else spr.Color = idleBg end
+		end
+		self:SetLabelColor(tabEnt, selected and selText or idleText)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ClearRows()
+		for _, row in pairs(self.rows) do
+			if isvalid(row) then
+				if self.rowHandlers[row] ~= nil then
+					row:DisconnectEvent(ButtonClickEvent, self.rowHandlers[row])
+				end
+				row:Destroy()
+			end
+		end
+		self.rows = {}
+		self.rowHandlers = {}
+		self.rowIds = {}
+	end
+
+	@ExecSpace("ClientOnly")
+	method any GetLocalQuest()
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return nil end
+		return lp.PlayerQuest
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RebuildList()
+		self:ClearRows()
+		local pq = self:GetLocalQuest()
+		if pq == nil or pq.UserDataTable == nil then
+			self:ShowEmptyDetail()
+			return
+		end
+
+		local entries = {}
+		for id, userData in pairs(pq.UserDataTable) do
+			local data = _QuestDataSetLogic:GetData(id)
+			if data ~= nil and self:MatchesTab(userData, data) then
+				entries[#entries + 1] = { id = id, userData = userData, data = data }
+			end
+		end
+		table.sort(entries, function(a, b)
+			local pa = a.data.Priority or 0
+			local pb = b.data.Priority or 0
+			if pa ~= pb then return pa < pb end
+			return a.id < b.id
+		end)
+
+		for i = 1, #entries do
+			self:AddRow(entries[i].id, entries[i].data, entries[i].userData)
+		end
+
+		if self.selectedId ~= 0 then
+			local still = false
+			for i = 1, #self.rowIds do
+				if self.rowIds[i] == self.selectedId then still = true break end
+			end
+			if not still then self.selectedId = 0 end
+		end
+		if self.selectedId == 0 and #self.rowIds > 0 then
+			self.selectedId = self.rowIds[1]
+		end
+		if self.selectedId ~= 0 then
+			self:SelectQuest(self.selectedId)
+		else
+			self:ShowEmptyDetail()
+		end
+		log("[QUEST-LOG] Rebuild tab=" .. tostring(self.currentTab) .. " n=" .. tostring(#self.rows))
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean MatchesTab(any userData, any data)
+		local state = userData.State
+		if self.currentTab == "done" then
+			return state == _QuestStateEnum.Completed
+		end
+		if state ~= _QuestStateEnum.InProgress then return false end
+		local ready = false
+		pcall(function() ready = userData:IsCompletable(data) end)
+		if self.currentTab == "ready" then return ready end
+		return not ready
+	end
+
+	@ExecSpace("ClientOnly")
+	method void AddRow(integer questId, any data, any userData)
+		local tmpl = self._T.rowTemplate
+		if not isvalid(tmpl) then return end
+		local idx = #self.rows + 1
+		local row = tmpl:Clone("Row_" .. tostring(idx))
+		if not isvalid(row) then return end
+		row.Enable = true
+		local tr = row.UITransformComponent
+		if isvalid(tr) then
+			tr.RectSize = Vector2(400, 88)
+		end
+
+		local cat = ""
+		if _QuestCategoryEnum ~= nil then
+			pcall(function() cat = _QuestCategoryEnum:ToUIStr(data.CategoryEnum) or "" end)
+		end
+		local chipEnt = row:GetChildByName("Chip")
+		if isvalid(chipEnt) then
+			if cat ~= nil and cat ~= "" then
+				chipEnt.Enable = true
+				self:SetLabel(chipEnt, cat)
+			else
+				chipEnt.Enable = false
+			end
+		end
+		local nameEnt = row:GetChildByName("Name")
+		self:SetLabel(nameEnt, data.Name or "")
+		local progressEnt = row:GetChildByName("Progress")
+		local ready = false
+		pcall(function() ready = userData:IsCompletable(data) end)
+		local progressText = self:BuildProgressLine(data, userData)
+		if self.currentTab == "done" then
+			progressText = "완료"
+		elseif ready then
+			progressText = "완료 가능"
+		end
+		self:SetLabel(progressEnt, progressText)
+
+		local capturedId = questId
+		local h = row:ConnectEvent(ButtonClickEvent, function()
+			self:PlayClick()
+			self:SelectQuest(capturedId)
+		end)
+		self.rows[idx] = row
+		self.rowHandlers[row] = h
+		self.rowIds[idx] = questId
+	end
+
+	@ExecSpace("ClientOnly")
+	method string BuildProgressLine(any data, any userData)
+		local conds = data.ConditionDatas
+		if conds == nil or #conds == 0 then return "" end
+		local values = userData.Values
+		local parts = {}
+		for i = 1, #conds do
+			local cond = conds[i]
+			local uv = 0
+			if values ~= nil and values[i] ~= nil then uv = values[i] end
+			parts[#parts + 1] = string.format("%s %d/%d", cond.Description or "", uv, cond.Value)
+		end
+		return table.concat(parts, " · ")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SelectQuest(integer questId)
+		self.selectedId = questId
+		self:RefreshRowHighlight()
+		local pq = self:GetLocalQuest()
+		if pq == nil or pq.UserDataTable == nil then
+			self:ShowEmptyDetail()
+			return
+		end
+		local userData = pq.UserDataTable[questId]
+		local data = _QuestDataSetLogic:GetData(questId)
+		if userData == nil or data == nil then
+			self:ShowEmptyDetail()
+			return
+		end
+		self:SetLabel(self._T.detailName, data.Name or "")
+		self:SetLabel(self._T.detailDesc, data.Desc or "")
+		self:SetLabel(self._T.detailGoal, self:BuildProgressBlock(data, userData))
+		local ready = false
+		pcall(function() ready = userData:IsCompletable(data) end)
+		local hint = ""
+		if userData.State == _QuestStateEnum.Completed then
+			hint = "완료한 퀘스트입니다."
+		elseif ready and data.TurnInNpcId ~= nil and data.TurnInNpcId ~= "" then
+			hint = "조건을 달성했습니다. 보고 대상에게 가서 완료하세요."
+		elseif ready then
+			hint = "조건을 달성했습니다."
+		else
+			hint = data.ProgressingDesc or ""
+		end
+		self:SetLabel(self._T.detailHint, hint)
+		self:FillRewards(data)
+		local abandonable = false
+		pcall(function() abandonable = userData:IsAbandonable(data) end)
+		if isvalid(self._T.abandonE) then
+			self._T.abandonE.Enable = abandonable
+		end
+		log("[QUEST-LOG] Select id=" .. tostring(questId) .. " ready=" .. tostring(ready)
+			.. " abandon=" .. tostring(abandonable))
+	end
+
+	@ExecSpace("ClientOnly")
+	method string BuildProgressBlock(any data, any userData)
+		local conds = data.ConditionDatas
+		if conds == nil or #conds == 0 then return (data.ProgressingDesc or "") end
+		local values = userData.Values
+		local parts = {}
+		for i = 1, #conds do
+			local cond = conds[i]
+			local uv = 0
+			if values ~= nil and values[i] ~= nil then uv = values[i] end
+			parts[#parts + 1] = string.format("· %s  %d / %d", cond.Description or "", uv, cond.Value)
+		end
+		return table.concat(parts, "\n")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void FillRewards(any data)
+		local slots = { self._T.slot1, self._T.slot2, self._T.slot3, self._T.slot4 }
+		local items = data.RewardItems
+		for i = 1, #slots do
+			local slot = slots[i]
+			if isvalid(slot) then
+				local it = nil
+				if items ~= nil then it = items[i] end
+				if it ~= nil then
+					slot.Enable = true
+					local itemName = tostring(it[1] or "")
+					local count = tonumber(it[2]) or 0
+					local iconEnt = slot:GetChildByName("Icon")
+					local countEnt = slot:GetChildByName("Count")
+					self:SetLabel(countEnt, "x" .. tostring(math.floor(count)))
+					if isvalid(iconEnt) then
+						local spr = iconEnt.SpriteGUIRendererComponent
+						local icon = self:GetItemIconRuid(itemName)
+						if isvalid(spr) and icon ~= "" then
+							spr.ImageRUID = icon
+							iconEnt.Enable = true
+						elseif isvalid(iconEnt) then
+							iconEnt.Enable = icon ~= ""
+						end
+					end
+				else
+					slot.Enable = false
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetItemIconRuid(string itemName)
+		local row = self:FindItemRow(itemName)
+		if row == nil then return "" end
+		local ok, v = pcall(function() return row:GetItem("IconRUID") end)
+		if ok and v ~= nil then return tostring(v) end
+		return ""
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetItemDisplayName(string itemName)
+		if itemName == nil or itemName == "" then return "" end
+		local row = self:FindItemRow(itemName)
+		if row == nil then return itemName end
+		local ok, v = pcall(function() return row:GetItem("DisplayName") end)
+		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		return itemName
+	end
+
+	@ExecSpace("ClientOnly")
+	method any FindItemRow(string itemName)
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil or itemName == nil or itemName == "" then return nil end
+		local row = ds:FindRow("Name", itemName)
+		if row ~= nil then return row end
+		return ds:FindRow("Name", string.lower(itemName))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowEmptyDetail()
+		local empty = "이 목록에 퀘스트가 없습니다."
+		if self.currentTab == "progress" then empty = "진행 중인 퀘스트가 없습니다."
+		elseif self.currentTab == "ready" then empty = "완료할 수 있는 퀘스트가 없습니다."
+		elseif self.currentTab == "done" then empty = "완료한 퀘스트가 없습니다."
+		end
+		self:SetLabel(self._T.detailName, empty)
+		self:SetLabel(self._T.detailDesc, "왼쪽에서 퀘스트를 선택하세요.")
+		self:SetLabel(self._T.detailGoal, "")
+		self:SetLabel(self._T.detailHint, "")
+		local slots = { self._T.slot1, self._T.slot2, self._T.slot3, self._T.slot4 }
+		for i = 1, #slots do
+			if isvalid(slots[i]) then slots[i].Enable = false end
+		end
+		if isvalid(self._T.abandonE) then self._T.abandonE.Enable = false end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshRowHighlight()
+		local selBg = Color(0.94, 0.66, 0.19, 1.0)
+		local idleBg = Color(0.16, 0.18, 0.15, 0.9)
+		local selText = Color(0.15, 0.12, 0.08, 1.0)
+		local idleName = Color(0.94, 0.91, 0.75, 1.0)
+		local idleProg = Color(0.79, 0.75, 0.70, 1.0)
+		for i = 1, #self.rows do
+			local row = self.rows[i]
+			if isvalid(row) then
+				local selected = (self.rowIds[i] == self.selectedId)
+				local spr = row.SpriteGUIRendererComponent
+				if isvalid(spr) then
+					if selected then spr.Color = selBg else spr.Color = idleBg end
+				end
+				self:SetLabelColor(row:GetChildByName("Name"), selected and selText or idleName)
+				self:SetLabelColor(row:GetChildByName("Progress"), selected and selText or idleProg)
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnAbandon()
+		if self.selectedId == 0 then return end
+		local pq = self:GetLocalQuest()
+		if pq == nil then return end
+		local id = self.selectedId
+		pcall(function()
+			pq:RequestAbandonQuests({ id })
+		end)
+		log("[QUEST-LOG] Abandon request id=" .. tostring(id))
+		self.selectedId = 0
+		self:RebuildList()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetLabel(Entity ent, string text)
+		if not isvalid(ent) then return end
+		if isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.Text = text
+			return
+		end
+		if isvalid(ent.TextComponent) then
+			ent.TextComponent.Text = text
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetLabelColor(Entity ent, Color color)
+		if not isvalid(ent) then return end
+		if isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.FontColor = color
+			return
+		end
+		if isvalid(ent.TextComponent) then
+			ent.TextComponent.FontColor = color
+		end
+	end
+
+end

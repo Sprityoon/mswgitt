@@ -3,6 +3,9 @@
 > **목적**: 별도 스토리 작가 에이전트(외부 세션)와 협업해 세계관·NPC 서사·퀘스트 라인을 전개하고,
 > 그 산출물이 **이 저장소의 기존 데이터 주도 파이프라인(QuestDataSet / DialogDataSet)에 그대로 흘러들어오게** 하는 연동 설계.
 > §5 핸드오프 브리프는 스토리 에이전트에게 복사해 전달하는 용도로 작성됐다.
+>
+> **2026-08-14 폴더 개편**: 이 문서는 `docs/design/story/`로 이동했다. 이 문서는 **시스템 연동(스키마·재생기·하드 제약)의 단일 소스**로 유지되고,
+> 콘텐츠 원안(세계관·챕터·맵 컨셉·퀘스트 라인)은 같은 폴더의 [README.md](./README.md) 문서 지도를 따른다.
 
 ---
 
@@ -52,7 +55,7 @@
 ```
 스토리 에이전트 산출물                     이 저장소의 그릇
 ─────────────────────                  ─────────────────────────────
-① 세계관 바이블 (md)          →  docs/design/story-bible.md (신규, 참조용)
+① 세계관 바이블 (md)          →  docs/design/story/story-bible.md (✅ 2026-08-14 신설, 참조용)
 ② 퀘스트 라인 (CSV 행)        →  QuestDataSet.csv / QuestConditionDataSet.csv  [기존 스키마 그대로]
 ③ NPC 스토리 대사 (CSV 행)    →  StoryDialogDataSet.csv  [신규 — §2.1]
 ④ 앰비언트 대사 증분 (CSV 행) →  DialogDataSet.csv  [기존 스키마 그대로]
@@ -98,7 +101,7 @@ QuestId, NpcId, Phase(offer|progress|complete), Seq(1..n), Text, Speaker(npc|pla
 
 ## 4. 제작자 결정 필요 (열린 판단)
 
-1. ⚖️ **스토리 톤 (2026-08-08)**: **기본 코지 + 미스터리 훅** (연구소/보스/마을의 가벼운 수수께끼). 죽음/공포/정치는 금지.
+1. ⚖️ **스토리 톤 (2026-08-08 → 2026-08-14 개정)**: **기본 코지 + 이원 미스터리** — 긍정(푸른 빛)과 메인 빌런(그늘)이 나란히. 구 "죽음/공포/정치 전면 금지"는 **해제** — 잔혹·고어 묘사, 절망 전개, 현실 정치 풍자만 회피. 몬스터 전투 = **"퇴치"**, 몬스터 = 잠식으로 적대화된 이웃 생물, 사냥 드롭 = 연구·발전 재료. 원문: [story-bible.md](./story-bible.md) §0~§2.
 2. **분량 단위**: 챕터당 4~6퀘, 첫 챕터는 마을 소개 아크 (유지).
 3. **주인공 설정**: 영지 이주민 전제 명문화 (유지).
 4. ⚖️ **대화창 (2026-08-08)**: **메이플스토리식 하단 대화창** 신설. F「대화하기」는 ChatBalloon이 아니라 이 창. 퀘스트 수락/거절 포함. HUD·퀵슬롯·모바일 버튼을 덮어도 됨. 자동 혼잣말(거리 트리거)만 기존 말풍선 유지.
@@ -139,7 +142,7 @@ QuestId, NpcId, Phase(offer|progress|complete), Seq(1..n), Text, Speaker(npc|pla
   (예: "Gather,Wood,,5" = 나무 5회 채집. 호위/타이머/대화만으로 완료되는 조건은 시스템에 없음 — 필요하면 "시스템 제안"으로 분리 표기.)
 - 아이템/몬스터 이름은 제공된 목록의 영문 Name을 그대로 (별도 첨부: item_dataset의 Name 컬럼, 몬스터 Name 목록).
 - 대사는 한국어, 한 문장 40자 내외, 이모지 금지. 말줄임표는 "…" 하나.
-- 톤: **코지 기본 + 가벼운 미스터리 훅**(연구소·보스·마을 수수께끼). 따뜻함·잔잔한 유머 유지. 죽음/공포/정치 소재 금지.
+- 톤: **코지 기본 + 이원 미스터리**(긍정: 푸른 불씨 / 그늘: 메인 빌런). 따뜻함·잔잔한 유머 유지. 잔혹·고어 묘사, 절망 전개, 현실 정치 풍자만 금지 (2026-08-14 개정 — 구 "죽음/공포/정치 전면 금지"는 해제). 몬스터 전투는 "퇴치"로 서술. 세계관·용어는 story-bible.md 용어집을 따를 것.
 - 챕터 1 분량: 퀘스트 4~6개 + NPC별 스토리 대사 시퀀스(offer 2~4문장, complete 1~3문장) + 앰비언트 10줄 내외.
 ```
 
@@ -147,6 +150,7 @@ QuestId, NpcId, Phase(offer|progress|complete), Seq(1..n), Text, Speaker(npc|pla
 
 ## 관련 문서
 
-- 게임 설계: [../../game_design.md](../../game_design.md) §2(월드 구조)·§3(시스템)
-- 함정: [../pitfalls.md](../pitfalls.md) 규칙 4(아이템 식별자)·7(UserDataRow)
+- 콘텐츠 원안(같은 폴더): [README.md](./README.md) · [story-bible.md](./story-bible.md) · [npc-cast.md](./npc-cast.md) · [map-concepts.md](./map-concepts.md) · [quest-design.md](./quest-design.md)
+- 게임 설계: [../../../game_design.md](../../../game_design.md) §2(월드 구조)·§3(시스템)
+- 함정: [../../pitfalls.md](../../pitfalls.md) 규칙 4(아이템 식별자)·7(UserDataRow)
 - 의뢰 게시판(기존): `RequestPoolDataSet` — 스토리 퀘스트와 별개 축으로 유지

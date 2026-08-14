@@ -189,7 +189,12 @@ script UIShopController extends Component
 
 						-- Set Name
 						if isvalid(nameTxt) and isvalid(nameTxt.TextComponent) then
-							nameTxt.TextComponent.Text = itemName
+							local disp = itemName
+							if row ~= nil then
+								local okD, vD = pcall(function() return row:GetItem("DisplayName") end)
+								if okD and vD ~= nil and tostring(vD) ~= "" then disp = tostring(vD) end
+							end
+							nameTxt.TextComponent.Text = disp
 						end
 
 						-- Set Price text

@@ -10,8 +10,331 @@
 
 | 대상 | 내용 |
 |---|---|
+| `docs/design/story/` 신설 6문서 · `AGENTS.md` §10 | **스토리·맵·퀘스트 콘텐츠 설계 체계** (2026-08-14) — 아래 참조 |
+| `ui/PopupGroup.ui` · `HUDGroup.ui` · `UIQuestLogController` · `UIQuestController` | **퀘스트 로그 A안** (2026-08-14) — 아래 참조 |
+| `UIPreviewToolController` · `item_dataset` | **도끼 외형 F9 8라운드** (2026-08-14) — 망치 철회, 전투 도끼 재탐색 |
+| 데이터셋 + `ui/PopupGroup.ui`·`HUDGroup.ui` + UI 컨트롤러 | **한글화 1차** (2026-08-14) — 아래 참조 |
+| `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
+| `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
+| `ui/MainMenuGroup.ui` | **캐릭터 만들기 좌/우 페이지** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
+| `ui/PopupGroup.ui` | **팝업 정합성 감사** (2026-08-14) — 아래 참조 |
+| `ui/PopupGroup.ui` | **팝업 크롬 통일안** (2026-08-14 Play 실측) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-14 스토리·맵·퀘스트 콘텐츠 설계 체계 (docs/design/story/ 신설)
+
+제작자 지시: 스토리 구체화 + 앞으로의 맵 컨셉·디자인을 퀘스트와 연계, **전용 폴더 관리**, 여러 에이전트 공동 보완 체제.
+
+| 산출물 | 내용 |
+|---|---|
+| `docs/design/story/README.md` | 허브 — 문서 지도 · 진행 보드 · **에이전트 협업 규약**(⚖️/🧭/❓/✅ 표기, ❓ 미실측 반영 금지) · 열린 질문 Q1~Q7 |
+| `story-bible.md` | 톤 가드(⚖️ 코지+미스터리) · 세계관 「푸른 불씨」 🧭 · 챕터 1~5 아크 · 용어집. 근거 = 반영된 201 대사·`Recipe Scroll`(고대 두루마리)·hunt04 Biome=green_island·`SlimeKing.model` |
+| `npc-cast.md` | NPC 말투 카드(기존 CSV 대사에서 역산) + 🔴 수주 가능 NPC = `VillagerDialog` 부착 6인뿐(merchant 불가) 실측 명시 |
+| `map-concepts.md` | 공간 7종 컨셉·팔레트(BiomeDataSet 실측색) · 🔴 hunt01~03 `template_field` 공유 → 구역별 픽스처 구조 결정 필요(Q5) · 스토리 소품 = 기존 Prop 재사용 표(R1) |
+| `quest-design.md` | 챕터 1 상세(202~205 초안) + 챕터 2~5 골격(211~243) · 조건 10종 중 검증 4종/미실측 6종(❓) 구분 · CSV 반영 체크리스트 · 키 부록(아이템 48·몬스터·포탈) |
+| 이동 | `docs/design/story-npc-quest-plan.md` → `docs/design/story/`(git mv, 시스템 측 단일 소스로 유지). 인바운드 링크 1건(main-menu-save-slots.md) 및 내부 상대 링크 수정 |
+| `AGENTS.md` §10 | 문서 단일 소스 표에 「스토리·맵 컨셉·퀘스트 콘텐츠 설계」 행 추가 |
+
+- 검증: 문서·링크 작업만 — 코드/데이터셋/맵/UI 무변경, refresh 불요. 이동 후 참조 전수 grep으로 끊긴 링크 0 확인. 퀘스트 초안은 전부 🧭이며 CSV 미투입.
+
+**같은 날 제작자 판정 1차 반영 (⚖️ 2026-08-14)** — README 판정 로그에 원문 기록:
+
+| 판정 | 반영 |
+|---|---|
+| 죽음·공포·정치 **엄격 금지 해제** (잔혹·고어, 절망 전개, 현실 정치 풍자만 회피) | story-bible §0 · story-npc-quest-plan §4·§5 브리프 · design-policy §5 스토리 톤 행 개정 |
+| 몬스터 전투 = **"퇴치"** · 몬스터 = **잠식되어 적대화된 이웃 생물** (확정) | story-bible §0·§1·§5 용어집 · 퀘스트명 개정(211·242) |
+| 긍정 미스터리(푸른 빛) + **미스터리 메인 빌런**(몬스터 발생 원인) 이원 구조 | story-bible §2-B 신설 (이름 후보 = Q8) · 챕터 단서 사슬 빛/그늘 2가닥 재편 · 설원 아크 = 빌런 추적으로 승격 |
+| **몬스터 사냥 드롭 → 연구·발전** 재료 축 | quest-design §4.6 신설 (Slime Jelly 등 4종 + 연구 행 제안 = Q9, 챕터 2에 표본 퀘스트 212 추가 → 211~216) |
+
+- 다음 단계: 제작자가 열린 질문 **Q1~Q9** 판정 (신규: Q8 빌런 이름, Q9 드롭·연구 라인업) → 챕터 1 대사 집필(202~205) → ❓ 조건 실측(Kill/Smelt/Warp 인자, Gather 드롭 집계) 후 CSV 반영.
+
+### 2026-08-14 퀘스트 로그 A안 + 트래커 클릭
+
+제작자 확정: 좌목록+우상세 큰창(제작·도감 1000×780 크롬). HUD `QuestTracker` 클릭으로 연다. 수락/거절은 `DialogGroup` 유지.
+
+| 구역 | 내용 |
+|---|---|
+| 탭 | 진행 중 / 완료 가능 / 완료 (`InProgress`·`IsCompletable`·`Completed`) |
+| 왼쪽 | 스크롤 행 400×88. 이름·진행·카테고리 칩 |
+| 오른쪽 | 설명·목표·보상 슬롯 4·포기(`IsAbandonable`일 때만) |
+| 트래커 | `BtnOpen` 오버레이. 진행 퀘스트가 없어도 크롬 유지 |
+
+- 변경: `ui/PopupGroup.ui` `QuestPopup` · `ui/HUDGroup.ui` `QuestTracker/BtnOpen` · `UIQuestLogController.mlua`(신규) · `UIQuestController.mlua` · `docs/design-policy.md` §5
+- 검증: UIBuilder write + `ui_lint` Error=0 (Popup WARN 87 / HUD WARN 62, 기존 베이스라인+신규 탭은 88px). LSP 0. `maker_refresh_workspace` status ok. build dateTime=`2026-08-14T19:18:11`~`12`(이번 refresh와 일치). Error=1 = 기존 `LEA-4004 PlayerController.OnMapEnter`(무관). Warning=47. `.codeblock` 생성 확인. 1차 refresh의 `LEA-1118 ---@type UIQuestLogController`는 주석 제거 후 소거.
+
+### 2026-08-14 퀘스트 팝업 가시성 (Play 실측)
+
+제작자: 가시성 떨어짐 · 배치 이상 → AI가 Play 들어가 스크린샷 확인.
+
+실측 (슬롯1 `다줄`, 퀘스트 101 `첫 걸음 - 풀 뜯기` 0/3):
+1. 나무 프레임 속지가 Inner a=0.08이라 맵이 비치고, 크림/회색 글자가 잔디·길에 묻힘
+2. 상세 힌트가 보상 슬롯·「보상」라벨과 겹침 (힌트 bottom y=150 vs 슬롯 top -322, 480px 패널에 88px 포기 버튼까지 넣어서 수직 충돌)
+3. 선택 행 Color a=0.55라 행 자체도 비침
+4. 목록/상세 y=-70이라 탭(하단 ~172)과 콘텐츠(상단 ~220) 사이 빈 간격
+
+수정:
+- `QuestPopup/Paper` 추가 (제작창과 같은 `c24adedc…` a=1) + Inner a=1
+- 목록 마스크 다크 a=0.72, 상세 카드 다크 a=0.96
+- 힌트를 설명 아래로, 보상·포기는 겹치지 않게 재배치. 목록/상세 y=-40
+- 선택 행 a=1.0 + 잉크색 글자
+
+- 검증: UIBuilder write + `ui_lint` Error=0 (WARN 87). `maker_refresh_workspace` status ok. build dateTime=`2026-08-14T19:31:45`~`46`(이번 refresh와 일치). Error=1 = 기존 `LEA-4004`. Warning=47.
+- 재Play 스크린샷 (2026-08-14 19:38): 맵 비침은 사라졌으나 제목 외곽선·힌트 겹침·다크카드가 도감/제작대와 안 맞음.
+- 제작자: 다른 UI처럼 직접 열어 대조하라. Play에서 제작대·도감을 연 뒤 퀘스트를 도감 탭(180×44)+제작대 잉크 본문+Inner Paper a=1로 맞춤. 늦은 sibling `Paper` 제거. 힌트 pivot (0,1).
+- 재캡처 19:51: 나무 헤더+얇은 탭+종이 속지+잉크 상세. build dateTime=`2026-08-14T19:50:21`~`23`(이번 refresh 일치). Error=1 기존 `LEA-4004`. Warning=47. 닫기 ✕는 TextGUIRenderer 글리프라 제작대 X 스프라이트(`221e0368…`) 대비 약함.
+
+### 2026-08-14 도끼 외형 F9 8라운드
+
+제작자: 망치류는 뜬금없음. 전투 무기여도 되니 도끼에서 다시. 철=강철 유지. 돌·구리 `item_dataset` 미반영.
+이번 5종은 이전에 F9에 안 올린 도끼·엑스만.
+
+| # | 후보 | 슬롯/모션 |
+|---|---|---|
+| 1 | 메이플 스틸 엑스 `1c6f881a…` | onehand / swingO2 |
+| 2 | 드래곤 엑스 `4f1e6bbc…` | onehand / swingO2 |
+| 3 | 클로니안 엑스 `53a4e340…` | twohand / swingT1 |
+| 4 | Commerci Two-handed Axe `504f8169…` | twohand / swingT1 |
+| 5 | 스칼렛 배틀엑스 `34de2b5f…` | twohand / swingT1 |
+
+7라운드(망치·톱·몽둥이) 철회.
+- 검증: `maker_refresh_workspace` **보류** (Play Test 중). Stop 후 Refresh 필요.
+- **런타임 검증 보류(제작자 수행)** — Stop → Refresh → Play → F9 → 모션 재생
+
+### 2026-08-14 도끼 외형 F9 7라운드
+
+제작자: 6라운드(미스릴·Battle Axe·젝커·쟈이힌)도 전투템. 카탈로그 도끼/엑스는 전부 전투 무기라 **작업 도구**로 전환.
+철=강철 유지. 돌·구리 `item_dataset` 미반영. 곡괭이·야삽·호미는 다른 도구가 사용 중이라 제외.
+
+| # | 후보 | 슬롯/모션 | 제안 |
+|---|---|---|---|
+| 1 | 나무 망치 `3c9b8138…` | twohand / swingT1 | 돌 · 나무 작업 |
+| 2 | 몽둥이 `ce073997…` | onehand / swingO2 | 돌 · 원시 |
+| 3 | 톱 `d18bed85…` | onehand / swingO2 | 벌목 도구 |
+| 4 | 망치 `512df6b4…` | onehand / swingO2 | 구리 · 한손 작업 |
+| 5 | 사각 망치 `4f3b9177…` | twohand / swingT1 | 구리 · 양손 작업 |
+
+6라운드에서 내린 것: 미스릴 도끼 · GMS Battle Axe · 젝커 · 쟈이힌 엑스 · 쟈이힌 투핸드엑스.
+- 검증: `maker_refresh_workspace` status ok. build dateTime=`2026-08-14T18:31:14`~`15` — **이번 refresh와 일치**. Error=1 = 기존 `LEA-4004`(무관). Warning=47
+- **런타임 검증 보류(제작자 수행)** — Play → F9 → 모션 재생
+
+### 2026-08-14 도끼 외형 F9 6라운드
+
+제작자: 5라운드와 다른 기본템을 더 찾음. 철=강철 유지. 돌·구리 `item_dataset` 미반영.
+
+카탈로그 도끼/엑스 103종 전수. 이벤트·앱솔·제네시스·메이플로고·이미 본 5라운드 제외.
+
+| # | 후보 | 슬롯/모션 | 제안 |
+|---|---|---|---|
+| 1 | 미스릴 도끼 `07511c43…` | onehand / swingO2 | 돌 · 회색 한손 (신규) |
+| 2 | GMS Battle Axe `949f8935…` | twohand / swingT1 | 돌 · 양손 벌목 (신규) |
+| 3 | 젝커 `61decbb6…` | onehand / swingO2 | 구리 · 초반 한손 (신규) |
+| 4 | 쟈이힌 엑스 `ef7b758c…` | onehand / swingO2 | 구리 · 한손 (신규) |
+| 5 | 쟈이힌 투핸드엑스 `e97411c1…` | twohand / swingT1 | 구리 · 양손 (신규) |
+
+5라운드 보류: 벅 · 양손 도끼 · 쇠 도끼 · 철제 도끼 · 버크.
+- 검증: `maker_refresh_workspace` **보류** (Play Test 중). Stop 후 Refresh 필요.
+- **런타임 검증 보류(제작자 수행)** — Stop → Refresh → Play → F9 → 모션 재생
+
+### 2026-08-14 도끼 외형 F9 5라운드
+
+제작자: 철 도끼 = 강철 도끼 확정. 돌·구리는 기본템 느낌으로 재탐색.
+
+**철 도끼 확정** (`item_dataset` `Iron Axe` 반영):
+
+| 항목 | 값 |
+|---|---|
+| 외형 | 강철 도끼 |
+| WeaponRUID | `69ef6490cd794abeb4ebbc539b8582d9` |
+| IconRUID | `thumbnail://69ef6490…` |
+| WeaponSlot | `twohand` (구 전투 도끼는 한손 `swingO2` → 슬롯·모션 동반 변경) |
+| SwingAction | `swingT1` |
+
+F9는 돌(1–2)·구리(3–5). 카탈로그에 돌날 전용 도끼는 없음(Chief/호크헤드는 화려해서 제외).
+
+| # | 후보 | 슬롯/모션 | 제안 |
+|---|---|---|---|
+| 1 | 벅 `28f8e12e…` | onehand / swingO2 | 돌 · 초반 한손 |
+| 2 | 양손 도끼 `95a4ec9d…` | twohand / swingT1 | 돌 · 기본 양손 (신규) |
+| 3 | 쇠 도끼 `2b9abd01…` | twohand / swingT1 | 구리 · 기본 양손 |
+| 4 | 철제 도끼 `4573564d…` | twohand / swingT1 | 구리 · 기본 양손 |
+| 5 | 버크 `b72e8b64…` | twohand / swingT1 | 구리 · 기본 양손 (신규) |
+
+4라운드에서 내린 것: 파이어 잭 · 콘트라 엑스 · Commerci Axe. 돌·구리 `item_dataset` 미반영.
+- 검증: `maker_refresh_workspace` status ok. build dateTime=`2026-08-14T18:10:17`~`19` — **이번 refresh와 일치**. Error=1 = 기존 `LEA-4004`(무관). Warning=47
+- **런타임 검증 보류(제작자 수행)** — Play → F9 → 모션 재생. 철 도끼는 인게임 장착으로 강철 도끼인지 확인
+
+### 2026-08-14 도끼 외형 F9 4라운드
+
+제작자: 네오코라 제외. 구리색이 눈에 띄는 도끼 탐색. 쇠·강철 유지.
+카탈로그에 '구리 도끼' 이름 없음. 틴트 불가 → 날이 주황·적동·청동인 한손 도끼 3종.
+
+| # | 후보 | 슬롯/모션 | 상태 |
+|---|---|---|---|
+| 1 | 파이어 잭 `d36181f7…` | onehand / swingO2 | 주황 날 (색이 가장 뚜렷) |
+| 2 | 콘트라 엑스 `cdee4e06…` | onehand / swingO2 | 적동 한손 |
+| 3 | Commerci Axe `c410c327…` | onehand / swingO2 | 청동 한손 |
+| 4 | 쇠 도끼 `2b9abd01…` | twohand / swingT1 | **후보 유지** |
+| 5 | 강철 도끼 `69ef6490…` | twohand / swingT1 | **후보 유지** |
+
+3라운드에서 내린 것: 네오코라. 보류: 벅 · 철제 도끼. `item_dataset` 미반영.
+- 검증: `maker_refresh_workspace` **보류** (Play Test 중). Stop 후 Refresh 필요.
+- **런타임 검증 보류(제작자 수행)** — Stop → Refresh → Play → F9 → 모션 재생
+
+### 2026-08-14 도끼 외형 F9 3라운드
+
+제작자: 2라운드(Chief/호크헤드/당커)는 화려함. 구리도 초반 라인에서 재탐색. 쇠·강철 유지.
+
+| # | 후보 | 슬롯/모션 | 상태 |
+|---|---|---|---|
+| 1 | 벅 `28f8e12e…` | onehand / swingO2 | 초반 한손 (손도끼 다음) |
+| 2 | 네오코라 `4a1ea465…` | onehand / swingO2 | 초반 청동·구리 |
+| 3 | 철제 도끼 `4573564d…` | twohand / swingT1 | 초반 양손, 쇠↔강철 사이 |
+| 4 | 쇠 도끼 `2b9abd01…` | twohand / swingT1 | **후보 유지** |
+| 5 | 강철 도끼 `69ef6490…` | twohand / swingT1 | **후보 유지** |
+
+2라운드에서 내린 것: Chief Axe · 호크헤드 · 당커. `item_dataset` 미반영.
+- 검증: `maker_refresh_workspace` status ok. build dateTime=`2026-08-14T17:54:57`~`58` — **이번 refresh와 일치**. Error=1 = 기존 `LEA-4004`(무관). Warning=47
+- **런타임 검증 보류(제작자 수행)** — Play → F9 → 모션 재생
+
+### 2026-08-14 도끼 외형 F9 2라운드
+
+제작자: 쇠 도끼·강철 도끼는 후보 유지. 손 도끼는 돌날이 더 필요.
+
+| # | 후보 | 슬롯/모션 | 상태 |
+|---|---|---|---|
+| 1 | Chief Axe `3524d8ff…` | onehand / swingO2 | 돌 신규 |
+| 2 | 호크헤드 `39d5af74…` | onehand / swingO2 | 돌 신규 |
+| 3 | 당커 `4e010b67…` | onehand / swingO2 | 돌·투박 신규 |
+| 4 | 쇠 도끼 `2b9abd01…` | twohand / swingT1 | **후보 유지** |
+| 5 | 강철 도끼 `69ef6490…` | twohand / swingT1 | **후보 유지** |
+
+1라운드에서 내린 것: 손 도끼(금속) · 토마호크 · 양날 도끼. `item_dataset` 미반영.
+- **refresh 검증 보류** — 요청 시점 Maker가 Play Test라 `maker_refresh_workspace` unavailable. Play 종료 후 refresh 필요
+- **런타임 검증 보류(제작자 수행)** — Stop → Refresh → Play → F9 → 모션 재생
+
+### 2026-08-14 도끼 외형 F9 샘플 1라운드
+
+현행 장착이 마음에 안 맞음. `item_dataset`은 아직 안 바꾸고 F9 후보만 교체.
+
+| 현행 | 이름 | RUID |
+|---|---|---|
+| 돌 도끼 | GMS Axe | `096fabc5…` |
+| 구리 도끼 | (이름 없음) onehandedweapon-3280 | `233fd076…` |
+| 철 도끼 | 전투 도끼 | `963cde7d…` |
+
+F9 슬롯 (벌목 실루엣, 전투·네온 제외):
+
+| # | 후보 | 슬롯/모션 | 제안 티어 |
+|---|---|---|---|
+| 1 | 손 도끼 `5b0af54d…` | onehand / swingO2 | 돌 |
+| 2 | 토마호크 `5e6acebb…` | onehand / swingO2 | 돌 |
+| 3 | 양날 도끼 `9d1a419e…` | onehand / swingO2 | 구리 |
+| 4 | 쇠 도끼 `2b9abd01…` | twohand / swingT1 | 구리·철 |
+| 5 | 강철 도끼 `69ef6490…` | twohand / swingT1 | 철 |
+
+- 고르면: `WeaponRUID` + `WeaponSlot` + `SwingAction` + `IconRUID=thumbnail://같은RUID`. 양손이면 슬롯/모션을 twohand·swingT*로 같이 바꿀 것
+- 2라운드 가능: 같은 계열 색 변형, 또는 `철제 도끼` `미스릴 도끼` `Chief Axe`
+- **런타임 검증 보류(제작자 수행)** — Play → F9 → 모션 재생. 사라지는 슬롯 = 그 액션 없음
+- 검증: `maker_refresh_workspace` status ok. build dateTime=`2026-08-14T17:29:01`~`02` — **이번 refresh와 일치**. Error=1 = 기존 `LEA-4004 PlayerController.OnMapEnter`(무관). Warning=47
+
+### 2026-08-14 한글화 1차 (데이터셋 + UI)
+
+플레이어 문구는 한글. **`item_dataset.Name`은 영문 키 유지** (세이브·제작·상점 깨짐 방지). 표시는 `DisplayName`.
+
+| 대상 | 내용 |
+|---|---|
+| `item_dataset.csv` | `DisplayName` 컬럼 추가(Name 다음). Description 한글. 48행 |
+| `RecipeDataSet.csv` | `Desc` 한글. RecipeName/Ing* 키 유지 |
+| `BiomeDataSet.csv` | DisplayName: 초록 섬 / 흙 벌판 / 바위 지대 / 사막 / 설원 |
+| `QuestDataSet.csv` | ProgressingDesc 영문 잔재 제거 6건 |
+| `AnimalDataSet.csv` | DisplayName: 닭 / 양 / 고양이 |
+| `ui/PopupGroup.ui` | 타이틀·탭·슬롯·스탯·칩·버튼 한글 33 |
+| `ui/HUDGroup.ui` | 모바일 라벨 한글 6 |
+| UI 컨트롤러 | 제작/가방/캐릭터/화로/도감/상점/의뢰가 DisplayName·한글 버튼 사용 |
+
+- 검증: UIBuilder write + lint Error=0 (Popup WARN 86, HUD WARN 66). `maker_refresh_workspace` status ok. build 로그 dateTime=`2026-08-14T17:15:50`~`51` — **이번 refresh와 일치**. Error=1 = 기존 `LEA-4004 PlayerController.OnMapEnter`(무관). Warning=47 (이번 시각 6 + 버퍼 잔여 41). **런타임 검증 보류(제작자 수행)**
+- Play 확인: ① 가방 탭=전체/자원/장비 ② 툴팁 한글명 ③ 제작 목록·상세·칩 한글 ④ 캐릭터 스탯 라벨 한글 ⑤ 상점·의뢰 아이템명 한글 ⑥ HUD 모바일 버튼 한글. **인벤 세이브가 그대로인지**(Name 키 변경 없음)
+
+### 2026-08-14 PopupGroup 정합성 감사
+
+| 판정 | 내용 |
+|---|---|
+| ✅ 바인딩 | 팝업 컨트롤러 UUID 160건 → `PopupGroup.ui` 대조. **missing=0.** 규칙 24 해당 없음. 중첩 UIGroup 0. 빈 string 프로퍼티 6건은 상태값(아이템키 등)이라 노이즈 |
+| ✅ 호버 | 팝업 버튼 82개 전부 ColorTint 골드 `#ffd161` (08-14 패치 유지) |
+| ✅ **닫기 이중 X** | 상자·용광로·권한·상점·스킬트리 `BtnClose`가 X 스프라이트 `221e0368` + 레거시 `TextComponent="X"` 겹침. 글자 비움. 인벤/제작/캐릭터/워프는 원래 스프라이트만 |
+| ✅ **용광로 제목** | Title 500×50이 닫기를 68px 덮음 → 340×50. L023 소거 |
+| ✅ **인벤 툴팁** | `Name`/`Count` 히트박스 400px → 카드 240에 맞춤 220 |
+| ℹ️ 닫기 두 패밀리 | 큰 종이창(인벤·제작·캐릭터)=흰 X 아이콘. 작은 카드=적갈 X 아이콘. 도감·의뢰·연구는 나무칩+글자(✕/X) — 의도된 세대 차이, 미통일 |
+| ℹ️ 워프 L023 | Header/Slot 풀이 작성 좌표에서 겹침. `UIWarpController.PopulateDestinations`가 Open 때 재배치·Bg 높이 맞춤. 작성 좌표는 풀 주차 |
+| ℹ️ 스킬트리 L016 | 노드가 왼쪽 치우침. 오른쪽 `SkillDetailPanel` 자리. 의도 |
+| ℹ️ Grid L004 | 인벤 Grid stretch + `anchoredPosition.y=-18.3`는 OffsetMin/Max에서 유도된 값. 규칙 10 오탐 |
+| ⚠ 닫기 히트박스 | 작은 카드에서 88×88 닫기가 카드 밖으로 4~14px (상자·권한·워프·상점·스킬·의뢰·연구). 터치 88 정책과 트레이드오프. 미수정 |
+| ⚠ GroupType | 파일 전부 `GroupType=1` (08-13과 동일). `GroupOrder=2`로만 쌓음 |
+| ℹ️ 노이즈 | 터치 &lt;88 (슬롯 72·탭 40) · 연구/의뢰 템플릿 빈 RUID(런타임 채움) · Capacity↔Coin 20px · 스탯 라벨↔값 10px |
+
+- 변경: `ui/PopupGroup.ui` only (닫기 텍스트 5 · 용광로 Title · 툴팁 Name/Count). `.mlua` 없음
+- 검증: UIBuilder write + `ui_lint` Error=0 (WARN 87→86, Furnace L023 소거). `maker_refresh_workspace` status ok. build 로그 dateTime=`2026-08-14T15:56:22` — **이번 refresh와 불일치 → 빌드 로그 갱신 미확인**. **런타임 검증 보류(제작자 수행)**
+- Play 확인: ① 상자/용광로/상점/권한/스킬트리 닫기가 X 아이콘 한 장인지(글자 X 겹침 없음) ② 용광로 제목이 닫기를 안 덮는지 ③ 인벤 툴팁 이름·수량이 카드 안에 있는지 ④ 워프 Open 때 헤더·슬롯이 카드 안에 세로로 쌓이는지
+
+### 2026-08-14 팝업 크롬 통일 — Play 실측 + 크래프트 X
+
+12창을 Enable로 열어 캡처. 타이틀 그룹이 팝업 위에 있어서 MainMenu/HUD는 끄고 찍음.
+
+| 창 | 실측 |
+|---|---|
+| 제작 | 티어/카테고리 바(do 6·7)가 닫기(do 3)를 덮음. 영문 잔재·칩 대비 낮음·레시피명 넘침 |
+| 인벤 | 닫기 보임. 탭 영문. 종이 프레임은 기준 후보 |
+| 캐릭터 | 닫기 보임. 스탯 영문·값 잘림 |
+| 도감 | 나무칩 ✕. 한글 |
+| 상점·상자 | 작은 다크 카드. 상자는 인벤 옆용 우측 오프셋 |
+| 용광로 | 영문 Furnace. 회색 플레이스홀더에 가까움 |
+| 스킬 | 닫기 보임. 한글 |
+| 의뢰·연구 | 나무+골드 액센트. 크롬이 가장 정돈됨 |
+| 워프 | Open 후 그룹 헤더 정상. 흰 카드 |
+
+- 즉시 수정: 제작 `BtnClose` displayOrder 20 + Tier/Category 바 820px·좌로 60. Play 재캡처로 X 노출 확인
+- 검증: UIBuilder write + lint Error=0 (WARN 86). refresh ok. **런타임 검증 보류(제작자: 테이블 F → 닫기가 바에 안 가리는지)**
+- 통일안(미착수, 제작자 확정 대기): 큰창=인벤 종이 / 작은카드=의뢰 나무. 닫기는 항상 창 우상단·최상단 z. 제목 한글+크림 플레이트. 영문 잔재 제거
+
+### 2026-08-14 타이틀 호버 + SFX + Bg 정리
+
+| 판정 | 내용 |
+|---|---|
+| 🐛 **타이틀 호버 없음** | 새로하기/이어하기/종료하기 `ImageRUID=e363fe…` **리소스 없음**(=투명). ColorTint가 칠할 스프라이트가 없었음 |
+| ✅ **타이틀 칩** | 슬롯과 같은 9-slice + 나무색 a=0.92. 호버 골드 ColorTint가 보임 |
+| ✅ **키아트** | 원본 **1376×768**. Stretch(None)→1920×1080은 비균등 업스케일로 열화. **Art AspectOnly + Bg Mask(alpha 0)** 로 복구. 보이는 스프라이트는 Art 한 장 |
+| ✅ **SFX** | 메인메뉴 `BindBtn` — 호버/클릭. RUID는 프로퍼티 |
+
+- 변경: `ui/MainMenuGroup.ui` · `UIMainMenuController.mlua`
+- 검증: UIBuilder write + `ui_lint` Error=0. LSP 0. `maker_refresh_workspace` status ok. build dateTime=`2026-08-14T15:56:22`(이번 refresh와 일치). Error=1 = 기존 `LEA-4004 PlayerController.OnMapEnter`(무관). Warning=47. **런타임 검증 보류(제작자 수행)**
+- Play 확인: ① 타이틀 3버튼 호버=골드 칩 ② 호버/클릭 효과음 ③ 키아트가 화면에 한 장만 보이는지(이중 겹침 없음) ④ 슬롯/커스텀 버튼도 효과음
+
+### 2026-08-14 버튼 호버 피드백
+
+| 판정 | 내용 |
+|---|---|
+| ✅ **원인** | 전 버튼이 이미 ColorTint인데 Highlighted=`#f5f5f5`(Normal 대비 4%)라 나무/그린 버튼에서 호버가 안 보였음 |
+| ✅ **호버** | Highlighted=`#ffd161` (따뜻한 골드). Fade 0.08s |
+| ✅ **누름** | Pressed=`#9e8c6b` (어둡게) |
+| ✅ **범위** | MainMenu 28 · HUD 22 · Popup 82 · Dialog 4 · PreviewTool 4 = **140** |
+
+- 변경: `ui/*.ui` 5파일 `ButtonComponent.Colors`만. `.mlua` 없음. 평소 스프라이트색은 Normal 백색 유지
+- 검증: UIBuilder write + `ui_lint` Error=0 (WARN은 파일별 기존 베이스라인). `maker_refresh_workspace` status ok. build 로그 dateTime=`2026-08-14T15:00:47` — **이번 refresh와 불일치 → 빌드 로그 갱신 미확인**. **런타임 검증 보류(제작자 수행)**
+- Play 확인: ① 타이틀 새로하기/이어하기/종료하기에 마우스 → 골드 틴트 ② 클릭 유지 → 어두워짐 ③ 슬롯·커스텀·인벤 닫기·대화 수락도 동일 ④ 호버 끝나면 원래 색으로 복귀
+
+### 2026-08-14 캐릭터 만들기 — 스프링 축 좌/우 페이지
+
+| 판정 | 내용 |
+|---|---|
+| ✅ **스프링 축** | 좌 틴트 350×490 @ (-225, 10) · 우 틴트 380×490 @ (245, 10). 틈 x≈-50~+55 |
+| ✅ **왼쪽 페이지** | 미리보기 · 내 캐릭터 유지 · 외형 꾸미기 · 뒤로 |
+| ✅ **오른쪽 페이지** | 헤어/얼굴/피부/상의 행 + 닉네임 + 모험 시작. 행 칩은 슬롯과 같은 `#f7edd9` a=0.92 |
+| ✅ **선택 가독성** | NamePlate를 행 전체 360×62 크림 칩으로. 라벨 24px 잉크색. `<`/`>` 56×56 |
+
+- 변경: `ui/MainMenuGroup.ui` only (`LeftPageTint` 추가). `.mlua` 바인딩 불변
+- 검증: UIBuilder write + `ui_lint` Error=0 (WARN 19, 기존 베이스라인). `maker_refresh_workspace` status ok. build 로그 dateTime=`2026-08-14T15:00:47` — **이번 refresh와 불일치 → 빌드 로그 갱신 미확인**. **런타임 검증 보류(제작자 수행)**
+- Play 확인: 타이틀 → 새로하기 → 빈 슬롯 → 캐릭터 만들기. ① 스프링철이 좌/우 페이지 사이 빈 틈에 보이는지 ② 헤어~상의 크림 칩이 오른쪽 페이지에만 있는지 ③ `<`/`>`·파츠명이 읽히는지 ④ 미리보기·룩 버튼이 왼쪽인지 ⑤ 뒤로/모험 시작이 각 페이지 하단인지
 
 ### 2026-08-13 UI 정합성 감사
 

@@ -257,8 +257,8 @@ script UICollectionController extends Component
 			end
 			local textComp = chip.TextComponent
 			if isvalid(textComp) then
-				-- T26 미러: 옵션 값을 라벨로 그대로 표시 (all / resource / tool …).
-				textComp.Text = tostring(catVal)
+				-- 필터 키는 all/resource/tool 유지, 칩 글자만 한글.
+				textComp.Text = self:GetFilterLabel(tostring(catVal))
 				textComp.FontSize = 15
 			end
 			local idx = i
@@ -271,6 +271,17 @@ script UICollectionController extends Component
 		self:RefreshChipHighlight()
 		log("[DEX] BuildFilterChips n=" .. tostring(#self.categoryOptions)
 			.. " selected=" .. tostring(self.categoryOptions[self.selectedCategoryIndex] or "all"))
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetFilterLabel(string catVal)
+		if catVal == "all" or catVal == "All" then return "전체" end
+		if catVal == "tool" then return "도구" end
+		if catVal == "furniture" then return "가구" end
+		if catVal == "resource" then return "자원" end
+		if catVal == "consumable" then return "소모품" end
+		if catVal == "misc" then return "기타" end
+		return catVal
 	end
 
 	@ExecSpace("ClientOnly")
@@ -404,7 +415,10 @@ script UICollectionController extends Component
 				if catFilter == "all" or cat == catFilter then
 					local icon = ds:GetCell(i, "IconRUID") or ""
 					local count = math.floor(tonumber(dex.items[name]) or 0)
-					self:AddRow(icon, name, count > 0, tostring(count) .. " 개 획득")
+					local disp = name
+					local okD, vD = pcall(function() return ds:GetCell(i, "DisplayName") end)
+					if okD and vD ~= nil and tostring(vD) ~= "" then disp = tostring(vD) end
+					self:AddRow(icon, disp, count > 0, tostring(count) .. " 개 획득")
 				end
 			end
 		end

@@ -159,4 +159,4 @@ MSW는 월드 입장 시점에 이미 아바타가 스폰된다 → 메인화면
 
 - 세이브 함정: [../pitfalls.md](../pitfalls.md) 규칙 9 (T37 인벤토리 유실)
 - 아트: [art-style-guide.md](./art-style-guide.md) §5 메인화면 키 아트
-- 스토리 연동(새로하기 시 첫 경험): [story-npc-quest-plan.md](./story-npc-quest-plan.md)
+- 스토리 연동(새로하기 시 첫 경험): [story/story-npc-quest-plan.md](./story/story-npc-quest-plan.md)
