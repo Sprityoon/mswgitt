@@ -10,6 +10,10 @@
 
 | 대상 | 내용 |
 |---|---|
+| `ui/PopupGroup.ui` CharacterPopup · CraftingPopup | **장착 실루엣 삭제 + 제작 제목/설명 가림 해소** (2026-08-15) — 아래 참조 |
+| `ui/PopupGroup.ui` CharacterPopup | **캐릭터 정보 장착칸·게이지·권한버튼 창 밖 돌출** (2026-08-15) — 아래 참조 |
+| `ui/PopupGroup.ui` | **팝업 배치·가시성 전수 복구** (2026-08-15) — 아래 참조 |
+| `MainMenuGroup` · `PreviewTool` · `HUDGroup` · `UIHUDController` | **부팅 시 팝업/HUD가 타이틀보다 먼저 보임** (2026-08-15) — 아래 참조 |
 | `PlayerDBManager` · `PersistenceManager` | **퀘스트 재접속 초기화 버그 해결 & 캐릭터 닉네임 동기화** (2026-08-15) — 아래 참조 |
 | `PersistenceManager` · `UIMainMenuController` | **이어하기 슬롯 캐릭터 레벨 실시간 동기화** (2026-08-15) — 아래 참조 |
 | `QuestConditionDataSet` · `PlayerQuest` · `UserQuestData` | **퀘스트 CountMode Action/State** (2026-08-15) — 아래 참조 |
@@ -25,6 +29,78 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-15 장착 실루엣 삭제 + 제작 제목/설명 가림 해소
+
+제작자 보고: (1) 캐릭터 정보 왼쪽 장착칸 사이에 불필요 사각형 (2) 제작 창 제목이 안 보임, 설명이 슬롯에 가림.
+
+원인:
+1. `EquipPanel/Silhouette` 150×250 어두운 박스(`4fea64a3` a=0.6) + "아바타" 라벨. 컨트롤러 참조 없음.
+2. 제작 `Title` dOrd=2 < `TierBar` 5, 제목 하단 20px를 티어바가 덮음.
+3. `Details/Desc` dOrd=2 < `Slot1/2` 3·4 이고 y도 50px 겹침.
+
+| 파일 | 조치 |
+|---|---|
+| `CharacterPopup/EquipPanel/Silhouette` | 서브트리 삭제 (3 엔티티). 장착 슬롯 6칸 유지 |
+| `CraftingPopup` | Title dOrd=10. TierBar y=-80, CategoryBar y=-128. List/Details y=-56 |
+| `CraftingPopup/Details` | Icon/Desc를 슬롯 위로, 재료칸을 제작 버튼 쪽으로. Desc dOrd=5 |
+
+- 검증: 실루엣 부재, 제목∩티어바 null, 설명∩슬롯 null. `ui_lint` Error=0 (WARN 91, 기존 베이스라인). **refresh 검증 보류** (Maker Play Test 중). **런타임 검증 보류(제작자 수행)**
+- Play 확인: ① 캐릭터 정보 장착칸 사이에 회색 박스 없음 ② 제작대 제목이 티어바 위에 보임 ③ 레시피 설명이 재료 칸에 안 가림
+
+### 2026-08-15 캐릭터 정보 장착칸·게이지·권한버튼 창 밖 돌출
+
+제작자 보고: 캐릭터 정보 팝업에서 장착칸, HP/SP/경험치 바, 영지 권한 설정 버튼이 창 밖으로 나감.
+
+원인:
+1. `SlotWeapon/Icon`·`SlotArmor/Icon` RectSize **400×48** (`text()` 기본값). 런타임 `weaponIcon.ImageRUID`가 그 박스를 채워 창 왼쪽으로 ~75px 돌출.
+2. HP/Stamina/XP가 Name과 같은 **top-left** `(0,1)`인데 `pos.x=180`(패널 360의 반) → 바의 왼쪽이 중앙에 붙어 창 오른쪽 **85px** 돌출.
+3. `BtnPermission` top-center에서 `pos.x=180` → 버튼 중심이 패널 오른쪽 끝, 창 밖 **65px**.
+
+| 파일 | 조치 |
+|---|---|
+| `scratch/fix_character_popup_overflow.cjs` | UIBuilder만. 아이콘 48×48(인벤 슬롯과 동일). 바 `pos.x=20`. 권한 버튼 `pos.x=0`. 헬멧 라벨 80×20. 실루엣/바 텍스트 칸 안에 |
+| `.mlua` | 변경 없음 (`FillAmount`·아이콘 RUID 경로 유지) |
+
+- 검증: 재실측 HP/SP/XP/권한버튼 vs CharacterPopup AABB **ok**. 아이콘 vs 64칸 **ok**. `ui_lint` Error=0 (WARN 91). `maker_refresh_workspace` status ok. build 로그 dateTime=`2026-08-15T17:47:51` — **이번 refresh와 불일치 → 빌드 로그 갱신 미확인**. **런타임 검증 보류(제작자 수행)**
+- Play 확인: 캐릭터 정보 창에서 ① 장착칸·아이콘이 나무 프레임 안 ② HP/SP/경험치 바가 종이 속지 안 ③ 영지 권한 설정 버튼이 창 안·클릭 가능
+- 재발 방지: pitfalls **규칙 31**
+
+### 2026-08-15 팝업 배치·가시성 전수 복구
+
+크롬 2계열 통일 이후 13창에서 제목·닫기가 탑바/카테고리 바에 묻힘. 스타일 교체 없이 z-order와 틴트만 되돌림.
+
+원인: 카드 창 `displayOrder`가 정책과 반대(TopBar > Title/Close). 종이 창 Close가 전부 20 미만. 제작 CategoryBar(7)가 Close(6)를 덮음(규칙 11 재발).
+
+| 파일 | 조치 |
+|---|---|
+| `scratch/audit_popup_layout.cjs` | 13창 AABB·dOrd·겹침·돌출 실측. 패치 전 issues=34, 후 **0**. 창 밖 돌출 없음 → 좌표 미수정 |
+| `scratch/fix_popup_visibility.cjs` | UIBuilder만. 종이 5 Close=20. 카드 7 TopBar/Accent/Title/Close=15/16/17/20. 스킬트리=25/26/27/30. 의뢰·연구 Bg 틴트 `(0.2,0.1,0.1,1)` |
+| 워프 | Title/Close 작성 좌표·앵커 불변. z만 17/20 |
+| `.mlua` | 변경 없음 |
+
+- 검증: `ui_lint` Error=0 (WARN 91, 기존 베이스라인). 감사 재실행 issues=0. `maker_refresh_workspace` status ok. build 로그 dateTime=`2026-08-15T17:47:51` — **이번 refresh와 불일치 → 빌드 로그 갱신 미확인**. 고착 스냅샷 Error=1은 `PlayerController.OnMapEnter`(LEA-4004), UI 무관. **런타임 검증 보류(제작자 수행)**
+- Play 확인: ① 13창 우상단 흰 X가 탑바/카테고리 바 위·클릭 가능 ② 카드 8 크림 제목이 어두운 탑바 위 ③ 제작 티어/카테고리 바가 창 안·X 안 가림 ④ 워프 목적지 수에 따라 제목·X·탑바 추종 ⑤ 퀘스트 보상 아이콘이 칸 안
+
+### 2026-08-15 부팅 시 팝업이 타이틀보다 먼저 보임
+
+제작자 보고: 게임 첫 실행 때 메인 화면 전에 다른 팝업 UI가 보임.
+
+원인:
+1. `PreviewTool/Root`가 `.ui`에서 Enable=true — F9 프리뷰(1600×900)가 `OnBeginPlay`로 숨기기 전 한 프레임 이상 노출. GroupOrder=1이라 HUD 페이드보다 위.
+2. `MainMenuGroup.DefaultShow=false` + `OnBeginPlay`가 루트를 끔 — 타이틀은 서버 `ClientOpenMainMenu` RPC 뒤에야 켜짐.
+
+| 파일 | 조치 |
+|---|---|
+| `ui/PreviewTool.ui` | `Root` Enable=false (Controller는 유지 → F9 동작) |
+| `ui/MainMenuGroup.ui` | `DefaultShow=true` |
+| `UIMainMenuController` | `OnBeginPlay`에서 루트를 켜 두고 타이틀 패널만 표시 |
+| `ui/HUDGroup.ui` | 미니맵·스킬바·퀵슬롯·내정보·모바일·퀘스트트래커·버튼·페이드 전부 Enable=false |
+| `UIHUDController` | `SetPlayHudVisible` — 타이틀 동안 크롬 끔, 슬롯 확정 `Close` 뒤에만 켬. UpdateHUD/버프바도 그 전엔 갱신 안 함 |
+| `UIMainMenuController` | 열릴 때 HUD 숨김, `Close` 때 HUD 표시 |
+
+- 검증: HUD d1 크롬 Enable=false 재독. LSP 0. **refresh 검증 보류** (Maker MCP 타임아웃). **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 타이틀에 미니맵/스킬바/내정보/퀵슬롯이 안 비치는지 ② 모험 시작(슬롯 확정) 후 HUD가 켜지는지 ③ 낚시 게이지는 낚시 중에만 보이는지
 
 ### 2026-08-15 이어하기 슬롯 캐릭터 레벨 실시간 동기화
 

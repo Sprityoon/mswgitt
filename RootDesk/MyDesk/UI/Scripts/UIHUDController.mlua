@@ -48,31 +48,50 @@ script UIHUDController extends Component
 
 	property any btnSkillTreeHandler = nil
 
+	property boolean playHudReady = false
+
+	@ExecSpace("ClientOnly")
+	method void SetPlayHudVisible(boolean on)
+		-- 타이틀이 떠 있는 동안 HUD 크롬을 끈다. 슬롯 확정(Close) 뒤에만 켠다.
+		self.playHudReady = on
+		local names = {
+			"BtnCollection", "BtnSkillTree", "Minimap", "MobileUI",
+			"QuestTracker", "QuickSlots", "SkillBar", "UIMyInfo",
+			"FishingGauge",
+		}
+		for i = 1, #names do
+			local ent = self.Entity:GetChildByName(names[i], false)
+			if isvalid(ent) then
+				ent.Enable = on
+			end
+		end
+		if isvalid(self.spawnFade) and isvalid(self.spawnFade.Entity) then
+			self.spawnFade.Entity.Enable = false
+		end
+		local clock = self._T.TimeClockEntity
+		if isvalid(clock) then
+			clock.Enable = on
+		end
+		if not on then
+			local bar = self.Entity:GetChildByName("BuffBar", false)
+			if isvalid(bar) then bar.Enable = false end
+			local gauge = self.Entity:GetChildByName("FishingGauge", false)
+			if isvalid(gauge) then gauge.Enable = false end
+		end
+		log("[HUD] playHud=" .. tostring(on))
+	end
+
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
 		log("TEST_LOG: UIHUDController OnBeginPlay")
-		-- Ensure the spawn cover is opaque and blocking from the first frame; the server
-		-- fades it out (FadeOutSpawn) once this client's home map is ready.
-		if isvalid(self.spawnFade) then
-			self.spawnFade.Color = Color(0, 0, 0, 1)
-			self.spawnFade.RaycastTarget = true
-			if isvalid(self.spawnFade.Entity) then
-				self.spawnFade.Entity.Enable = true
-			end
-			-- Safety net: if the server's ready signal never arrives, never trap the player
-			-- behind a black screen — auto-fade after a generous timeout.
-			_TimerService:SetTimerOnce(function()
-				if isvalid(self.spawnFade) and isvalid(self.spawnFade.Entity) and self.spawnFade.Entity.Enable then
-					self:FadeOutSpawn()
-				end
-			end, 8.0)
-		end
+		self:SetPlayHudVisible(false)
 
 		self.updateTimer = _TimerService:SetTimerRepeat(function()
 			self:UpdateHUD()
 		end, 1/10)
 		
 		self:InitTimeUI()
+		self:SetPlayHudVisible(false)
 		
 		local btnMine = _EntityService:GetEntityByPath("/ui/HUDGroup/MobileUI/BtnMine")
 		if isvalid(btnMine) then
@@ -500,6 +519,7 @@ script UIHUDController extends Component
 	@ExecSpace("ClientOnly")
 	method void UpdateBuffBar(Entity player)
 		-- T16: 활성 버프 텍스트 (아이콘 바 간이판).
+		if not self.playHudReady then return end
 		local bar = _EntityService:GetEntityByPath("/ui/HUDGroup/BuffBar")
 		if not isvalid(bar) then return end
 		local textEnt = bar:GetChildByName("Text")
@@ -528,6 +548,7 @@ script UIHUDController extends Component
 	method void UpdateHUD()
 		-- description: Updates quick slots (icons, counts, rarity colors) and the day/night time UI.
 		-- HP / Level / Stamina now live in the UIMyInfo widget (script.UIMyInfo).
+		if not self.playHudReady then return end
 		local player = _UserService.LocalPlayer
 		if not isvalid(player) then return end
 

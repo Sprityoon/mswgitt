@@ -104,8 +104,10 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
-		self:SetRootEnable(false)
+		-- 타이틀은 첫 프레임부터 켠다. 끄면 HUD·PreviewTool이 슬롯 RPC보다 먼저 보인다.
+		self:SetRootEnable(true)
 		self:ShowPanel("title")
+		self:SetPlayHudVisible(false)
 		if isvalid(self.namePrompt) then self.namePrompt.Enable = false end
 
 		self:BindBtn(self.btnNew, function() self:OnTitleNew() end)
@@ -267,6 +269,7 @@ script UIMainMenuController extends Component
 		end
 		self.isOpen = true
 		self:SetRootEnable(true)
+		self:SetPlayHudVisible(false)
 		self:CloseNamePrompt()
 		self:ShowPanel("title")
 		self:SetTitleHint("")
@@ -308,6 +311,17 @@ script UIMainMenuController extends Component
 		self.isOpen = false
 		self:CloseNamePrompt()
 		self:SetRootEnable(false)
+		self:SetPlayHudVisible(true)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetPlayHudVisible(boolean on)
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		if not isvalid(hud) then return end
+		local c = hud:GetComponent("script.UIHUDController")
+		if isvalid(c) then
+			c:SetPlayHudVisible(on)
+		end
 	end
 
 	@ExecSpace("ClientOnly")
