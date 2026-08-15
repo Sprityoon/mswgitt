@@ -94,6 +94,10 @@ script PersistenceManager extends Logic
 			for userId, player in pairs(players) do
 				if isvalid(player) then
 					self:SavePlayerData(player, true)
+					local db = player:GetComponent("script.PlayerDBManager")
+					if isvalid(db) then
+						db:SaveToDB(true)
+					end
 				end
 			end
 		end
@@ -157,6 +161,10 @@ script PersistenceManager extends Logic
 		if isvalid(player) then
 			currentMap = player.CurrentMap
 			self:SavePlayerData(player, true)
+			local db = player:GetComponent("script.PlayerDBManager")
+			if isvalid(db) then
+				db:SaveToDB(true)
+			end
 			self.DirtyPlayers[userId] = nil
 			self.DirtyGenerations[userId] = nil
 		end
@@ -227,20 +235,110 @@ script PersistenceManager extends Logic
 	end
 
 	@ExecSpace("ServerOnly")
-	method string ReadSlotMetaJson(string userId)
+	method table ReadSlotMetaTable(string userId)
+		-- 슬롯 메타 요약본을 읽고, 각 슬롯 세이브 데이터와 비교하여 최신 레벨/정보로 동기화한다.
 		local storage = _DataStorageService:GetUserDataStorage(userId)
-		if not storage then return "{}" end
+		if not storage then return {} end
+
+		local meta = {}
 		local err, raw = storage:GetAndWait("SlotMeta")
-		if err == 0 and raw ~= nil and raw ~= "" then return raw end
-		return "{}"
+		if err == 0 and raw ~= nil and raw ~= "" and raw ~= "{}" then
+			local ok, decoded = pcall(function() return _HttpService:JSONDecode(raw) end)
+			if ok and type(decoded) == "table" then
+				meta = decoded
+			end
+		end
+
+		-- 모든 슬롯(1~5) 및 레거시 세이브 데이터를 일괄 조회하여 실제 레벨/이름/외형을 SlotMeta에 실시간 동기화
+		local keys = {}
+		for i = 1, self.MaxSaveSlots do
+			keys[#keys + 1] = self:SaveKeyForSlot(i)
+		end
+		keys[#keys + 1] = "SaveData"
+
+		local retCode, itemPages = storage:BatchGetAndWait(keys)
+		local saveRawBySlot = {}
+		if retCode == 0 and itemPages ~= nil then
+			while true do
+				local datas = itemPages:GetCurrentPageDatas()
+				if datas == nil then break end
+				for i = 1, #datas do
+					local item = datas[i]
+					if item ~= nil and item.KeyInfo ~= nil then
+						local k = item.KeyInfo.Key
+						if item.Value ~= nil and item.Value ~= "" and item.Value ~= "{}" then
+							saveRawBySlot[k] = item.Value
+						end
+					end
+				end
+				if itemPages.IsLastPage == true then break end
+				itemPages:MoveToNextPageAndWait()
+			end
+		end
+
+		local dirty = false
+		for slot = 1, self.MaxSaveSlots do
+			local sKey = tostring(slot)
+			local saveRaw = saveRawBySlot[self:SaveKeyForSlot(slot)]
+			if (saveRaw == nil or saveRaw == "") and slot == 1 then
+				saveRaw = saveRawBySlot["SaveData"]
+			end
+
+			if saveRaw ~= nil and saveRaw ~= "" and saveRaw ~= "{}" then
+				local ok, data = pcall(function() return _HttpService:JSONDecode(saveRaw) end)
+				if ok and type(data) == "table" then
+					local slotLevel = math.floor(tonumber(data.level) or 1)
+					local slotFishLv = math.floor(tonumber(data.fishingLevel or data.fishLv) or 1)
+					local slotName = ""
+					if data.characterName ~= nil and tostring(data.characterName) ~= "" then
+						slotName = tostring(data.characterName)
+					elseif meta[sKey] ~= nil and meta[sKey].name ~= nil and tostring(meta[sKey].name) ~= "" then
+						slotName = tostring(meta[sKey].name)
+					else
+						slotName = "슬롯" .. tostring(slot)
+					end
+
+					local slotCostume = nil
+					if type(data.costumeLook) == "table" then
+						slotCostume = self:NormalizeCostume(data.costumeLook)
+					elseif meta[sKey] ~= nil and type(meta[sKey].costume) == "table" then
+						slotCostume = self:NormalizeCostume(meta[sKey].costume)
+					else
+						slotCostume = { useAccount = true }
+					end
+
+					local cur = meta[sKey]
+					if cur == nil or type(cur) ~= "table"
+						or cur.name ~= slotName
+						or cur.level ~= slotLevel
+						or cur.fishLv ~= slotFishLv then
+						meta[sKey] = {
+							name = slotName,
+							level = slotLevel,
+							fishLv = slotFishLv,
+							playSec = (cur and cur.playSec) or 0,
+							lastSaveTicks = (cur and cur.lastSaveTicks) or "0",
+							costume = slotCostume
+						}
+						dirty = true
+					end
+				end
+			end
+		end
+
+		if dirty then
+			local json = self:SafeEncodeJson(meta, "{}")
+			storage:SetAndWait("SlotMeta", json)
+			log("[SLOT] synchronized and updated SlotMeta for " .. tostring(userId))
+		end
+
+		return meta
 	end
 
 	@ExecSpace("ServerOnly")
-	method table ReadSlotMetaTable(string userId)
-		local raw = self:ReadSlotMetaJson(userId)
-		local ok, decoded = pcall(function() return _HttpService:JSONDecode(raw) end)
-		if ok and type(decoded) == "table" then return decoded end
-		return {}
+	method string ReadSlotMetaJson(string userId)
+		local meta = self:ReadSlotMetaTable(userId)
+		return self:SafeEncodeJson(meta, "{}")
 	end
 
 	@ExecSpace("ServerOnly")
@@ -473,6 +571,12 @@ script PersistenceManager extends Logic
 			self.ActiveSlotByUser[userId] = slot
 			self.CharacterNameByUser[userId] = nick
 			self.CharacterCostumeByUser[userId] = costume
+			if isvalid(player.PlayerComponent) then
+				player.PlayerComponent.Nickname = nick
+			end
+			if isvalid(player.NameTagComponent) then
+				player.NameTagComponent.Name = nick
+			end
 			self:SetDefaultPlayerData(player)
 			self:ApplyCostumeToPlayer(player, costume)
 			-- 첫 저장 전에 영지 초기 상태를 스포너에 심는다. 이걸 빼면 SavePlayerData가
@@ -496,8 +600,15 @@ script PersistenceManager extends Logic
 				if isvalid(pc) then pc:ClientMainMenuError("빈 슬롯입니다. 새로하기를 선택하세요") end
 				return
 			end
+			local nick = tostring(existing.name)
 			self.ActiveSlotByUser[userId] = slot
-			self.CharacterNameByUser[userId] = tostring(existing.name)
+			self.CharacterNameByUser[userId] = nick
+			if isvalid(player.PlayerComponent) then
+				player.PlayerComponent.Nickname = nick
+			end
+			if isvalid(player.NameTagComponent) then
+				player.NameTagComponent.Name = nick
+			end
 			if type(existing.costume) == "table" then
 				self.CharacterCostumeByUser[userId] = self:NormalizeCostume(existing.costume)
 			else
@@ -584,7 +695,14 @@ script PersistenceManager extends Logic
 			end
 
 			if data.characterName ~= nil and tostring(data.characterName) ~= "" then
-				self.CharacterNameByUser[userId] = tostring(data.characterName)
+				local nick = tostring(data.characterName)
+				self.CharacterNameByUser[userId] = nick
+				if isvalid(player.PlayerComponent) then
+					player.PlayerComponent.Nickname = nick
+				end
+				if isvalid(player.NameTagComponent) then
+					player.NameTagComponent.Name = nick
+				end
 			end
 
 			-- 슬롯 외형 복원
@@ -1208,6 +1326,28 @@ script PersistenceManager extends Logic
 					if (tonumber(self.DirtyGenerations[userId]) or 0) == savedGeneration then
 						self.DirtyPlayers[userId] = false
 					end
+					-- 비동기 저장 성공 시에도 SlotMeta 요약 갱신
+					local meta = self:ReadSlotMetaTable(userId)
+					local nick = self.CharacterNameByUser[userId] or ""
+					if nick == "" then nick = "슬롯" .. tostring(slot) end
+					local costume = self.CharacterCostumeByUser[userId]
+					if costume == nil then
+						local prev = meta[tostring(slot)]
+						if prev ~= nil and type(prev.costume) == "table" then
+							costume = prev.costume
+						else
+							costume = self:NormalizeCostume(nil)
+						end
+					end
+					meta[tostring(slot)] = {
+						name = nick,
+						level = capLevel,
+						fishLv = capFishingLevel,
+						playSec = 0,
+						lastSaveTicks = "0",
+						costume = costume
+					}
+					self:WriteSlotMetaTable(userId, meta)
 				end
 			end)
 		end
@@ -1239,6 +1379,14 @@ script PersistenceManager extends Logic
 					local player = players[userId]
 					if isvalid(player) then
 						self:SavePlayerData(player, false)
+					end
+				end
+			end
+			for _, player in pairs(players) do
+				if isvalid(player) then
+					local db = player:GetComponent("script.PlayerDBManager")
+					if isvalid(db) then
+						db:SaveToDB(false)
 					end
 				end
 			end

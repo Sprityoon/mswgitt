@@ -22,7 +22,10 @@
   - 값 = `PortalDestinationDataSet.DestinationId`. 지급은 `PersistenceManager:GrantEstatePortal`(멱등) 담당.
 - 퀘스트 스키마 (`QuestDataSet.csv`):
   `Id, Name, Desc, ProgressingDesc, CategoryEnum(Main/Sub), CycleEnum, IsRepeatable, LinkedPrevId, RequiredId, AutoAccept, CannotAbandon, ConsumeItems, RewardItems, Priority, Disable, RewardUnlockId`
-- 조건 스키마 (`QuestConditionDataSet.csv`): `Id(퀘스트 Id와 동일), Description, CondEnum, CondArg, CondExtra, Value, Disable`
+- 조건 스키마 (`QuestConditionDataSet.csv`): `Id(퀘스트 Id와 동일), Description, CondEnum, CondArg, CondExtra, Value, CountMode(Action|State), Disable`
+  - **`CountMode=Action`**(기본): 수락 **이후** 행동만 집계. 풀 3개(101)·나무 5개(103)처럼 "지금 가서 하라".
+  - **`CountMode=State`**: 수락·로그인 때 현재 상태를 스냅샷. 이미 한 일이면 즉시 완료. 주먹도끼 던지기 습득(108)·제작(102·104)·설치(106).
+  - `LearnSkill`은 이벤트가 0→1 한 번뿐이라 빈 `CountMode`도 State로 취급한다. 반복 퀘스트는 스냅샷으로 자동 완료하지 않는다(보상 루프 방지).
 - **지원 조건 타입 (`ActionEnum.mlua` 실측)**: `Attend`(출석) · `StateChange` · `MesoChange` · `StaminaChange` · `Kill`(몬스터 처치) · `Gather`(채집) · `Craft`(제작) · `Smelt`(제련) · `Place`(설치) · `Warp`(포탈 이동) · `LearnSkill`(스킬 첫 습득, 2026-08-14). **이 11종 밖의 조건은 현재 구현이 없다.**
 
 ### 1.2 NPC — 마을 상주 (T77) + 상호작용 가이드(2026-08-08)

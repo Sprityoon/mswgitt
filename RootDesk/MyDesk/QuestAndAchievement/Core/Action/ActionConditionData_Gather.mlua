@@ -28,4 +28,9 @@ script ActionConditionData_Gather extends ActionConditionData
 		return userValue + (evt.Args[2] or 1)
 	end
 
+	method integer GetUpdatedValue(Entity userEntity, integer userValue, integer condValue)
+		-- CountMode=State: 도감 누적 획득 수. Action이면 호출되지 않는다.
+		return self:SnapshotDexItemCount(userEntity, self.Target)
+	end
+
 end

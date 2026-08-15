@@ -9,7 +9,11 @@ script QuestConditionData
 
 	property integer Value = 0
 
+	-- Action = 수락 이후 행동만 집계. State = 이미 한 일을 수락·로그인 때 스냅샷.
+	property string CountMode = "Action"
+
 	method boolean Load(any dataRow)
+		-- QuestConditionDataSet 한 행을 로드한다. CountMode 빈 칸의 LearnSkill은 State.
 		---@type UserDataRow
 		local row = dataRow
 		
@@ -26,6 +30,32 @@ script QuestConditionData
 		
 		local value = math.tointeger(tonumber(row:GetItem("Value")))
 		self.Value = value or 0
+
+		self.CountMode = "Action"
+		local okCm, cm = pcall(function() return row:GetItem("CountMode") end)
+		local cmStr = ""
+		if okCm and cm ~= nil then
+			cmStr = tostring(cm)
+		end
+		if cmStr == "State" or cmStr == "state" then
+			self.CountMode = "State"
+		elseif cmStr == "Action" or cmStr == "action" then
+			self.CountMode = "Action"
+		else
+			-- 빈 칸: LearnSkill은 0→1 이벤트라 이미 배웠으면 진행이 불가 → State.
+			local actionCondData = self.ConditionData
+			if actionCondData ~= nil then
+				local enumList = actionCondData:GetActionEnumList()
+				if enumList ~= nil then
+					for i = 1, #enumList do
+						if enumList[i] == _ActionEnum.LearnSkill then
+							self.CountMode = "State"
+							break
+						end
+					end
+				end
+			end
+		end
 		
 		return true
 	end

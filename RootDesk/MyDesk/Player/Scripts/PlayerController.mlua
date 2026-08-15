@@ -2523,10 +2523,8 @@ script PlayerController extends Component
 		if isvalid(combatForHit) then
 			---@type PlayerCombat
 			local ch2 = combatForHit
-			-- 투사체는 비행 중 유지 — Melee/Ultimate/Dash만 즉시 클리어
-			if skillType ~= "Projectile" then
-				ch2.PendingHitEffectRUID = ""
-			end
+			-- 투사체는 탄환 자신의 HitEffectRUID를 쓴다. Pending을 남기면 도구 평타에 스킬 FX가 붙는다.
+			ch2.PendingHitEffectRUID = ""
 		end
 		
 		if effectRUID ~= nil and effectRUID ~= "" then
@@ -2972,7 +2970,12 @@ script PlayerController extends Component
 		if not isvalid(proj) then return end
 		
 		local sprite = proj.SpriteRendererComponent
+		local projRuid = ""
+		local iconRuid = ""
+		local effectRuid = ""
+		local beforeRuid = ""
 		if isvalid(sprite) then
+			beforeRuid = tostring(sprite.SpriteRUID or "")
 			sprite.IgnoreMapLayerCheck = true
 			sprite.SortingLayer = _RenderLayers.EntityLayer
 			sprite.OrderInLayer = 500
@@ -2982,12 +2985,52 @@ script PlayerController extends Component
 				local row = ds:FindRow("SkillId", skillId)
 				if row ~= nil then
 					local okR, rawR = pcall(function() return row:GetItem("ProjectileRUID") end)
-					if okR and rawR ~= nil and tostring(rawR) ~= "" then
-						sprite.SpriteRUID = tostring(rawR)
-					end
+					if okR and rawR ~= nil then projRuid = tostring(rawR) end
+					local okI, rawI = pcall(function() return row:GetItem("IconRUID") end)
+					if okI and rawI ~= nil then iconRuid = tostring(rawI) end
+					local okE, rawE = pcall(function() return row:GetItem("EffectRUID") end)
+					if okE and rawE ~= nil then effectRuid = tostring(rawE) end
+					sprite.SpriteRUID = projRuid
 				end
 			end
 		end
+		-- #region agent log
+		local afterRuid = ""
+		if isvalid(sprite) then afterRuid = tostring(sprite.SpriteRUID or "") end
+		local hasPrefix = string.sub(projRuid, 1, 12) == "thumbnail://"
+		log("[DBG985ecc][A] skill=" .. skillId .. " projRuid=" .. projRuid .. " hasThumb=" .. tostring(hasPrefix) .. " before=" .. beforeRuid .. " after=" .. afterRuid)
+		log("[DBG985ecc][B/C/E] effect=" .. effectRuid .. " hitFx=" .. tostring(hitEffectRUID or "") .. " icon=" .. iconRuid)
+		local capturedSkill = skillId
+		local capturedProj = projRuid
+		local capturedBefore = beforeRuid
+		local capturedAfter = afterRuid
+		local capturedIcon = iconRuid
+		local capturedEffect = effectRuid
+		local capturedHit = hitEffectRUID or ""
+		_TimerService:SetTimerOnce(function()
+			pcall(function()
+				local body = _HttpService:JSONEncode({
+					sessionId = "985ecc",
+					runId = "pre-fix",
+					hypothesisId = "A",
+					location = "PlayerController.mlua:ExecuteProjectileSkill",
+					message = "projectile sprite assign",
+					timestamp = math.floor(_UtilLogic.ElapsedSeconds * 1000),
+					data = {
+						skillId = capturedSkill,
+						projectileRuid = capturedProj,
+						hasThumbnailPrefix = string.sub(capturedProj, 1, 12) == "thumbnail://",
+						beforeSprite = capturedBefore,
+						afterSprite = capturedAfter,
+						iconRuid = capturedIcon,
+						effectRuid = capturedEffect,
+						hitEffectRuid = capturedHit,
+					},
+				})
+				_HttpService:PostAndWait("http://127.0.0.1:7370/ingest/58abf2db-eaa9-4f3f-9d39-f759a7ee317d", body, HttpContentType.ApplicationJson, nil)
+			end)
+		end, 0.05)
+		-- #endregion
 		
 		local projComp = proj:GetComponent("script.Projectile")
 		if not isvalid(projComp) then

@@ -127,17 +127,25 @@ script PlayerDBManager extends Component
 			end
 			local logicalSuccess = {}
 			local suffix = "_s" .. tostring(slot)
-			for _, storedKey in pairs(successKeys or {}) do
-				local key = tostring(storedKey)
-				if string.sub(key, -string.len(suffix)) == suffix then
-					key = string.sub(key, 1, string.len(key) - string.len(suffix))
+			local keysTable = successKeys
+			if keysTable ~= nil and type(keysTable.ToTable) == "function" then
+				keysTable = keysTable:ToTable()
+			end
+			if type(keysTable) == "table" then
+				for _, storedKey in pairs(keysTable) do
+					local key = tostring(storedKey)
+					if string.sub(key, -string.len(suffix)) == suffix then
+						key = string.sub(key, 1, string.len(key) - string.len(suffix))
+					end
+					logicalSuccess[key] = true
 				end
-				logicalSuccess[key] = true
 			end
 			playerEntity.PlayerAchievement:OnSavedToDB(logicalSuccess, savedGenerations)
 			playerEntity.PlayerQuest:OnSavedToDB(logicalSuccess, savedGenerations)
 			if errorCode ~= 0 then
 				log_error("PlayerDBManager: batch save failed. errorCode=" .. tostring(errorCode))
+			else
+				log("[SLOT] PlayerDBManager batch save success slot=" .. tostring(slot))
 			end
 		end
 
@@ -200,15 +208,18 @@ script PlayerDBManager extends Component
 			itemPages:MoveToNextPageAndWait()
 		end
 
-		-- 패키지가 StorageName("Quest")으로 조회하도록 슬롯 키 → 논리 키 별칭
+		-- 패키지가 StorageName("Quest")으로 조회하도록 슬롯 키 → 논리 키 매핑 (슬롯별 키 최우선)
 		for i = 1, #loadKey do
 			local logical = tostring(loadKey[i])
 			local slotted = logical .. "_s" .. tostring(slot)
-			if loadedData[logical] == nil and loadedData[slotted] ~= nil then
+			if loadedData[slotted] ~= nil and loadedData[slotted].Value ~= nil and loadedData[slotted].Value ~= "" then
+				-- 1순위: 슬롯 전용 데이터
 				loadedData[logical] = loadedData[slotted]
-			end
-			if loadedData[logical] == nil then
-				-- 신규 슬롯: 빈 스텁 (PlayerQuest가 nil.Value로 죽지 않게)
+			elseif slot == 1 and loadedData[logical] ~= nil and loadedData[logical].Value ~= nil and loadedData[logical].Value ~= "" then
+				-- 2순위 (슬롯1 한정): 레거시 비슬롯 데이터
+				-- loadedData[logical] 그대로 유지
+			else
+				-- 3순위 (신규 슬롯 또는 빈 데이터): 빈 스텁 (PlayerQuest가 nil.Value로 죽지 않게)
 				loadedData[logical] = { Value = "" }
 			end
 		end
@@ -230,7 +241,10 @@ script PlayerDBManager extends Component
 		local UserId = event.UserId
 
 		if UserId == self.Entity.PlayerComponent.UserId then
-			_TimerService:ClearTimer(self.TimerId)
+			if self.TimerId ~= 0 then
+				_TimerService:ClearTimer(self.TimerId)
+				self.TimerId = 0
+			end
 			self:SaveToDB(true)
 		end
 	end

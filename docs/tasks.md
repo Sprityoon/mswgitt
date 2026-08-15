@@ -10,6 +10,10 @@
 
 | 대상 | 내용 |
 |---|---|
+| `PlayerDBManager` · `PersistenceManager` | **퀘스트 재접속 초기화 버그 해결 & 캐릭터 닉네임 동기화** (2026-08-15) — 아래 참조 |
+| `PersistenceManager` · `UIMainMenuController` | **이어하기 슬롯 캐릭터 레벨 실시간 동기화** (2026-08-15) — 아래 참조 |
+| `QuestConditionDataSet` · `PlayerQuest` · `UserQuestData` | **퀘스트 CountMode Action/State** (2026-08-15) — 아래 참조 |
+| `ui/PopupGroup.ui` 퀘스트 보상 Icon | **보상칸 아이콘 Simple+None 정렬** (2026-08-15) — 아래 참조 |
 | `item_dataset` · `SkillDataSet` · 인벤/스킬/퀘스트 | **주먹도끼 기믹 무기 + 던지기 스킬** (2026-08-14) — 아래 참조 |
 | `docs/design/story/` 신설 6문서 · `AGENTS.md` §10 | **스토리·맵·퀘스트 콘텐츠 설계 체계** (2026-08-14) — 아래 참조 |
 | `ui/PopupGroup.ui` · `HUDGroup.ui` · `UIQuestLogController` · `UIQuestController` | **퀘스트 로그 A안** (2026-08-14) — 아래 참조 |
@@ -21,6 +25,68 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-15 이어하기 슬롯 캐릭터 레벨 실시간 동기화
+
+제작자 보고: 이어하기(메인메뉴 슬롯 선택)에서 캐릭터별 레벨이 제대로 뜨지 않음.
+
+원인:
+1. `SlotMeta`와 실제 슬롯 세이브(`SaveData_s1`~`s5`)의 이중 관리 및 미동기화 — 세이브 본문에 레벨업이 기록되어도 `SlotMeta`가 갱신되지 않아 이전 레벨(Lv.1)이 표시됨.
+2. 60초 주기 자동 저장 등 비동기 저장 경로에서 `SlotMeta` 갱신 누락.
+
+| 파일 | 조치 |
+|---|---|
+| `PersistenceManager.mlua` | `ReadSlotMetaTable`: `BatchGetAndWait`로 `SaveData_s1`~`s5`를 조회하여 최신 `level`, `fishingLevel`, `characterName`을 `SlotMeta`에 실시간 자동 동기화 및 영구 저장. `SavePlayerData` 비동기 저장 콜백에도 `SlotMeta` 갱신 추가 |
+| `UIMainMenuController.mlua` | `RefreshSlots`: `meta.level`/`Level`, `meta.fishLv`/`fishingLevel` 방어적 파싱 보강 |
+
+- 검증: `maker_refresh_workspace` status ok, build logs `13:15:02` Error=0, Warning=0. **런타임 검증 보류(제작자 Play)**
+
+### 2026-08-15 퀘스트 재접속 초기화 버그 해결 & 캐릭터 닉네임 동기화
+
+제작자 보고: 접속할 때마다 퀘스트가 다시 처음부터 뜨고, 새로 만든 캐릭터 이름이 인게임에서 계정 이름으로 뜸.
+
+원인:
+1. `PlayerDBManager:LoadFromDB`: 슬롯 키(`Quest_s1`)와 레거시 키(`Quest`) 조회 시, 레거시 키가 존재하면 슬롯 키 데이터를 무시해버리는 조건문 우선순위 역전 버그.
+2. `PersistenceManager`: `OnEndPlay`, `OnUserLeave`, `SaveDirtyData`에서 `PlayerDBManager:SaveToDB` 호출이 누락되어 퀘스트 변경사항이 저장되지 않고 소실됨.
+3. `PersistenceManager`: `SelectSaveSlot` 및 `LoadPlayerData`에서 슬롯 캐릭터 닉네임을 `self.CharacterNameByUser`에만 두고 `player.PlayerComponent.Nickname` 및 `player.NameTagComponent.Name`에 대입해주지 않아 계정명이 그대로 노출됨.
+
+| 파일 | 조치 |
+|---|---|
+| `PlayerDBManager.mlua` | `LoadFromDB`: 슬롯 전용 데이터(`Quest_s{slot}`) 최우선 채택. `SaveToDB`: `successKeys` .NET List 안전 순회 보강 |
+| `PersistenceManager.mlua` | `SelectSaveSlot` / `LoadPlayerData`: `player.PlayerComponent.Nickname = nick`, `player.NameTagComponent.Name = nick` 설정. `OnEndPlay`/`OnUserLeave`/`SaveDirtyData`: `PlayerDBManager:SaveToDB` 연동 |
+
+- 검증: `maker_refresh_workspace` status ok, build logs `11:22:29` Error=0, Warning=0. **런타임 검증 보류(제작자 Play)**
+
+### 2026-08-15 퀘스트 보상칸 아이콘 정렬
+
+제작자 보고: 주먹도끼는 보상칸 가운데, 나무·돌 등 자원은 칸을 살짝 벗어남.
+
+원인: 보상 `Icon`이 인벤토리와 달리 `PreserveSprite=AspectOnly` + `Type=Sliced` + `pos y=+8`. 자원 `IconRUID`는 하단 피벗 드롭 스프라이트, 주먹도끼는 `thumbnail://` 중심 썸네일.
+
+| 항목 | 내용 |
+|---|---|
+| 대상 | `QuestPopup/Details/RewardSlot1~4/Icon` |
+| 조치 | 인벤토리 `ItemSlot/Icon`과 동일: `Type=Simple(0)`, `PreserveSprite=None(0)`, `pos (0, 0)` |
+| 재발 방지 | `scratch/build_quest_popup.cjs` 동일 값으로 맞춤. pitfalls 규칙 29 |
+
+- 검증: UIBuilder 재독으로 4칸 모두 Simple+None+(0,0) 확인. **refresh 검증 보류** (Maker MCP `CallMcpTool` 클라이언트 미등록). **런타임 검증 보류(제작자 Play)**
+- Play 확인: 퀘스트 로그에서 Wood/Stone 보상이 72×72 칸 안에 들어가 보이는지. 주먹도끼도 가운데 유지.
+
+### 2026-08-15 퀘스트 CountMode — Action / State
+
+제작자: 퀘스트를 (1) 받은 **이후** 행동으로만 완수 / (2) **이미 한 일**이면 자동 완수, 두 부류로 나눌 것. 예: 주먹도끼 던지기 습득(108)은 이미 배웠으면 LearnSkill 이벤트가 다시 안 나와 완수 불가.
+
+| 항목 | 내용 |
+|---|---|
+| 컬럼 | `QuestConditionDataSet.CountMode` = `Action` \| `State` |
+| Action | 수락 이후 `ActionEvent`만 집계. 101·103·105·107·201 |
+| State | 수락·로그인 때 `GetUpdatedValue` 스냅샷. 이미 충족이면 즉시 완료. 102·104·106·108 |
+| 108 | LearnSkill `hand_axe_throw` — `GetSkillLevel>=1`이면 완료. 빈 CountMode의 LearnSkill도 State |
+| 반복 퀘 | 스냅샷으로 자동 완료하지 않음 (AutoAccept 보상 루프 방지) |
+
+- 변경: `ActionConditionData` 스냅샷 헬퍼 · 조건 7종 `GetUpdatedValue` · `QuestConditionData.CountMode` · `UserQuestData.UpdateValues` · `PlayerQuest.AcceptQuests`/`TryCompleteReadyQuests`
+- 검증: **refresh 검증 보류** (MCP maker 미연결). **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 스킬을 먼저 배운 뒤 108 수락 → 즉시 완료+주먹도끼 20 ② 108 진행 중 접속(이미 배운 세이브) → 로그인 시 완료 ③ 101은 풀을 이미 들고 있어도 0/3에서 시작 ④ 102는 주먹도끼를 이미 만든 세이브면 수락 즉시 완료
 
 ### 2026-08-14 주먹도끼 기믹 무기 + 던지기 스킬
 
@@ -37,6 +103,20 @@
 - 변경: `PlayerInventory` · `PlayerController` · `UISkillTreeController` · `PlayerQuest.PostOnLoadedDataFromDB` AutoAccept · CSV 다수 · `PersistenceManager` 로드 후 fold
 - 검증: LSP(아래). **refresh 검증 보류** (MCP maker 미연결). **런타임 검증 보류(제작자 Play)**
 - Play 확인: 주먹도끼 제작 → 한 슬롯 중첩 → 퀘스트 108 등장 → 스킬트리 해금(SP 0) → 배우면 +20 → QWER 던지기 1개 소모
+
+### 2026-08-15 도구 평타에 스킬 HitEffect 잔류
+
+제작자 보고: 일반 도구 Ctrl 평타만 쳐도 스킬 `HitEffect`가 몬스터에 재생됨.
+
+원인: `ExecuteSkill`이 Projectile만 `PendingHitEffectRUID`를 비행 중 유지하고, `DoAttackAt`은 비우지 않음. 매직 클로 등 HitEffect가 있는 투사체 이후 Ctrl 평타가 그 RUID를 그대로 소비.
+
+| 파일 | 조치 |
+|---|---|
+| `PlayerCombat.DoAttackAt` | AttackFast 직전 `PendingHitEffectRUID=""` |
+| `PlayerController.ExecuteSkill` | Projectile 포함 시전 후 즉시 클리어 (탄환은 자체 `HitEffectRUID`) |
+| `Projectile.TriggerAttackOnTarget` | 명중 후 이전 Pending을 되살리지 않고 `""` |
+
+- 검증: LSP 0. refresh + build 로그는 아래 턴 기록. **런타임 검증 보류(제작자 Play)** — 스킬 후 Ctrl 평타에 `[T66][HITFX]`가 없어야 함. 스킬 자체 HitEffect는 유지.
 
 ### 2026-08-14 스토리·맵·퀘스트 콘텐츠 설계 체계 (docs/design/story/ 신설)
 

@@ -10,6 +10,20 @@ script Projectile extends Component
 	-- T66: 명중 시 Monster.HandleHitEvent가 소비할 피격 이펙트
 	property string HitEffectRUID = ""
 
+	method void OnBeginPlay()
+		-- DBG985ecc: client SpriteRUID after sync (LEA-3015 is client-side).
+		if not self:IsClient() then return end
+		_TimerService:SetTimerOnce(function()
+			if not isvalid(self.Entity) then return end
+			local spr = self.Entity.SpriteRendererComponent
+			local ruid = ""
+			if isvalid(spr) then ruid = tostring(spr.SpriteRUID or "") end
+			-- #region agent log
+			log("[DBG985ecc][A/D] client SpriteRUID=" .. ruid .. " hasThumb=" .. tostring(string.sub(ruid, 1, 12) == "thumbnail://"))
+			-- #endregion
+		end, 0.1)
+	end
+
 	method void Initialize(Entity owner, Vector2 dir, integer dmg, number speed, string hitEffectRUID)
 		self.Owner = owner
 		
@@ -79,7 +93,6 @@ script Projectile extends Component
 
 		-- Store original PendingDamage and apply skill damage
 		local originalPending = combat.PendingDamage
-		local originalHitFx = combat.PendingHitEffectRUID
 		combat.PendingDamage = self.Damage
 		combat.PendingHitEffectRUID = self.HitEffectRUID or ""
 
@@ -89,9 +102,9 @@ script Projectile extends Component
 		
 		combat:AttackFast(shape, nil, CollisionGroups.HitBox)
 		
-		-- Restore original PendingDamage / hit FX
+		-- Restore original PendingDamage. Hit FX는 이 명중분만 — 이전 스킬 Pending을 되살리면 평타에 붙는다.
 		combat.PendingDamage = originalPending
-		combat.PendingHitEffectRUID = originalHitFx or ""
+		combat.PendingHitEffectRUID = ""
 		log("[PROJECTILE] Struck monster target " .. target.Name .. " dealing " .. self.Damage .. " damage.")
 	end
 

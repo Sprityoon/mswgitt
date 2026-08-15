@@ -400,8 +400,8 @@ script UIMainMenuController extends Component
 			if isvalid(info) then
 				if occupied then
 					-- 슬롯 카드가 가로 1행이라 한 줄로 표기 (2줄이면 행 높이를 넘친다).
-					local lv = tonumber(meta.level) or 1
-					local fish = tonumber(meta.fishLv) or 1
+					local lv = tonumber(meta.level or meta.Level) or 1
+					local fish = tonumber(meta.fishLv or meta.fishingLevel or meta.FishingLevel) or 1
 					info.Text = "Lv." .. tostring(lv) .. "  ·  낚시 Lv." .. tostring(fish)
 				else
 					info.Text = "비어 있음"

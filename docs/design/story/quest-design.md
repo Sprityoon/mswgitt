@@ -9,14 +9,15 @@
 ## 1. 하드 제약 (요약 — 위반 콘텐츠는 반려)
 
 1. **조건은 11종** (✅ `ActionEnum` 실측 2026-08-14): `Attend` `StateChange` `MesoChange` `StaminaChange` `Kill` `Gather` `Craft` `Smelt` `Place` `Warp` `LearnSkill`. 호위·타이머·"대화만으로 완료" 없음 — 필요하면 "시스템 제안"으로 분리.
+1-bis. **`CountMode`는 퀘스트마다 명시** (✅ 2026-08-15): `Action` = 수락 이후 행동만, `State` = 이미 한 일이면 수락·로그인 때 자동 충족. `LearnSkill`은 빈 칸도 State. 반복 퀘는 State여도 자동 완료하지 않음.
 2. **조건 인자(CondArg)의 검증 상태**:
 
    | CondEnum | 인자 의미 | 상태 |
    |---|---|---|
    | Gather | 아이템 `Name` (Grass/Wood/Stone) | ✅ 101·103·105·201 가동 — 단, **직접 채집** 기준. 드롭 습득(구리 등)도 집계되는지 ❓ |
-   | Craft | 결과 아이템 `Name` | ✅ 102·104 가동 |
-   | LearnSkill | `SkillDataSet.SkillId` | ✅ 구현 2026-08-14 (108) — Play 확인 대기 |
-   | Place | 설치 가구 `Name` | ✅ 106 가동 |
+   | Craft | 결과 아이템 `Name` | ✅ 102·104 `CountMode=State` (2026-08-15) — 이미 제작·획득했으면 수락 시 완료 |
+   | LearnSkill | `SkillDataSet.SkillId` | ✅ 108 `CountMode=State` (2026-08-15) — 이미 배웠으면 수락 시 완료. Play 확인 대기 |
+   | Place | 설치 가구 `Name` | ✅ 106 `CountMode=State` (2026-08-15) — 이미 설치돼 있으면 수락 시 완료 |
    | Warp | 빈칸 = 아무 포탈 이동 | ✅ 107 가동 — 특정 목적지 지정 가능 여부 ❓ |
    | Kill | 몬스터 Id 추정 (`slime`/`boar`/`horn_mushroom`) | ❓ 사용례 0 — 인자 표기·발화 지점 실측 필수 |
    | Smelt | 제련 결과 `Name` 추정 | ❓ 사용례 0 |

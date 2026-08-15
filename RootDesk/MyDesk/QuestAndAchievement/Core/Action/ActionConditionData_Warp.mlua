@@ -28,4 +28,17 @@ script ActionConditionData_Warp extends ActionConditionData
 		return userValue + (evt.Args[2] or 1)
 	end
 
+	method integer GetUpdatedValue(Entity userEntity, integer userValue, integer condValue)
+		-- CountMode=State: 지금 영지 밖이면 충족. 귀가하면 0이라 Action이 기본.
+		if not _Util:IsNilorEmptyString(self.Target) then
+			if isvalid(userEntity) and isvalid(userEntity.CurrentMap) then
+				if userEntity.CurrentMap.Name == self.Target then
+					return condValue
+				end
+			end
+			return 0
+		end
+		return self:SnapshotOffHome(userEntity, condValue)
+	end
+
 end

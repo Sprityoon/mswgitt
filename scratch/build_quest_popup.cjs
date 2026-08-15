@@ -214,9 +214,10 @@ for (let i = 1; i <= 4; i += 1) {
   b.sprite(`${slot}/Icon`, {
     image_ruid: CHIP,
     color: { r: 1, g: 1, b: 1, a: 1 },
-    preserve_sprite: 1,
+    preserve_sprite: 0,
+    sprite_type: 0,
     rect_size: [48, 48],
-    pos: [0, 8],
+    pos: [0, 0],
   });
   b.text(`${slot}/Count`, "x1", {
     size: 14,

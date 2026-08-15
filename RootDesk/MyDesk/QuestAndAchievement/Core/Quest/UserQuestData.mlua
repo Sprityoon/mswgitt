@@ -128,6 +128,7 @@ script UserQuestData
 	end
 
 	method boolean UpdateValues(Entity userEntity, QuestData data)
+		-- CountMode=State 이거나 IsUpdateNeeded인 조건을 현재 상태로 채운다.
 		local state = self.State
 		if state ~= _QuestStateEnum.InProgress then
 			return false
@@ -152,7 +153,8 @@ script UserQuestData
 				continue
 			end
 			
-			if not actionCondData:IsUpdateNeeded() then
+			local snapshot = condData.CountMode == "State" or actionCondData:IsUpdateNeeded()
+			if not snapshot then
 				continue
 			end
 			
@@ -175,6 +177,7 @@ script UserQuestData
 			
 			values[i] = nextUserValue
 			isDirty = true
+			log(string.format("[QUEST] snapshot id=%d idx=%d mode=%s %d→%d", self.Id, i, condData.CountMode, userValue, nextUserValue))
 		end
 		
 		if not isDirty then

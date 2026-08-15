@@ -28,4 +28,9 @@ script ActionConditionData_Craft extends ActionConditionData
 		return userValue + (evt.Args[2] or 1)
 	end
 
+	method integer GetUpdatedValue(Entity userEntity, integer userValue, integer condValue)
+		-- CountMode=State: 도감 누적 획득(제작·픽업 포함)으로 이미 만든 결과를 인정.
+		return self:SnapshotDexItemCount(userEntity, self.Target)
+	end
+
 end

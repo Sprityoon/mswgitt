@@ -148,6 +148,7 @@ script PlayerQuest extends Component
 	method boolean PostOnLoadedDataFromDB()
 		-- 세이브 로드 후 AutoAccept 재평가 (이미 깬 LinkedPrevId 뒤에 붙은 신규 퀘스트 수주)
 		self:AutoAcceptQuests(true)
+		self:TryCompleteReadyQuests()
 		return true
 	end
 
@@ -292,6 +293,7 @@ script PlayerQuest extends Component
 
 	@ExecSpace("ServerOnly")
 	method void AcceptQuests(table ids, boolean sync)
+		-- 수락 후 State 조건이 이미 충족되면 비반복 퀘스트를 즉시 완료한다.
 		local userEntity = self.Entity
 		local elapsed = _DateTimeLogic:GetTimeElapsed()
 		
@@ -321,6 +323,42 @@ script PlayerQuest extends Component
 		
 		if sync then
 			self:SyncDataChanged(acceptUserDataTable, self.Entity.PlayerComponent.UserId)
+		end
+
+		-- CountMode=State 조건이 수락 시점에 이미 충족되면 반복 퀘가 아닌 한 즉시 완료.
+		local completableIds = {}
+		for id, userData in pairs(acceptUserDataTable) do
+			local qdata = _QuestDataSetLogic:GetData(id)
+			if qdata ~= nil and not qdata.IsRepeatable and userData:IsCompletable(qdata) then
+				completableIds[#completableIds + 1] = id
+				log(string.format("[QUEST] auto-complete snapshot id=%d", id))
+			end
+		end
+		if #completableIds > 0 then
+			self:CompleteQuests(completableIds)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void TryCompleteReadyQuests()
+		-- 진행 중이고 스냅샷으로 이미 조건을 채운 비반복 퀘스트를 완료한다.
+		local ids = {}
+		for id, _ in pairs(self.ProgressingIdTable) do
+			local data = _QuestDataSetLogic:GetData(id)
+			local userData = self.UserDataTable[id]
+			if data == nil or userData == nil then
+				continue
+			end
+			if data.IsRepeatable then
+				continue
+			end
+			if userData:IsCompletable(data) then
+				ids[#ids + 1] = id
+				log(string.format("[QUEST] auto-complete ready id=%d", id))
+			end
+		end
+		if #ids > 0 then
+			self:CompleteQuests(ids)
 		end
 	end
 

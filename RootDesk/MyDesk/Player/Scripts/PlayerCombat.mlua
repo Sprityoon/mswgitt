@@ -29,6 +29,8 @@ script PlayerCombat extends AttackComponent
 		end
 		
 		self.PendingDamage = dmg
+		-- 도구 평타는 스킬 HitEffect를 쓰지 않는다. 투사체 스킬이 Pending을 비행 중 남겨 두면 Ctrl 평타에 붙는다.
+		self.PendingHitEffectRUID = ""
 		local shape = BoxShape(worldPos, Vector2(self.AttackBoxSize, self.AttackBoxSize), 0)
 		self:AttackFast(shape, nil, CollisionGroups.HitBox)
 	end

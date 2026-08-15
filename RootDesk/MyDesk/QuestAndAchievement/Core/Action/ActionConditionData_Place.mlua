@@ -28,4 +28,9 @@ script ActionConditionData_Place extends ActionConditionData
 		return userValue + (evt.Args[2] or 1)
 	end
 
+	method integer GetUpdatedValue(Entity userEntity, integer userValue, integer condValue)
+		-- CountMode=State: 영지에 이미 설치된 가구 수.
+		return self:SnapshotFurnitureCount(userEntity, self.Target)
+	end
+
 end
