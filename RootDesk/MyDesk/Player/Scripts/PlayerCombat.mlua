@@ -12,20 +12,22 @@ script PlayerCombat extends AttackComponent
 	@ExecSpace("ServerOnly")
 	method void DoAttackAt(Vector2 worldPos)
 		-- Emits a melee box at worldPos; only monster hitboxes (HitBox group) take damage.
+		-- 평타 = CharAtk + 장착 Attack. ToolPower는 채집 전용.
 		local dmg = self.BaseDamage
+		local pc = self.Entity:GetComponent("script.PlayerController")
+		if isvalid(pc) then
+			---@type PlayerController
+			local controller = pc
+			dmg = controller:GetCharacterAttack()
+		end
 		local inv = self.Entity:GetComponent("script.PlayerInventory")
 		if isvalid(inv) then
 			---@type PlayerInventory
 			local pi = inv
 			local toolInfo = pi:GetEquippedToolInfo()
-			if toolInfo and toolInfo.power > 0 then
-				dmg = dmg + toolInfo.power * 4  -- 등급별 4배율 공격력 증가식
+			if toolInfo ~= nil then
+				dmg = dmg + (tonumber(toolInfo.attack) or 0)
 			end
-		end
-		-- T16 AttackPower 버프
-		local pc = self.Entity:GetComponent("script.PlayerController")
-		if isvalid(pc) then
-			dmg = dmg + math.floor(pc:GetBuffedAttackPower() + 0.5)
 		end
 		
 		self.PendingDamage = dmg
@@ -33,10 +35,11 @@ script PlayerCombat extends AttackComponent
 		self.PendingHitEffectRUID = ""
 		local shape = BoxShape(worldPos, Vector2(self.AttackBoxSize, self.AttackBoxSize), 0)
 		self:AttackFast(shape, nil, CollisionGroups.HitBox)
+		log("[DMG] melee=" .. tostring(dmg))
 	end
 
 	method integer CalcDamage(Entity attacker, Entity defender, string attackInfo)
-		-- Damage dealt to the struck monster (flat base for now; tool scaling is a later pass).
+		-- Damage dealt to the struck monster (PendingDamage = CharAtk + Attack, or skill core).
 		return self.PendingDamage
 	end
 

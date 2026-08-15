@@ -1382,8 +1382,8 @@ script PlayerInventory extends Component
 
 	@ExecSpace("ServerOnly")
 	method table GetEquippedToolInfo()
-		-- Returns { toolType, power } of the equipped tool; empty toolType when bare-handed.
-		local info = { toolType = "", power = 0 }
+		-- Returns { toolType, power, attack, magicAttack, skillAttack, toolTier }.
+		local info = { toolType = "", power = 0, attack = 0, magicAttack = 0, skillAttack = 0, toolTier = 0 }
 		if self.EquippedTool == "" then return info end
 		
 		local baseName = self:GetBaseItemName(self.EquippedTool)
@@ -1394,7 +1394,80 @@ script PlayerInventory extends Component
 		
 		info.toolType = row:GetItem("ToolType") or ""
 		info.power = tonumber(row:GetItem("ToolPower")) or 0
+		info.attack = 0
+		info.magicAttack = 0
+		info.skillAttack = 0
+		info.toolTier = 0
+		local function numCol(col)
+			local ok, raw = pcall(function() return row:GetItem(col) end)
+			if ok and raw ~= nil and tostring(raw) ~= "" then
+				return tonumber(raw) or 0
+			end
+			return 0
+		end
+		info.attack = numCol("Attack")
+		info.magicAttack = numCol("MagicAttack")
+		info.skillAttack = numCol("SkillAttack")
+		info.toolTier = numCol("ToolTier")
 		return info
+	end
+
+	method string GetToolTypeLabel(string toolType)
+		-- ToolType 컬럼 → 한글 표시. 신규 종류는 여기와 데이터만.
+		if toolType == "axe" then return "도끼" end
+		if toolType == "pickaxe" then return "곡괭이" end
+		if toolType == "shovel" then return "삽" end
+		if toolType == "hoe" then return "호미" end
+		if toolType == "rod" then return "낚싯대" end
+		if toolType == "water_spade" then return "물삽" end
+		return toolType or ""
+	end
+
+	method string FormatItemStatLines(string itemName)
+		-- 툴팁용 짧은 스펙. 0인 전투 수치는 숨긴다. 던지기는 적지 않는다.
+		if itemName == nil or itemName == "" then return "" end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return "" end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return "" end
+		local function numCol(col)
+			local ok, raw = pcall(function() return row:GetItem(col) end)
+			if ok and raw ~= nil and tostring(raw) ~= "" then
+				return tonumber(raw) or 0
+			end
+			return 0
+		end
+		local lines = {}
+		local toolType = ""
+		local okT, rawT = pcall(function() return row:GetItem("ToolType") end)
+		if okT and rawT ~= nil then toolType = tostring(rawT) end
+		local power = numCol("ToolPower")
+		local tier = numCol("ToolTier")
+		if toolType ~= "" then
+			local typeLabel = self:GetToolTypeLabel(toolType)
+			local head = typeLabel
+			if tier > 0 then
+				head = "T" .. tostring(math.floor(tier)) .. " " .. typeLabel
+			end
+			if power > 0 then
+				head = head .. " · 채집 +" .. tostring(math.floor(power))
+			end
+			lines[#lines + 1] = head
+		end
+		local attack = numCol("Attack")
+		if attack > 0 then
+			lines[#lines + 1] = "무기 공격력 " .. tostring(math.floor(attack))
+		end
+		local magicAtk = numCol("MagicAttack")
+		if magicAtk > 0 then
+			lines[#lines + 1] = "마법 공격력 " .. tostring(math.floor(magicAtk))
+		end
+		local skillAtk = numCol("SkillAttack")
+		if skillAtk > 0 then
+			lines[#lines + 1] = "스킬 공격력 +" .. tostring(math.floor(skillAtk))
+		end
+		if #lines == 0 then return "" end
+		return table.concat(lines, "\n")
 	end
 
 	@ExecSpace("Client")

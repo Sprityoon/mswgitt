@@ -639,7 +639,16 @@ script UICraftingController extends Component
 		local unlocked = self:IsRecipeUnlocked(self.selectedRecipe)
 		if isvalid(self.detailDesc) then
 			if unlocked then
-				self.detailDesc.Text = recipe.desc
+				local text = recipe.desc or ""
+				local player = _UserService.LocalPlayer
+				local inv = isvalid(player) and player:GetComponent("script.PlayerInventory")
+				if isvalid(inv) then
+					local stats = inv:FormatItemStatLines(recipe.name)
+					if stats ~= nil and stats ~= "" then
+						text = text .. "\n" .. stats
+					end
+				end
+				self.detailDesc.Text = text
 			else
 				self.detailDesc.Text = "잠긴 제작법"
 			end

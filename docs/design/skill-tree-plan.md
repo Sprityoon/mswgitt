@@ -35,6 +35,11 @@
 | `CooldownPerLevel` | 레벨당 쿨다운 감소량 (음수) |
 | `TreeRow` / `TreeCol` | 스킬트리 UI 배치 좌표 |
 | `ConsumeItem` / `ConsumeCount` | 시전 소모 아이템 `Name`과 개수 (공란=소모 없음) |
+| `DamageModel` | `Physical` = (CharAtk+Attack)×배율 · `Magic` = SkillPower×배율 · `Throw` = (SkillPower+CharAtk+Attack)×배율 |
+| `SkillPower` | Magic/Throw의 스킬 고유 위력. Physical은 미사용(0) |
+| `RequireEquippedItem` | 장착 도구 `Name`이 일치해야 시전 (공란=제한 없음) |
+
+아이템 전투 칸(`item_dataset`): `Attack` 평타·물리, `MagicAttack` 마법, `SkillAttack` 모든 스킬(평타 제외), `ToolTier` 표시용 T1~T4.
 | `ProjectileRUID` | Projectile 타입 발사체 스프라이트 |
 | `UnlockOwnedItem` | 해금 OR 게이트 — 해당 `Name` 보유/도감 획득 시 통과 (`UnlockAchievementId`와 함께면 OR) |
 
@@ -59,7 +64,7 @@ SP 지급: `PlayerController.AddXP`의 레벨업 루프에서 `SP += n` (n도 �
   ③ UnlockAchievementId 완료 또는 UnlockOwnedItem 보유? (둘 다 있으면 OR)
   ④ SP >= SPCost? ⑤ level < MaxLevel?
   → 통과 시 skillLevels[skillId] += 1, SP -= cost, @Sync 반영
-스킬 사용 시: 실효 배율 = DamageMultiplier + DamagePerLevel × (level-1)
+스킬 사용 시: 실효 배율 = DamageMultiplier + DamagePerLevel × (level-1). 데미지 코어는 `DamageModel` (⚖️ 2026-08-16). CharAtk = `PlayerCombat.BaseDamage`(8) + AttackPower 버프 — 스탯 투자는 `GetCharacterAttack()`에만 더한다.
 ```
 
 ### UI

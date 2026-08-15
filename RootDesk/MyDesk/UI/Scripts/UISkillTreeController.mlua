@@ -398,7 +398,7 @@ script UISkillTreeController extends Component
 	end
 
 	method string TypeDisplayLabel(string typeStr)
-		-- SkillDataSet Type 컬럼 → 표시 라벨 (이름 하드코딩 금지, Type 값 분기만)
+		-- 폴백. 상세 패널은 GetSkillKindLabel을 쓴다.
 		if typeStr == nil then return "액티브" end
 		if typeStr == "Passive" then return "패시브" end
 		return "액티브"
@@ -441,7 +441,6 @@ script UISkillTreeController extends Component
 		end
 
 		local name = row:GetItem("Name") or sid
-		local typeStr = row:GetItem("Type") or ""
 		local maxLevel = tonumber(row:GetItem("MaxLevel")) or 1
 		local spCost = tonumber(row:GetItem("SPCost")) or 1
 		local desc = self:StripCsvQuotes(row:GetItem("Description") or "")
@@ -467,14 +466,23 @@ script UISkillTreeController extends Component
 		end
 
 		self:SetTextSafe(self._T.dName, name, true)
-		local typeLv = self:TypeDisplayLabel(typeStr) .. " · Lv " .. tostring(level) .. "/" .. tostring(maxLevel)
+		local kindLabel = self:TypeDisplayLabel(row:GetItem("Type") or "")
+		if pc ~= nil then
+			pcall(function() kindLabel = pc:GetSkillKindLabel(row) end)
+		end
+		local typeLv = kindLabel .. " · Lv " .. tostring(level) .. "/" .. tostring(maxLevel)
 		self:SetTextSafe(self._T.dTypeLv, typeLv, true)
 		local consumeLine = self:FormatConsumeLine(row)
-		if consumeLine ~= "" then
+		local equipLine = self:FormatEquipReqLine(row)
+		local extra = consumeLine
+		if equipLine ~= "" then
+			if extra ~= "" then extra = extra .. "\n" .. equipLine else extra = equipLine end
+		end
+		if extra ~= "" then
 			if desc ~= "" then
-				desc = desc .. "\n" .. consumeLine
+				desc = desc .. "\n" .. extra
 			else
-				desc = consumeLine
+				desc = extra
 			end
 		end
 		self:SetTextSafe(self._T.dDesc, desc, true)
@@ -672,6 +680,24 @@ script UISkillTreeController extends Component
 			end
 		end
 		return "소모: " .. disp .. " x" .. tostring(n)
+	end
+
+	method string FormatEquipReqLine(any row)
+		-- RequireEquippedItem이 있으면 "장착: 표시명".
+		if row == nil then return "" end
+		local ok, raw = pcall(function() return row:GetItem("RequireEquippedItem") end)
+		if not ok or raw == nil or tostring(raw) == "" then return "" end
+		local itemName = tostring(raw)
+		local disp = itemName
+		local ds = _DataService:GetTable("item_dataset")
+		if ds ~= nil then
+			local irow = ds:FindRow("Name", itemName)
+			if irow ~= nil then
+				local okD, v = pcall(function() return irow:GetItem("DisplayName") end)
+				if okD and v ~= nil and tostring(v) ~= "" then disp = tostring(v) end
+			end
+		end
+		return "장착: " .. disp
 	end
 
 	@ExecSpace("ClientOnly")

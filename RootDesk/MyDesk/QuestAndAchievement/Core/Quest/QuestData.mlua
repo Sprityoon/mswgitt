@@ -23,6 +23,8 @@ script QuestData
 
 	property boolean CannotAbandon = false
 
+	property table ConsumeItems = nil
+
 	property table RewardItems = nil
 
 	property integer Priority = 0
@@ -81,6 +83,20 @@ script QuestData
 		if not _Util:IsNilorEmptyString(row:GetItem("CannotAbandon")) then
 			self.CannotAbandon = true
 		end
+
+		-- 보고 시 넘길 아이템 (공란=보여 주기만 / 튜토리얼 자동완료). RewardItems와 같은 Name:count| 문법.
+		self.ConsumeItems = nil
+		local consumeItems = {}
+		local okCi, ci = pcall(function() return row:GetItem("ConsumeItems") end)
+		if okCi and ci ~= nil then
+			if not self:ParseItems(ci, consumeItems) then
+				log_error(string.format("ConsumeItem name or count is nil. Id : %d", id))
+				return false
+			end
+			if not _Util:IsNilorEmptyTable(consumeItems) then
+				self.ConsumeItems = consumeItems
+			end
+		end
 		
 		local rewardItems = {}
 		if not self:ParseItems(row:GetItem("RewardItems"), rewardItems) then
@@ -121,6 +137,11 @@ script QuestData
 		end
 		
 		return true
+	end
+
+	method boolean RequiresNpcTurnIn()
+		-- TurnInNpcId가 있으면 조건 충족만으로 완료하지 않고 NPC 보고가 필요하다.
+		return self.TurnInNpcId ~= nil and self.TurnInNpcId ~= ""
 	end
 
 	method boolean ParseItems(string itemsStr, table outItems)

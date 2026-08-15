@@ -224,10 +224,18 @@ script UICharacterController extends Component
 			end
 		
 			if isvalid(self.atkVal) then
+				local charAtk = 8
+				pcall(function() charAtk = controller:GetCharacterAttack() end)
+				local weapAtk = 0
 				if equippedTool ~= "" then
-					self.atkVal.Text = tostring(controller.Attack or 15) .. " (" .. self:GetItemDisplayName(equippedTool) .. ")"
+					local stats = self:GetToolStats(equippedTool)
+					weapAtk = stats.Attack or 0
+				end
+				local shown = charAtk + weapAtk
+				if equippedTool ~= "" then
+					self.atkVal.Text = tostring(shown) .. " (" .. self:GetItemDisplayName(equippedTool) .. ")"
 				else
-					self.atkVal.Text = tostring(controller.Attack or 15) .. " (맨손)"
+					self.atkVal.Text = tostring(shown) .. " (맨손)"
 				end
 			end
 			if isvalid(self.defVal) then
@@ -235,13 +243,20 @@ script UICharacterController extends Component
 			end
 			if isvalid(self.gatherVal) then
 				if equippedTool ~= "" then
-					local stats = self:GetToolStats(equippedTool)
-					local toolType = self:GetToolTypeLabel(stats.Type)
-					local toolPower = stats.Power
-					if stats.Type ~= "" then
-						self.gatherVal.Text = toolType .. " · +" .. tostring(toolPower)
+					local playerInv = player:GetComponent("script.PlayerInventory")
+					local statLine = ""
+					if isvalid(playerInv) then
+						statLine = playerInv:FormatItemStatLines(playerInv:GetBaseItemName(equippedTool))
+					end
+					if statLine ~= nil and statLine ~= "" then
+						local nl = string.find(statLine, "\n", 1, true)
+						if nl ~= nil then
+							self.gatherVal.Text = string.sub(statLine, 1, nl - 1)
+						else
+							self.gatherVal.Text = statLine
+						end
 					else
-						self.gatherVal.Text = "강화 (" .. self:GetItemDisplayName(equippedTool) .. ")"
+						self.gatherVal.Text = self:GetItemDisplayName(equippedTool)
 					end
 				else
 					self.gatherVal.Text = "+" .. tostring(controller.GatheringSpeed or 10) .. "%"
@@ -255,18 +270,20 @@ script UICharacterController extends Component
 
 	@ExecSpace("ClientOnly")
 	method table GetToolStats(string itemName)
-		-- Looks up the equipped tool's ToolType/ToolPower from item_dataset.
+		-- Looks up ToolType/ToolPower/Attack from item_dataset.
+		local empty = {Type = "", Power = 0, Attack = 0}
 		local ds = _DataService:GetTable("item_dataset")
-		if ds == nil then return {Type = "", Power = 0} end
-		local rowCount = ds:GetRowCount()
-		for i = 1, rowCount do
-			if ds:GetCell(i, "Name") == itemName then
-				local toolType = ds:GetCell(i, "ToolType") or ""
-				local toolPower = tonumber(ds:GetCell(i, "ToolPower")) or 0
-				return {Type = toolType, Power = toolPower}
-			end
+		if ds == nil then return empty end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return empty end
+		local toolType = row:GetItem("ToolType") or ""
+		local toolPower = tonumber(row:GetItem("ToolPower")) or 0
+		local attack = 0
+		local okA, rawA = pcall(function() return row:GetItem("Attack") end)
+		if okA and rawA ~= nil and tostring(rawA) ~= "" then
+			attack = tonumber(rawA) or 0
 		end
-		return {Type = "", Power = 0}
+		return {Type = toolType, Power = toolPower, Attack = attack}
 	end
 
 	@ExecSpace("ClientOnly")

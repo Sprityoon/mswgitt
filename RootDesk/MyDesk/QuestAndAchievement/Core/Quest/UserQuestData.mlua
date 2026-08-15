@@ -296,8 +296,68 @@ script UserQuestData
 		return true
 	end
 
+	method boolean HasConsumeItems(QuestData data, Entity userEntity)
+		-- ConsumeItems가 비면 보고만 하면 된다. 있으면 인벤에 해당 Name 수량이 있어야 한다.
+		local items = data.ConsumeItems
+		if items == nil or #items == 0 then
+			return true
+		end
+		if not isvalid(userEntity) then
+			return false
+		end
+		local inv = userEntity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then
+			return false
+		end
+		for i = 1, #items do
+			local item = items[i]
+			local itemName = item[1]
+			local itemCount = item[2]
+			if itemName == nil or itemName == "" or itemCount == nil or itemCount <= 0 then
+				continue
+			end
+			if inv:GetItemCount(itemName) < itemCount then
+				return false
+			end
+		end
+		return true
+	end
+
+	method boolean TryConsumeItems(Entity userEntity, QuestData data)
+		if not self:HasConsumeItems(data, userEntity) then
+			return false
+		end
+		local items = data.ConsumeItems
+		if items == nil or #items == 0 then
+			return true
+		end
+		local inv = userEntity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then
+			return false
+		end
+		for i = 1, #items do
+			local item = items[i]
+			local itemName = item[1]
+			local itemCount = item[2]
+			if itemName == nil or itemName == "" or itemCount == nil or itemCount <= 0 then
+				continue
+			end
+			if not inv:RemoveItem(itemName, itemCount) then
+				log(string.format("[QUEST] consume failed: %s x%d (Quest %d)", itemName, itemCount, data.Id))
+				return false
+			end
+			log(string.format("[QUEST] consumed: %s x%d (Quest %d)", itemName, itemCount, data.Id))
+		end
+		return true
+	end
+
 	method boolean Complete(Entity userEntity, QuestData data, integer elapsed)
 		-- This function should check the conditions using the `IsCompletable` function before execution.
+		if not self:TryConsumeItems(userEntity, data) then
+			log(string.format("[QUEST] turn-in items missing (Quest %d)", data.Id))
+			return false
+		end
+
 		local inv = userEntity:GetComponent("script.PlayerInventory")
 		local rewardItems = data.RewardItems
 		if rewardItems ~= nil then

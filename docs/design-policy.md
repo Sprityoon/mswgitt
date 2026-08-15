@@ -69,7 +69,22 @@
 
 기본 도구는 인스턴스별 고유 키(한 슬롯에 1개)다. **기믹 무기**만 `MaxStack>1`로 자원처럼 한 슬롯에 중첩한다. 이름 분기를 두지 않는다 (`if name == "Hand Axe"` 금지). 현재 대상: `Hand Axe`(주먹도끼, MaxStack=99) + 스킬 `hand_axe_throw`(1개 소모 투사체).
 
-주먹도끼의 **아이템·레시피 설명은 벌목 도구**다. 던지기는 툴팁에 적지 않고, 퀘스트명(`왠지 던질 수 있을것 같습니다..`)과 스킬로만 드러내는 기믹이다.
+주먹도끼의 **아이템·레시피 설명은 벌목 도구**다. 던지기는 툴팁에 적지 않고, 퀘스트명(`왠지 던질 수 있을것 같습니다..`)과 스킬로만 드러내는 기믹이다. 시전은 `RequireEquippedItem=Hand Axe` — **들고 있을 때만**, 스택 1개 소모.
+
+### ⚖️ 전투 데미지 세 갈래 (2026-08-16)
+
+채집 `ToolPower`를 전투에 곱하지 않는다. `item_dataset.Attack`이 무기 공격력이다.
+
+| 갈래 | 식 | 대상 |
+|---|---|---|
+| 평타 | CharAtk + Attack | Ctrl 근접 |
+| Physical | (평타 + SkillAttack) × 실효배율 | 파워 스트라이크, 슬래시 블러스트 |
+| Magic | (SkillPower + MagicAtk + MagicAttack + SkillAttack) × 실효배율 | 매직 클로, 플래시 점프 |
+| Throw | (SkillPower + CharAtk + Attack + SkillAttack) × 실효배율 | 주먹도끼 던지기 (`RequireEquippedItem`) |
+
+CharAtk = 8 + 버프. MagicAtk = 0 + MagicPower 버프. 스탯 투자는 `GetCharacterAttack()` / `GetMagicAttack()`. 아이템 `MagicAttack`·`SkillAttack`은 지금은 0(지팡이·스킬 무기용 칸). 던지기 MaxLevel 5 · DamagePerLevel 0.3.
+
+툴팁: 아이템은 맛 설명 + `T티어 종류 · 채집 +N` / `무기 공격력` / `마법 공격력` / `스킬 공격력`(0은 숨김). 스킬은 `물리 스킬`·`마법 스킬`·`투척 스킬`·`패시브`.
 
 ---
 

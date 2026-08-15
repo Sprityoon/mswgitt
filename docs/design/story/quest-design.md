@@ -9,20 +9,21 @@
 ## 1. 하드 제약 (요약 — 위반 콘텐츠는 반려)
 
 1. **조건은 11종** (✅ `ActionEnum` 실측 2026-08-14): `Attend` `StateChange` `MesoChange` `StaminaChange` `Kill` `Gather` `Craft` `Smelt` `Place` `Warp` `LearnSkill`. 호위·타이머·"대화만으로 완료" 없음 — 필요하면 "시스템 제안"으로 분리.
-1-bis. **`CountMode`는 퀘스트마다 명시** (✅ 2026-08-15): `Action` = 수락 이후 행동만, `State` = 이미 한 일이면 수락·로그인 때 자동 충족. `LearnSkill`은 빈 칸도 State. 반복 퀘는 State여도 자동 완료하지 않음.
+1-bis. **`CountMode`는 퀘스트마다 명시** (✅ 2026-08-15): `Action` = 수락 이후 행동만, `State` = 이미 한 일이면 수락·로그인 때 조건만 채움. `LearnSkill`은 빈 칸도 State. 반복 퀘는 State여도 자동 완료하지 않음.
+1-ter. **완료 경로 분리** (✅ 2026-08-16): `TurnInNpcId` 공란 = 튜토리얼·서브처럼 조건 충족 즉시 완료. `TurnInNpcId` 있음 = NPC에게 보고해야 완료(제작·채집만으로 끝나지 않음). `ConsumeItems`가 있으면 보고 때 그 아이템을 넘긴다(도구 보여 주기 퀘는 공란으로 남겨 낚싯대·곡괭이를 유지).
 2. **조건 인자(CondArg)의 검증 상태**:
 
    | CondEnum | 인자 의미 | 상태 |
    |---|---|---|
-   | Gather | 아이템 `Name` (Grass/Wood/Stone) | ✅ 101·103·105·201 가동 — 단, **직접 채집** 기준. 드롭 습득(구리 등)도 집계되는지 ❓ |
-   | Craft | 결과 아이템 `Name` | ✅ 102·104 `CountMode=State` (2026-08-15) — 이미 제작·획득했으면 수락 시 완료 |
+   | Gather | 아이템 `Name` (Grass/Wood/Stone/`Slime Jelly`) | ✅ 채집·드롭 줍기 모두 `itemreact`가 `Name`으로 Gather 발행 (코드 실측 2026-08-15). 212 투입. Play 확인 대기 |
+   | Craft | 결과 아이템 `Name` | ✅ 102·104·202·215 `CountMode=State` (2026-08-15) — 이미 제작·획득했으면 수락 시 완료 |
    | LearnSkill | `SkillDataSet.SkillId` | ✅ 108 `CountMode=State` (2026-08-15) — 이미 배웠으면 수락 시 완료. Play 확인 대기 |
    | Place | 설치 가구 `Name` | ✅ 106 `CountMode=State` (2026-08-15) — 이미 설치돼 있으면 수락 시 완료 |
-   | Warp | 빈칸 = 아무 포탈 이동 | ✅ 107 가동 — 특정 목적지 지정 가능 여부 ❓ |
-   | Kill | 몬스터 Id 추정 (`slime`/`boar`/`horn_mushroom`) | ❓ 사용례 0 — 인자 표기·발화 지점 실측 필수 |
-   | Smelt | 제련 결과 `Name` 추정 | ❓ 사용례 0 |
+   | Warp | 빈칸 = 아무 맵 / CondArg = `CurrentMap.Name` (`hunt01` 등) | ✅ 107 빈칸 + 205 `Warp,hunt01` (코드 실측 2026-08-15). Play 확인 대기 |
+   | Kill | `Monster.MonsterId` (`slime`/`boar`/`horn_mushroom`/`slime_king`) | ✅ 막타 시 `_ActionEnum.Kill` 발행 (코드 실측 2026-08-15). 211·216 투입. Play 확인 대기 |
+   | Smelt | 제련 결과 `Name` (`Copper Bar`) | ✅ `Furnace`가 Smelt emit (코드 실측 2026-08-15). 214 투입. Play 확인 대기 |
    | Attend·StateChange·MesoChange·StaminaChange | — | ❓ 사용례 0 — 실측 전 콘텐츠 배정 금지 |
-3. **수주/보고 NPC는 `VillagerDialog` 부착 NPC만** (elder · fisher · researcher · vendor · blacksmith · barnkeeper). 검증된 것은 elder(201)뿐 — 타 NPC 첫 사용 시 재생기 동작 확인. `merchant`·시설은 불가 ([npc-cast.md](./npc-cast.md) §0).
+3. **수주/보고 NPC는 `VillagerDialog` 부착 NPC만** (elder · fisher · researcher · vendor · blacksmith · barnkeeper). elder(201) 가동. **2026-08-15** fisher(202)·blacksmith(203/213~215)·researcher(204/212) CSV 투입 — **Play 확인 대기**. `merchant`·시설은 불가 ([npc-cast.md](./npc-cast.md) §0).
 4. **아이템·몬스터·포탈 키는 §6 부록의 영문 키 그대로** (pitfalls 규칙 4). 존재하지 않는 키 금지, 신규 아이템은 ❓ 비용 항목으로 분리.
 5. **대사 형식** (⚖️): 한 문장 40자 내외 · 이모지 금지 · "…" 하나. 분량 = offer 2~4 / progress 1 / complete 1~3 문장. 몬스터 전투 서술 = **"퇴치"** (⚖️ 2026-08-14 — [story-bible.md](./story-bible.md) §5 용어집).
 6. **한 퀘스트 = 조건 1행** 유지 (현행 데이터 전례). 다조건(같은 Id 복수 행) 지원 여부 ❓ — 실측 전 사용 금지.
@@ -43,6 +44,7 @@
 - 메인 챕터 퀘스트: `CategoryEnum=Main`, `AutoAccept` 빈칸(대면 수주), `CannotAbandon=O`(온보딩 201 전례 따름 ❓— 202 이후는 포기 허용 검토), `Priority`는 Id 순.
 - 게이트는 `RequiredId`로 직전 퀘스트를 지정 (✅ 201이 `RequiredId=107` — 대면 수주 퀘의 검증된 패턴). `LinkedPrevId`는 AutoAccept 직렬 체인(튜토리얼) 전용으로 남긴다 ❓(두 컬럼의 동작 차이 실측 후 확정).
 - 보상 문법(✅): `RewardItems="Name:수량|Name:수량"` · `RewardUnlockId`(레시피 해금) · `RewardPortalId`(포탈 개통 — 106→town 가동).
+- 보고 넘김(✅ 2026-08-16): `ConsumeItems` 같은 문법. 201 Grass:5 · 203 Wood:10 · 204 Stone:10 · 212 Slime Jelly:3 · 213 Copper Ore:10. 202/214/215는 공란(도구·주괴는 들고 감).
 
 ### 2.3 구역 개방 정책 (❓ Q7 — 제작자 결정)
 
@@ -57,13 +59,12 @@
 | Id | 이름(안) | Giver→TurnIn | 조건 (CondEnum,CondArg,Value) | 보상 | 게이트 | 이야기 비트 |
 |---|---|---|---|---|---|---|
 | 201 ✅ | 촌장의 걱정 | elder→elder | Gather,Grass,5 | Wood:15\|Stone:10 | RequiredId=107 | 불씨의 존재 (반영 완료) |
-| 202 | 연못가의 첫 수업 | fisher→fisher | Craft,Fishing Rod,1 | Coin:30 | RequiredId=201 | "마음이 들뜰수록 낚싯대부터" — fisher 온보딩. fisher 수주 첫 사용 ❓ 재생기 확인 |
-| 203 | 대장간의 불씨 준비 | blacksmith→blacksmith | Gather,Wood,10 | Grass Seed:5 | RequiredId=202 | 대장장이 `blacksmith`가 화로 땔감을 부탁하며, 밤에 본 연구소 창가 빛 소식을 들려줌 |
-| 204 | 연구원의 받침돌 | researcher→researcher | Gather,Stone,10 | Roasted Grass:3 | RequiredId=203 | 연구원 `researcher`가 연구소 창가에 둘 불씨 받침석을 의뢰 — 불씨를 "연구·보호"하는 태도 |
-| 205 | 벌판의 기척 | elder→elder | Warp,,1 | Wood:20\|Stone:20 | RequiredId=204 | 노점상 `vendor`의 벌판 소문과 헛간지기 `barnkeeper`의 가축 불안 증언에 첫 원정 → 챕터 2 예고 |
+| 202 ✅ | 연못가의 첫 수업 | fisher→fisher | Craft,Fishing Rod,1 State | Coin:30 | RequiredId=201 | 제작 후 **fisher 보고**. Consume 없음(대 유지) |
+| 203 ✅ | 대장간의 불씨 준비 | blacksmith→blacksmith | Gather,Wood,10 Action | Grass Seed:5 | RequiredId=202 | 화로 땔감 + 연구소 창가 빛 |
+| 204 ✅ | 연구원의 받침돌 | researcher→researcher | Gather,Stone,10 Action | Roasted Grass:3 | RequiredId=203 | 불씨 받침석 — 연구·보호 |
+| 205 ✅ | 벌판의 기척 | elder→elder | Warp,hunt01,1 Action | Wood:20\|Stone:20 | RequiredId=204 | 마리·토리 소문 → 흙 벌판 원정 |
 
-- 앰비언트 증분(~10줄): vendor(벌판 소문·의상) · barnkeeper(가축들의 이상 반응) · fisher(물밑이 수상하다) 등.
-- ❓ 205의 Warp는 목적지 미지정(107 전례). hunt01 지정 가능해지면 교체.
+- 앰비언트 ✅ (2026-08-15): vendor 벌판 소문 · barnkeeper 가축 불안 · fisher 물밑 수상.
 
 ## 4. 챕터 2~5 — 퀘스트 골격 (집필 전 단계)
 
@@ -71,12 +72,12 @@
 
 | Id | 이름(안) | Giver→TurnIn | 조건 | 비고 |
 |---|---|---|---|---|
-| 211 | 잠식된 이웃 퇴치 | elder | Kill,slime,5 ❓ | 촌장의 원정 부탁. 퇴치 후 "잠식이 걷히는" 연출 방향 |
-| 212 | 검은 이슬 표본 | researcher | Gather,Slime Jelly,3 ❓❓ | **연구원 `researcher`의 잠식 표본 연구 의뢰.** (미채택 시 대체: Kill,slime,10 ❓) |
-| 213 | 구리 한 줌 | blacksmith | Gather,Copper Ore,10 | 대장장이 `blacksmith`가 광석 제련을 제안 |
-| 214 | 화로의 첫 쇳물 | blacksmith | Smelt,Copper Bar,2 ❓ | 대장간 화로 연구/제련 안내 |
-| 215 | 구리 손맛 | blacksmith | Craft,Copper Pickaxe,1 | `research_copper_tools` 해금 선행 — 구리 도구 완성 |
-| 216 | 이정표 아래에서 | elder | Kill,boar,3 ❓ | complete: 이정표 문양 = 두루마리 문양 (빛 사슬 2) + 검은 이슬 재확인 (그늘 사슬 2) |
+| 211 ✅ | 잠식된 이웃 퇴치 | elder | Kill,slime,5 Action | 촌장의 원정 부탁. Play 대기 |
+| 212 ✅ | 검은 이슬 표본 | researcher | Gather,Slime Jelly,3 Action | 잠식 표본. 드롭 줍기=Gather (코드 실측) |
+| 213 ✅ | 구리 한 줌 | blacksmith | Gather,Copper Ore,10 Action | 광석 채집 |
+| 214 ✅ | 화로의 첫 쇳물 | blacksmith | Smelt,Copper Bar,2 Action | 화로 Smelt emit (코드 실측) |
+| 215 ✅ | 구리 손맛 | blacksmith | Craft,Copper Pickaxe,1 State | 구리 도구 해금은 기존 연구/두루마리 |
+| 216 ✅ | 이정표 아래에서 | elder | Kill,boar,3 Action | 이정표 문양=두루마리 (빛) + 검은 이슬 (그늘) |
 
 ### 4.2 챕터 3 「바위 메아리」 (hunt02) — 철 테크와 심지
 
@@ -117,20 +118,19 @@
 ⚖️ 제작자 확정: **몬스터를 사냥해 얻는 아이템으로 연구·발전을 할 수 있어야 한다.**
 이는 원 설계와도 일치한다 (✅ [game_design.md](../../../game_design.md) §2.2 ② 연구소 컨셉 — "멧돼지 다리를 연구하면 고기와 가죽으로 분해하는 기술을 얻는다").
 
-**현행 실측**: 몬스터 드롭은 코인 중심(`MonsterCoinDropDataSet`) + 멧돼지 생고기(`Raw Meat`)뿐이고, 연구 입력은 광석 2종뿐(`ResearchDataSet`) — 사냥→연구 고리가 아직 없다.
+**현행 실측 (2026-08-15)**: 코인 + `Raw Meat` + ✅ `Slime Jelly`(슬라임 드롭, 아이콘 플레이스홀더). 연구 입력 = 광석 2종 + ✅ `research_gloom_sample` → `Purified Jelly`. 가죽·갓·그늘 조각은 미투입.
 
 🧭 **제안 라인업** (전부 데이터 행 — 코드 무변경 전제, `ItemDropDataSet` 경로 재사용):
 
 | 신규 아이템 (`Name` / 표시명) | 드롭원 | 소비처 (신규 `ResearchDataSet` 행) | 산출(해금) 방향 |
 |---|---|---|---|
-| `Slime Jelly` / 슬라임 젤리 | slime | **잠식 표본 연구** | Monster Ward 강화 레시피 or 신규 소모품 (제작자와 확정) |
+| `Slime Jelly` / 슬라임 젤리 ✅ | slime | `research_gloom_sample` | `Purified Jelly` (`gather_boost_small`) |
 | `Boar Hide` / 멧돼지 가죽 | boar | 가죽 가공 연구 | 가방·장비류 제작 라인 (발전 축) |
 | `Mushroom Cap` / 뿔버섯 갓 | horn_mushroom | 포자 연구 | 상위 버프 요리 재료 해금 |
 | `Gloom Shard` / 그늘 조각 | SlimeKing (1회) | — (스토리 키 아이템, `Tradable=false`) | 설원 아크 열쇠 — 챕터 5 연출용 |
 
-- 비용: `item_dataset` 4행 + 아이콘 RUID 4종(`msw-search`) + `ItemDropDataSet` 행 + `ResearchDataSet` 2~3행 + (선택) 드롭 모델. 
-- ❓ 반영 전 실측 2건: ① `Gather` 조건이 **드롭 습득**을 집계하는지 (§1-2 — 212 성립 조건) ② 연구 산출 해금 대상 확정(제작자).
-- 챕터 연계: 2장 212(젤리)에서 축을 열고, 3장(갓)·4장(가죽)은 의뢰·앰비언트로 소비처를 넓힌다 — 챕터마다 새 연구 1건이 리듬.
+- Gather 드롭 습득 = ✅ 코드 실측 (`itemreact` Name). Play 확인 대기.
+- 챕터 연계: 2장 212(젤리)에서 축을 열고, 3장(갓)·4장(가죽)은 이후 투입.
 
 
 ### 4.7 마법 스킬 해금 체계 — 푸른빛(불씨) 연동 (⚖️ 기획안 2026-08-14)
@@ -171,14 +171,14 @@
 6. [ ] [README.md](./README.md) §2 진행 보드 + [docs/tasks.md](../../tasks.md)에 기록, 상태를 ✅로.
 7. [ ] **런타임 검증 보류(제작자 Play)** 명기 — 수주→진행→보고→보상 전 구간은 Play로만 확정된다.
 
-## 6. 부록 — 사용 가능한 키 (✅ 2026-08-14 실측 스냅샷)
+## 6. 부록 — 사용 가능한 키 (✅ 2026-08-15 스냅샷)
 
 > 원본: `item_dataset.csv` / `MonsterSpawnDataSet.csv` / `PortalDestinationDataSet.csv` / `ResearchDataSet.csv`. **CSV가 늘 우선** — 어긋나면 이 표를 갱신.
 
-- **자원**: `Wood` `Stone` `Grass` `Copper Ore` `Iron Ore` `Copper Bar` `Iron Bar` `Coin` `Carrot` `Egg` `Wool` `Raw Meat` `Carp` `Shrimp` `Salmon` `Tuna`
+- **자원**: `Wood` `Stone` `Grass` `Copper Ore` `Iron Ore` `Copper Bar` `Iron Bar` `Coin` `Carrot` `Egg` `Wool` `Raw Meat` `Carp` `Shrimp` `Salmon` `Tuna` `Slime Jelly`
 - **도구**: `Hand Axe` `Stone Pickaxe` `Stone Axe` `Copper Pickaxe` `Copper Axe` `Iron Pickaxe` `Iron Axe` `Shovel` `Hoe` `Water Spade` `Fishing Rod`
 - **가구**: `Wooden Chest` `Furnace` `Cooking Pot` `Bed` `Wood Floor` `Portal` `Animal Pen` `Monster Ward`
-- **소모품**: `Roasted Grass` `Carrot Soup` `Veggie Stir Fry` `Feast Dish` `Roasted Meat` `Egg Omelette` `Grass Seed` `Carrot Seed` `Chicken Ticket` `Sheep Ticket` `Dog Whistle` `Recipe Scroll: Copper Tools` `Recipe Scroll: Iron Tools`
-- **몬스터**: `slime` `boar` `horn_mushroom` (스폰 데이터 기준) · 보스 `SlimeKing`(모델명 — Kill 인자 표기 ❓)
+- **소모품**: `Roasted Grass` `Carrot Soup` `Veggie Stir Fry` `Feast Dish` `Roasted Meat` `Egg Omelette` `Grass Seed` `Carrot Seed` `Chicken Ticket` `Sheep Ticket` `Dog Whistle` `Recipe Scroll: Copper Tools` `Recipe Scroll: Iron Tools` `Purified Jelly`
+- **몬스터**: `slime` `boar` `horn_mushroom` · 보스 Kill 인자 `slime_king` (`SlimeKing.model` MonsterId ✅ 코드 실측 2026-08-15)
 - **포탈 목적지**: `town` `hunt01` `hunt02` `hunt03` `hunt04`
-- **연구/해금 Id**: `research_copper_tools` `research_iron_tools` · 퀘스트 해금 전례 `quest_cooking_pot`(✅ 107)
+- **연구/해금 Id**: `research_copper_tools` `research_iron_tools` `research_gloom_sample` · 퀘스트 해금 전례 `quest_cooking_pot`(✅ 107)

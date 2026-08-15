@@ -67531,6 +67531,95 @@
           ],
           "@version": 1
         }
+      },
+      {
+        "id": "7c833716-6f03-4dd7-bb6f-399e89f4cd84",
+        "path": "/maps/template_field/PioneerSignpost",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "PioneerSignpost",
+          "path": "/maps/template_field/PioneerSignpost",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 14,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "prop_signpost",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 4,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0.10452846326765346,
+                "w": 0.9945218953682733
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "be45d53696de43ffa3c659cc53a03529",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.5,
+                "y": 0.5
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": -0.1
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "prop_signpost",
+            "sub_entity_id": null,
+            "root_entity_id": "7c833716-6f03-4dd7-bb6f-399e89f4cd84",
+            "replaced_model_id": null
+          }
+        }
       }
     ]
   }

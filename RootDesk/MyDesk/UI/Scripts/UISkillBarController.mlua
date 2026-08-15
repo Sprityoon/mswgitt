@@ -170,7 +170,10 @@ script UISkillBarController extends Component
 		end
 
 		local name = row:GetItem("Name") or skillId
-		local skType = row:GetItem("Type") or ""
+		local skType = "액티브"
+		if pc ~= nil then
+			pcall(function() skType = pc:GetSkillKindLabel(row) end)
+		end
 		local desc = ""
 		local okD, dval = pcall(function() return row:GetItem("Description") end)
 		if okD and dval ~= nil then desc = tostring(dval) end

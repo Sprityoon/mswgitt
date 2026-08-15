@@ -904,7 +904,16 @@ script UIInventoryController extends Component
 			self.tooltipName.FontColor = self:GetRarityColor(rarity)
 		end
 		if isvalid(self.tooltipDesc) then
-			self.tooltipDesc.Text = self:GetItemDescription(baseName)
+			local flavor = self:GetItemDescription(baseName)
+			local stats = ""
+			if isvalid(inv) then
+				stats = inv:FormatItemStatLines(baseName)
+			end
+			if stats ~= nil and stats ~= "" then
+				self.tooltipDesc.Text = flavor .. "\n" .. stats
+			else
+				self.tooltipDesc.Text = flavor
+			end
 		end
 		if isvalid(self.tooltipCount) then
 			local suffix = ""

@@ -37,8 +37,8 @@
 | 단위 | 상태 | 게임 데이터 |
 |---|---|---|
 | 튜토리얼 101~108 | ✅ 반영 (108 CountMode=State, Play 확인 대기) | `QuestDataSet` 101~108. 108=`왠지 던질 수 있을것 같습니다..` (LearnSkill `hand_axe_throw`, 이미 배웠으면 자동 완료, 보상 Hand Axe:20) |
-| 챕터 1 「마을의 푸른 빛」 | **집필** — 201만 반영, 202~205 초안 완료 | 201 ✅ (2026-08-08) |
-| 챕터 2 「검은 이슬」 | 구상 + 퀘스트 골격 (211~216) | — |
+| 챕터 1 「마을의 푸른 빛」 | ✅ 반영 (2026-08-15, Play 확인 대기) | `QuestDataSet` 201~205. fisher/blacksmith/researcher 대면 수주 첫 투입 |
+| 챕터 2 「검은 이슬」 | ✅ 반영 (2026-08-15, Play 확인 대기) | 211~216. `Slime Jelly` 드롭·연구 `research_gloom_sample`. `template_field` 공용 이정표 |
 | 챕터 3 「바위 메아리」 | 구상 + 퀘스트 골격 | — |
 | 챕터 4 「모래에 잠든 길」 | 구상 + 퀘스트 골격 | — |
 | 챕터 5 「첫 정원의 뜰지기」 | 구상 + 퀘스트 골격 | — |
@@ -75,11 +75,11 @@
 | Q2 | 챕터 제목 5종 + 용어(첫 개척단·첫 정원·뜰지기) 채택 여부 | [story-bible.md](./story-bible.md) §3·§5 |
 | Q3 | ⚖️ **확정 (2026-08-14)**: 주민 4인 NpcId 및 역할 = `researcher`(연구원 엘렌) · `vendor`(노점상 마리) · `blacksmith`(대장장이 로체) · `barnkeeper`(헛간지기 토리) | [npc-cast.md](./npc-cast.md) §2 |
 | Q4 | hunt04 표시명 "보스 사냥터" → "첫 정원" 변경 여부 | [map-concepts.md](./map-concepts.md) §1.6 |
-| Q5 | 구역별 스토리 픽스처 방식 — 공유 템플릿이라 구조 결정 필요 | [map-concepts.md](./map-concepts.md) §0.3 |
+| Q5 | 구역별 스토리 픽스처 — **1차 (c) 채택**: `template_field` 공용 이정표 배치 (2026-08-15). a/b는 이후 | [map-concepts.md](./map-concepts.md) §0.3 |
 | Q6 | 챕터 완주 보상 가구 「정원의 등불」 신설 여부 (아이템+모델 비용) | [quest-design.md](./quest-design.md) §4.5 |
 | Q7 | 다음 구역 개방을 퀘스트 보상(RewardPortalId)으로 줄지, 도보 도달만 둘지 | [quest-design.md](./quest-design.md) §2.3 |
 | Q8 | 메인 빌런 이름 선택 — 먹그늘 / 어스름 / 어둑서니 (확정 전 대사에 이름 사용 금지) | [story-bible.md](./story-bible.md) §2-B |
-| Q9 | 몬스터 드롭·연구 라인업 채택 — Slime Jelly·Boar Hide·Mushroom Cap·Gloom Shard + 연구 행 | [quest-design.md](./quest-design.md) §4.6 |
+| Q9 | 몬스터 드롭·연구 라인업 — **Slime Jelly + research_gloom_sample 1차 투입** (2026-08-15). 가죽·갓·그늘 조각 대기 | [quest-design.md](./quest-design.md) §4.6 |
 
 ## 5. 관련 문서 (폴더 밖)
 

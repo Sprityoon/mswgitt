@@ -1,4 +1,4 @@
-﻿Id,Name,Desc,ProgressingDesc,CategoryEnum,CycleEnum,IsRepeatable,LinkedPrevId,RequiredId,AutoAccept,CannotAbandon,ConsumeItems,RewardItems,Priority,Disable,RewardUnlockId,GiverNpcId,TurnInNpcId,RewardPortalId
+Id,Name,Desc,ProgressingDesc,CategoryEnum,CycleEnum,IsRepeatable,LinkedPrevId,RequiredId,AutoAccept,CannotAbandon,ConsumeItems,RewardItems,Priority,Disable,RewardUnlockId,GiverNpcId,TurnInNpcId,RewardPortalId
 101,첫 걸음 - 풀 뜯기,맨손으로 들판의 풀을 뜯어 모아보세요.,풀을 3개 채집하세요. (맨손으로 가능),Sub,,,,,O,O,,Stone:5,1,,,,,
 102,도구 제작 - 주먹도끼,모은 돌로 첫 도구인 주먹도끼를 만들어보세요.,C 키로 제작창을 열고 주먹도끼를 제작하세요.,Sub,,,101,,O,O,,Wood:2,2,,,,,
 103,나무 베기,주먹도끼로 나무를 베어 목재를 모으세요.,나무를 베어 나무 5개를 모으세요.,Sub,,,102,,O,O,,Stone:3,3,,,,,
@@ -7,4 +7,14 @@
 106,나만의 창고 짓기,나무 상자를 만들어 영지에 설치하세요.,나무 상자를 제작한 뒤 Ctrl로 설치하세요.,Sub,,,105,,O,O,,Stone:4,6,,,,,town
 107,넓은 세계로,영지의 포탈을 이용해 바깥으로 떠나보세요.,포탈에 상호작용해 다른 지역으로 이동하세요.,Sub,,,106,,O,O,,Wood:10|Stone:10,7,,quest_cooking_pot,,,
 108,왠지 던질 수 있을것 같습니다..,주먹도끼를 손에 쥐니 묘한 생각이 듭니다.,주먹도끼 던지기를 배우시오.,Sub,,,102,,O,O,,Hand Axe:20,8,,,,,
-201,촌장의 걱정,마을 연구소 쪽에서 이상한 빛이 보인다는군. 풀을 조금 모아 와 주게.,풀을 5개 채집해 촌장에게 보고하세요.,Main,,,,107,,O,,Wood:15|Stone:10,10,,,elder,elder,
+201,촌장의 걱정,마을 연구소 쪽에서 이상한 빛이 보인다는군. 풀을 조금 모아 와 주게.,풀을 5개 채집해 촌장에게 보고하세요.,Main,,,,107,,O,Grass:5,Wood:15|Stone:10,10,,,elder,elder,
+202,연못가의 첫 수업,마음이 들뜰수록 낚싯대부터 챙기게. 나무로 하나 만들어 보게.,낚싯대를 제작해 낚시꾼에게 보여 주세요.,Main,,,,201,,O,,Coin:30,11,,,fisher,fisher,
+203,대장간의 불씨 준비,화로 땔감이 필요하다네. 나무를 모아 로체에게 전하게.,나무 10개를 모아 대장장이에게 전하세요.,Main,,,,202,,O,Wood:10,Grass Seed:5,12,,,blacksmith,blacksmith,
+204,연구원의 받침돌,연구소 창가에 둘 받침석이 필요해. 돌을 모아 줘.,돌 10개를 모아 연구원에게 전하세요.,Main,,,,203,,O,Stone:10,Roasted Grass:3,13,,,researcher,researcher,
+205,벌판의 기척,벌판 소문이 심상치 않네. 흙 벌판에 다녀와 주게.,사냥터 1구역으로 이동하세요.,Main,,,,204,,O,,Wood:20|Stone:20,14,,,elder,elder,
+211,잠식된 이웃 퇴치,벌판의 슬라임이 잠식되었네. 다섯을 퇴치하고 돌아오게.,슬라임을 5마리 퇴치하세요.,Main,,,,205,,O,,Coin:40,20,,,elder,elder,
+212,검은 이슬 표본,퇴치한 슬라임에서 젤리가 떨어질 거야. 표본 세 개를 가져와.,슬라임 젤리 3개를 모아 연구원에게 전하세요.,Main,,,,211,,O,Slime Jelly:3,Roasted Grass:5,21,,,researcher,researcher,
+213,구리 한 줌,이제 광석을 두드릴 때야. 구리 광석을 모아 오게.,구리 광석 10개를 모아 대장장이에게 전하세요.,Main,,,,212,,O,Copper Ore:10,Wood:10,22,,,blacksmith,blacksmith,
+214,화로의 첫 쇳물,광석을 화로에 넣고 구리 주괴를 뽑아 보게.,구리 주괴 2개를 제련하세요.,Main,,,,213,,O,,Stone:10,23,,,blacksmith,blacksmith,
+215,구리 손맛,구리 곡괭이를 만들어 손맛을 보게. 연구소 연구가 필요할 수 있네.,구리 곡괭이를 제작하세요.,Main,,,,214,,O,,Coin:50,24,,,blacksmith,blacksmith,
+216,이정표 아래에서,벌판 이정표 곁의 멧돼지를 퇴치하고 문양을 살펴보게.,멧돼지를 3마리 퇴치하세요.,Main,,,,215,,O,,Wood:20|Stone:20,25,,,elder,elder,

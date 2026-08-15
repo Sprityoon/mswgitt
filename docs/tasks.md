@@ -10,6 +10,11 @@
 
 | 대상 | 내용 |
 |---|---|
+| PlayerCombat · PlayerController · item_dataset · SkillDataSet | **전투 데미지 세 갈래 + 주먹도끼 던지기 장착 제한** (2026-08-16) — 아래 참조 |
+| item_dataset · SkillDataSet · 인벤/스킬/제작/캐릭터 툴팁 | **아이템·스킬 스펙 툴팁 + MagicAttack/SkillAttack 칸** (2026-08-16) — 아래 참조 |
+| PlayerQuest · QuestData · UserQuestData · QuestDataSet | **보고 퀘 vs 자동완료 분리** (2026-08-16) — 아래 참조 |
+| QuestDataSet 202~216 · StoryDialog · Slime Jelly · template_field | **스토리 챕터 1~2 1차 반영** (2026-08-15) — 아래 참조 |
+| VillagerDialog · UIMinimapController | **퀘스트 NPC 머리 표시 + 미니맵 노란 칸** (2026-08-15) — 아래 참조 |
 | `ui/PopupGroup.ui` CharacterPopup · CraftingPopup | **장착 실루엣 삭제 + 제작 제목/설명 가림 해소** (2026-08-15) — 아래 참조 |
 | `ui/PopupGroup.ui` CharacterPopup | **캐릭터 정보 장착칸·게이지·권한버튼 창 밖 돌출** (2026-08-15) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 배치·가시성 전수 복구** (2026-08-15) — 아래 참조 |
@@ -29,6 +34,80 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-16 전투 데미지 세 갈래 + 주먹도끼 던지기 장착 제한
+
+제작자: 모든 스킬이 도구 ToolPower에 비례하는 게 어색. 던지기는 들고 있을 때만, 세게, 나중에 스탯·SP로 성장.
+
+| 파일 | 조치 |
+|---|---|
+| `item_dataset.csv` | `Attack` 컬럼. Stone Axe 8 / Copper Axe 12 / Iron Axe 20. 곡괭이·주먹도끼·삽=0 |
+| `SkillDataSet.csv` | `DamageModel`/`SkillPower`/`RequireEquippedItem`. 던지기 Throw·16·Hand Axe, MaxLevel 5, mul 1.5, DamagePerLevel 0.3, SPCost 1 |
+| `PlayerCombat.mlua` | 평타 = CharAtk + Attack (ToolPower×4 제거) |
+| `PlayerController.mlua` | `GetCharacterAttack` / `ComputeSkillDamage` 세 갈래. `RequireEquippedItem` 시전 게이트 |
+| `PlayerInventory.mlua` | `GetEquippedToolInfo().attack` |
+
+- 검증: LSP 0. **refresh 검증 보류** (Maker Play Test 중). **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 주먹도끼 미장착 시 던지기 불가·안내 ② 장착 후 던지기 ≈36, 도끼 1개 소모 ③ 구리 곡괭이 들면 매직 클로가 평타처럼 세지지 않음(≈17) ④ 돌 도끼 평타 16 ⑤ 채집은 기존 ToolPower
+
+### 2026-08-16 아이템·스킬 스펙 툴팁 + MagicAttack/SkillAttack 칸
+
+제작자: 아이템/스킬에 짧은 설명. 스킬은 물리·마법. 아이템은 툴 티어와 무기 데미지 유무. 스킬 강화 무기·마법 스탯 칸을 미리.
+
+| 파일 | 조치 |
+|---|---|
+| `item_dataset.csv` | `ToolTier` `MagicAttack` `SkillAttack`. 돌=T2, 구리=T3, 철=T4. 마법/스킬 공격력은 0 예약 |
+| `SkillDataSet.csv` | 물리/마법 비례 문구. 던지기 성장 문구 |
+| `PlayerInventory.mlua` | `FormatItemStatLines` |
+| `PlayerController.mlua` | `GetMagicAttack` `GetSkillKindLabel`. 마법 코어에 MagicAtk+MagicAttack+SkillAttack |
+| 인벤·제작·캐릭터·스킬바·스킬트리 UI | 스펙 줄 / `물리 스킬` 라벨 |
+
+- 검증: LSP 0. **refresh 검증 보류** (Maker Play Test 중). **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 돌 곡괭이 툴팁 `T2 곡괭이 · 채집 +2`, 무기 공격력 없음 ② 돌 도끼 툴팁에 `무기 공격력 8` ③ 스킬바/트리에 `물리 스킬`/`마법 스킬`/`투척 스킬` ④ 주먹도끼 툴팁에 던지기 언급 없음
+
+### 2026-08-16 보고 퀘 vs 자동완료 분리
+
+제작자: 낚싯대(202)를 만들기만 해도 완료됨. 튜토리얼·모으기만 하면 되는 퀘와 가져와서 보고하는 퀘를 나눠야 함.
+
+원인: `PlayerQuest`가 `TurnInNpcId`와 무관하게 `IsCompletable`이면 즉시 `CompleteQuests`. `ConsumeItems` 컬럼은 CSV에만 있고 로드되지 않음.
+
+| 파일 | 조치 |
+|---|---|
+| `QuestData.mlua` | `ConsumeItems` 로드. `RequiresNpcTurnIn()` = TurnInNpcId 비공란 |
+| `PlayerQuest.mlua` | 행동/수락 스냅샷/`TryCompleteReadyQuests` 자동완료는 TurnIn 공란만 |
+| `UserQuestData.mlua` | 완료 시 ConsumeItems 수량 확인 후 `RemoveItem` |
+| `VillagerDialog.mlua` | 완료 대사·`RequestCompleteQuests`는 인벤 수량까지 맞을 때 |
+| `QuestDataSet.csv` | 201 Grass:5 · 203 Wood:10 · 204 Stone:10 · 212 Slime Jelly:3 · 213 Copper Ore:10. 202/214/215 Consume 공란(도구·주괴 유지) |
+
+- 검증: LSP 0. `maker_refresh_workspace` status ok. build dateTime=`2026-08-16T00:05:42`~`43`(이번 refresh와 일치). Error=1 = 기존 `LEA-4004 PlayerController.OnMapEnter`(무관). Warning=47. **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 202 낚싯대 제작 후에도 진행 유지 → fisher F로 완료, 대는 남음 ② 101~108은 조건 충족 시 기존처럼 즉시 완료 ③ 203 나무 10을 모은 뒤 써 버리면 대장장이에게 진행 대사만, 다시 들고 가야 완료·나무 소모
+
+### 2026-08-15 퀘스트 NPC 머리 표시 + 미니맵 노란 칸
+
+제작자: 퀘스트가 있는 주민 머리 위 표시, 미니맵에서 그 위치를 노란색으로.
+
+| 파일 | 조치 |
+|---|---|
+| `VillagerDialog.mlua` | `GetQuestPingKind`: 수락 가능 `!`, 진행/보고 `?`. HUD `uitext`를 월드 좌표에 붙임 (InteractGuide와 같은 런타임 스폰, `.ui` 무수정) |
+| `UIMinimapController.mlua` | 같은 판정으로 해당 셀을 노란 `Color(1, 0.86, 0.12)` |
+
+- 검증: LSP 0. `maker_refresh_workspace` status ok. build dateTime=`2026-08-15T23:43:12`~`13`(이번 refresh와 일치). Error=1 = 기존 `LEA-4004 PlayerController.OnMapEnter`(무관). Warning=47. **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 마을에서 촌장 머리에 노란 `!` (201 수락 전) ② 수락 후 `?` ③ 미니맵에 그 칸이 노랑 ④ 타이틀 화면에서는 표시 없음
+
+### 2026-08-15 스토리 챕터 1~2 1차 반영
+
+설계 원안: `docs/design/story/` 챕터 1(202~205) + 챕터 2(211~216). 마법 스킬·희귀 장비·신규 몬스터 모델은 제외.
+
+| 항목 | 내용 |
+|---|---|
+| 퀘스트 | `QuestDataSet`/`QuestConditionDataSet` 202~205, 211~216. Main, RequiredId 직렬, AutoAccept 빈칸 |
+| 대사 | `StoryDialogDataSet` 수주/진행/완료. 앰비언트 vendor/barnkeeper/fisher 증분 |
+| 드롭·연구 | `Slime Jelly` + 슬라임 드롭 0.6. `research_gloom_sample` → `Purified Jelly`. 아이콘 = 슬라임 코인 RUID 플레이스홀더 |
+| 맵 | `template_field` `PioneerSignpost` (`Prop_Signpost`, 4,0, 기울임). TileMapMode=1 확인 |
+| CSV | 열 수 mismatch 0. 스토리 대사 42자 초과 0 |
+
+- 검증: CSV 정적만. **refresh 검증 보류** (Maker MCP 미연결). **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 201 후 fisher 202 수주 ② 205 hunt01 워프 ③ 슬라임 5 퇴치(211) ④ 젤리 줍기(212) ⑤ 화로 제련(214) ⑥ 벌판 이정표 보임
 
 ### 2026-08-15 장착 실루엣 삭제 + 제작 제목/설명 가림 해소
 

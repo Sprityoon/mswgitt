@@ -13,6 +13,7 @@ script VillagerDialog extends Component
 	property number AutoTalkInterval = 15.0
 	property number AutoTalkRange = 6.0
 	property number AutoTalkAccum = 0
+	property number QuestMarkAccum = 0
 	property any keyHandler = nil
 	property any interactRequestHandler = nil
 	property any balloonClearTimer = nil
@@ -51,6 +52,11 @@ script VillagerDialog extends Component
 				end
 				self.interactRequestHandler = nil
 			end
+			local mark = self._T.QuestMarkLabel
+			if isvalid(mark) then
+				mark.Enable = false
+			end
+			self._T.QuestMarkLabel = nil
 		end
 		if self.balloonClearTimer ~= nil then
 			_TimerService:ClearTimer(self.balloonClearTimer)
@@ -59,7 +65,10 @@ script VillagerDialog extends Component
 	end
 
 	method void OnUpdate(number delta)
-		-- 서버: 근처 플레이어 있을 때만 주기 자동 혼잣말(말풍선).
+		-- 클라: 퀘스트 머리 표시. 서버: 근처 플레이어 있을 때만 주기 자동 혼잣말.
+		if self:IsClient() then
+			self:UpdateQuestMark(delta)
+		end
 		if not self:IsServer() then return end
 		local interval = self.AutoTalkInterval
 		if interval <= 0 then return end
@@ -150,6 +159,127 @@ script VillagerDialog extends Component
 		if id == "blacksmith" or id == "resident_c" then return "대장장이 로체" end
 		if id == "barnkeeper" or id == "rancher" or id == "resident_d" then return "헛간지기 토리" end
 		return id
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetQuestPingKind(Entity player)
+		-- "" 없음 / "!" 수락 가능 / "?" 진행·보고. 완료 요청은 하지 않는다.
+		if not isvalid(player) or player.PlayerQuest == nil then return "" end
+		local offer = self:FindOfferQuest(player)
+		if offer ~= nil then return "!" end
+		local ds = _DataService:GetTable("QuestDataSet")
+		if ds == nil then return "" end
+		local rows = ds:GetAllRow()
+		if rows == nil then return "" end
+		local npcId = self.NpcId or ""
+		for _, row in ipairs(rows) do
+			local turnIn = ""
+			local okT, rawT = pcall(function() return row:GetItem("TurnInNpcId") end)
+			if okT and rawT ~= nil then turnIn = tostring(rawT) end
+			if turnIn == "" then
+				local okG, rawG = pcall(function() return row:GetItem("GiverNpcId") end)
+				if okG and rawG ~= nil then turnIn = tostring(rawG) end
+			end
+			if turnIn ~= npcId then continue end
+			local id = math.floor(tonumber(row:GetItem("Id")) or 0)
+			if id <= 0 then continue end
+			local userData = player.PlayerQuest.UserDataTable[id]
+			if userData == nil then continue end
+			if userData.State == _QuestStateEnum.InProgress then
+				return "?"
+			end
+		end
+		return ""
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateQuestMark(number delta)
+		-- 머리 위 노란 !/? . HUD uitext를 월드 좌표에 붙인다 (InteractGuide 패턴).
+		local lp = _UserService.LocalPlayer
+		self.QuestMarkAccum = self.QuestMarkAccum + delta
+		if self.QuestMarkAccum >= 0.3 then
+			self.QuestMarkAccum = 0
+			local kind = ""
+			if isvalid(lp) then
+				kind = self:GetQuestPingKind(lp)
+			end
+			if kind ~= self._T.QuestPingKind then
+				self._T.QuestPingKind = kind
+				log("[QMARK] npc=" .. tostring(self.NpcId) .. " kind=" .. tostring(kind))
+			end
+		end
+		local kind = self._T.QuestPingKind
+		if kind == nil then kind = "" end
+		local label = self._T.QuestMarkLabel
+		if kind == "" then
+			if isvalid(label) then label.Enable = false end
+			return
+		end
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		if isvalid(hud) then
+			local hudCtrl = hud:GetComponent("script.UIHUDController")
+			if isvalid(hudCtrl) and hudCtrl.playHudReady == false then
+				if isvalid(label) then label.Enable = false end
+				return
+			end
+		end
+		if not isvalid(label) then
+			label = self:EnsureQuestMarkLabel()
+			if not isvalid(label) then return end
+		end
+		label.Enable = true
+		local textComp = label.TextComponent
+		if isvalid(textComp) and textComp.Text ~= kind then
+			textComp.Text = kind
+		end
+		local ax = 0
+		local ay = 0
+		if isvalid(self.Entity) and isvalid(self.Entity.TransformComponent) then
+			local p = self.Entity.TransformComponent.WorldPosition
+			ax = p.x
+			ay = p.y + 1.55
+		end
+		local screenPos = _UILogic:WorldToScreenPosition(Vector2(ax, ay))
+		local uiPos = _UILogic:ScreenToUIPosition(screenPos)
+		local transform = label.UITransformComponent
+		if isvalid(transform) then
+			transform.anchoredPosition = uiPos
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method Entity EnsureQuestMarkLabel()
+		-- HUD 아래 uitext 1개. .ui 무수정 (규칙 11).
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		if not isvalid(hud) then return nil end
+		local name = "QuestMark_" .. tostring(self.NpcId or "npc")
+		local label = hud:GetChildByName(name)
+		if not isvalid(label) then
+			label = _SpawnService:SpawnByModelId("uitext", name, Vector3.zero, hud)
+		end
+		if not isvalid(label) then return nil end
+		self._T.QuestMarkLabel = label
+		local sprite = label.SpriteGUIRendererComponent
+		if isvalid(sprite) then
+			sprite.Color = Color(0, 0, 0, 0)
+			sprite.RaycastTarget = false
+		end
+		local transform = label.UITransformComponent
+		if isvalid(transform) then
+			transform.AlignmentOption = AlignmentType.CastFrom("Center")
+			transform.RectSize = Vector2(56, 48)
+		end
+		local textComp = label.TextComponent
+		if isvalid(textComp) then
+			textComp.Font = FontType.Maple
+			textComp.FontSize = 30
+			textComp.FontColor = Color(1.0, 0.86, 0.12, 1.0)
+			textComp.UseOutLine = true
+			textComp.OutlineColor = Color(0.18, 0.10, 0.02, 1.0)
+			textComp.OutlineWidth = 1.4
+			textComp.Alignment = TextAlignmentType.MiddleCenter
+		end
+		return label
 	end
 
 	@ExecSpace("ClientOnly")
@@ -282,7 +412,7 @@ script VillagerDialog extends Component
 			local data = _QuestDataSetLogic ~= nil and _QuestDataSetLogic:GetData(id) or nil
 			if data == nil then continue end
 
-			if userData.State == _QuestStateEnum.InProgress and userData:IsCompletable(data) then
+			if userData.State == _QuestStateEnum.InProgress and userData:IsCompletable(data) and userData:HasConsumeItems(data, lp) then
 				local pages = self:LoadStoryPages(id, "complete")
 				if #pages == 0 then
 					pages = { "수고했네. 보상을 받지.", tostring(data.Name or "") .. " 완료!" }

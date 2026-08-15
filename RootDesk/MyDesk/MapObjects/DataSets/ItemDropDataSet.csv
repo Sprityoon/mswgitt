@@ -1,4 +1,4 @@
-﻿SourceId,BiomeId,ItemId,MinCount,MaxCount,Probability
+SourceId,BiomeId,ItemId,MinCount,MaxCount,Probability
 Big Stone1,,stone,8,12,1.0
 Big Stone1,,copper ore,1,2,0.2
 Big Stone1,rocky,stone,8,12,1.0
@@ -20,6 +20,7 @@ IronNodeResource,,iron_ore,2,4,1.0
 slime_king,,recipe_scroll_copper,1,1,0.35
 slime_king,,recipe_scroll_iron,1,1,0.15
 boar,,raw_meat,1,2,1.0
+slime,,slime_jelly,1,2,0.6
 TreasureChest,,copper ore,2,4,1.0
 TreasureChest,,iron_ore,1,2,0.5
 TreasureChest,,recipe_scroll_copper,1,1,0.25

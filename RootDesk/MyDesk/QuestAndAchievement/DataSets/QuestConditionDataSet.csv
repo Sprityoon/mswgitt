@@ -1,4 +1,4 @@
-﻿Id,Description,CondEnum,CondArg,CondExtra,Value,CountMode,Disable
+Id,Description,CondEnum,CondArg,CondExtra,Value,CountMode,Disable
 101,풀 채집,Gather,Grass,,3,Action,
 102,주먹도끼 제작,Craft,Hand Axe,,1,State,
 103,나무 채집,Gather,Wood,,5,Action,
@@ -8,3 +8,13 @@
 107,포탈 이동,Warp,,,1,Action,
 201,풀 채집(조사),Gather,Grass,,5,Action,
 108,주먹도끼 던지기를 배우시오,LearnSkill,hand_axe_throw,,1,State,
+202,낚싯대 제작,Craft,Fishing Rod,,1,State,
+203,땔감 나무,Gather,Wood,,10,Action,
+204,받침석 돌,Gather,Stone,,10,Action,
+205,흙 벌판 이동,Warp,hunt01,,1,Action,
+211,슬라임 퇴치,Kill,slime,,5,Action,
+212,슬라임 젤리 표본,Gather,Slime Jelly,,3,Action,
+213,구리 광석,Gather,Copper Ore,,10,Action,
+214,구리 주괴 제련,Smelt,Copper Bar,,2,Action,
+215,구리 곡괭이 제작,Craft,Copper Pickaxe,,1,State,
+216,멧돼지 퇴치,Kill,boar,,3,Action,

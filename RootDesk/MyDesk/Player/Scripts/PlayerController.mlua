@@ -2437,6 +2437,9 @@ script PlayerController extends Component
 			log("[SKILL] Client stamina low for " .. skillId)
 			return
 		end
+		if not self:IsSkillEquipRequirementMet(row) then
+			return
+		end
 		if not self:ConsumeSkillItemIfNeeded(row, false) then
 			return
 		end
@@ -2483,6 +2486,7 @@ script PlayerController extends Component
 		local lastCast = self.CooldownMap[skillId] or -999.0
 		if now - lastCast < cd then return end
 		if self.Stamina < cost then return end
+		if not self:IsSkillEquipRequirementMet(row) then return end
 		-- 소모 아이템은 스태미나/쿨다운보다 먼저 검사·차감한다. 실패해도 자원이 깎이지 않게.
 		if not self:ConsumeSkillItemIfNeeded(row, true) then return end
 		
@@ -2511,11 +2515,11 @@ script PlayerController extends Component
 		end
 
 		if skillType == "Melee" then
-			self:ExecuteAreaDamageSkill(damageMul, Vector2(dirX, dirY), 1.8, 1.2)
+			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(dirX, dirY), 1.8, 1.2)
 		elseif skillType == "Ultimate" then
-			self:ExecuteAreaDamageSkill(damageMul, Vector2(0, 0), 5.0, 0.0)
+			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(0, 0), 5.0, 0.0)
 		elseif skillType == "Dash" then
-			self:ExecuteDashSkill(dirX, dirY, damageMul)
+			self:ExecuteDashSkill(skillId, dirX, dirY, damageMul)
 		elseif skillType == "Projectile" then
 			self:ExecuteProjectileSkill(skillId, damageMul, dirX, dirY, hitEffectRUID)
 		end
@@ -2660,6 +2664,30 @@ script PlayerController extends Component
 			return (base + buffs:GetStatAdd("StaminaRegen")) * buffs:GetStatMult("StaminaRegen")
 		end
 		return base
+	end
+
+	method boolean IsSkillEquipRequirementMet(any row)
+		-- RequireEquippedItem이 있으면 장착 도구 Name이 일치해야 시전한다.
+		if row == nil then return true end
+		local requireItem = ""
+		local okR, rawR = pcall(function() return row:GetItem("RequireEquippedItem") end)
+		if okR and rawR ~= nil then requireItem = tostring(rawR) end
+		if requireItem == "" then return true end
+		local inv = self.Entity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return false end
+		---@type PlayerInventory
+		local p = inv
+		local equipped = p:GetBaseItemName(p.EquippedTool or "")
+		if equipped == requireItem then return true end
+		local disp = p:GetItemDisplayName(requireItem)
+		local msg = disp .. "을(를) 들고 있어야 합니다."
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp ~= nil then
+			self:ClientShowMineFeedback(msg, playerComp.UserId)
+		else
+			self:ShowMineFeedback(msg)
+		end
+		return false
 	end
 
 	method boolean ConsumeSkillItemIfNeeded(any row, boolean doRemove)
@@ -2846,9 +2874,8 @@ script PlayerController extends Component
 		log("[SKILL-TREE] " .. playerComp.UserId .. " leveled " .. skillId .. " -> " .. (curLevel + 1) .. " (SP left: " .. self.SP .. ")")
 	end
 
-	@ExecSpace("ServerOnly")
-	method integer ComputeSkillDamage(number damageMul)
-		-- Base melee damage + tool-power scaling, then the skill multiplier (mirrors PlayerCombat.DoAttackAt).
+	method integer GetCharacterAttack()
+		-- CharAtk = BaseDamage + AttackPower 버프. 스탯 투자는 나중에 이 한곳에 더한다.
 		local base = 8
 		local combat = self.Entity:GetComponent("script.PlayerCombat")
 		if isvalid(combat) then
@@ -2856,21 +2883,102 @@ script PlayerController extends Component
 			local c = combat
 			base = c.BaseDamage
 		end
+		return base + math.floor(self:GetBuffedAttackPower() + 0.5)
+	end
+
+	method integer GetEquippedAttack()
+		-- item_dataset.Attack. 곡괭이·삽은 0, 전투 무기에만 값을 둔다.
+		return self:GetEquippedStat("attack")
+	end
+
+	method integer GetEquippedMagicAttack()
+		-- item_dataset.MagicAttack. 마법 스킬 코어에 더한다.
+		return self:GetEquippedStat("magicAttack")
+	end
+
+	method integer GetEquippedSkillAttack()
+		-- item_dataset.SkillAttack. 모든 스킬 코어에 더하고 평타에는 안 더한다.
+		return self:GetEquippedStat("skillAttack")
+	end
+
+	method integer GetEquippedStat(string key)
 		local pi = self.Entity:GetComponent("script.PlayerInventory")
-		if isvalid(pi) then
-			---@type PlayerInventory
-			local p = pi
-			local toolInfo = p:GetEquippedToolInfo()
-			if toolInfo and toolInfo.power > 0 then
-				base = base + toolInfo.power * 4
-			end
+		if not isvalid(pi) then return 0 end
+		---@type PlayerInventory
+		local p = pi
+		local toolInfo = p:GetEquippedToolInfo()
+		if toolInfo == nil then return 0 end
+		return math.floor(tonumber(toolInfo[key]) or 0)
+	end
+
+	method integer GetMagicAttack()
+		-- 마법 스탯 + MagicPower 버프. 기본 0. 스탯 투자는 나중에 이 한곳에 더한다.
+		local base = 0
+		local buffs = self.Entity:GetComponent("script.PlayerBuffs")
+		if isvalid(buffs) then
+			return math.floor(base + buffs:GetStatAdd("MagicPower")
+				+ (buffs:GetStatMult("MagicPower") - 1.0) * 8.0 + 0.5)
 		end
-		base = base + math.floor(self:GetBuffedAttackPower() + 0.5)
-		return math.floor(base * damageMul)
+		return base
+	end
+
+	method string GetSkillKindLabel(any row)
+		-- DamageModel/Type → 물리 스킬·마법 스킬·투척 스킬·패시브.
+		if row == nil then return "액티브" end
+		local typeStr = row:GetItem("Type") or ""
+		if typeStr == "Passive" then return "패시브" end
+		local model = ""
+		local okM, rawM = pcall(function() return row:GetItem("DamageModel") end)
+		if okM and rawM ~= nil then model = tostring(rawM) end
+		if model == "Magic" then return "마법 스킬" end
+		if model == "Throw" then return "투척 스킬" end
+		if model == "Physical" then return "물리 스킬" end
+		return "액티브"
 	end
 
 	@ExecSpace("ServerOnly")
-	method void ExecuteAreaDamageSkill(number damageMul, Vector2 dir, number boxSize, number reach)
+	method integer ComputeSkillDamage(string skillId, number damageMul)
+		-- Physical: (CharAtk+Attack+SkillAttack)×배율
+		-- Magic: (SkillPower+MagicAtk+MagicAttack+SkillAttack)×배율
+		-- Throw: (SkillPower+CharAtk+Attack+SkillAttack)×배율
+		local model = "Physical"
+		local skillPower = 0
+		local ds = _DataService:GetTable("SkillDataSet")
+		if ds ~= nil and skillId ~= nil and skillId ~= "" then
+			local row = ds:FindRow("SkillId", skillId)
+			if row ~= nil then
+				local okM, rawM = pcall(function() return row:GetItem("DamageModel") end)
+				if okM and rawM ~= nil and tostring(rawM) ~= "" then
+					model = tostring(rawM)
+				end
+				local okP, rawP = pcall(function() return row:GetItem("SkillPower") end)
+				if okP and rawP ~= nil and tostring(rawP) ~= "" then
+					skillPower = tonumber(rawP) or 0
+				end
+			end
+		end
+		local charAtk = self:GetCharacterAttack()
+		local magicAtk = self:GetMagicAttack()
+		local weaponAtk = self:GetEquippedAttack()
+		local itemMagic = self:GetEquippedMagicAttack()
+		local skillAtk = self:GetEquippedSkillAttack()
+		local core = charAtk + weaponAtk + skillAtk
+		if model == "Magic" then
+			core = skillPower + magicAtk + itemMagic + skillAtk
+		elseif model == "Throw" then
+			core = skillPower + charAtk + weaponAtk + skillAtk
+		end
+		local dmg = math.floor(core * damageMul)
+		log("[DMG] skill=" .. tostring(skillId) .. " model=" .. model
+			.. " char=" .. tostring(charAtk) .. " mag=" .. tostring(magicAtk)
+			.. " weap=" .. tostring(weaponAtk) .. " sp=" .. tostring(skillPower)
+			.. " mul=" .. string.format("%.2f", damageMul)
+			.. " -> " .. tostring(dmg))
+		return dmg
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ExecuteAreaDamageSkill(string skillId, number damageMul, Vector2 dir, number boxSize, number reach)
 		-- Melee / Ultimate: emit a damage box (ahead of the player by `reach`, or centered when reach == 0)
 		-- that only hits monster HitBoxes, reusing PlayerCombat's CalcDamage / IsAttackTarget path.
 		local combat = self.Entity:GetComponent("script.PlayerCombat")
@@ -2878,7 +2986,7 @@ script PlayerController extends Component
 		---@type PlayerCombat
 		local c = combat
 		
-		local finalDmg = self:ComputeSkillDamage(damageMul)
+		local finalDmg = self:ComputeSkillDamage(skillId, damageMul)
 		local myPos = self.Entity.TransformComponent.WorldPosition
 		local center = Vector2(myPos.x + dir.x * reach, myPos.y + dir.y * reach)
 		local shape = BoxShape(center, Vector2(boxSize, boxSize), 0)
@@ -2891,7 +2999,7 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("ServerOnly")
-	method void ExecuteDashSkill(integer dirX, integer dirY, number damageMul)
+	method void ExecuteDashSkill(string skillId, integer dirX, integer dirY, number damageMul)
 		-- Teleport-dash a short distance toward facing, stopping just before the first obstacle.
 		-- T66: 경로 AABB 스윕 → PendingDamage+AttackFast (4방향 축정렬).
 		local body = self.Entity.KinematicbodyComponent
@@ -2933,7 +3041,7 @@ script PlayerController extends Component
 			if isvalid(combat) then
 				---@type PlayerCombat
 				local c = combat
-				local finalDmg = self:ComputeSkillDamage(mul)
+				local finalDmg = self:ComputeSkillDamage(skillId, mul)
 				local minX = math.min(currentPos.x, finalPos.x) - 0.6
 				local maxX = math.max(currentPos.x, finalPos.x) + 0.6
 				local minY = math.min(currentPos.y, finalPos.y) - 0.6
@@ -2962,7 +3070,7 @@ script PlayerController extends Component
 			return
 		end
 		
-		local finalDmg = self:ComputeSkillDamage(damageMul)
+		local finalDmg = self:ComputeSkillDamage(skillId, damageMul)
 		local myPos = self.Entity.TransformComponent.WorldPosition
 		local spawnPos = Vector3(myPos.x + dirX * 0.8, myPos.y + dirY * 0.8, myPos.z)
 		

@@ -411,7 +411,7 @@ graph TD
 | **T3** | **Copper Ore** | 곡괭이 | 화로 제련 → Copper Bar (2 Copper Ore→1, 5초) → 구리 곡괭이/도끼 | 제련 ✅ / 구리 장비 ⏳ |
 | **T4** | **Iron Ore** | 구리 곡괭이(Tech Lock 예정) | 화로 제련 → Iron Bar (2 Iron Ore→1, 8초) → 철 곡괭이/도끼·철제 장비 | Iron 노드·장비 ⏳ |
 
-- **도구 효율 값**(`item_dataset`): Hand Axe(axe, ToolPower 0, **MaxStack 99 기믹 무기**) / Stone Pickaxe(pickaxe, ToolPower 2) / Stone Axe(axe, ToolPower 2). 데미지 = `1 + ToolPower`. 주먹도끼 던지기 = `SkillDataSet.hand_axe_throw`.
+- **도구 효율 값**(`item_dataset`): Hand Axe(axe, ToolPower 0, Attack 0, **MaxStack 99 기믹 무기**) / Stone Pickaxe(pickaxe, ToolPower 2, Attack 0) / Stone Axe(axe, ToolPower 2, Attack 8). 채집 데미지 = `1 + ToolPower`. 전투 평타 = CharAtk + Attack. 주먹도끼 던지기 = `SkillDataSet.hand_axe_throw` (Throw, 장착 필수).
 - **연료**(`FurnaceFuelDataSet`): 현재 Wood(10초/개).
 - ⚠️ 기존 표의 **흙(Dirt) 채광·흙벽/돌담/횃불/제작대**는 미구현이며, 지반·풀밭 타일은 채집 불가 배경이다(§3.2).
 - ⚠️ **광석 공급원 전환 (2026-06)**: 개인 영지를 green_island로 전면화하면 **Copper/Iron Ore·Big Stone은 영지에서 더 이상 스폰되지 않는다**(이들은 earth_field/rocky/desert/snowfield 전용 자원이었고, 해당 바이옴은 사냥터로 이관됨). 따라서 **T3/T4 금속 테크는 사냥터(또는 마을 상점/연구소) 출시 이후 본격 가동**되는 것을 정식 진행 곡선으로 본다. 그전까지 영지 테크는 T1(Wood)·T2(Stone) 중심이다. (영지에서도 소량 금속을 원하면 green_island `BiomeResourceDataSet`에 낮은 확률로 광맥을 추가하는 것은 가능하나, 기본 방향은 사냥터 보상으로 둔다.)
@@ -539,7 +539,7 @@ graph TD
     - ✅ 몬스터→플레이어 데미지: 슬라임 AI가 인접 시 접촉 공격, 베이스 `player` 모델 내장 HitComponent가 HP 자동 차감.
     - ✅ 넉백 양방향 및 보간: 피격 시 EaseOutCubic 곡선을 이용해 롤백 없이 부드럽게 감속하는 클라이언트 넉백 연출 적용.
     - ✅ 연속 피격/넉백 정상화: IFrameTimer의 갱신을 서버 타이머 루틴으로 이관하여 2차 피격 넉백 씹힘을 완전히 제거함.
-    - ✅ 완료: 사망(HP0)→3s 후 (0,0) 리스폰 + 자원 50% 손실, 플레이어 피격 적색 플래시(아바타), 도구 등급별 공격력 스케일링(ToolPower * 4).
+    - ✅ 완료: 사망(HP0)→3s 후 (0,0) 리스폰 + 자원 50% 손실, 플레이어 피격 적색 플래시(아바타). 전투 공격력은 `item_dataset.Attack`(채집 ToolPower와 분리, ⚖️ 2026-08-16).
   - ✅ AI 추격 튜닝 완료: 몬스터가 플레이어에게 끝까지 달려들지 않고 바로 앞칸에서 공격을 멈추던 현상을 `DSq <= 0.81`(밀착) 및 공격 쿨타임 중에도 근접 타겟팅을 유지하도록 튜닝하여 해결.
   - [x] M3 완료: `MonsterSpawner`(@Logic, 맵당 인구캡, 바이옴별 변종 HpMul/AtkMul, 녹색섬 중앙 제외, 10분 주기 낮/밤 부스트 적용 완료) + `MonsterSpawnDataSet`.
   - 🔶 **전투 체감 개선(T38 — 코드 완료 2026-07-11, Play 검증 보류)**: 접촉 데미지 틱(TouchDamage/i-frame 위임) + 공격 타이밍 정정(윈드업 만료 시점 타격) + 텔레그래프 틴트 + `AttackRange` 단일화(리터럴 0.81 제거 — 상단 "AI 추격 튜닝"의 밀착 기준 대체)·`StopDistance` 신설. handoff §3 T38.

@@ -213,6 +213,28 @@ script UIMinimapController extends Component
 		local half = math.floor(gridCells / 2)
 		local tilesPerCell = math.floor(self.TilesPerCell)
 		
+		local yellow = {}
+		if isvalid(curMap) then
+			local dialogs = curMap:GetChildComponentsByTypeName("script.VillagerDialog", true)
+			if dialogs ~= nil then
+				for _, dialog in ipairs(dialogs) do
+					if isvalid(dialog) then
+						local kind = dialog:GetQuestPingKind(player)
+						if kind ~= nil and kind ~= "" and isvalid(dialog.Entity) and isvalid(dialog.Entity.TransformComponent) then
+							local np = dialog.Entity.TransformComponent.WorldPosition
+							local nx = math.floor(np.x)
+							local ny = math.floor(np.y)
+							local cc = half + math.floor((nx - px) / tilesPerCell)
+							local rr = half + math.floor((ny - py) / tilesPerCell)
+							if cc >= 0 and cc < gridCells and rr >= 0 and rr < gridCells then
+								yellow[tostring(rr) .. "_" .. tostring(cc)] = true
+							end
+						end
+					end
+				end
+			end
+		end
+
 		for r = 0, gridCells - 1 do
 			for c = 0, gridCells - 1 do
 				local cellEntity = self.Entity:GetChildByName("Cell_" .. r .. "_" .. c)
@@ -220,7 +242,11 @@ script UIMinimapController extends Component
 					local wx = px + (c - half) * tilesPerCell
 					local wy = py + (r - half) * tilesPerCell
 					local tileName = self:TileNameAt(wx, wy)
-					cellEntity.SpriteGUIRendererComponent.Color = self:TileColor(tileName)
+					local col = self:TileColor(tileName)
+					if yellow[tostring(r) .. "_" .. tostring(c)] == true then
+						col = Color(1.0, 0.86, 0.12, 1.0)
+					end
+					cellEntity.SpriteGUIRendererComponent.Color = col
 				end
 			end
 		end
