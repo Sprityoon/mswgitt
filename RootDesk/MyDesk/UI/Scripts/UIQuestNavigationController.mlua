@@ -1,0 +1,394 @@
+@Component
+script UIQuestNavigationController extends Component
+
+	-- 마을 및 퀘스트 맵에서 미수락 퀘스트(!)를 가진 주민의 방향과 거리를 안내하는 네비게이션 컨트롤러.
+	-- 1) 화면 밖(Off-screen) 시 화면 테두리에 골드 뱃지([!] NPC이름 거리m ➔) 표시
+	-- 2) 플레이어 캐릭터 주변 궤도에 실시간 방향 가이드 화살표 표시
+	-- 3) 상호작용 거리(2.5m 이내) 도달 시 또는 미수락 퀘스트 부재 시 자동 숨김
+
+	property any scanTimer = nil
+	property any updateTimer = nil
+
+	property any targetNpc = nil
+	property string targetNpcName = ""
+	property Vector2 targetNpcPos = Vector2(0, 0)
+	property boolean hasTarget = false
+
+	property Entity rootEntity = nil
+	property Entity edgeBadge = nil
+	property Entity badgeIcon = nil
+	property Entity badgeName = nil
+	property Entity badgeDist = nil
+	property Entity badgeArrow = nil
+	property Entity playerCompass = nil
+	property Entity compassArrow = nil
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		self.rootEntity = self.Entity
+		self:EnsureUIElements()
+		self:SetNavVisible(false)
+
+		-- 타겟 주민 탐색 타이머 (0.25초 주기)
+		self.scanTimer = _TimerService:SetTimerRepeat(function()
+			self:ScanTargetNpc()
+		end, 0.25)
+
+		-- 방향/거리/위치 실시간 갱신 타이머 (30fps)
+		self.updateTimer = _TimerService:SetTimerRepeat(function()
+			self:UpdateNavigation()
+		end, 1/30)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		if self.scanTimer ~= nil then
+			_TimerService:ClearTimer(self.scanTimer)
+			self.scanTimer = nil
+		end
+		if self.updateTimer ~= nil then
+			_TimerService:ClearTimer(self.updateTimer)
+			self.updateTimer = nil
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void EnsureUIElements()
+		local root = self.Entity
+		if not isvalid(root) then return end
+
+		-- 1. 화면 테두리 뱃지 (EdgeBadge)
+		local edge = root:GetChildByName("EdgeBadge")
+		if not isvalid(edge) then
+			edge = _SpawnService:SpawnByModelId("uisprite", "EdgeBadge", Vector3.zero, root)
+		end
+		if isvalid(edge) then
+			self.edgeBadge = edge
+			local sprite = edge.SpriteGUIRendererComponent
+			if isvalid(sprite) then
+				sprite.Color = Color(0.10, 0.08, 0.06, 0.90)
+				sprite.RaycastTarget = false
+			end
+			local transform = edge.UITransformComponent
+			if isvalid(transform) then
+				transform.AlignmentOption = AlignmentType.CastFrom("Center")
+				transform.RectSize = Vector2(210, 46)
+			end
+
+			-- 느낌표 아이콘
+			local icon = edge:GetChildByName("Icon")
+			if not isvalid(icon) then
+				icon = _SpawnService:SpawnByModelId("uitext", "Icon", Vector3.zero, edge)
+			end
+			if isvalid(icon) then
+				self.badgeIcon = icon
+				local s = icon.SpriteGUIRendererComponent
+				if isvalid(s) then s.Color = Color(0, 0, 0, 0) s.RaycastTarget = false end
+				local t = icon.UITransformComponent
+				if isvalid(t) then
+					t.AlignmentOption = AlignmentType.CastFrom("Left")
+					t.anchoredPosition = Vector2(18, 0)
+					t.RectSize = Vector2(30, 40)
+				end
+				local txt = icon.TextComponent
+				if isvalid(txt) then
+					txt.Text = "!"
+					txt.Font = FontType.Maple
+					txt.FontSize = 26
+					txt.FontColor = Color(1.0, 0.86, 0.12, 1.0)
+					txt.UseOutLine = true
+					txt.OutlineColor = Color(0.18, 0.10, 0.02, 1.0)
+					txt.OutlineWidth = 1.5
+					txt.Alignment = TextAlignmentType.MiddleCenter
+				end
+			end
+
+			-- NPC 이름
+			local nameEnt = edge:GetChildByName("Name")
+			if not isvalid(nameEnt) then
+				nameEnt = _SpawnService:SpawnByModelId("uitext", "Name", Vector3.zero, edge)
+			end
+			if isvalid(nameEnt) then
+				self.badgeName = nameEnt
+				local s = nameEnt.SpriteGUIRendererComponent
+				if isvalid(s) then s.Color = Color(0, 0, 0, 0) s.RaycastTarget = false end
+				local t = nameEnt.UITransformComponent
+				if isvalid(t) then
+					t.AlignmentOption = AlignmentType.CastFrom("Left")
+					t.anchoredPosition = Vector2(70, 0)
+					t.RectSize = Vector2(90, 36)
+				end
+				local txt = nameEnt.TextComponent
+				if isvalid(txt) then
+					txt.Text = ""
+					txt.Font = FontType.Maple
+					txt.FontSize = 18
+					txt.FontColor = Color(1.0, 1.0, 1.0, 1.0)
+					txt.UseOutLine = true
+					txt.OutlineColor = Color(0.0, 0.0, 0.0, 1.0)
+					txt.OutlineWidth = 1.0
+					txt.Alignment = TextAlignmentType.MiddleLeft
+				end
+			end
+
+			-- 거리 텍스트
+			local distEnt = edge:GetChildByName("Dist")
+			if not isvalid(distEnt) then
+				distEnt = _SpawnService:SpawnByModelId("uitext", "Dist", Vector3.zero, edge)
+			end
+			if isvalid(distEnt) then
+				self.badgeDist = distEnt
+				local s = distEnt.SpriteGUIRendererComponent
+				if isvalid(s) then s.Color = Color(0, 0, 0, 0) s.RaycastTarget = false end
+				local t = distEnt.UITransformComponent
+				if isvalid(t) then
+					t.AlignmentOption = AlignmentType.CastFrom("Right")
+					t.anchoredPosition = Vector2(-42, 0)
+					t.RectSize = Vector2(50, 36)
+				end
+				local txt = distEnt.TextComponent
+				if isvalid(txt) then
+					txt.Text = ""
+					txt.Font = FontType.Maple
+					txt.FontSize = 16
+					txt.FontColor = Color(1.0, 0.86, 0.12, 1.0)
+					txt.UseOutLine = true
+					txt.OutlineColor = Color(0.18, 0.10, 0.02, 1.0)
+					txt.OutlineWidth = 1.0
+					txt.Alignment = TextAlignmentType.MiddleRight
+				end
+			end
+
+			-- 화살표 아이콘
+			local arrowEnt = edge:GetChildByName("Arrow")
+			if not isvalid(arrowEnt) then
+				arrowEnt = _SpawnService:SpawnByModelId("uitext", "Arrow", Vector3.zero, edge)
+			end
+			if isvalid(arrowEnt) then
+				self.badgeArrow = arrowEnt
+				local s = arrowEnt.SpriteGUIRendererComponent
+				if isvalid(s) then s.Color = Color(0, 0, 0, 0) s.RaycastTarget = false end
+				local t = arrowEnt.UITransformComponent
+				if isvalid(t) then
+					t.AlignmentOption = AlignmentType.CastFrom("Right")
+					t.anchoredPosition = Vector2(-16, 0)
+					t.RectSize = Vector2(28, 28)
+					t.Pivot = Vector2(0.5, 0.5)
+				end
+				local txt = arrowEnt.TextComponent
+				if isvalid(txt) then
+					txt.Text = "▲"
+					txt.Font = FontType.Maple
+					txt.FontSize = 18
+					txt.FontColor = Color(1.0, 0.86, 0.12, 1.0)
+					txt.UseOutLine = true
+					txt.OutlineColor = Color(0.18, 0.10, 0.02, 1.0)
+					txt.OutlineWidth = 1.2
+					txt.Alignment = TextAlignmentType.MiddleCenter
+				end
+			end
+		end
+
+		-- 2. 플레이어 주변 방향 나침반 (PlayerCompass)
+		local compass = root:GetChildByName("PlayerCompass")
+		if not isvalid(compass) then
+			compass = _SpawnService:SpawnByModelId("uitext", "PlayerCompass", Vector3.zero, root)
+		end
+		if isvalid(compass) then
+			self.playerCompass = compass
+			local s = compass.SpriteGUIRendererComponent
+			if isvalid(s) then s.Color = Color(0, 0, 0, 0) s.RaycastTarget = false end
+			local t = compass.UITransformComponent
+			if isvalid(t) then
+				t.AlignmentOption = AlignmentType.CastFrom("Center")
+				t.RectSize = Vector2(36, 36)
+				t.Pivot = Vector2(0.5, 0.5)
+			end
+			local txt = compass.TextComponent
+			if isvalid(txt) then
+				txt.Text = "▲"
+				txt.Font = FontType.Maple
+				txt.FontSize = 24
+				txt.FontColor = Color(1.0, 0.86, 0.12, 0.90)
+				txt.UseOutLine = true
+				txt.OutlineColor = Color(0.18, 0.10, 0.02, 1.0)
+				txt.OutlineWidth = 1.4
+				txt.Alignment = TextAlignmentType.MiddleCenter
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetNavVisible(boolean vis)
+		if isvalid(self.edgeBadge) then
+			self.edgeBadge.Enable = vis
+		end
+		if isvalid(self.playerCompass) then
+			self.playerCompass.Enable = vis
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ScanTargetNpc()
+		local player = _UserService.LocalPlayer
+		if not isvalid(player) then
+			self.hasTarget = false
+			self.targetNpc = nil
+			return
+		end
+
+		local curMap = player.CurrentMap
+		if not isvalid(curMap) then
+			self.hasTarget = false
+			self.targetNpc = nil
+			return
+		end
+
+		local dialogs = curMap:GetChildComponentsByTypeName("script.VillagerDialog", true)
+		if dialogs == nil or #dialogs == 0 then
+			self.hasTarget = false
+			self.targetNpc = nil
+			return
+		end
+
+		local playerPos = player.TransformComponent.WorldPosition
+		local bestDist = 999999
+		local bestDialog = nil
+		local bestPos = Vector2(0, 0)
+
+		for _, dialog in ipairs(dialogs) do
+			if isvalid(dialog) and isvalid(dialog.Entity) and isvalid(dialog.Entity.TransformComponent) then
+				-- 수락 가능한 퀘스트(!)가 있는 주민만 필터
+				local kind = dialog:GetQuestPingKind(player)
+				if kind == "!" then
+					local np = dialog.Entity.TransformComponent.WorldPosition
+					local d = Vector2.Distance(Vector2(playerPos.x, playerPos.y), Vector2(np.x, np.y))
+					if d < bestDist then
+						bestDist = d
+						bestDialog = dialog
+						bestPos = Vector2(np.x, np.y)
+					end
+				end
+			end
+		end
+
+		if bestDialog ~= nil then
+			self.targetNpc = bestDialog.Entity
+			self.targetNpcName = bestDialog:GetSpeakerName()
+			self.targetNpcPos = bestPos
+			self.hasTarget = true
+		else
+			self.hasTarget = false
+			self.targetNpc = nil
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateNavigation()
+		-- 1. HUD 활성화 여부 확인
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		if isvalid(hud) then
+			local hudCtrl = hud:GetComponent("script.UIHUDController")
+			if isvalid(hudCtrl) and hudCtrl.playHudReady == false then
+				self:SetNavVisible(false)
+				return
+			end
+		end
+
+		-- 2. 타겟 존재 여부 확인
+		if not self.hasTarget or not isvalid(self.targetNpc) then
+			self:SetNavVisible(false)
+			return
+		end
+
+		local player = _UserService.LocalPlayer
+		if not isvalid(player) or not isvalid(player.TransformComponent) then
+			self:SetNavVisible(false)
+			return
+		end
+
+		local pPos = player.TransformComponent.WorldPosition
+		local tPos = self.targetNpcPos
+		local dist = Vector2.Distance(Vector2(pPos.x, pPos.y), tPos)
+
+		-- 3. 상호작용 가능 거리(2.5m) 이내 도달 시 자동 숨김
+		if dist <= 2.5 then
+			self:SetNavVisible(false)
+			return
+		end
+
+		-- 4. 플레이어 및 목표의 스크린/UI 좌표 계산
+		local pScreen = _UILogic:WorldToScreenPosition(Vector2(pPos.x, pPos.y))
+		local pUi = _UILogic:ScreenToUIPosition(pScreen)
+
+		local tScreen = _UILogic:WorldToScreenPosition(Vector2(tPos.x, tPos.y))
+		local tUi = _UILogic:ScreenToUIPosition(tScreen)
+
+		-- 방향 벡터 계산
+		local diff = Vector2(tPos.x - pPos.x, tPos.y - pPos.y)
+		local dir = diff:Normalize()
+		local angleDeg = Vector2.SignedAngle(Vector2.right, dir)
+
+		-- (A) 플레이어 주변 궤도 방향 나침반 (PlayerCompass)
+		if isvalid(self.playerCompass) then
+			self.playerCompass.Enable = true
+			local orbitRadius = 75.0
+			local cx = pUi.x + dir.x * orbitRadius
+			local cy = pUi.y + dir.y * orbitRadius
+			local ct = self.playerCompass.UITransformComponent
+			if isvalid(ct) then
+				ct.anchoredPosition = Vector2(cx, cy)
+				-- '▲' 기본 방향이 위(90도)이므로 -90 오프셋 회전
+				ct.ZRotation = angleDeg - 90.0
+			end
+		end
+
+		-- (B) 화면 가장자리 뱃지 (EdgeBadge) — 화면 밖일 때만 표시
+		-- FHD 1920x1080 UI 좌표 기준 (중심 0,0, 가로 ±960, 세로 ±540)
+		-- 안전 마진을 둔 뷰포트 경계 (X: ±840, Y: ±440)
+		local viewBoundX = 840.0
+		local viewBoundY = 440.0
+		local isOffScreen = (tUi.x < -viewBoundX or tUi.x > viewBoundX or tUi.y < -viewBoundY or tUi.y > viewBoundY)
+
+		if isvalid(self.edgeBadge) then
+			if isOffScreen then
+				self.edgeBadge.Enable = true
+				-- 텍스트 갱신
+				if isvalid(self.badgeName) and isvalid(self.badgeName.TextComponent) then
+					if self.badgeName.TextComponent.Text ~= self.targetNpcName then
+						self.badgeName.TextComponent.Text = self.targetNpcName
+					end
+				end
+				if isvalid(self.badgeDist) and isvalid(self.badgeDist.TextComponent) then
+					local distStr = string.format("%dm", math.floor(dist))
+					if self.badgeDist.TextComponent.Text ~= distStr then
+						self.badgeDist.TextComponent.Text = distStr
+					end
+				end
+
+				-- 화면 테두리 클램핑 좌표 계산 (중심 기준 타원/박스 교점)
+				local edgeMarginX = 820.0
+				local edgeMarginY = 420.0
+				local absX = math.abs(dir.x)
+				local absY = math.abs(dir.y)
+				local scale = math.min(edgeMarginX / math.max(0.001, absX), edgeMarginY / math.max(0.001, absY))
+				local ex = dir.x * scale
+				local ey = dir.y * scale
+
+				local et = self.edgeBadge.UITransformComponent
+				if isvalid(et) then
+					et.anchoredPosition = Vector2(ex, ey)
+				end
+
+				-- 화살표 회전
+				if isvalid(self.badgeArrow) and isvalid(self.badgeArrow.UITransformComponent) then
+					self.badgeArrow.UITransformComponent.ZRotation = angleDeg - 90.0
+				end
+			else
+				-- 화면 안에 있을 때는 머리 위 !가 보이므로 뱃지 숨김 (플레이어 궤도 화살표는 유지)
+				self.edgeBadge.Enable = false
+			end
+		end
+	end
+
+end

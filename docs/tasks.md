@@ -10,6 +10,7 @@
 
 | 대상 | 내용 |
 |---|---|
+| UIQuestNavigationController · UIHUDController · `ui/HUDGroup.ui` | **미수락 퀘스트 주민 방향/거리 네비게이션 시스템** (2026-08-16) — 아래 참조 |
 | PlayerCombat · PlayerController · item_dataset · SkillDataSet | **전투 데미지 세 갈래 + 주먹도끼 던지기 장착 제한** (2026-08-16) — 아래 참조 |
 | item_dataset · SkillDataSet · 인벤/스킬/제작/캐릭터 툴팁 | **아이템·스킬 스펙 툴팁 + MagicAttack/SkillAttack 칸** (2026-08-16) — 아래 참조 |
 | PlayerQuest · QuestData · UserQuestData · QuestDataSet | **보고 퀘 vs 자동완료 분리** (2026-08-16) — 아래 참조 |
@@ -34,6 +35,19 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-16 미수락 퀘스트 주민 방향/거리 네비게이션 시스템
+
+제작자: 마을에 도착했을 때 퀘스트가 있는(아직 수락하지 않은) 주민이 있을 경우, 느낌표 표시 + 미니맵 표시에 더해 방향을 알려주는 네비게이션 추가.
+
+| 파일 | 조치 |
+|---|---|
+| `UIQuestNavigationController.mlua` (신규) | 수락 가능 퀘스트(`!`) 주민 탐색, 화면 밖 엣지 뱃지([!] 이름 거리 화살표), 플레이어 궤도 가이드 화살표 실시간 렌더 (30fps), 2.5m 도달 시 자동 숨김 |
+| `ui/HUDGroup.ui` | `QuestNavigator` 엔티티 신설 및 `UIQuestNavigationController` 컴포넌트 부착 (UIBuilder) |
+| `UIHUDController.mlua` | `SetPlayHudVisible` 관리 대상에 `QuestNavigator` 추가 (타이틀 화면 중복 노출 방지) |
+
+- 검증: `ui_lint` Error=0 (WARN 62 베이스라인 유지). `math.atan2` 폐기 이슈 `Vector2.SignedAngle` 및 `Normalize` 네이티브 연산으로 해소. `maker_refresh_workspace` status ok. build dateTime=`2026-08-16T22:00:16~17`(이번 refresh와 일치). Error=1 = 기존 `LEA-4004 PlayerController.OnMapEnter`(무관). Warning=48. `.codeblock` 생성 확인. **런타임 검증 보류(제작자 Play)**
+- Play 확인: ① 마을 도착 시 미수락 퀘스트가 있는 촌장 방향으로 화면 가장자리 뱃지 + 플레이어 주변 화살표 표시 ② 접근 시 거리 감소 및 방향 회전 ③ 2.5m 접근 시 네비게이션 숨김 및 머리 위 `!` 표시 ④ 퀘스트 수락 시 네비게이션 소거
 
 ### 2026-08-16 전투 데미지 세 갈래 + 주먹도끼 던지기 장착 제한
 

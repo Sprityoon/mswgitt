@@ -43,6 +43,7 @@
 | [29](#규칙-29-아이템-슬롯-아이콘은-simple--none이다) | 아이템 슬롯 아이콘 = Simple + None | 자원 아이콘이 보상칸 밖으로 밀려 나감 |
 | [30](#규칙-30-숨길-오버레이는-ui에서-enablefalse로-둔다) | 숨길 오버레이는 `.ui`에서 Enable=false | 부팅 때 팝업이 타이틀보다 먼저 보임 |
 | [31](#규칙-31-기본-텍스트-rect와-top-left-pos를-슬롯바에-쓰지-않는다) | 슬롯/바는 칸 크기·왼쪽 여백 | 장착 아이콘·HP바가 팝업 밖으로 나감 |
+| [32](#규칙-32-mathatan2는-mlua에서-nil이다--vector2signedangle-사용) | `math.atan2`는 nil (`Vector2.SignedAngle` 사용) | `LEA-2011` AttemptToCall |
 
 ---
 
@@ -384,6 +385,15 @@ MSW에는 **이름이 비슷한 별개 컴포넌트가 둘** 있고, `UIBuilder.
 - ❌ 기본 텍스트 박스(400×48)를 아이콘·게이지 라벨에 그대로 두지 않는다.
 
 **사고 실례 (2026-08-15)**: 캐릭터 정보. 무기 `Icon` 400×48 + HP/SP/XP `pos.x=180`(패널 360의 반) + 권한 버튼 `pos.x=180`(top-center) → 창 밖으로 돌출.
+
+### 규칙 32. `math.atan2`는 mlua에서 nil이다 — `Vector2.SignedAngle` 사용
+
+Lua 5.3+ 및 MSW mlua 환경에서 `math.atan2`는 폐기(deprecated)되어 **nil**이다. 호출 시 `[LEA-2011] AttemptToCall : 'atan2'을 호출할 수 없습니다` 런타임 오류가 발생한다.
+
+- ✅ 2D 방향 각도는 엔진 네이티브 **`Vector2.SignedAngle(Vector2.right, dir)`** 또는 **`diff:Normalize()`** 를 사용한다.
+- 삼각함수(`math.cos`, `math.sin`) 없이도 정규화 벡터 `dir.x`, `dir.y`를 직접 곱해 궤도/클램핑 좌표를 안전하게 계산할 수 있다.
+
+**사고 실례 (2026-08-16)**: `UIQuestNavigationController`가 각도 계산에 `math.atan2`를 호출해 `LEA-2011` 에러 발생. `Vector2.SignedAngle` 및 `Normalize`로 교체하여 해소.
 
 ---
 

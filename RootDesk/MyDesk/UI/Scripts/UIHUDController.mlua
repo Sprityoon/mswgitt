@@ -56,7 +56,7 @@ script UIHUDController extends Component
 		self.playHudReady = on
 		local names = {
 			"BtnCollection", "BtnSkillTree", "Minimap", "MobileUI",
-			"QuestTracker", "QuickSlots", "SkillBar", "UIMyInfo",
+			"QuestTracker", "QuestNavigator", "QuickSlots", "SkillBar", "UIMyInfo",
 			"FishingGauge",
 		}
 		for i = 1, #names do
@@ -77,6 +77,8 @@ script UIHUDController extends Component
 			if isvalid(bar) then bar.Enable = false end
 			local gauge = self.Entity:GetChildByName("FishingGauge", false)
 			if isvalid(gauge) then gauge.Enable = false end
+			local nav = self.Entity:GetChildByName("QuestNavigator", false)
+			if isvalid(nav) then nav.Enable = false end
 		end
 		log("[HUD] playHud=" .. tostring(on))
 	end
