@@ -1,13 +1,13 @@
 {
   "Id": "",
   "GameId": "",
-  "EntryKey": "model://item_animalpen",
+  "EntryKey": "model://874e9b73-0201-4579-b72f-56a6fb10439e",
   "ContentType": "x-mod/model",
   "Content": "",
   "Usage": 0,
   "UsePublish": 1,
   "UseService": 0,
-  "CoreVersion": "26.5.0.0",
+  "CoreVersion": "26.7.0.0",
   "StudioVersion": "0.1.0.0",
   "DynamicLoading": 0,
   "ContentProto": {
@@ -16,7 +16,7 @@
       "Version": 1,
       "Name": "Item_AnimalPen",
       "BaseModelId": null,
-      "Id": "item_animalpen",
+      "Id": "874e9b73-0201-4579-b72f-56a6fb10439e",
       "Components": [
         "MOD.Core.TransformComponent",
         "MOD.Core.SpriteRendererComponent",
@@ -34,7 +34,7 @@
           "Link": {
             "Target": {
               "$type": "MODNativeType",
-              "type": "MOD.Core.SpriteRendererComponent, MOD.Core, Version=26.5.0.0, Culture=neutral, PublicKeyToken=null"
+              "type": "MOD.Core.SpriteRendererComponent, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
             },
             "Property": "SpriteRUID"
           }
@@ -66,16 +66,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "Bed"
-        },
-        {
-          "TargetType": "MOD.Core.SpriteRendererComponent",
-          "Name": "SortingLayer",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": "MapLayer5"
+          "Value": "Animal Pen"
         }
       ],
       "EventLinks": [],

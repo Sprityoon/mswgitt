@@ -1,7 +1,7 @@
 {
   "Id": "",
   "GameId": "",
-  "EntryKey": "model://f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b9",
+  "EntryKey": "model://eb72d08b-ac67-4e91-93a7-b7837a2d2b3a",
   "ContentType": "x-mod/model",
   "Content": "",
   "Usage": 0,
@@ -14,9 +14,9 @@
     "Use": "Json",
     "Json": {
       "Version": 1,
-      "Name": "Item_Furnace",
+      "Name": "Item_CopperAxe",
       "BaseModelId": null,
-      "Id": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b9",
+      "Id": "eb72d08b-ac67-4e91-93a7-b7837a2d2b3a",
       "Components": [
         "MOD.Core.TransformComponent",
         "MOD.Core.SpriteRendererComponent",
@@ -57,7 +57,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "8cb667c940834bb9b19c11ae242a0aa1"
+          "Value": "thumbnail://5b0af54d1fd0489198f8c31183d130fa"
         },
         {
           "TargetType": "script.itemreact",
@@ -66,7 +66,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "Furnace"
+          "Value": "Copper Axe"
         }
       ],
       "EventLinks": [],

@@ -71,6 +71,13 @@ script itemreact extends Component
 		
 		if isvalid(self.Entity.SpriteRendererComponent) then
 			self.Entity.SpriteRendererComponent.Color = color
+			local ok, iconRuid = pcall(function() return row:GetItem("IconRUID") end)
+			if ok and iconRuid ~= nil and tostring(iconRuid) ~= "" then
+				local strRuid = tostring(iconRuid)
+				if self.Entity.SpriteRendererComponent.SpriteRUID ~= strRuid then
+					self.Entity.SpriteRendererComponent.SpriteRUID = strRuid
+				end
+			end
 		end
 	end
 

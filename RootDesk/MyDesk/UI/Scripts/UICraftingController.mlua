@@ -106,6 +106,7 @@ script UICraftingController extends Component
 			return
 		end
 		
+		local itemDs = _DataService:GetTable("item_dataset")
 		local rowCount = ds:GetRowCount()
 		for i = 1, rowCount do
 			local recipeName = ds:GetCell(i, "RecipeName")
@@ -115,10 +116,26 @@ script UICraftingController extends Component
 			if category == "" then category = "misc" end
 			local unlockId = ds:GetCell(i, "UnlockId") or ""
 			local unlockHint = ds:GetCell(i, "UnlockHint") or ""
+
+			-- 아이콘 단일 소스화: item_dataset.IconRUID 우선 참조 (도구/무기/가구/소모품 전체 동기화)
+			local iconRuid = ""
+			if itemDs ~= nil then
+				local itemRow = itemDs:FindRow("Name", recipeName)
+				if itemRow ~= nil then
+					local ok, v = pcall(function() return itemRow:GetItem("IconRUID") end)
+					if ok and v ~= nil and tostring(v) ~= "" then
+						iconRuid = tostring(v)
+					end
+				end
+			end
+			if iconRuid == "" then
+				iconRuid = ds:GetCell(i, "Icon") or ""
+			end
+
 			local entry = {
 				name = recipeName,
 				desc = ds:GetCell(i, "Desc"),
-				icon = ds:GetCell(i, "Icon"),
+				icon = iconRuid,
 				tier = tier,
 				category = category,
 				unlockId = unlockId,

@@ -1,7 +1,7 @@
 {
   "Id": "",
   "GameId": "",
-  "EntryKey": "model://f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b9",
+  "EntryKey": "model://111ea19a-5b96-41b5-b8e3-3015beb4d37b",
   "ContentType": "x-mod/model",
   "Content": "",
   "Usage": 0,
@@ -14,9 +14,9 @@
     "Use": "Json",
     "Json": {
       "Version": 1,
-      "Name": "Item_Furnace",
+      "Name": "Item_IronAxe",
       "BaseModelId": null,
-      "Id": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b9",
+      "Id": "111ea19a-5b96-41b5-b8e3-3015beb4d37b",
       "Components": [
         "MOD.Core.TransformComponent",
         "MOD.Core.SpriteRendererComponent",
@@ -57,7 +57,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "8cb667c940834bb9b19c11ae242a0aa1"
+          "Value": "thumbnail://cdee4e069bc24b49b202f3bfe99bb8a0"
         },
         {
           "TargetType": "script.itemreact",
@@ -66,7 +66,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "Furnace"
+          "Value": "Iron Axe"
         }
       ],
       "EventLinks": [],

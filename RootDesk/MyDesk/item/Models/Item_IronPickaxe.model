@@ -1,7 +1,7 @@
 {
   "Id": "",
   "GameId": "",
-  "EntryKey": "model://f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b9",
+  "EntryKey": "model://5a745447-dfd5-4712-bf9a-3d224bca3342",
   "ContentType": "x-mod/model",
   "Content": "",
   "Usage": 0,
@@ -14,9 +14,9 @@
     "Use": "Json",
     "Json": {
       "Version": 1,
-      "Name": "Item_Furnace",
+      "Name": "Item_IronPickaxe",
       "BaseModelId": null,
-      "Id": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b9",
+      "Id": "5a745447-dfd5-4712-bf9a-3d224bca3342",
       "Components": [
         "MOD.Core.TransformComponent",
         "MOD.Core.SpriteRendererComponent",
@@ -57,7 +57,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "8cb667c940834bb9b19c11ae242a0aa1"
+          "Value": "thumbnail://54a842df20b94f37b0d7bdbc0c1d2acd"
         },
         {
           "TargetType": "script.itemreact",
@@ -66,7 +66,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "Furnace"
+          "Value": "Iron Pickaxe"
         }
       ],
       "EventLinks": [],

@@ -102,7 +102,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": -1.0
+          "Value": 0
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -111,7 +111,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 1.0
+          "Value": 2
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -120,7 +120,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": -1.0
+          "Value": -2
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -129,7 +129,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0.0
+          "Value": 0
         },
         {
           "TargetType": "script.ResourceReaction",
@@ -147,7 +147,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 8.0
+          "Value": 8
         },
         {
           "TargetType": "script.ResourceReaction",
@@ -156,7 +156,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 12.0
+          "Value": 12
         },
         {
           "TargetType": "script.ResourceReaction",
@@ -194,10 +194,10 @@
           },
           "Value": {
             "$type": "MOD.Core.MODQuaternion, MOD.Core",
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0,
-            "w": 1.0
+            "x": 0,
+            "y": 0,
+            "z": 0,
+            "w": 1
           }
         },
         {
@@ -238,8 +238,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 1.0,
-            "y": 1.0
+            "x": 1,
+            "y": 1
           }
         },
         {
@@ -341,9 +341,9 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 2.0,
-            "y": 2.0,
-            "z": 2.0
+            "x": 2,
+            "y": 2,
+            "z": 2
           }
         }
       ],

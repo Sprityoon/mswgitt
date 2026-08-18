@@ -171,6 +171,11 @@ script PlayerController extends Component
 				movement.InputSpeed = 3.6  -- Set top-down movement speed
 			end
 
+			local stateComp = self.Entity.StateComponent
+			if isvalid(stateComp) then
+				stateComp:ChangeState("IDLE")
+			end
+
 			self:UpdateAvatarYOrder(true)
 			
 			log("PlayerController initialized on client. Facing: " .. self.LastDirectionX .. ", " .. self.LastDirectionY)
@@ -446,13 +451,14 @@ script PlayerController extends Component
 		-- Belt-and-suspenders walk animation: the engine PlayerControllerComponent normally auto-
 		-- transitions MOVE/IDLE, but our custom controller drives MovementComponent directly, so its
 		-- auto-transition may not always fire. Mirror MOVE/IDLE from our arrow-key input as a fallback.
-		-- Guarded to only swap IDLE<->MOVE (and only when already in one of those), so it is a no-op
-		-- whenever the controller already set the state and never clobbers HIT/DEAD/JUMP/ATTACK.
+		-- In RectTile mode (no Rigidbody footholds), FALL/JUMP states never auto-transition to IDLE
+		-- via NCIsOnGround, so FALL/JUMP must also transition back to IDLE/MOVE on ground locomotion.
+		-- Guarded to never clobber HIT/DEAD/MINE/ATTACK.
 		if self:IsClient() then
 			local stateComp = self.Entity.StateComponent
 			if isvalid(stateComp) then
 				local cur = stateComp.CurrentStateName
-				if cur == nil or cur == "" or cur == "IDLE" or cur == "MOVE" then
+				if cur == nil or cur == "" or cur == "IDLE" or cur == "MOVE" or cur == "FALL" or cur == "JUMP" then
 					local moving = (inputDx ~= 0 or inputDy ~= 0)
 					if moving and cur ~= "MOVE" then
 						stateComp:ChangeState("MOVE")

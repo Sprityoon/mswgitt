@@ -10,6 +10,7 @@
 
 | 대상 | 내용 |
 |---|---|
+| `SkillDataSet.csv` · `item_dataset.csv` · `PlayerController.mlua` | **[긴급 핫픽스] 데이터셋 컬럼 복원(LEA-3011) + 점프/낙하 모션 고착 해소** (2026-08-18) — 아래 참조 |
 | UIQuestNavigationController · UIHUDController · `ui/HUDGroup.ui` | **미수락 퀘스트 주민 방향/거리 네비게이션 시스템** (2026-08-16) — 아래 참조 |
 | PlayerCombat · PlayerController · item_dataset · SkillDataSet | **전투 데미지 세 갈래 + 주먹도끼 던지기 장착 제한** (2026-08-16) — 아래 참조 |
 | item_dataset · SkillDataSet · 인벤/스킬/제작/캐릭터 툴팁 | **아이템·스킬 스펙 툴팁 + MagicAttack/SkillAttack 칸** (2026-08-16) — 아래 참조 |
@@ -35,6 +36,26 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-18 데이터셋 컬럼 복원(LEA-3011) + 점프/낙하 모션 고착 해소 긴급 핫픽스
+
+제작자 보고: 인게임 진입/제작대/인벤토리 오픈 시 `DamageModel`, `ToolTier`, `Attack`, `MagicAttack`, `SkillAttack` 컬럼 NotFound (`LEA-3011`) 에러 폭주 + 캐릭터가 들어가자마자 계속 점프 모션으로 이동하는 문제.
+
+- **원인**:
+  1. 커밋 `23402cc`에서 `item_dataset.csv` 및 `SkillDataSet.csv`가 이전 버전으로 롤백되어 신규 스탯 컬럼들이 누락됨.
+  2. 톱다운 맵(`RectTile`)에는 사이드뷰 발판 판정이 없어 `Player.stateset`의 `NCIsOnGround`(착지)가 발동하지 않는데, `PlayerController.mlua`가 `FALL`/`JUMP` 상태에서의 `MOVE`/`IDLE` 복귀를 가드 조건으로 차단하여 아바타가 점프 모션에 영구 고착됨.
+
+| 파일 | 조치 |
+|---|---|
+| `SkillDataSet.csv` | `DamageModel`, `SkillPower`, `RequireEquippedItem` 컬럼 복원 (`a0333f5` 버전 정합) |
+| `item_dataset.csv` | `Attack`, `ToolTier`, `MagicAttack`, `SkillAttack` 컬럼 복원 (`a0333f5` 버전 정합) |
+| `PlayerController.mlua` | 클라이언트 `OnBeginPlay` 시 `IDLE` 초기화 + 이동 루프에서 `FALL`/`JUMP` 상태 시 `MOVE`/`IDLE`로 정상 복귀하도록 가드 확장 |
+| `Big Stone2.model` | `ResourceOccupiedArea` 점유 그리드 범위를 피벗 포함 콜라이더 영역에 맞춰 `X: 0~3, Y: -3~0`으로 보정 (피벗 미포함 HitResource 실패 및 외곽 허공 판정 해소) |
+| `Big Stone1.model` | `ResourceOccupiedArea` 점유 그리드 범위를 피벗 포함 콜라이더 영역에 맞춰 `X: 0~2, Y: -2~0`으로 보정 |
+| `RecipeDataSet.csv` · `UICraftingController.mlua` | **제작대 아이콘 단일 소스화**: `item_dataset.IconRUID`를 최우선 참조하도록 스크립트 개선 및 레시피 데이터셋 전수 동기화 (`thumbnail://...`) |
+| `RootDesk/MyDesk/item/Models/*.model` · `itemreact.mlua` | **아이템 모델 RUID 전수 동기화**: `item_dataset.csv` 기준으로 기존 17종 모델 SpriteRUID 갱신(돌 곡괭이 포함 장착 무기 썸네일 전수 일치), 구리/철 도구 및 몬스터와드 신규 모델 6종 고유 EntryKey(UUID) 발급 및 생성(LEA-3015 해소), `itemreact` 바닥 드롭 스프라이트 동적 갱신 연결 |
+
+- 검증: ModelBuilder 통한 `.model` 스키마 안전 패치 및 신규 모델 6종 등록(중복 EntryKey 0건 전수 검사 통과). `maker_refresh_workspace` status ok. build dateTime=`2026-08-18` 일치. Error=1 = 기존 `LEA-4004 PlayerController.OnMapEnter` (무관). Warning=48. **런타임 검증 보류(제작자 Play)**
 
 ### 2026-08-16 미수락 퀘스트 주민 방향/거리 네비게이션 시스템
 
