@@ -140,8 +140,12 @@ script PlayerDBManager extends Component
 					logicalSuccess[key] = true
 				end
 			end
-			playerEntity.PlayerAchievement:OnSavedToDB(logicalSuccess, savedGenerations)
-			playerEntity.PlayerQuest:OnSavedToDB(logicalSuccess, savedGenerations)
+			if isvalid(playerEntity) and isvalid(playerEntity.PlayerAchievement) then
+				playerEntity.PlayerAchievement:OnSavedToDB(logicalSuccess, savedGenerations)
+			end
+			if isvalid(playerEntity) and isvalid(playerEntity.PlayerQuest) then
+				playerEntity.PlayerQuest:OnSavedToDB(logicalSuccess, savedGenerations)
+			end
 			if errorCode ~= 0 then
 				log_error("PlayerDBManager: batch save failed. errorCode=" .. tostring(errorCode))
 			else

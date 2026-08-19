@@ -160,11 +160,11 @@ script PersistenceManager extends Logic
 		local currentMap = nil
 		if isvalid(player) then
 			currentMap = player.CurrentMap
-			self:SavePlayerData(player, true)
 			local db = player:GetComponent("script.PlayerDBManager")
 			if isvalid(db) then
 				db:SaveToDB(true)
 			end
+			self:SavePlayerData(player, true)
 			self.DirtyPlayers[userId] = nil
 			self.DirtyGenerations[userId] = nil
 		end

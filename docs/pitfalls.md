@@ -44,6 +44,8 @@
 | [30](#규칙-30-숨길-오버레이는-ui에서-enablefalse로-둔다) | 숨길 오버레이는 `.ui`에서 Enable=false | 부팅 때 팝업이 타이틀보다 먼저 보임 |
 | [31](#규칙-31-기본-텍스트-rect와-top-left-pos를-슬롯바에-쓰지-않는다) | 슬롯/바는 칸 크기·왼쪽 여백 | 장착 아이콘·HP바가 팝업 밖으로 나감 |
 | [32](#규칙-32-mathatan2는-mlua에서-nil이다--vector2signedangle-사용) | `math.atan2`는 nil (`Vector2.SignedAngle` 사용) | `LEA-2011` AttemptToCall |
+| [33](#규칙-33-원격-플레이어-엔티티에-로컬-입력state-조작-금지--localplayer-가드) | 원격 유저 엔티티 조작 금지 (`LocalPlayer` 가드) | `LEA-3022 InvalidExecSpace` 폭주 · 서버 NullRef |
+| [34](#규칙-34-발밑-피벗-스프라이트의-콜라이더-오프셋은-boxsizey--2다) | 발밑 피벗 콜라이더 오프셋 = `+BoxSize.y/2` | 콜라이더 땅속 박힘 · Y정렬·F키 오작동 |
 
 ---
 
@@ -394,6 +396,26 @@ Lua 5.3+ 및 MSW mlua 환경에서 `math.atan2`는 폐기(deprecated)되어 **ni
 - 삼각함수(`math.cos`, `math.sin`) 없이도 정규화 벡터 `dir.x`, `dir.y`를 직접 곱해 궤도/클램핑 좌표를 안전하게 계산할 수 있다.
 
 **사고 실례 (2026-08-16)**: `UIQuestNavigationController`가 각도 계산에 `math.atan2`를 호출해 `LEA-2011` 에러 발생. `Vector2.SignedAngle` 및 `Normalize`로 교체하여 해소.
+
+### 규칙 33. 원격 플레이어 엔티티에 로컬 입력/State 조작 금지 — `LocalPlayer` 가드
+
+클라이언트 환경에서 `PlayerController` 등 플레이어 엔티티 컴포넌트의 `OnUpdate`, `OnKeyDown`, `OnScreenTouch` 등은 **맵에 존재하는 모든 플레이어(로컬 및 원격 유저)에 대해 각각 실행**된다. `LocalPlayer` 가드 없이 원격 유저 엔티티의 `StateComponent:ChangeState()`나 `MovementComponent`를 조작하면 **`[LEA-3022] InvalidExecSpace` 에러가 초당 수백 회 폭주**한다. 또한 플레이어 퇴장(`OnUserLeave`) 시 비동기 세이브(`SetAndWait`) 도중 엔티티가 파괴될 수 있으므로, 세이브 전 컴포넌트 참조 확보 및 `isvalid` 가드가 필수다.
+
+- ✅ `PlayerController`의 입력 및 상태 변경 메서드 시작부에 **`if self.Entity ~= _UserService.LocalPlayer then return end`** 를 반드시 배치한다 (`UpdateAvatarYOrder` 같은 렌더링 정렬만 전체 유저 허용).
+- ✅ `OnUserLeave`에서는 비동기 세이브 Yield 함수 호출 **전에** 필요한 컴포넌트(`PlayerDBManager` 등)를 미리 조회하거나, 콜백에서 `isvalid(playerEntity)`를 엄격히 검사한다.
+- ❌ 원격 플레이어 엔티티의 State나 Movement를 클라이언트에서 직접 제어하려 하지 않는다.
+
+**사고 실례 (2026-08-19)**: 마을에 타 유저 접속 시 로컬 클라이언트에서 원격 플레이어의 `StateComponent:ChangeState`를 호출해 `LEA-3022` 에러 폭주 + 퇴장 시 `PersistenceManager`의 `OnUserLeave`에서 NullReferenceException 발생.
+
+### 규칙 34. 발밑 피벗 스프라이트의 콜라이더 오프셋은 `+BoxSize.y / 2`다
+
+MSW 아바타 및 다수의 NPC 스프라이트는 **발밑(y = 0)이 피벗(원점)**이다. 중심 피벗(y = 0.5)으로 오판하고 `ColliderOffset.y`에 음수(-0.35 등)를 주면 콜라이더가 **발밑 땅속으로 박혀** 북쪽에서는 몸통을 통과하고 남쪽에서는 멀리서 막힌다. 또한 `groundY` 접지선 계산이 왜곡되어 Y-sort 정렬이 뒤집히고 F키 상호작용 조준(AABB)이 빗나간다.
+
+- ✅ 발밑 피벗 엔티티의 콜라이더 오프셋 공식: **$\text{ColliderOffset.y} = \frac{\text{BoxSize.y}}{2}$ (양수)**.
+- ✅ 이렇게 설정하면 박스의 바닥면이 항상 발밑 접지선 `y = 0`에 정확히 일치하여 Scale 배율이 변해도 접지선이 유지된다.
+- ❌ 바닥 정렬을 하겠다고 음수 오프셋(`-BoxSize.y / 2`)을 넣지 않는다.
+
+**사고 실례 (2026-08-19)**: 마을 주민 7종의 `ColliderOffset.y`가 `-0.35`로 설정되어 콜라이더가 땅속(`-0.75 ~ +0.05`)에 박히고 Y-sort 정렬 및 F키 대화 조준이 어긋남. `ColliderOffset.y = +0.35`로 일괄 교정.
 
 ---
 

@@ -10,6 +10,8 @@
 
 | 대상 | 내용 |
 |---|---|
+| `PlayerController.mlua` · `PersistenceManager.mlua` · `PlayerDBManager.mlua` | **[긴급 핫픽스] 타 유저 동시 접속 시 LEA-3022 클라 에러 폭주 + 퇴장 시 서버 크래시 해소** (2026-08-19) — 아래 참조 |
+| `RootDesk/MyDesk/NPC/Models/*.model` (7종) · `map/town.map` | **[핫픽스] 마을 주민 7종 콜라이더 오류 원인 규명 및 일괄 교정** (2026-08-19) — 아래 참조 |
 | `SkillDataSet.csv` · `item_dataset.csv` · `PlayerController.mlua` | **[긴급 핫픽스] 데이터셋 컬럼 복원(LEA-3011) + 점프/낙하 모션 고착 해소** (2026-08-18) — 아래 참조 |
 | UIQuestNavigationController · UIHUDController · `ui/HUDGroup.ui` | **미수락 퀘스트 주민 방향/거리 네비게이션 시스템** (2026-08-16) — 아래 참조 |
 | PlayerCombat · PlayerController · item_dataset · SkillDataSet | **전투 데미지 세 갈래 + 주먹도끼 던지기 장착 제한** (2026-08-16) — 아래 참조 |
@@ -36,6 +38,37 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-19 타 유저 동시 접속 시 LEA-3022 클라 에러 폭주 + 퇴장 시 서버 크래시 긴급 핫픽스
+
+제작자 보고: 마을에 다른 유저와 함께 들어가보니 콘솔 에러가 폭주함 (`[Error][CLIENT] [LEA-3022] InvalidExecSpace : 권한이 없는 실행 공간에서는 상태의 강제 전이가 불가능합니다. PlayerController.OnUpdate (at MyDesk/PlayerController:438)`, `[Error][SERVER] Object reference not set to an instance of an object. PersistenceManager.OnUserLeave`).
+
+- **원인 분석**:
+  1. **LEA-3022 클라이언트 에러 폭주**: `PlayerController` 컴포넌트의 `OnUpdate`, `OnKeyDown`, `OnScreenTouch` 등 클라이언트 훅에 `LocalPlayer` 가드가 누락되어 있었음. 동일 맵에 타 유저(Remote Player)가 접속하면 로컬 클라이언트에서 원격 유저 엔티티의 `PlayerController:OnUpdate`가 매 프레임 실행되어 로컬 키보드 입력을 읽고 `stateComp:ChangeState("IDLE"/"MOVE")`를 원격 엔티티에 호출함. MSW 엔진은 클라이언트가 타 유저의 StateComponent를 변경하는 것을 엄격히 금지하므로 초당 수백 회 `LEA-3022` 에러가 발생함.
+  2. **OnUserLeave 서버 NullReference 크래시**: `PersistenceManager.OnUserLeave`에서 `self:SavePlayerData(player, true)`(내부 `SetAndWait` Yield 함수) 호출 도중 플레이어 엔티티가 파괴된 뒤, 다음 라인에서 `player:GetComponent("script.PlayerDBManager")`를 호출하여 서버 NullReferenceException 발생.
+- **조치 내용**:
+  - `PlayerController.mlua`: `OnBeginPlay`, `OnUpdate`, `OnKeyDown`, `OnScreenTouch`, `OnInteractButton`, `SetMobileReelHold`, `TryMine`, `TryInteract`에 `if self.Entity ~= _UserService.LocalPlayer then return end` 전수 배치 (`UpdateAvatarYOrder` 정렬만 모든 유저 수행).
+  - `PersistenceManager.mlua`: `OnUserLeave`에서 `player:GetComponent("script.PlayerDBManager")` 조회를 `SavePlayerData` (Yield) 호출 전으로 이동.
+  - `PlayerDBManager.mlua`: `SaveToDB`의 `onSaved` 콜백에 `isvalid(playerEntity)` 및 서브컴포넌트 `isvalid` 가드 추가.
+- 검증: 정적 문법 검사 통과. Maker 오프라인 상태로 **refresh 검증 보류**, **런타임 검증 보류(제작자 Play)**.
+
+### 2026-08-19 마을 주민 7종 콜라이더 오류 원인 규명 및 일괄 교정
+
+제작자 보고: 마을의 주민들 콜라이더가 주민과 알맞지 않게 설정돼 있음. 기존 계산법에서의 원인 파악 후 일괄 처리.
+
+- **원인 분석**:
+  1. **중심 피벗(Center Pivot) 착오 및 음수 오프셋(-0.35)**: T81에서 NPC 스프라이트 피벗이 허리/중심에 있다고 가정하고 바닥 정렬을 위해 `ColliderOffset.y = -0.35`로 설정했으나, 실제 스프라이트 피벗은 **발밑(y = 0)** 이었음. 이로 인해 콜라이더 박스가 **발밑 땅속(y: -0.75 ~ +0.05)** 에 형성되어 북쪽에서는 몸통을 통과하고 남쪽에서는 0.75m 먼 땅에서 막힘.
+  2. **Scale(배율) 곱셈 반영에 따른 왜곡**: T101에서 실물 콜라이더(`BoxSize × Scale`) 규약이 코드에 반영되면서, 스케일(1.218~1.658)이 곱해져 박스가 땅속으로 더욱 깊이 파고들고 불필요하게 커짐.
+  3. **Y-Order(접지선) 정렬 및 F키 조준 결함**: 접지선 계산식(`groundY = worldY + ColliderOffset.y*sy - BoxSize.y*0.5*sy`)에서 음수 오프셋으로 인해 접지선이 1m 남쪽으로 오판되어 플레이어가 앞에 서 있어도 NPC에 가려지며, F키 조준선(AABB)도 빗나감.
+- **올바른 계산 공식**: 발밑 피벗 기준 $\text{ColliderOffset.y} = \frac{\text{BoxSize.y}}{2}$ (양수). 바닥이 항상 정확히 발밑 접지선 `y = 0`에 일치하여 Scale 배율에도 바닥 위치가 불변하며 Y정렬 접지선도 플레이어와 1:1 완벽 정합.
+- **표준 설정**: `BoxSize = { x: 0.60, y: 0.70 }`, `ColliderOffset = { x: 0.0, y: 0.35 }`
+
+| 파일 | 조치 |
+|---|---|
+| `RootDesk/MyDesk/NPC/Models/*.model` (7종) | `Merchant`, `Villager_Elder`, `Villager_Fisher`, `Villager_ResidentA~D` 7종 `TriggerComponent` `BoxSize=(0.6, 0.7)`, `ColliderOffset=(0, 0.35)` 갱신 (ModelBuilder) |
+| `map/town.map` | 위 7기 엔티티 `MOD.Core.TriggerComponent` `BoxSize`, `ColliderOffset` 동일 동기화 (MapBuilder) |
+
+- 검증: `ModelBuilder.read` 및 `MapBuilder.read` 7종 전수 스캔 확인. `maker_refresh_workspace` status ok. build logs Error=1 (기존 `PlayerController.OnMapEnter` 무관), Warning=48 (baseline 유지). **런타임 검증 보류(제작자 Play)**
 
 ### 2026-08-18 데이터셋 컬럼 복원(LEA-3011) + 점프/낙하 모션 고착 해소 긴급 핫픽스
 

@@ -145,40 +145,46 @@ script PlayerController extends Component
 		self.CooldownMap = {}
 		
 		if self:IsClient() then
-			self.KeyDownHandler = _InputService:ConnectEvent(KeyDownEvent, self.OnKeyDown)
-			self.ScreenTouchHandler = _InputService:ConnectEvent(ScreenTouchEvent, self.OnScreenTouch)
-		
-			-- Remove ONLY the WASD movement keys from the engine PlayerControllerComponent — do NOT
-			-- disable the whole component (that also killed facing/LookDirectionX, jump, and the MOVE/IDLE
-			-- walk animation). Our custom arrow-key movement drives MovementComponent every frame, so the
-			-- controller's own locomotion is already overridden; WASD only survived as an in-place walk
-			-- animation. Dropping the WASD action keys makes WASD inert while the arrow keys keep driving
-			-- facing/jump/animation natively. (W stays usable as skill slot 2 via OnKeyDown.)
-			-- Delayed one tick so the controller has bound its default action keys first.
-			_TimerService:SetTimerOnce(function()
-				if not isvalid(self) or not isvalid(self.Entity) then return end
-				local pcc = self.Entity.PlayerControllerComponent
-				if isvalid(pcc) then
-					pcc:RemoveActionKey(KeyboardKey.W)
-					pcc:RemoveActionKey(KeyboardKey.A)
-					pcc:RemoveActionKey(KeyboardKey.S)
-					pcc:RemoveActionKey(KeyboardKey.D)
+			local isLocal = (_UserService.LocalPlayer == self.Entity)
+			if isLocal then
+				self.KeyDownHandler = _InputService:ConnectEvent(KeyDownEvent, self.OnKeyDown)
+				self.ScreenTouchHandler = _InputService:ConnectEvent(ScreenTouchEvent, self.OnScreenTouch)
+			
+				-- Remove ONLY the WASD movement keys from the engine PlayerControllerComponent — do NOT
+				-- disable the whole component (that also killed facing/LookDirectionX, jump, and the MOVE/IDLE
+				-- walk animation). Our custom arrow-key movement drives MovementComponent every frame, so the
+				-- controller's own locomotion is already overridden; WASD only survived as an in-place walk
+				-- animation. Dropping the WASD action keys makes WASD inert while the arrow keys keep driving
+				-- facing/jump/animation natively. (W stays usable as skill slot 2 via OnKeyDown.)
+				-- Delayed one tick so the controller has bound its default action keys first.
+				_TimerService:SetTimerOnce(function()
+					if not isvalid(self) or not isvalid(self.Entity) then return end
+					if self.Entity ~= _UserService.LocalPlayer then return end
+					local pcc = self.Entity.PlayerControllerComponent
+					if isvalid(pcc) then
+						pcc:RemoveActionKey(KeyboardKey.W)
+						pcc:RemoveActionKey(KeyboardKey.A)
+						pcc:RemoveActionKey(KeyboardKey.S)
+						pcc:RemoveActionKey(KeyboardKey.D)
+					end
+				end, 0.2)
+			
+				local movement = self.Entity.MovementComponent
+				if isvalid(movement) then
+					movement.InputSpeed = 3.6  -- Set top-down movement speed
 				end
-			end, 0.2)
-		
-			local movement = self.Entity.MovementComponent
-			if isvalid(movement) then
-				movement.InputSpeed = 3.6  -- Set top-down movement speed
-			end
 
-			local stateComp = self.Entity.StateComponent
-			if isvalid(stateComp) then
-				stateComp:ChangeState("IDLE")
+				local stateComp = self.Entity.StateComponent
+				if isvalid(stateComp) then
+					stateComp:ChangeState("IDLE")
+				end
 			end
 
 			self:UpdateAvatarYOrder(true)
 			
-			log("PlayerController initialized on client. Facing: " .. self.LastDirectionX .. ", " .. self.LastDirectionY)
+			if isLocal then
+				log("PlayerController initialized on client for LocalPlayer. Facing: " .. self.LastDirectionX .. ", " .. self.LastDirectionY)
+			end
 		else
 			log("PlayerController initialized on server for player: " .. self.Entity.Name)
 			-- 이미 영지 맵에 서 있는 채 박스 밖이면 (구 세이브·클리핑) 한 틱 뒤 스냅.
@@ -270,6 +276,14 @@ script PlayerController extends Component
 	method void OnUpdate(number delta)
 		-- description: Handle updates per frame.
 		self:UpdateAvatarYOrder(false)
+
+		-- 🔴 멀티플레이어 환경 가드: 원격 플레이어(다른 유저)는 로컬 클라이언트에서 입력을 처리하거나
+		-- StateComponent/Movement를 조작해선 안 됨 (LEA-3022 InvalidExecSpace 및 조작 간섭 방지).
+		local localPlayer = _UserService.LocalPlayer
+		if not isvalid(localPlayer) or localPlayer ~= self.Entity then
+			return
+		end
+
 		if self.IsSleeping then
 			local movement = self.Entity.MovementComponent
 			if isvalid(movement) then movement:Stop() end
@@ -558,6 +572,7 @@ script PlayerController extends Component
 	@ExecSpace("ClientOnly")
 	method void TryMine()
 		-- description: Attempts to trigger mining, placement, or consumable use on client-side.
+		if self.Entity ~= _UserService.LocalPlayer then return end
 		local inv = self.Entity:GetComponent("script.PlayerInventory")
 		local activeItem = ""
 		if isvalid(inv) then
@@ -655,6 +670,7 @@ script PlayerController extends Component
 	@ExecSpace("ClientOnly")
 	method void OnKeyDown(KeyDownEvent event)
 		-- description: Handle keyboard input events on client.
+		if self.Entity ~= _UserService.LocalPlayer then return end
 		if self.IsSleeping then
 			self:ServerRequestWakeUp()
 			return
@@ -1650,6 +1666,7 @@ script PlayerController extends Component
 	@ExecSpace("ClientOnly")
 	method boolean TryInteract()
 		-- T59: F/BtnInteract 공통 상호작용 본문 (KeyDown F에서 이동 — 로직 변경 금지).
+		if self.Entity ~= _UserService.LocalPlayer then return false end
 		if self.FishingState ~= "None" then
 			-- T64: 릴링 중 단발 F는 소비만 — 홀드는 OnUpdate 폴링(ServerSetReelHold)이 전담.
 			if self.FishingState == "Reeling" then
@@ -1738,6 +1755,7 @@ script PlayerController extends Component
 	method void OnInteractButton()
 		-- T59: BtnInteract = TryInteract + 미처리 시 InteractRequestEvent(분산 핸들러 브리지).
 		-- T64: 릴링 중 클릭(릴리즈 시 발화)은 무시 — 홀드는 SetMobileReelHold 경로.
+		if self.Entity ~= _UserService.LocalPlayer then return end
 		if self.FishingState == "Reeling" then
 			return
 		end
@@ -1752,6 +1770,7 @@ script PlayerController extends Component
 	@ExecSpace("ClientOnly")
 	method void OnScreenTouch(ScreenTouchEvent event)
 		-- description: Handles screen touch and mouse clicks. Placement logic has been removed as it is now tool-driven.
+		if self.Entity ~= _UserService.LocalPlayer then return end
 		if event.TouchId ~= 1 then return end
 		if _InputService:IsPointerOverUI() then return end
 		
@@ -3626,6 +3645,7 @@ script PlayerController extends Component
 	@ExecSpace("ClientOnly")
 	method void SetMobileReelHold(boolean holding)
 		-- T64: BtnInteract Pressed/Released(UIHUDController) → 홀드 플래그. OnUpdate 폴링이 소비.
+		if self.Entity ~= _UserService.LocalPlayer then return end
 		self._T.MobileReelHold = holding
 	end
 

@@ -56,6 +56,7 @@
 | 2026-08-14 | **몬스터 사냥 드롭 → 연구·발전 재료** 축 필요 | [quest-design.md](./quest-design.md) §4.6 |
 | 2026-08-14 | **주민 4인 전문 직업 확정** (연구원 엘렌, 노점상 마리, 대장장이 로체, 헛간지기 토리) | [npc-cast.md](./npc-cast.md) §2 |
 | 2026-08-15 | **푸른 빛 발견 기반 마법 스킬 해금** + **몬스터 사냥 희귀 장비 드롭 (고유 특수 효과)** 확정 | [magic-skills-and-rare-equipment.md](../magic-skills-and-rare-equipment.md) |
+| 2026-08-19 | **타이틀 확정 (`메이플크래프트: 마지막 모험가`) + 은퇴 모험가의 귀농/맨땅 개척 서사 확정** | [story-bible.md](./story-bible.md) §1 · [world_metadata.md](../../world_metadata.md) |
 
 ## 3. 협업 규약 (모든 에이전트 공통)
 
