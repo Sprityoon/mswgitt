@@ -1867,6 +1867,11 @@ script PlayerInventory extends Component
 		end
 		
 		-- Validate grid footprint occupancy
+		local xMin = cellPos.x
+		local xMax = cellPos.x
+		local yMin = cellPos.y
+		local yMax = cellPos.y
+
 		if isTile then
 			local key = cellPos.x .. "_" .. cellPos.y
 			if resourceSpawner:GetGridToEntity(currentMap.Name)[key] ~= nil then
@@ -1887,7 +1892,8 @@ script PlayerInventory extends Component
 				return
 			end
 			
-			local xMin, xMax, yMin, yMax = cellPos.x, cellPos.x, cellPos.y, cellPos.y
+			xMax = cellPos.x + 1
+			yMax = cellPos.y + 1
 			
 			-- Check player collision overlap
 			local players = _UserService:GetUsersByMapComponent(currentMap.MapComponent)
@@ -1896,7 +1902,7 @@ script PlayerInventory extends Component
 					if isvalid(user) then
 						local uPos = user.TransformComponent.WorldPosition
 						local uCell = tilemap:ToCellPosition(uPos)
-						if uCell.x >= xMin and uCell.x <= xMax and uCell.y >= yMin and uCell.y <= yMax then
+						if uCell and uCell.x >= xMin and uCell.x <= xMax and uCell.y >= yMin and uCell.y <= yMax then
 							log_warning("Cannot place on a player.")
 							return
 						end
@@ -1931,8 +1937,8 @@ script PlayerInventory extends Component
 			local layer3 = currentMap:GetChildByName("RectTileMap3")
 			if isvalid(layer3) and isvalid(layer3.RectTileMapComponent) then
 				layer3.RectTileMapComponent:SetTile(placedTileName, cellPos.x, cellPos.y)
-				log("[PLACE] Painted tile " .. placedTileName .. " at cell " .. tostring(cellPos))
 				resourceSpawner:AddPlacedTile(currentMap.Name, placedTileName, cellPos.x, cellPos.y)
+				log("[PLACE] Painted tile " .. placedTileName .. " at cell " .. tostring(cellPos))
 				placementSucceeded = true
 			else
 				log_error("[PLACE] RectTileMap3 unavailable; refunding " .. itemName)
@@ -1946,7 +1952,11 @@ script PlayerInventory extends Component
 			else
 				modelId = _EntryService:GetModelIdByName("Furniture_" .. string.gsub(itemName, " ", ""))
 			end
-			local spawnPos = Vector3(cellPos.x + 0.5, cellPos.y + 0.5, 0)
+			local spawnPos = Vector3(0, 0, 0)
+			if isvalid(tilemap) then
+				local tileWorldPos = tilemap:ToWorldPosition(cellPos)
+				spawnPos = Vector3(tileWorldPos.x, tileWorldPos.y, 0)
+			end
 			local spawnName = itemName
 			if isCropSeed then
 				local cropId = cropRow:GetItem("CropId") or itemName
@@ -2069,15 +2079,17 @@ script PlayerInventory extends Component
 		if ok and v ~= nil then action = v end
 		if action == "" then return end   -- 편집 도구/아이템이 아님
 
-		-- 서버 위치와 서버 방향 기준으로 바라보는 인접 셀만 허용한다.
+		-- 서버 위치와 서버 방향 기준으로 바라보는 인접 1x1 타일 셀 검증.
 		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
 		if not isvalid(tilemap) then return end
 		local playerPos = self.Entity.TransformComponent.WorldPosition
-		local playerCell = tilemap:ToCellPosition(playerPos)
-		if playerCell == nil or not isvalid(pc) then return end
+		if not isvalid(pc) then return end
 		dirX = pc.LastDirectionX
 		dirY = pc.LastDirectionY
-		if cellX ~= playerCell.x + dirX or cellY ~= playerCell.y + dirY then
+		local aimX = playerPos.x + dirX * 0.45
+		local aimY = playerPos.y + 0.25 + dirY * 0.45
+		local expectedCell = tilemap:ToCellPosition(Vector3(aimX, aimY, 0))
+		if expectedCell and (math.abs(cellX - expectedCell.x) > 2 or math.abs(cellY - expectedCell.y) > 2) then
 			log_warning("Rejected terrain edit outside the aimed adjacent cell.")
 			return
 		end
@@ -2085,55 +2097,24 @@ script PlayerInventory extends Component
 		local resourceSpawner = _ResourceSpawner
 		if resourceSpawner == nil then return end
 
-		-- digPath axis/side 결정 (저장 시 side 확정 — 재생 시 플레이어 위치 재계산 금지).
-		-- 🔴 판정은 _ResourceSpawner:DeriveDigPathAxisSide 단일 소스를 쓴다 — 클라 미리보기
-		--    (PlayerController:UpdateTerrainAffectPreview)와 같은 결과여야 한다(규칙 18).
+		-- digPath axis/side 결정
 		local axis = ""
 		local side = ""
 		if action == "digPath" then
 			local ax = resourceSpawner:DeriveDigPathAxisSide(dirX, dirY, playerPos.x, playerPos.y)
 			axis = ax.axis
 			side = ax.side
-		end
-
-		-- 점유 셀 사전 검사 (digPath는 두 셀 모두 — Apply 내부와 동일 규칙, 피드백 메시지용).
-		if action == "digPath" then
-			local x1 = cellX
-			local y1 = cellY
-			local x2 = cellX
-			local y2 = cellY
-			if axis == "h" then
-				if side == "up" then
-					y2 = cellY + 1
-				else
-					y1 = cellY - 1
-				end
-			else
-				if side == "right" then
-					x2 = cellX + 1
-				else
-					x1 = cellX - 1
-				end
-			end
-			if resourceSpawner:IsGridOccupied(mapName, x1, y1) or resourceSpawner:IsGridOccupied(mapName, x2, y2) then
+			if resourceSpawner:IsGridOccupied(mapName, cellX, cellY) then
 				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
 				return
 			end
-			if not resourceSpawner:IsTerrainCellEditable(currentMap, x1, y1)
-				or not resourceSpawner:IsTerrainCellEditable(currentMap, x2, y2) then
+			if not resourceSpawner:IsTerrainCellEditable(currentMap, cellX, cellY) then
 				if isvalid(pc) then pc:ShowMineFeedback("여기는 팔 수 없습니다.") end
 				return
 			end
 		end
 
-		-- 물 파기 (Water Spade = dig_water만). 되메움(fill_water)은 별도 도구 — 토글 금지(2026-08-07).
-		-- 🔴 물은 **n×n 블록 단위**로 판다(ResourceSpawner.WaterDigSize, 현재 2). 1×1은 오버행 문법상
-		--    degenerate라 프린지가 아예 안 붙는다 — 자세한 이유는 그 프로퍼티 주석 참조.
-		--    ApplyTerrainEdit에 넘기는 cellX/cellY는 조준 셀이 아니라 **블록 원점**이며,
-		--    영속 델타에도 원점이 저장되어 재생 시 dir 없이 재현된다.
-		-- 🔴 이 조건에 `digPath`를 넣지 말 것 (2026-08-06 회귀 수정): T92가 물 파기를 삽에 얹으면서
-		--    digPath를 조건에 포함시켜 realAction이 항상 물로 치환됐고, 그 결과 ApplyTerrainEdit의
-		--    digPath 분기가 도달 불가능해져 **길 파기가 통째로 사라졌다**(Phase 14-A 회귀).
+		-- 물 파기 (Water Spade = dig_water만)
 		local realAction = action
 		local editX = cellX
 		local editY = cellY
@@ -2148,7 +2129,6 @@ script PlayerInventory extends Component
 					return
 				end
 			end
-			-- 조준 셀 → 블록 원점 (클라 미리보기와 동일 함수를 쓴다 — 규칙 18).
 			local origin = resourceSpawner:GetWaterDigOrigin(cellX, cellY, dirX, dirY)
 			editX = origin.x
 			editY = origin.y
@@ -2172,7 +2152,6 @@ script PlayerInventory extends Component
 				end
 			end
 		elseif action == "fill_water" then
-			-- 향후 복구 전용 도구용. Water Spade CSV는 dig_water만 쓴다.
 			local origin = resourceSpawner:GetWaterDigOrigin(cellX, cellY, dirX, dirY)
 			editX = origin.x
 			editY = origin.y
@@ -2183,8 +2162,9 @@ script PlayerInventory extends Component
 			end
 		end
 
-		-- 지형 편집 적용 (서브셀 마스크 + 영속 델타). 물은 editX/editY = 블록 원점.
+		-- 지형 편집 적용 (서브셀 마스크 + 영속 델타)
 		local success = resourceSpawner:ApplyTerrainEdit(mapName, currentMap, realAction, editX, editY, axis, side, true)
+
 		if not success then
 			if isvalid(pc) then
 				if realAction == "dig_water" then

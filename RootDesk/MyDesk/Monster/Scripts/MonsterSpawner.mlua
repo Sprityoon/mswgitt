@@ -177,13 +177,15 @@ script MonsterSpawner extends Logic
 					-- Occupancy check
 					if gridToEntity[gridKey] == nil then
 						-- Player proximity check: spawn kills prevention
+						local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+						local targetPos = tilemap and tilemap:ToWorldPosition(Vector2Int(rx, ry)) or Vector3((rx + 0.5) * 0.5, (ry + 0.5) * 0.5, 0)
 						local playerOk = true
 						local users = _UserService:GetUsersByMapComponent(map.MapComponent)
 						if users then
 							for _, user in ipairs(users) do
 								if isvalid(user) then
 									local up = user.TransformComponent.WorldPosition
-									local distSq = (up.x - (rx + 0.5))^2 + (up.y - (ry + 0.5))^2
+									local distSq = (up.x - targetPos.x)^2 + (up.y - targetPos.y)^2
 									if distSq < 16.0 then -- 4.0 blocks radius
 										playerOk = false
 										break
@@ -218,7 +220,7 @@ script MonsterSpawner extends Logic
 									modelId = chosenOpt.modelId -- Fallback to direct modelId string
 								end
 
-								local spawnPos = Vector3(rx + 0.5, ry + 0.5, 0)
+								local spawnPos = targetPos
 								-- Entity.Name = display/debug only; data keys use MonsterId (model id slug).
 								local entityName = chosenOpt.modelId .. "_" .. biomeId
 								local spawnedMonster = _SpawnService:SpawnByModelId(
@@ -251,7 +253,7 @@ script MonsterSpawner extends Logic
 									-- Set initial AI anchor pos to avoid leashing bugs
 									local aiComp = spawnedMonster:GetComponent("script.MonsterAI")
 									if isvalid(aiComp) then
-										aiComp.SpawnPos = Vector2(rx + 0.5, ry + 0.5)
+										aiComp.SpawnPos = Vector2(spawnPos.x, spawnPos.y)
 									end
 
 									-- Tint from BiomeDataSet.MonsterTint (#RRGGBB; blank = white)

@@ -7907,7 +7907,11 @@
                   },
                   "tileIndex": 9
                 }
-              ]
+              ],
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              }
             }
           ],
           "@version": 1
@@ -13761,7 +13765,11 @@
                   },
                   "tileIndex": 18
                 }
-              ]
+              ],
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              }
             }
           ],
           "@version": 1
@@ -13810,7 +13818,11 @@
               "SortingLayer": "MapLayer2",
               "TileSetRUID": "tileset://7e240dde-c5fe-4d2e-ad41-0a80f4b3ec7d",
               "Enable": true,
-              "tileMap": []
+              "tileMap": [],
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              }
             }
           ],
           "@version": 1
@@ -16548,7 +16560,11 @@
                   },
                   "tileIndex": 0
                 }
-              ]
+              ],
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              }
             }
           ],
           "@version": 1
@@ -19286,7 +19302,11 @@
                   },
                   "tileIndex": 39
                 }
-              ]
+              ],
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              }
             }
           ],
           "@version": 1

@@ -205,7 +205,7 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 0.0,
+            "x": 0,
             "y": -0.1
           }
         },
@@ -252,7 +252,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0.0
+          "Value": 0
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -270,7 +270,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0.0
+          "Value": 0
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -279,7 +279,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0.0
+          "Value": 1
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -288,7 +288,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0.0
+          "Value": 0
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -297,7 +297,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0.0
+          "Value": 1
         }
       ],
       "EventLinks": [],

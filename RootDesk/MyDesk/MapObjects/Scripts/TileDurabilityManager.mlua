@@ -467,7 +467,8 @@ script TileDurabilityManager extends Logic
 		data.lastHitTime = os.clock()
 		
 		-- Target drop position calculation
-		local dropPos = Vector3(gridData.pivotX + 0.5, gridData.pivotY + 0.5, 0)
+		local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+		local dropPos = tilemap and tilemap:ToWorldPosition(Vector2Int(gridData.pivotX, gridData.pivotY)) or Vector3((gridData.pivotX + 0.5) * 0.5, (gridData.pivotY + 0.5) * 0.5, 0)
 		
 		if isTile then
 			log("Hit tile: " .. gridData.tileName .. " at " .. pivotKey .. " (" .. data.currentHits .. "/" .. data.maxDurability .. ")")

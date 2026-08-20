@@ -1536,10 +1536,11 @@ script ResourceSpawner extends Logic
 		end
 
 		-- 이미 있는 상자 수만큼 건너뛰고 부족분만 추가 (멱등 확장)
+		local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
 		for idx = existingCount + 1, #rows do
 			local c = rows[idx]
-			local spawnPos = Vector3(c.x + 0.5, c.y + 0.5, 0)
-			local safe = self:FindSafeSpawnPosition(mapName, c.x + 0.5, c.y + 0.5)
+			local spawnPos = tilemap and tilemap:ToWorldPosition(Vector2Int(c.x, c.y)) or Vector3((c.x + 0.5) * 0.5, (c.y + 0.5) * 0.5, 0)
+			local safe = self:FindSafeSpawnPosition(mapName, spawnPos.x, spawnPos.y)
 			if safe ~= nil then
 				spawnPos = Vector3(safe.x, safe.y, 0)
 			end
@@ -1590,7 +1591,8 @@ script ResourceSpawner extends Logic
 		local modelId = _EntryService:GetModelIdByName(bossModelId)
 		if modelId == nil or modelId == "" then modelId = bossModelId end
 
-		local spawnPos = Vector3(bx + 0.5, by + 0.5, 0)
+		local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+		local spawnPos = tilemap and tilemap:ToWorldPosition(Vector2Int(bx, by)) or Vector3((bx + 0.5) * 0.5, (by + 0.5) * 0.5, 0)
 		-- Entity.Name is display/debug only; MonsterId is the data key (model id slug).
 		local boss = _SpawnService:SpawnByModelId(modelId, "Boss_" .. bossModelId, spawnPos, map)
 		if not isvalid(boss) then
@@ -1610,7 +1612,7 @@ script ResourceSpawner extends Logic
 		if isvalid(aiComp) then
 			---@type MonsterAI
 			local ai = aiComp
-			ai.SpawnPos = Vector2(bx + 0.5, by + 0.5)
+			ai.SpawnPos = Vector2(spawnPos.x, spawnPos.y)
 			ai.EngagementStarted = false
 			ai.AttackCooldownTimer = 0
 			ai.SpawnGraceTimer = 0
@@ -1637,7 +1639,9 @@ script ResourceSpawner extends Logic
 			log_warning("ResourceSpawner: Furniture_Portal model not found; portal '" .. portalName .. "' skipped.")
 			return
 		end
-		local portal = _SpawnService:SpawnByModelId(portalModelId, portalName, Vector3(px + 0.5, py + 0.5, 0), map)
+		local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+		local spawnPos = tilemap and tilemap:ToWorldPosition(Vector2Int(px, py)) or Vector3((px + 0.5) * 0.5, (py + 0.5) * 0.5, 0)
+		local portal = _SpawnService:SpawnByModelId(portalModelId, portalName, spawnPos, map)
 		if not isvalid(portal) then return end
 
 		local sprite = portal.SpriteRendererComponent
@@ -1933,6 +1937,9 @@ script ResourceSpawner extends Logic
 		local spawnedEntities = self:GetSpawnedEntities(mapName)
 		local destroyedResources = self:GetDestroyedResources(mapName)
 
+		local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+		local spawnPos = tilemap and tilemap:ToWorldPosition(Vector2Int(x, y)) or Vector3((x + 0.5) * 0.5, (y + 0.5) * 0.5, 0)
+
 		-- Prevent spawning on top of active players
 		local mapComp = map.MapComponent
 		if isvalid(mapComp) then
@@ -1941,8 +1948,8 @@ script ResourceSpawner extends Logic
 				for _, player in ipairs(players) do
 					if isvalid(player) and player.TransformComponent then
 						local pPos = player.TransformComponent.WorldPosition
-						local dx = pPos.x - (x + 0.5)
-						local dy = pPos.y - (y + 0.5)
+						local dx = pPos.x - spawnPos.x
+						local dy = pPos.y - spawnPos.y
 						local distance = math.sqrt(dx * dx + dy * dy)
 						if distance < 1.5 then
 							return nil
@@ -1975,7 +1982,6 @@ script ResourceSpawner extends Logic
 			end
 		end
 
-		local spawnPos = Vector3(x + 0.5, y + 0.5, 0)
 		local resEntity = _SpawnService:SpawnByModelId(
 			modelId,
 			name,
@@ -2093,7 +2099,8 @@ script ResourceSpawner extends Logic
 									itemModelId = "05fa541a-a48d-4f36-bf82-0c60784a4a53"
 								end
 								
-								local itemSpawnPos = Vector3(targetX + 0.5, targetY + 0.5, 0)
+								local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+								local itemSpawnPos = tilemap and tilemap:ToWorldPosition(Vector2Int(targetX, targetY)) or Vector3((targetX + 0.5) * 0.5, (targetY + 0.5) * 0.5, 0)
 								local drop = _SpawnService:SpawnByModelId(
 									itemModelId,
 									"Item_Stone",
@@ -2424,7 +2431,9 @@ script ResourceSpawner extends Logic
 				if gridToEntity[key] ~= nil then
 					isOccupied = true
 				else
-					local checkShape = BoxShape(Vector2(cellX + 0.5, cellY + 0.5), Vector2(0.9, 0.9), 0)
+					local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+					local checkPos = tilemap and tilemap:ToWorldPosition(Vector2Int(cellX, cellY)) or Vector3((cellX + 0.5) * 0.5, (cellY + 0.5) * 0.5, 0)
+					local checkShape = BoxShape(Vector2(checkPos.x, checkPos.y), Vector2(0.45, 0.45), 0)
 					local simulator = _CollisionService:GetSimulator(map)
 					if simulator then
 						local overlaps = simulator:OverlapAll({ CollisionGroups.Default, CollisionGroups.HitBox }, checkShape)
@@ -2461,7 +2470,8 @@ script ResourceSpawner extends Logic
 	@ExecSpace("ServerOnly")
 	method Entity SpawnResourceWithAnimation(Entity map, string name, string modelId, number x, number y)
 		local mapName = map.Name
-		local spawnPos = Vector3(x + 0.5, y + 0.5, 0)
+		local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+		local spawnPos = tilemap and tilemap:ToWorldPosition(Vector2Int(x, y)) or Vector3((x + 0.5) * 0.5, (y + 0.5) * 0.5, 0)
 		local resEntity = _SpawnService:SpawnByModelId(
 			modelId,
 			name,
@@ -2617,7 +2627,8 @@ script ResourceSpawner extends Logic
 				modelId = _EntryService:GetModelIdByName("Furniture_" .. string.gsub(f.itemName, " ", ""))
 			end
 			if modelId ~= nil and modelId ~= "" then
-				local spawnPos = Vector3(fx + 0.5, fy + 0.5, 0)
+				local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+				local spawnPos = tilemap and tilemap:ToWorldPosition(Vector2Int(fx, fy)) or Vector3((fx + 0.5) * 0.5, (fy + 0.5) * 0.5, 0)
 				local spawnedEntity = _SpawnService:SpawnByModelId(
 					modelId,
 					spawnName,
@@ -2742,7 +2753,9 @@ script ResourceSpawner extends Logic
 			log_warning("ResourceSpawner: Furniture model not found for '" .. tostring(itemName) .. "'")
 			return false
 		end
-		local ent = _SpawnService:SpawnByModelId(modelId, itemName, Vector3(fx + 0.5, fy + 0.5, 0), map)
+		local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+		local spawnPos = tilemap and tilemap:ToWorldPosition(Vector2Int(fx, fy)) or Vector3((fx + 0.5) * 0.5, (fy + 0.5) * 0.5, 0)
+		local ent = _SpawnService:SpawnByModelId(modelId, itemName, spawnPos, map)
 		if not isvalid(ent) then
 			log_warning("ResourceSpawner: SpawnByModelId returned nil for '" .. tostring(itemName) .. "'")
 			return false
@@ -2811,15 +2824,34 @@ script ResourceSpawner extends Logic
 		local key = x .. "_" .. y
 		local gridToEntity = self:GetGridToEntity(mapName)
 		local spawnedEntities = self:GetSpawnedEntities(mapName)
-		gridToEntity[key] = {
-			entity = spawnedEntity,
-			pivotX = x,
-			pivotY = y,
-			isFurniture = true,
-			isCrop = isCrop,
-			itemName = fData.itemName,
-			plantedAt = math.floor(tonumber(fData.plantedAt) or 0)
-		}
+		local xMin = x
+		local xMax = x
+		local yMin = y
+		local yMax = y
+		local occ = spawnedEntity:GetComponent("script.ResourceOccupiedArea")
+		if isvalid(occ) then
+			xMin = math.floor(x + occ.OffsetXMin)
+			xMax = math.floor(x + occ.OffsetXMax)
+			yMin = math.floor(y + occ.OffsetYMin)
+			yMax = math.floor(y + occ.OffsetYMax)
+		else
+			xMax = x + 1
+			yMax = y + 1
+		end
+		for nx = xMin, xMax do
+			for ny = yMin, yMax do
+				local gKey = math.floor(nx) .. "_" .. math.floor(ny)
+				gridToEntity[gKey] = {
+					entity = spawnedEntity,
+					pivotX = x,
+					pivotY = y,
+					isFurniture = true,
+					isCrop = isCrop,
+					itemName = fData.itemName,
+					plantedAt = math.floor(tonumber(fData.plantedAt) or 0)
+				}
+			end
+		end
 		spawnedEntities[key] = spawnedEntity
 		log("Added placed furniture " .. tostring(fData.itemName)
 			.. " at (" .. x .. ", " .. y .. ") in map " .. mapName
@@ -2860,6 +2892,15 @@ script ResourceSpawner extends Logic
 		local key = x .. "_" .. y
 		local gridToEntity = self:GetGridToEntity(mapName)
 		local spawnedEntities = self:GetSpawnedEntities(mapName)
+		for nx = x, x + 3 do
+			for ny = y - 3, y + 3 do
+				local gKey = math.floor(nx) .. "_" .. math.floor(ny)
+				local existing = gridToEntity[gKey]
+				if existing and existing.pivotX == x and existing.pivotY == y then
+					gridToEntity[gKey] = nil
+				end
+			end
+		end
 		gridToEntity[key] = nil
 		spawnedEntities[key] = nil
 		log("Removed placed furniture at (" .. x .. ", " .. y .. ") in map " .. mapName)
@@ -2868,9 +2909,12 @@ script ResourceSpawner extends Logic
 	@ExecSpace("ServerOnly")
 	method Vector2 FindSafeSpawnPosition(string mapName, number startX, number startY)
 		local gridToEntity = self:GetGridToEntity(mapName)
+		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
+		local tilemap = isvalid(map) and map:GetFirstChildComponentByTypeName("RectTileMapComponent", true) or nil
 		
-		local cx = math.floor(startX)
-		local cy = math.floor(startY)
+		local cellPos = tilemap and tilemap:ToCellPosition(Vector3(startX, startY, 0)) or Vector2Int(math.floor(startX / 0.5), math.floor(startY / 0.5))
+		local cx = cellPos.x
+		local cy = cellPos.y
 		local isHome = mapName ~= nil and string.sub(mapName, 1, 5) == "Home_"
 		
 		local function isSafe(tx, ty)
@@ -2900,7 +2944,8 @@ script ResourceSpawner extends Logic
 						local tx = cx + dx
 						local ty = cy + dy
 						if isSafe(tx, ty) then
-							return Vector2(tx + 0.5, ty + 0.5)
+							local wpos = tilemap and tilemap:ToWorldPosition(Vector2Int(tx, ty)) or Vector3((tx + 0.5) * 0.5, (ty + 0.5) * 0.5, 0)
+							return Vector2(wpos.x, wpos.y)
 						end
 					end
 				end

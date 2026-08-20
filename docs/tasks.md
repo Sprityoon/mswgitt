@@ -10,6 +10,8 @@
 
 | 대상 | 내용 |
 |---|---|
+| map/*.map | **맵 경계에 배치된 정적 오브젝트 좌표 조정 (타일 축소 0.5에 따른 경계선 오브젝트 재배치)** |
+| `map/*.map` · `ResourceOccupiedArea` · `PlayerController` · `PlayerInventory` · `ResourceSpawner` | **타일 축소(GridSize 0.5×0.5) 및 2×2 조준점·점유 영역(OccupiedArea) 시스템 개편** (2026-08-20) — 아래 참조 |
 | `docs/world_metadata.md` · `docs/design/story/story-bible.md` | **[출품 준비] 월드 메타데이터(1000자 스토어 설명문·3분할 썸네일·스토리 바이블 전면 개정)** (2026-08-20) — 아래 참조 |
 | `PlayerController.mlua` · `PersistenceManager.mlua` · `PlayerDBManager.mlua` | **[긴급 핫픽스] 타 유저 동시 접속 시 LEA-3022 클라 에러 폭주 + 퇴장 시 서버 크래시 해소** (2026-08-19) — 아래 참조 |
 | `RootDesk/MyDesk/NPC/Models/*.model` (7종) · `map/town.map` | **[핫픽스] 마을 주민 7종 콜라이더 오류 원인 규명 및 일괄 교정** (2026-08-19) — 아래 참조 |
@@ -39,6 +41,37 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-20 타일 축소(GridSize 0.5×0.5) 및 2×2 조준점·점유 영역(OccupiedArea) 시스템 개편
+
+- **요청 사항**:
+  1. 타일을 기존 2×2 타일 크기가 현재 1×1 크기로 보이도록 축소 (`GridSize = Vector2(0.5, 0.5)`).
+  2. 자동 생성되는 맵 오브젝트 및 엔티티는 기존 월드 크기(1.0)를 유지하되 점유 영역(`OccupiedArea`)은 2×2 타일로 확장.
+  3. 플레이어 조준점이 1타일이 아닌 2×2 타일(1.0×1.0 월드 단위)을 지정하도록 단일화하고, 기존 삽/물삽/호미 등 보조 조준선(`TerrainAffect_1..16`)을 제거.
+- **작업 내용**:
+  1. **맵 타일 그리드 크기 변경**:
+     - `map/map01.map`, `map/town.map`, `map/template_field.map`, `map/template_boss.map` 내 모든 `RectTileMapComponent` (`RectTileMap`, `RectTileMap2~6`)의 `GridSize`를 `{ x: 0.5, y: 0.5 }`로 설정.
+     - `scripts/build_maps.cjs` 맵 빌더 스크립트의 레이어 생성 기본값에 `GridSize: { x: 0.5, y: 0.5 }` 추가.
+  2. **오브젝트 점유 영역 확장**:
+     - `ResourceOccupiedArea.mlua` 기본값을 `OffsetXMin = 0, OffsetXMax = 1, OffsetYMin = 0, OffsetYMax = 1`로 변경 (기본 1×1 월드 크기 = 2×2 타일).
+     - 모든 `.model` 파일(`Furniture_*`, `Crop_*`, `Prop_*`, `Big Stone1/2`)의 점유 오프셋을 2배 확장 갱신 (ModelBuilder).
+  3. **플레이어 조준 및 지형 상호작용 1×1 타일 단위 정밀화 & 캐릭터 중심 앵커 투영 & 렌더링 오프셋 보정**:
+     - `PlayerController.mlua`:
+       - `ReticleOffsetX` / `ReticleOffsetY` 프로퍼티 추가 (기본값 `0.0, 0.0`): 타격 셀과 100% 일치하도록 렌더링 위치 정합.
+       - `GetAimedCell`: 캐릭터 발 위치 대신 **몸체 중심점(`Y + 0.25`)에서 진행 방향으로 0.45 전방의 타일 셀을 투영**하여 캐릭터 몸체와 겹치거나 위로 붕 뜨는 오차를 해결.
+       - `UpdatePlacementPreview` / `UpdateMineReticle`: `GetAimedCell`과 `tilemap:ToWorldPosition(targetCell)` 및 `ReticleOffsetX/Y`를 연계하여 정확한 위치로 조준점 스냅.
+       - `RequestMine` / `ProbeInteractTarget`: `GetAimedCell` 기반으로 타격 및 상호작용 위치 계산.
+       - `IsAimTargetCore`: 1×1 타일 셀 `tilemap:ToWorldPosition(aimCell)` 기준 AABB ∩ 콜라이더 판정.
+       - `IsAimTileWaterCore`: `GetAimedCell` 기준 물 타일 검사.
+     - `PlayerInventory.mlua`:
+       - `ServerRequestPlace`: `tilemap:ToWorldPosition(cellPos)` 기반으로 가구/작물 스폰 좌표 정밀화.
+       - `ServerRequestTerrainEdit`: 전방 투영 셀 기준 허용 검증 및 1×1 타일 셀 단위 지형 편집.
+     - `ResourceSpawner.mlua`:
+       - `AddPlacedFurniture` / `RemovePlacedFurniture`: 다중 타일 점유(`ResourceOccupiedArea`)와 1×1 타일 조준 히트의 완벽 정합.
+        - 자연 스폰(TrySpawnResourceInChunk, SpawnResourceWithAnimation, SpawnTownTreasureChests, SpawnHuntBoss, SpawnFixedPortal, ReconstructWorldPlacementsForMap, SpawnAndRegisterFurniture, AroundItem_Stone 드롭, FindSafeSpawnPosition): 하드코딩된 Vector3(x + 0.5, y + 0.5, 0) 대신 tilemap:ToWorldPosition(Vector2Int(x, y))을 사용하도록 전면 교체하여 타일 축소 후 맵 경계 밖으로 스폰되던 버그 해결.
+      - MonsterSpawner.mlua: 몬스터 자연 스폰 및 AI 앵커 좌표를 tilemap:ToWorldPosition으로 동기화.
+      - TileDurabilityManager.mlua: 자원/타일 파괴 시 드롭 아이템 위치를 tilemap:ToWorldPosition으로 동기화.
+- **검증**: `maker_refresh_workspace` status ok, `maker_logs(kind="build")` Error=0, Warning=66 (baseline 유지, 신규 에러 없음), 타임스탬프 일치. **런타임 검증 보류(제작자 Play)**.
 
 ### 2026-08-20 월드 메타데이터(1000자 스토어 설명문·3분할 썸네일·스토리 바이블 전면 개정)
 

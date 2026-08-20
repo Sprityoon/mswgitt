@@ -228,6 +228,10 @@
             },
             {
               "@type": "MOD.Core.RectTileMapComponent",
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              },
               "SortingLayer": "MapLayer0",
               "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
               "Enable": true,
@@ -40648,6 +40652,10 @@
             },
             {
               "@type": "MOD.Core.RectTileMapComponent",
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              },
               "SortingLayer": "MapLayer1",
               "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
               "Enable": true,
@@ -74020,6 +74028,10 @@
             },
             {
               "@type": "MOD.Core.RectTileMapComponent",
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              },
               "SortingLayer": "MapLayer2",
               "TileSetRUID": "tileset://7e240dde-c5fe-4d2e-ad41-0a80f4b3ec7d",
               "Enable": true,
@@ -74224,8 +74236,8 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Position": {
-                "x": 6.46248245,
-                "y": 4.696032,
+                "x": 3.94978046,
+                "y": 3.32108355,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -74235,8 +74247,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.75236249,
-                "y": 1.75236249,
+                "x": 1.56755769,
+                "y": 1.56755769,
                 "z": 1.0
               },
               "Enable": true
@@ -74384,6 +74396,10 @@
             },
             {
               "@type": "MOD.Core.RectTileMapComponent",
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              },
               "SortingLayer": "MapLayer3",
               "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
               "Enable": true,
@@ -81004,6 +81020,10 @@
             },
             {
               "@type": "MOD.Core.RectTileMapComponent",
+              "GridSize": {
+                "x": 0.5,
+                "y": 0.5
+              },
               "SortingLayer": "MapLayer4",
               "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
               "Enable": true,
@@ -87573,8 +87593,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -3.815639,
-                "y": -8.588628,
+                "x": -2.33757448,
+                "y": -4.52291965,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -87684,8 +87704,8 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Position": {
-                "x": -6.09806156,
-                "y": -6.69923449,
+                "x": -3.52371216,
+                "y": -3.11442661,
                 "z": 999.999
               },
               "QuaternionRotation": {
@@ -87695,8 +87715,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 2.0405333,
-                "y": 2.040533,
+                "x": 1.52275562,
+                "y": 1.52275538,
                 "z": 1.0
               },
               "Enable": true
@@ -87880,8 +87900,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 9.260423,
-                "y": 12.0387993,
+                "x": 5.1366334,
+                "y": 9.111486,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88106,8 +88126,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 7.68548,
-                "y": 10.7059622,
+                "x": 3.56169128,
+                "y": 7.77865171,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88225,8 +88245,8 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Position": {
-                "x": 6.927777,
-                "y": 12.3085546,
+                "x": 3.09590435,
+                "y": 9.155781,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88236,8 +88256,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 0.6401515,
-                "y": 0.6401515,
+                "x": 0.4986602,
+                "y": 0.4986602,
                 "z": 1.0
               },
               "Enable": true
@@ -88435,8 +88455,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 18.66089,
-                "y": 4.255257,
+                "x": 13.221611,
+                "y": 2.51069832,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88537,8 +88557,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -5.609912,
-                "y": 4.694177,
+                "x": -3.63669658,
+                "y": 3.13442278,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88548,8 +88568,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 2.09050035,
-                "y": 2.09050035,
+                "x": 1.64581347,
+                "y": 1.64581347,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88639,8 +88659,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -16.6360874,
-                "y": 4.21366739,
+                "x": -8.65715,
+                "y": 3.206522,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88650,8 +88670,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.788504,
-                "y": 1.78850377,
+                "x": 1.40684938,
+                "y": 1.406849,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88741,8 +88761,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -12.00214,
-                "y": 11.1811447,
+                "x": -5.857696,
+                "y": 5.61056376,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88752,8 +88772,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.81485331,
-                "y": 1.81485307,
+                "x": 1.26640737,
+                "y": 1.26640725,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88843,8 +88863,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 6.626129,
-                "y": -6.963333,
+                "x": 9.911131,
+                "y": -3.30788946,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88854,8 +88874,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 0.446144819,
-                "y": 0.446144819,
+                "x": 0.3948903,
+                "y": 0.3948903,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88945,8 +88965,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 8.647855,
-                "y": 2.47852373,
+                "x": 4.597982,
+                "y": 1.17749858,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -89069,8 +89089,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -5.770833,
-                "y": 2.53688431,
+                "x": -3.184228,
+                "y": 1.36891651,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -89193,8 +89213,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 15.8665247,
-                "y": 3.5628345,
+                "x": 10.353344,
+                "y": 2.02525735,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -89317,8 +89337,8 @@
                 "z": 1.336034
               },
               "Position": {
-                "x": 7.665717,
-                "y": -9.31196,
+                "x": 8.286505,
+                "y": -5.009712,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -89441,7 +89461,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 3.34173584,
+                "x": 0.784692764,
                 "y": -2.89661622,
                 "z": 0.0
               },

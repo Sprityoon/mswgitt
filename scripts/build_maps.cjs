@@ -226,7 +226,7 @@ function normalizeLayers(m, layerNames, forceSL) {
         modelId: "recttilemap",
         "@components": [
           { "@type": "MOD.Core.TransformComponent", Position: { x: 0.0, y: 0.0, z: 0.0 }, QuaternionRotation: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 }, Enable: true },
-          { "@type": "MOD.Core.RectTileMapComponent", SortingLayer: s.sl, TileSetRUID: s.ts, Enable: true, tileMap: [] },
+          { "@type": "MOD.Core.RectTileMapComponent", GridSize: { x: 0.5, y: 0.5 }, SortingLayer: s.sl, TileSetRUID: s.ts, Enable: true, tileMap: [] },
         ],
         "@version": 1,
       };
