@@ -46,6 +46,9 @@
 | [32](#규칙-32-mathatan2는-mlua에서-nil이다--vector2signedangle-사용) | `math.atan2`는 nil (`Vector2.SignedAngle` 사용) | `LEA-2011` AttemptToCall |
 | [33](#규칙-33-원격-플레이어-엔티티에-로컬-입력state-조작-금지--localplayer-가드) | 원격 유저 엔티티 조작 금지 (`LocalPlayer` 가드) | `LEA-3022 InvalidExecSpace` 폭주 · 서버 NullRef |
 | [34](#규칙-34-발밑-피벗-스프라이트의-콜라이더-오프셋은-boxsizey--2다) | 발밑 피벗 콜라이더 오프셋 = `+BoxSize.y/2` | 콜라이더 땅속 박힘 · Y정렬·F키 오작동 |
+| [35](#규칙-35-_inputservice에는-iskeydown이-없다--connecteventkeydownevent-또는-iskeypressed-사용) | `_InputService:IsKeyDown` 없음 | `LEA-2011` AttemptToCall |
+| [36](#규칙-36-mapcomponent-바운더리를-지정할-때는-usecustombound-true가-필수다) | `MapComponent` 바운더리 지정 = `UseCustomBound: true` | `LWA-3019` SpawnLocation 영역 밖 경고 |
+| [37](#규칙-37-다중-타일-점유-자원은-점유-박스-정중앙에-스폰해야-좌우-타격-판정이-일치한다) | 다중 타일 자원 스폰 피벗 = 점유 영역 정중앙 | 왼쪽은 딱붙고 오른쪽은 멀리서 쳐짐 |
 
 ---
 
@@ -423,7 +426,19 @@ MSW `_InputService`에는 `IsKeyDown` 메서드가 존재하지 않는다(호출
 - ✅ `OnEndPlay` 시 리스너 해제: `_InputService:DisconnectEvent(KeyDownEvent, self.keyHandler)`
 - ❌ `_InputService:IsKeyDown(...)` 호출 금지.
 
-**사고 실례 (2026-08-21)**: `UIMinimapController.mlua`에서 `_InputService:IsKeyDown(KeyboardKey.Tab)` 호출로 `LEA-2011` 클라이언트 에러 발생 → `ConnectEvent(KeyDownEvent)`로 교정.
+### 36. `MapComponent` 바운더리를 지정할 때는 `UseCustomBound = true`가 필수다
+
+MSW의 `MapComponent`에서 `LeftBottom`과 `RightTop` 프로퍼티로 커스텀 맵 영역을 지정할 때, **`UseCustomBound = true`** 가 지정되어 있지 않으면 엔진은 설정된 바운드를 무시하고 타일이 실제로 깔려있는 영역(Tile Bounding Box)만을 유효 영역으로 판정한다. 이로 인해 맵 중심이나 타일 영역 바깥에 배치된 `SpawnLocation` 엔티티가 맵 바운드 밖으로 오인되어 **`[LWA-3019] NotRecommendedValue : 'xxx' 맵의 영역 밖에 배치된 SpawnLocation이 있습니다`** 클라이언트 경고가 지속 출력된다.
+
+- ✅ `MapComponent`에 커스텀 크기를 지정할 때는 `UseCustomBound = true`를 반드시 함께 설정한다.
+- ❌ `LeftBottom`과 `RightTop`만 입력하고 `UseCustomBound`를 빼먹지 않는다.
+
+### 37. 다중 타일 점유 자원은 점유 박스 정중앙에 스폰해야 좌우 타격 판정이 일치한다
+
+`ResourceOccupiedArea`로 2x2 이상의 타일을 점유하는 자원(Tree1, Tree2, Stone, Big Stone 등)을 스폰할 때, 기본 단일 셀 중심인 `(x + 0.5, y + 0.5)`에 그대로 스폰하면 **스프라이트는 왼쪽 아래 셀에 치우쳐 렌더링되는데 점유 타일은 오른쪽/위쪽으로 뻗어있는 불일치**가 발생한다. 이로 인해 플레이어가 자원을 캘 때 **오른쪽에서는 멀리서도 넉넉하게 타격되지만, 왼쪽에서는 스프라이트에 딱 붙어야만 타격**되는 판정 불균형이 생긴다.
+
+- ✅ 다중 타일 자원의 스폰 좌표 공식: $\text{cx} = \frac{\text{xMin} + \text{xMax} + 1}{2}, \quad \text{cy} = \frac{\text{yMin} + \text{yMax} + 1}{2}$ (점유 영역의 기하학적 정중앙).
+- ✅ 이렇게 배치해야 스프라이트와 콜라이더가 점유 영역의 정중앙에 위치하여 좌우/상하 어디서 도끼질이나 곡괭이질을 해도 대칭적인 타격 거리가 보장된다.
 
 ---
 

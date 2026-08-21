@@ -149,7 +149,7 @@ script itemreact extends Component
 		
 		local closestPlayer = nil
 		local magnetPos = nil
-		local minDistance = 2.0 -- player magnet range (2.0 units)
+		local minDistance = 3.2 -- player magnet range (3.2 units)
 		
 		for _, user in ipairs(users) do
 			if isvalid(user) then
@@ -168,7 +168,7 @@ script itemreact extends Component
 		if pets ~= nil then
 			for _, pet in ipairs(pets) do
 				if isvalid(pet) and isvalid(pet.Entity) then
-					local range = tonumber(pet.PickupRange) or 2.5
+					local range = tonumber(pet.PickupRange) or 3.5
 					local petPos = pet.Entity.TransformComponent.WorldPosition
 					local dist = Vector2.Distance(Vector2(self.BasePosition.x, self.BasePosition.y), Vector2(petPos.x, petPos.y))
 					if dist < range and dist < minDistance then
@@ -195,10 +195,10 @@ script itemreact extends Component
 			if dist > 0.01 then
 				local dirX = dx / dist
 				local dirY = dy / dist
-				self.BasePosition = self.BasePosition + Vector3(dirX, dirY, 0) * delta * 4.5
+				self.BasePosition = self.BasePosition + Vector3(dirX, dirY, 0) * delta * 12.0
 			end
 		
-			if minDistance < 0.4 then
+			if minDistance < 0.8 then
 				self.IsCollected = true
 				self:Collect(closestPlayer)
 			end

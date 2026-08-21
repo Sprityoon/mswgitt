@@ -237,7 +237,7 @@ script VillagerDialog extends Component
 		if isvalid(self.Entity) and isvalid(self.Entity.TransformComponent) then
 			local p = self.Entity.TransformComponent.WorldPosition
 			ax = p.x
-			ay = p.y + 1.55
+			ay = p.y + 2.3
 		end
 		local screenPos = _UILogic:WorldToScreenPosition(Vector2(ax, ay))
 		local uiPos = _UILogic:ScreenToUIPosition(screenPos)
@@ -267,16 +267,16 @@ script VillagerDialog extends Component
 		local transform = label.UITransformComponent
 		if isvalid(transform) then
 			transform.AlignmentOption = AlignmentType.CastFrom("Center")
-			transform.RectSize = Vector2(56, 48)
+			transform.RectSize = Vector2(70, 60)
 		end
 		local textComp = label.TextComponent
 		if isvalid(textComp) then
 			textComp.Font = FontType.Maple
-			textComp.FontSize = 30
+			textComp.FontSize = 42
 			textComp.FontColor = Color(1.0, 0.86, 0.12, 1.0)
 			textComp.UseOutLine = true
 			textComp.OutlineColor = Color(0.18, 0.10, 0.02, 1.0)
-			textComp.OutlineWidth = 1.4
+			textComp.OutlineWidth = 1.6
 			textComp.Alignment = TextAlignmentType.MiddleCenter
 		end
 		return label
@@ -534,9 +534,11 @@ script VillagerDialog extends Component
 		if dur > 5 then dur = 5 end
 		balloon.Enable = true
 		balloon.ChatModeEnabled = true
+		balloon.BalloonScale = 2.5
+		balloon.FontSize = 2.5
 		balloon.HideDuration = 0.05
 		balloon.AutoShowEnabled = true
-		if balloon.Offset < 0.5 then balloon.Offset = 1.2 end
+		balloon.Offset = 2.4
 		balloon.ShowDuration = dur
 		balloon.Message = ""
 		balloon.Message = text
@@ -563,9 +565,11 @@ script VillagerDialog extends Component
 		if not isvalid(balloon) then return end
 		balloon.Enable = true
 		balloon.ChatModeEnabled = true
+		balloon.BalloonScale = 2.5
+		balloon.FontSize = 2.5
 		balloon.HideDuration = 0.05
 		balloon.AutoShowEnabled = true
-		if balloon.Offset < 0.5 then balloon.Offset = 1.2 end
+		balloon.Offset = 2.4
 		balloon.ShowDuration = dur
 		balloon.Message = ""
 		balloon.Message = text

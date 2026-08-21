@@ -551,10 +551,28 @@ script PlayerController extends Component
 		local playerComp = self.Entity.PlayerComponent
 		if isvalid(playerComp) then
 			playerComp.Hp = playerComp.MaxHp
-			-- Spawn at map center (0,0)
-			local defaultPos = Vector3(0, 0, 0)
+			local defaultPos = Vector3(10, -2, 0)
+			local currentMap = self.Entity.CurrentMap
+			if isvalid(currentMap) then
+				local mapName = currentMap.Name
+				if string.sub(mapName, 1, 5) == "Home_" then
+					defaultPos = Vector3(-3, 0, 0)
+				elseif mapName == "town" then
+					defaultPos = Vector3(10, -2, 0)
+				else
+					local ds = _DataService:GetTable("PortalDestinationDataSet")
+					if ds then
+						local row = ds:FindRow("MapName", mapName)
+						if row then
+							local ax = tonumber(row:GetItem("ArriveX")) or 0
+							local ay = tonumber(row:GetItem("ArriveY")) or 0
+							defaultPos = Vector3(ax, ay, 0)
+						end
+					end
+				end
+			end
 			playerComp:SetWorldPosition(defaultPos)
-			log("Player " .. self.Entity.Name .. " respawned at (0,0) with full HP.")
+			log("Player " .. self.Entity.Name .. " respawned at (" .. tostring(defaultPos.x) .. ", " .. tostring(defaultPos.y) .. ") with full HP.")
 		end
 	end
 
@@ -967,6 +985,18 @@ script PlayerController extends Component
 			if gridData and (gridData.isTile or isvalid(gridData.entity)) then
 				pivotKey = math.floor(gridData.pivotX) .. "_" .. math.floor(gridData.pivotY)
 				targetEntity = gridData.entity
+			end
+			
+			-- 타겟 셀에서 미검출 시, 바라보는 방향 전방(1.2 유닛) 셀 추가 탐색 (좌우 채광 판정 균형)
+			if pivotKey == nil then
+				local probeX = math.floor(playerPos.x + self.LastDirectionX * 1.2)
+				local probeY = math.floor(playerPos.y + self.LastDirectionY * 1.2)
+				local probeKey = probeX .. "_" .. probeY
+				local pData = gridToEntity[probeKey]
+				if pData and (pData.isTile or isvalid(pData.entity)) then
+					pivotKey = math.floor(pData.pivotX) .. "_" .. math.floor(pData.pivotY)
+					targetEntity = pData.entity
+				end
 			end
 		end
 		

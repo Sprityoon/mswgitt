@@ -953,11 +953,11 @@ script PersistenceManager extends Logic
 			end
 			if lastKind == "town" or lastKind == "hunt" then
 				-- 마을·사냥터 종료 → 마을 기본 스폰 (IsDefault 행)
-				local dest = { mapName = "town", x = 3.0, y = 0.0 }
+				local dest = { mapName = "town", x = 10.0, y = -2.0 }
 				self:GetDefaultTownSpawn(dest)
 				local townMap = dest.mapName or "town"
-				local tx = tonumber(dest.x) or 3.0
-				local ty = tonumber(dest.y) or 0.0
+				local tx = tonumber(dest.x) or 10.0
+				local ty = tonumber(dest.y) or -2.0
 				local townSafe = Vector2(tx + 0.5, ty + 0.5)
 				if _ResourceSpawner ~= nil then
 					local sp = _ResourceSpawner:FindSafeSpawnPosition(townMap, tx + 0.5, ty + 0.5)
@@ -1034,8 +1034,8 @@ script PersistenceManager extends Logic
 	method void GetDefaultTownSpawn(table outDest)
 		-- PortalDestinationDataSet IsDefault 행 (T33) — 좌표 하드코딩 금지
 		outDest.mapName = "town"
-		outDest.x = 3.0
-		outDest.y = 0.0
+		outDest.x = 10.0
+		outDest.y = -2.0
 		local destDs = _DataService:GetTable("PortalDestinationDataSet")
 		if destDs == nil then return end
 		local n = destDs:GetRowCount()
@@ -1717,7 +1717,7 @@ script PersistenceManager extends Logic
 			itemName = "Portal",
 			x = self.EstatePortalCellX,
 			y = self.EstatePortalCellY,
-			targetMapName = "town", targetPositionX = 3, targetPositionY = 0,
+			targetMapName = "town", targetPositionX = 10, targetPositionY = -2,
 			destinationGroup = "town", portalColor = "white"
 		}
 

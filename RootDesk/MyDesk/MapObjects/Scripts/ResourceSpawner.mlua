@@ -1993,6 +1993,10 @@ script ResourceSpawner extends Logic
 			xMax = math.floor(x + occupiedArea.OffsetXMax)
 			yMin = math.floor(y + occupiedArea.OffsetYMin)
 			yMax = math.floor(y + occupiedArea.OffsetYMax)
+			-- 다중 타일 점유 자원은 스프라이트와 피벗을 점유 영역의 정중앙에 배치 (좌우 대칭 타격 및 판정 정합)
+			local cx = (xMin + xMax + 1.0) * 0.5
+			local cy = (yMin + yMax + 1.0) * 0.5
+			resEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
 		end
 	
 		local canPlace = true
@@ -2104,7 +2108,7 @@ script ResourceSpawner extends Logic
 								if isvalid(drop) then
 									local dropTransform = drop.TransformComponent
 									if isvalid(dropTransform) then
-										dropTransform.Scale = Vector3(1.5, 1.5, 1)
+										dropTransform.Scale = Vector3(3.0, 3.0, 1)
 									end
 									
 									local idc = drop:GetComponent("script.itemreact")
@@ -2484,6 +2488,10 @@ script ResourceSpawner extends Logic
 			xMax = math.floor(x + occupiedArea.OffsetXMax)
 			yMin = math.floor(y + occupiedArea.OffsetYMin)
 			yMax = math.floor(y + occupiedArea.OffsetYMax)
+			-- 다중 타일 점유 자원은 스프라이트와 피벗을 점유 영역의 정중앙에 배치 (좌우 대칭 타격 및 판정 정합)
+			local cx = (xMin + xMax + 1.0) * 0.5
+			local cy = (yMin + yMax + 1.0) * 0.5
+			resEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
 		end
 		
 		local gridToEntity = self:GetGridToEntity(mapName)

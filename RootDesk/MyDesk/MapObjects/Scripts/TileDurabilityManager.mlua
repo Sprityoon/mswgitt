@@ -5,7 +5,7 @@ script TileDurabilityManager extends Logic
 
 	property table RefusalFeedback = {}
 
-	property number DropItemScale = 2.0
+	property number DropItemScale = 4.0
 
 	@ExecSpace("ServerOnly")
 	method void OnBeginPlay()

@@ -41,6 +41,7 @@
                 "y": 50.0
               },
               "TileMapMode": 1,
+              "UseCustomBound": true,
               "Enable": true
             },
             {
@@ -74060,9 +74061,9 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 8.094651,
-                "y": -0.417729855,
-                "z": 999.999
+                "x": 10.0,
+                "y": -2.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
                 "x": 0.0,
@@ -74138,8 +74139,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.0,
-                "y": 1.0,
+                "x": 2.0,
+                "y": 2.0,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -74224,8 +74225,8 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Position": {
-                "x": 6.46248245,
-                "y": 4.696032,
+                "x": 8.156309,
+                "y": 6.32740259,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -74235,8 +74236,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.75236249,
-                "y": 1.75236249,
+                "x": 3.16158772,
+                "y": 3.16158772,
                 "z": 1.0
               },
               "Enable": true
@@ -87584,8 +87585,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.42183971,
-                "y": 1.42183971,
+                "x": 2.84367943,
+                "y": 2.84367943,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -87614,13 +87615,18 @@
             },
             {
               "@type": "MOD.Core.ChatBalloonComponent",
+              "BalloonScale": 2.5,
               "ChatBalloonRUID": {
                 "DataId": "7b6bd117bd0446a5bacec8ea6831c997"
               },
+              "FontSize": 2.5,
+              "Offset": 2.4,
               "Enable": true
             },
             {
               "@type": "MOD.Core.NameTagComponent",
+              "Bold": true,
+              "FontSize": 2.5,
               "Name": "상인",
               "NameTagRUID": {
                 "DataId": "9bf18287398c44699c20fc5123d1a1ae"
@@ -87684,8 +87690,8 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Position": {
-                "x": -6.09806156,
-                "y": -6.69923449,
+                "x": -7.0724926,
+                "y": -5.784449,
                 "z": 999.999
               },
               "QuaternionRotation": {
@@ -87695,8 +87701,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 2.0405333,
-                "y": 2.040533,
+                "x": 3.34418464,
+                "y": 3.34418416,
                 "z": 1.0
               },
               "Enable": true
@@ -87766,8 +87772,8 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Position": {
-                "x": 3.30780554,
-                "y": -0.256973147,
+                "x": 5.02495,
+                "y": 0.237142086,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -87777,8 +87783,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 0.6603534,
-                "y": 0.6603534,
+                "x": 1.06948137,
+                "y": 1.06948137,
                 "z": 1.0
               },
               "Enable": true
@@ -87880,8 +87886,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 9.260423,
-                "y": 12.0387993,
+                "x": 8.821203,
+                "y": 17.3407631,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -87891,8 +87897,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.24993289,
-                "y": 1.249933,
+                "x": 2.49986577,
+                "y": 2.499866,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -87982,8 +87988,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -0.879048347,
-                "y": -1.48302531,
+                "x": -2.91797543,
+                "y": -1.60851359,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -87993,8 +87999,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.369998,
-                "y": 1.369998,
+                "x": 2.739996,
+                "y": 2.739996,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88024,15 +88030,19 @@
             {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
+              "BalloonScale": 2.5,
               "ChatModeEnabled": true,
+              "FontSize": 2.5,
               "HideDuration": 0.05,
               "Message": "",
-              "Offset": 1.2,
+              "Offset": 2.4,
               "ShowDuration": 4.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.NameTagComponent",
+              "Bold": true,
+              "FontSize": 2.5,
               "Name": "촌장",
               "NameTagRUID": {
                 "DataId": "9bf18287398c44699c20fc5123d1a1ae"
@@ -88106,8 +88116,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 7.68548,
-                "y": 10.7059622,
+                "x": 5.36424446,
+                "y": 14.4706659,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88117,8 +88127,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.28217387,
-                "y": 1.282174,
+                "x": 2.56434774,
+                "y": 2.564348,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88148,15 +88158,19 @@
             {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
+              "BalloonScale": 2.5,
               "ChatModeEnabled": true,
+              "FontSize": 2.5,
               "HideDuration": 0.05,
               "Message": "",
-              "Offset": 1.2,
+              "Offset": 2.4,
               "ShowDuration": 4.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.NameTagComponent",
+              "Bold": true,
+              "FontSize": 2.5,
               "Name": "낚시꾼",
               "NameTagRUID": {
                 "DataId": "9bf18287398c44699c20fc5123d1a1ae"
@@ -88225,8 +88239,8 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Position": {
-                "x": 6.927777,
-                "y": 12.3085546,
+                "x": 4.614382,
+                "y": 17.2732544,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88236,8 +88250,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 0.6401515,
-                "y": 0.6401515,
+                "x": 1.06584227,
+                "y": 1.06584227,
                 "z": 1.0
               },
               "Enable": true
@@ -88345,8 +88359,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.14786935,
-                "y": 1.14786935,
+                "x": 2.2957387,
+                "y": 2.2957387,
                 "z": 1.0
               },
               "Enable": true
@@ -88435,8 +88449,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 18.66089,
-                "y": 4.255257,
+                "x": 20.3645916,
+                "y": 4.43366337,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88446,8 +88460,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.63619542,
-                "y": 1.63619566,
+                "x": 2.90371466,
+                "y": 2.90371513,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88537,8 +88551,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -5.609912,
-                "y": 4.694177,
+                "x": -6.56667042,
+                "y": 5.964763,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88548,8 +88562,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 2.09050035,
-                "y": 2.09050035,
+                "x": 3.58051038,
+                "y": 3.58051038,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88639,8 +88653,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -16.6360874,
-                "y": 4.21366739,
+                "x": -18.1960869,
+                "y": 4.80735445,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88650,8 +88664,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.788504,
-                "y": 1.78850377,
+                "x": 3.30926347,
+                "y": 3.309263,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88741,8 +88755,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -12.00214,
-                "y": 11.1811447,
+                "x": -10.6927948,
+                "y": 11.5008221,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88752,8 +88766,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.81485331,
-                "y": 1.81485307,
+                "x": 3.40258217,
+                "y": 3.402582,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88843,8 +88857,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 6.626129,
-                "y": -6.963333,
+                "x": 20.0122032,
+                "y": -6.18686438,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88854,8 +88868,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 0.446144819,
-                "y": 0.446144819,
+                "x": 0.725316644,
+                "y": 0.725316644,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88945,8 +88959,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 8.647855,
-                "y": 2.47852373,
+                "x": 9.30655,
+                "y": 2.07067823,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -88956,8 +88970,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.218373,
-                "y": 1.218373,
+                "x": 2.436746,
+                "y": 2.436746,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -88987,15 +89001,19 @@
             {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
+              "BalloonScale": 2.5,
               "ChatModeEnabled": true,
+              "FontSize": 2.5,
               "HideDuration": 0.05,
               "Message": "",
-              "Offset": 1.2,
+              "Offset": 2.4,
               "ShowDuration": 4.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.NameTagComponent",
+              "Bold": true,
+              "FontSize": 2.5,
               "Name": "연구원 엘렌",
               "NameTagRUID": {
                 "DataId": "9bf18287398c44699c20fc5123d1a1ae"
@@ -89080,8 +89098,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.35664546,
-                "y": 1.35664546,
+                "x": 2.713291,
+                "y": 2.713291,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -89111,15 +89129,19 @@
             {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
+              "BalloonScale": 2.5,
               "ChatModeEnabled": true,
+              "FontSize": 2.5,
               "HideDuration": 0.05,
               "Message": "",
-              "Offset": 1.2,
+              "Offset": 2.4,
               "ShowDuration": 4.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.NameTagComponent",
+              "Bold": true,
+              "FontSize": 2.5,
               "Name": "노점상 마리",
               "NameTagRUID": {
                 "DataId": "9bf18287398c44699c20fc5123d1a1ae"
@@ -89193,8 +89215,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 15.8665247,
-                "y": 3.5628345,
+                "x": 18.1249676,
+                "y": 3.34322524,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -89204,8 +89226,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.22112167,
-                "y": 1.22112191,
+                "x": 2.44224334,
+                "y": 2.44224381,
                 "z": 1.0
               },
               "ZRotation": 0.0,
@@ -89235,15 +89257,19 @@
             {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
+              "BalloonScale": 2.5,
               "ChatModeEnabled": true,
+              "FontSize": 2.5,
               "HideDuration": 0.05,
               "Message": "",
-              "Offset": 1.2,
+              "Offset": 2.4,
               "ShowDuration": 4.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.NameTagComponent",
+              "Bold": true,
+              "FontSize": 2.5,
               "Name": "대장장이 로체",
               "NameTagRUID": {
                 "DataId": "9bf18287398c44699c20fc5123d1a1ae"
@@ -89317,8 +89343,8 @@
                 "z": 1.336034
               },
               "Position": {
-                "x": 7.665717,
-                "y": -9.31196,
+                "x": 17.1387157,
+                "y": -10.19039,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -89328,8 +89354,8 @@
                 "w": 0.999932051
               },
               "Scale": {
-                "x": 1.65814745,
-                "y": 1.65814722,
+                "x": 3.316295,
+                "y": 3.31629443,
                 "z": 1.0
               },
               "ZRotation": 1.336034,
@@ -89359,15 +89385,19 @@
             {
               "@type": "MOD.Core.ChatBalloonComponent",
               "AutoShowEnabled": true,
+              "BalloonScale": 2.5,
               "ChatModeEnabled": true,
+              "FontSize": 2.5,
               "HideDuration": 0.05,
               "Message": "",
-              "Offset": 1.2,
+              "Offset": 2.4,
               "ShowDuration": 4.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.NameTagComponent",
+              "Bold": true,
+              "FontSize": 2.5,
               "Name": "헛간지기 토리",
               "NameTagRUID": {
                 "DataId": "9bf18287398c44699c20fc5123d1a1ae"
@@ -89452,8 +89482,8 @@
                 "w": 1.0
               },
               "Scale": {
-                "x": 1.37186646,
-                "y": 1.37186658,
+                "x": 2.743733,
+                "y": 2.74373317,
                 "z": 1.0
               },
               "ZRotation": 0.0,

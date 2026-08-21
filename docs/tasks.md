@@ -10,6 +10,12 @@
 
 | 대상 | 내용 |
 |---|---|
+| `map/town.map` | **[핫픽스] town 맵 `UseCustomBound: true` 적용 및 LWA-3019 스폰 영역 경고 해소** (2026-08-21) — 아래 참조 |
+| `ResourceSpawner.mlua` · `PlayerController.mlua` | **[개선] 나무/자원 채광 좌우 타격 판정 불균형 해소 (다중 타일 자원 중심 정렬 & 전방 1.2m 채광 프로브 적용)** (2026-08-21) — 아래 참조 |
+| `itemreact.mlua` · `TileDurabilityManager.mlua` · `item/*.model` (22종) · `VillagerDialog.mlua` | **[개선] 드롭 아이템 2배 확대(Scale: 4.0) & 자석 흡입 속도 대폭 가속(12.0) & 퀘스트 마크 적정 크기(42px) 축소** (2026-08-21) — 아래 참조 |
+| `RootDesk/MyDesk/NPC/Models/*.model` (7종) · `map/town.map` · `VillagerDialog.mlua` | **[개선] 주민 이름표(NameTag)·말풍선(ChatBalloon) 2.5배 확대 및 가독성·오프셋 정합** (2026-08-21) — 아래 참조 |
+| `map/town.map` · `PortalDestinationDataSet.csv` · `PlayerController.mlua` · `PersistenceManager.mlua` | **[개선] 마을 스폰/리스폰 위치를 분수대(우물)에서 포탈 오른쪽 안전 지점(10, -2)으로 이전** (2026-08-21) — 아래 참조 |
+| `map/town.map` · `map/template_field.map` | **[핫픽스] 마을 배치 오브젝트 20종 및 사냥터 표지판 2배 스케일 동기화 완료** (2026-08-21) — 아래 참조 |
 | `ui/HUDGroup.ui` · `UIMinimapController.mlua` | **[신규 시스템] 카메라 전경 조망 모드 (Eagle-Eye View) & 맵 맞춤형 동적 줌 & Tab/미니맵클릭 토글 및 비네팅 페이드 구축** (2026-08-21) — 아래 참조 |
 | `DefaultPlayer.model` · `*.model` 전반 · `itemreact.mlua` | **[비주얼 개편] 카메라 0.5배 줌아웃(ZoomRatio: 33) & 모든 캐릭터·오브젝트·드롭아이템 2배 스케일 및 점유 영역 확장** (2026-08-21) — 아래 참조 |
 | `ui/HUDGroup.ui` · `UISkillBarController.mlua` | **[개선] 스킬 퀵슬롯 360도 Radial 쿨타임 마스크 애니메이션 및 정밀 카운트다운 시간초 표시 적용** (2026-08-21) — 아래 참조 |
@@ -45,6 +51,92 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-21 [핫픽스] town 맵 `UseCustomBound: true` 적용 및 LWA-3019 스폰 영역 경고 해소
+
+- **배경**: `[CLIENT] [LWA-3019] NotRecommendedValue : 'town' 맵의 영역 밖에 배치된 SpawnLocation이 있습니다. SpawnLocation은 맵 영역 안에 배치되어야 합니다.` 경고 발생.
+- **원인 분석**:
+  - MSW `MapComponent`에는 커스텀 경계를 선언하는 `UseCustomBound` 프로퍼티(기본값 `false`)가 존재함.
+  - `UseCustomBound`가 `false`이면 `LeftBottom: (-50, -50), RightTop: (50, 50)` 설정이 엔진에서 무시되고 타일의 최소 Bounding Box만으로 유효 영역을 제한하여 `SpawnLocation`이 맵 바운드 밖으로 오인됨.
+- **작업 내용**:
+  - `map/town.map`: `MapComponent`에 `UseCustomBound: true`, `LeftBottom: {-50, -50}`, `RightTop: {50, 50}`을 명시하여 엔진 맵 영역을 완전 활성화.
+- **검증**:
+  - `maker_refresh_workspace` 완료 (`status: ok`, Error=1 기존 베이스라인 유지).
+
+### 2026-08-21 [개선] 나무/자원 채광 좌우 타격 판정 불균형 해소 (다중 타일 자원 중심 정렬 & 전방 1.2m 채광 프로브 적용)
+
+- **배경**: 나무를 캘 때 오른쪽에서는 넉넉하게 타격되지만, 왼쪽에서는 나무에 완전히 딱 붙어야만 타격되는 현상 발생.
+- **원인 분석**:
+  1. 나무(`Tree1`, `Tree2`) 등 2x2 점유 자원의 스폰 좌표가 `(x + 0.5, y + 0.5)`로 설정되어 있어 스프라이트가 왼쪽 아래 셀에 치우쳐 렌더링됨 (점유 타일은 `x ~ x+1, y ~ y+1`).
+  2. 채광 시 단일 정수 타겟 셀 1점만 조회하여, 플레이어가 왼쪽에서 칠 때 타일 경계에서 약간만 떨어져도 헛스윙이 발생함.
+- **작업 내용**:
+  1. `ResourceSpawner.mlua`:
+     - 다중 타일 점유 자원(`ResourceOccupiedArea`) 스폰 시, 점유 영역의 기하학적 정중앙 `cx = (xMin + xMax + 1) * 0.5, cy = (yMin + yMax + 1) * 0.5`로 `TransformComponent.WorldPosition` 자동 중심 정렬.
+     - `SpawnResourceWithAnimation`에서도 동일하게 정중앙 위치 보정 적용.
+  2. `PlayerController.mlua`:
+     - `RequestMine`에서 기본 `targetCell` 조회 실패 시, 바라보는 방향 전방(`playerPos + dir * 1.2`)의 셀도 추가 검사하는 전방 채광 프로브(Forward Probe) 적용.
+- **검증**:
+  - `maker_refresh_workspace` 완료 (`status: ok`, Error=1 기존 베이스라인 유지).
+
+### 2026-08-21 [개선] 드롭 아이템 2배 확대(Scale: 4.0) & 자석 흡입 속도 대폭 가속(12.0) & 퀘스트 마크 적정 크기(42px) 축소
+
+- **배경**:
+  1. 머리 위 퀘스트 마크(`!`/`?`)가 너무 커서 시각적 부담이 있어 적정 크기로 축소 요청.
+  2. 필드 드롭 아이템이 작게 보여 2배 추가 확대 및 플레이어 접근 시 빨려들어가는 흡입 반응성과 속도 대폭 개선 요청.
+- **작업 내용**:
+  1. **퀘스트 마크 적정 크기 조정 (`VillagerDialog.mlua`)**:
+     - `FontSize`: 64 ➡️ **`42`** (기존 30 대비 적절히 강조되는 선명한 크기).
+     - `RectSize`: `Vector2(70, 60)`, `OutlineWidth`: `1.6`, 머리 위 높이 `ay = p.y + 2.3` 정합.
+  2. **드롭 아이템 2배 확대 (Scale: 4.0)**:
+     - `TileDurabilityManager.mlua`: `DropItemScale` = **`4.0`** (기존 2.0 대비 2배 확대).
+     - `ResourceSpawner.mlua`: 자연 생성 돌 드롭 스케일 = `Vector3(3.0, 3.0, 1)`.
+     - `RootDesk/MyDesk/item/Models/*.model` (22종): `TransformComponent.Scale` = **`(4, 4, 4)`** 로 일괄 패치.
+  3. **자석 흡입 속도 및 반응성 강화 (`itemreact.mlua`)**:
+     - 플레이어 자석 흡입 이동 속도: `delta * 4.5` ➡️ **`delta * 12.0`** (약 2.7배 고속 흡입).
+     - 자석 인식 거리: `2.0` ➡️ **`3.2`** / 펫 인식 거리: `3.5` 로 상향.
+     - 픽업 완료 판정 거리: `0.4` ➡️ **`0.8`** (커진 아이템에 맞춰 즉각적인 수집 반응).
+- **검증**:
+  - `ModelBuilder` 유효성 검증 완료 및 `maker_refresh_workspace` 완료 (`status: ok`, Error=1 기존 베이스라인 유지).
+
+### 2026-08-21 [개선] 주민 이름표(NameTag)·말풍선(ChatBalloon) 2.5배 확대 및 가독성·오프셋 정합
+
+- **배경**: 카메라 0.5배 줌아웃(시야 2배) 환경에서 주민들의 머리 위 이름표, 자동 혼잣말 말풍선, 퀘스트 마크 글자가 작게 보여 가독성을 개선하고자 2.5배 확대 요청.
+- **작업 내용**:
+  1. `RootDesk/MyDesk/NPC/Models/*.model` (7종: Elder, Fisher, ResidentA~D, Merchant):
+     - `NameTagComponent`: `FontSize: 2.5`, `Bold: true` 적용.
+     - `ChatBalloonComponent`: `BalloonScale: 2.5`, `FontSize: 2.5`, `Offset: 2.4` (커진 스프라이트 및 말풍선에 맞춰 머리 위 오프셋 상향).
+  2. `map/town.map`:
+     - 7개 NPC 인스턴스의 `NameTagComponent` 및 `ChatBalloonComponent` 프로퍼티를 2.5배 스케일로 동기화.
+  3. `VillagerDialog.mlua`:
+     - `ShowBalloon` / `ClientShowBalloon`: `BalloonScale = 2.5`, `FontSize = 2.5`, `Offset = 2.4` 보장.
+     - `EnsureQuestMarkLabel`: `FontSize: 64` (기존 30), `RectSize: Vector2(100, 90)`, `OutlineWidth: 2.2`, Y 오프셋 `ay = p.y + 2.8` 적용.
+- **검증**:
+  - `ModelBuilder` / `MapBuilder` 유효성 검증 완료 및 `maker_refresh_workspace` 완료 (`status: ok`, Error=1 기존 베이스라인 유지).
+
+### 2026-08-21 [개선] 마을 스폰/리스폰 위치를 분수대(우물)에서 포탈 오른쪽 안전 지점(10, -2)으로 이전
+
+- **배경**: 마을 진입 또는 사망 시 리스폰 좌표가 중앙 분수대/우물 근처(`(3, 0)` 및 `(0, 0)`)로 설정되어 있어 분수대 콜라이더에 끼이거나 걸리는 현상 발생. 포탈(`PortalToHome` pos: 7.25, -1.73)의 오른쪽 안전 여백 영역으로 이전.
+- **작업 내용**:
+  1. `PortalDestinationDataSet.csv`: `town` 행의 `ArriveX, ArriveY`를 `3, 0` ➡️ **`10, -2`** (포탈 오른쪽 여백)로 갱신.
+  2. `map/town.map`: `SpawnLocation` 엔티티 좌표를 `(10.0, -2.0, 0.0)`으로 동기화.
+  3. `PlayerController.mlua`: `ServerRespawn` 시 맵별 안전 리스폰 로직 구현 (마을은 `(10, -2, 0)`, 영지는 `(-3, 0, 0)`, 사냥터는 데이터셋 좌표).
+  4. `PersistenceManager.mlua`: `GetDefaultTownSpawn` 및 마을 진입 폴백 좌표를 `(10, -2)`로 갱신.
+- **검증**:
+  - `MapBuilder` 정적 검증 완료 및 `maker_refresh_workspace` 완료 (`status: ok`, Error=1 기존 베이스라인 유지).
+
+### 2026-08-21 [핫픽스] 마을 배치 오브젝트 20종 및 사냥터 표지판 2배 스케일 동기화 완료
+
+- **배경**: 카메라 0.5배 줌아웃 및 플레이어/자연 스폰 모델 2배 확장에 맞춰, `map/town.map` 및 `map/template_field.map`에 인스턴스로 직접 배치된 건물·주민·동물·소품의 인스턴스 `TransformComponent.Scale`이 과거 1배 비율로 오버라이드되어 미니어처처럼 작게 보이던 현상 해결.
+- **작업 내용**:
+  1. `map/town.map` 20개 엔티티 인스턴스 `TransformComponent.Scale` 2배 일괄 동기화:
+     - 건물/하우스: `Building_Blacksmith`(3.27), `Building_Fountain`(2.30), `Building_Shop`(4.08), `ResearchLab`(3.50), `House_MushroomA`(4.18), `House_MushroomOrange`(3.58), `House_MushroomYellow`(3.63), `House_WoodTower`(0.89).
+     - 가구/게시판/연못: `PortalToHome`(2.0), `BulletinBoard`(1.32), `FishingRankBoard`(1.28), `FishingSpot`(2.50).
+     - NPC/동물: `Villager_Elder`(2.74), `Villager_Fisher`(2.56), `Villager_ResidentA`(2.44), `Villager_ResidentB`(2.71), `Villager_ResidentC`(2.44), `Villager_ResidentD`(3.32), `Merchant`(2.84), `Animal_Cat`(2.74).
+  2. `map/template_field.map`:
+     - `PioneerSignpost`: `Scale: (2.0, 2.0, 1.0)` 동기화.
+  3. `MapBuilder`를 통해 `.map` 직렬화 구조 및 객체 무결성(`jsonString` JObject) 100% 보존.
+- **검증**:
+  - `MapBuilder` 정적 검증 완료 및 `maker_refresh_workspace` 완료 (`status: ok`, Error 0건).
 
 ### 2026-08-21 [신규 시스템] 카메라 전경 조망 모드 (Eagle-Eye View) & 맵 맞춤형 동적 줌 & Tab/미니맵클릭 토글 및 비네팅 페이드 구축
 
