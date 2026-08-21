@@ -10,8 +10,12 @@
 
 | 대상 | 내용 |
 |---|---|
-| map/*.map | **맵 경계에 배치된 정적 오브젝트 좌표 조정 (타일 축소 0.5에 따른 경계선 오브젝트 재배치)** |
-| `map/*.map` · `ResourceOccupiedArea` · `PlayerController` · `PlayerInventory` · `ResourceSpawner` | **타일 축소(GridSize 0.5×0.5) 및 2×2 조준점·점유 영역(OccupiedArea) 시스템 개편** (2026-08-20) — 아래 참조 |
+| `ui/HUDGroup.ui` · `UIMinimapController.mlua` | **[신규 시스템] 카메라 전경 조망 모드 (Eagle-Eye View) & 맵 맞춤형 동적 줌 & Tab/미니맵클릭 토글 및 비네팅 페이드 구축** (2026-08-21) — 아래 참조 |
+| `DefaultPlayer.model` · `*.model` 전반 · `itemreact.mlua` | **[비주얼 개편] 카메라 0.5배 줌아웃(ZoomRatio: 33) & 모든 캐릭터·오브젝트·드롭아이템 2배 스케일 및 점유 영역 확장** (2026-08-21) — 아래 참조 |
+| `ui/HUDGroup.ui` · `UISkillBarController.mlua` | **[개선] 스킬 퀵슬롯 360도 Radial 쿨타임 마스크 애니메이션 및 정밀 카운트다운 시간초 표시 적용** (2026-08-21) — 아래 참조 |
+| `PlayerCombat.mlua` · `PlayerController.mlua` | **[개선] 일반 공격(Ctrl) 판정 개선 (단일 조준점 1점 타격 ➡️ 바라보는 방향 전방 범위 타격)** (2026-08-21) — 아래 참조 |
+| `TileDurabilityManager.mlua` | **[핫픽스] Big Stone 등 다중 타일 점유 자원의 정중앙 드롭 오프셋 자동 계산 적용** (2026-08-21) — 아래 참조 |
+| `map/*.map` · `*.model` · `*.mlua` 전반 | **[좌표계 복원] 타일 그리드 1.0 표준 좌표계 복원 및 시스템 정합** (2026-08-21) — 아래 참조 |
 | `docs/world_metadata.md` · `docs/design/story/story-bible.md` | **[출품 준비] 월드 메타데이터(1000자 스토어 설명문·3분할 썸네일·스토리 바이블 전면 개정)** (2026-08-20) — 아래 참조 |
 | `PlayerController.mlua` · `PersistenceManager.mlua` · `PlayerDBManager.mlua` | **[긴급 핫픽스] 타 유저 동시 접속 시 LEA-3022 클라 에러 폭주 + 퇴장 시 서버 크래시 해소** (2026-08-19) — 아래 참조 |
 | `RootDesk/MyDesk/NPC/Models/*.model` (7종) · `map/town.map` | **[핫픽스] 마을 주민 7종 콜라이더 오류 원인 규명 및 일괄 교정** (2026-08-19) — 아래 참조 |
@@ -42,36 +46,94 @@
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
 
-### 2026-08-20 타일 축소(GridSize 0.5×0.5) 및 2×2 조준점·점유 영역(OccupiedArea) 시스템 개편
+### 2026-08-21 [신규 시스템] 카메라 전경 조망 모드 (Eagle-Eye View) & 맵 맞춤형 동적 줌 & Tab/미니맵클릭 토글 및 비네팅 페이드 구축
 
-- **요청 사항**:
-  1. 타일을 기존 2×2 타일 크기가 현재 1×1 크기로 보이도록 축소 (`GridSize = Vector2(0.5, 0.5)`).
-  2. 자동 생성되는 맵 오브젝트 및 엔티티는 기존 월드 크기(1.0)를 유지하되 점유 영역(`OccupiedArea`)은 2×2 타일로 확장.
-  3. 플레이어 조준점이 1타일이 아닌 2×2 타일(1.0×1.0 월드 단위)을 지정하도록 단일화하고, 기존 삽/물삽/호미 등 보조 조준선(`TerrainAffect_1..16`)을 제거.
+- **배경**: 미니맵을 클릭하거나 단축키를 눌렀을 때, 현재 맵 전체를 실시간 카메라 뷰로 시원하게 조망할 수 있는 전경 모드 도입. 외곽 빈 여백은 부드러운 비네팅 섀도우 마스크로 자연스럽게 가림.
 - **작업 내용**:
-  1. **맵 타일 그리드 크기 변경**:
-     - `map/map01.map`, `map/town.map`, `map/template_field.map`, `map/template_boss.map` 내 모든 `RectTileMapComponent` (`RectTileMap`, `RectTileMap2~6`)의 `GridSize`를 `{ x: 0.5, y: 0.5 }`로 설정.
-     - `scripts/build_maps.cjs` 맵 빌더 스크립트의 레이어 생성 기본값에 `GridSize: { x: 0.5, y: 0.5 }` 추가.
-  2. **오브젝트 점유 영역 확장**:
-     - `ResourceOccupiedArea.mlua` 기본값을 `OffsetXMin = 0, OffsetXMax = 1, OffsetYMin = 0, OffsetYMax = 1`로 변경 (기본 1×1 월드 크기 = 2×2 타일).
-     - 모든 `.model` 파일(`Furniture_*`, `Crop_*`, `Prop_*`, `Big Stone1/2`)의 점유 오프셋을 2배 확장 갱신 (ModelBuilder).
-  3. **플레이어 조준 및 지형 상호작용 1×1 타일 단위 정밀화 & 캐릭터 중심 앵커 투영 & 렌더링 오프셋 보정**:
-     - `PlayerController.mlua`:
-       - `ReticleOffsetX` / `ReticleOffsetY` 프로퍼티 추가 (기본값 `0.0, 0.0`): 타격 셀과 100% 일치하도록 렌더링 위치 정합.
-       - `GetAimedCell`: 캐릭터 발 위치 대신 **몸체 중심점(`Y + 0.25`)에서 진행 방향으로 0.45 전방의 타일 셀을 투영**하여 캐릭터 몸체와 겹치거나 위로 붕 뜨는 오차를 해결.
-       - `UpdatePlacementPreview` / `UpdateMineReticle`: `GetAimedCell`과 `tilemap:ToWorldPosition(targetCell)` 및 `ReticleOffsetX/Y`를 연계하여 정확한 위치로 조준점 스냅.
-       - `RequestMine` / `ProbeInteractTarget`: `GetAimedCell` 기반으로 타격 및 상호작용 위치 계산.
-       - `IsAimTargetCore`: 1×1 타일 셀 `tilemap:ToWorldPosition(aimCell)` 기준 AABB ∩ 콜라이더 판정.
-       - `IsAimTileWaterCore`: `GetAimedCell` 기준 물 타일 검사.
-     - `PlayerInventory.mlua`:
-       - `ServerRequestPlace`: `tilemap:ToWorldPosition(cellPos)` 기반으로 가구/작물 스폰 좌표 정밀화.
-       - `ServerRequestTerrainEdit`: 전방 투영 셀 기준 허용 검증 및 1×1 타일 셀 단위 지형 편집.
-     - `ResourceSpawner.mlua`:
-       - `AddPlacedFurniture` / `RemovePlacedFurniture`: 다중 타일 점유(`ResourceOccupiedArea`)와 1×1 타일 조준 히트의 완벽 정합.
-        - 자연 스폰(TrySpawnResourceInChunk, SpawnResourceWithAnimation, SpawnTownTreasureChests, SpawnHuntBoss, SpawnFixedPortal, ReconstructWorldPlacementsForMap, SpawnAndRegisterFurniture, AroundItem_Stone 드롭, FindSafeSpawnPosition): 하드코딩된 Vector3(x + 0.5, y + 0.5, 0) 대신 tilemap:ToWorldPosition(Vector2Int(x, y))을 사용하도록 전면 교체하여 타일 축소 후 맵 경계 밖으로 스폰되던 버그 해결.
-      - MonsterSpawner.mlua: 몬스터 자연 스폰 및 AI 앵커 좌표를 tilemap:ToWorldPosition으로 동기화.
-      - TileDurabilityManager.mlua: 자원/타일 파괴 시 드롭 아이템 위치를 tilemap:ToWorldPosition으로 동기화.
-- **검증**: `maker_refresh_workspace` status ok, `maker_logs(kind="build")` Error=0, Warning=66 (baseline 유지, 신규 에러 없음), 타임스탬프 일치. **런타임 검증 보류(제작자 Play)**.
+  1. `ui/HUDGroup.ui`:
+     - `FullViewVignette`: 화면 전체(1920×1080) 외곽 암부 비네팅 마스크 엔티티 추가 (`BlocksRaycasts = false`).
+     - `FullViewGuide`: 상단 중앙 `[ 🗺️ 전체 조망 모드 (Tab / 이동 시 복귀) ]` 텍스트 엔티티 추가.
+     - `Minimap`: `ButtonComponent` 연결로 클릭 상호작용 지원.
+  2. `UIMinimapController.mlua`:
+     - **맵 맞춤형 동적 줌**: 영지(`9.0`), 마을(`7.5`), 사냥터(`8.0`), 보스방(`10.0`) 등 맵 전체가 시원하게 화면에 쏙 들어오도록 초광각 `ZoomRatio` 및 맵 중심 `(0, 0)` 오프셋 자동 정렬 적용.
+     - **단축키 및 토글**: `Tab` 키 및 미니맵 클릭 시 `ToggleFullView()` 실행.
+     - **이동 시 자동 복귀**: 전경 모드 중 플레이어가 방향키/WASD로 이동하면 즉시 원래 시점(`ZoomRatio: 33.0`, Offset 0)으로 자동 복원.
+  3. `PlayerController.mlua`:
+     - **플레이어 이동속도 2배 실반영**: 스크립트 내 하드코딩되던 `InputSpeed = 3.6` 및 `GetBuffedMoveSpeed()` 기준치를 `7.2` (2배)로 완벽 수정.
+- **검증**:
+  - `UIBuilder` 유효성 검사 및 `maker_refresh_workspace` 완료 (build `dateTime: 18:33:15`, Error 0건).
+
+- **배경**: 타일 물리 그리드는 안정적인 `1.0 × 1.0` 표준 좌표계를 유지하면서, 화면 시야를 2배 넓히고(0.5배 줌아웃) 모든 게임 오브젝트(플레이어, 몬스터, NPC, 자연 자원, 가구, 건물, 드롭 아이템)의 비주얼 크기와 점유 영역을 2배로 확장하여 아기자기하고 시원한 뷰 구축.
+- **작업 내용**:
+  1. `Global/DefaultPlayer.model`:
+     - `CameraComponent.ZoomRatio`: 66 ➡️ **33** (시야 2배 확장 / 화면 표시 0.5배 줌아웃).
+     - `TransformComponent.Scale`: (1.4, 1.4, 1) ➡️ **(2.8, 2.8, 1)** (플레이어 2배 확대).
+  2. `RootDesk/MyDesk/**/*.model` (80여 종 일괄 2배 패치):
+     - `Tree1/2`, `Stone`, `IronNodeResource`, `GrownGrass`, `Crop_Carrot`: `Scale: (2, 2, 2)`, `ResourceOccupiedArea`: **2×2 타일 점유** (`OffsetXMin=0, OffsetXMax=1, OffsetYMin=0, OffsetYMax=1`).
+     - `Big Stone1`: `Scale: (4, 4, 4)`, 점유 영역 **4×4 타일** (`OffsetXMax: 3, OffsetYMin: -3`).
+     - `Big Stone2`: `Scale: (4, 4, 4)`, 점유 영역 **6×6 타일** (`OffsetXMax: 5, OffsetYMin: -5`).
+     - 가구/프롭/건물/몬스터/NPC/동물: `Scale`, 콜라이더, 점유 영역 2배 확장.
+  3. `TileDurabilityManager.mlua` & `itemreact.mlua`:
+     - `DropItemScale`: `2.0` 적용.
+     - 360도 스캐터 분산 거리 `0.6 ~ 1.5m`, 포물선 점프 아크 `0.6m`로 2배 스케일 오브젝트에 맞춘 자연스러운 비주얼 물리 튜닝.
+  4. `PlayerController.mlua` & `PlayerCombat.mlua`:
+     - `ReticleScale`: `1.0` 적용.
+     - 전방 공격 판정 박스 `2.6 × 2.2m`로 확장.
+  5. `DefaultPlayer.model` & 몬스터/동물 모델 (`Slime`, `SlimeKing`, `HornMushroom`, `Boar`, `Animal_*`, `Pet_Dog`):
+     - 플레이어 이동 속도 `speed`: 1 ➡️ **2.0** (2배 가속).
+     - 몬스터 및 동물 이동 속도 `InputSpeed` 일괄 2배 가속.
+     - 투사체 속도(`MonsterProjectile.mlua` Speed 5 ➡️ 10, HitRadius 0.5 ➡️ 1.0) 2배 확장.
+- **검증**:
+  - 모델 파일 일괄 유효성 검사 및 정적 코드 검증 완료.
+
+### 2026-08-21 [개선] 스킬 퀵슬롯 360도 Radial 쿨타임 마스크 애니메이션 및 정밀 카운트다운 시간초 표시 적용
+
+- **배경**: 스킬 사용 시 남은 쿨타임을 한눈에 직관적으로 파악할 수 있도록, 시계 방향 원형 회전 게이지와 시간초 텍스트 표시 연출 도입.
+- **작업 내용**:
+  1. `ui/HUDGroup.ui`: `SkillSlot1~4` 내부 엔티티의 Z-Order 계층을 전면 재배치 (`Icon/FallbackText(1~2)` ➡️ `Key/Name(3~4)` ➡️ `Cooldown(5)` ➡️ `CdText(6, OrderInLayer: 10)`). 기존에 `Icon`이 `CdText` 위에 덮여 숫자가 가려지던 문제를 완벽 해결.
+  2. `ui/HUDGroup.ui`: `SkillSlot1~4/Cooldown`의 `SpriteGUIRendererComponent`를 `Type: Filled(3)`, `FillMethod: Radial360(4)`, `FillOrigin: Top(2)`으로 설정하여 360도 원형 마스크 구성.
+  3. `ui/HUDGroup.ui`: `SkillSlot1~4/CdText`의 텍스트 속성을 볼드체, 26pt, 화이트 폰트 + 블랙 아웃라인(두께 2) + 드롭 섀도우로 강화하여 가독성 대폭 향상.
+  4. `UISkillBarController.mlua`:
+     - 갱신 주기를 0.1초 ➡️ 0.04초(25fps)로 단축하여 부드러운 회전 애니메이션 구현.
+     - `spr.FillAmount = math.clamp(remain / cd, 0.0, 1.0)`를 실시간 반영하여 남은 쿨타임 비율에 맞춘 게이지 감소 구현.
+     - `cdText`를 10초 이상은 정수초(`12`), 10초 미만은 소수점 1자리(`3.4`)로 실시간 카운트다운 표시.
+- **검증**:
+  - `UIBuilder` 유효성 검사 및 정적 코드 검증 완료.
+
+### 2026-08-21 [개선] 일반 공격(Ctrl) 판정 개선 (단일 조준점 1점 타격 ➡️ 바라보는 방향 전방 범위 타격)
+
+- **배경**: 몬스터가 조준점 타일 1칸 중심(반경 0.9m)에 정확히 들어와 있어야만 공격이 발동되던 구조에서, 플레이어가 바라보는 방향 전방 범위 내의 몬스터를 쾌적하게 타격할 수 있도록 판정 개편.
+- **작업 내용**:
+  1. `PlayerController.mlua`: `FindMonsterInFront(currentMap, playerPos, dirX, dirY)` 구현 — 플레이어 전방 반경 ~2.0m, 좌우 폭 ±1.2m 범위 내의 몬스터를 감지하여 공격 발동.
+  2. `PlayerCombat.mlua`: `DoAttackInFront(playerPos, dirX, dirY)` 구현 — 플레이어 전방 0.85m 중심에 너비 1.8×1.6m의 넉넉한 `BoxShape`로 `AttackFast`를 실행하여 전방 다수/단일 몬스터 모두 안정적으로 타격.
+  3. 자원 채광(나무/돌 등) 및 기타 상호작용은 전방에 몬스터가 없을 때 기존 방식대로 100% 정상 작동 유지.
+- **검증**:
+  - 정적 코드 정합성 검증 완료.
+
+### 2026-08-21 [핫픽스] Big Stone 등 다중 타일 점유 자원의 정중앙 드롭 오프셋 자동 계산 적용
+
+- **증상**: 1×1인 작은 돌이나 나무는 중앙에서 돌/나무가 떨어지지만, 3×3(Big Stone1)이나 4×4(Big Stone2) 크기의 거대 바위는 중앙이 아닌 좌측 상단 모서리 타일에서 돌이 떨어지는 현상.
+- **원인**: `TileDurabilityManager.mlua`의 `dropPos` 계산식이 `Vector3(gridData.pivotX + 0.5, gridData.pivotY + 0.5, 0)`로 모든 자원을 1×1 크기로 가정하여, 좌상단 모서리가 피벗인 3×3/4×4 바위의 경우 좌상단 모서리 타일에서 아이템이 생성됨.
+- **조치**: `TileDurabilityManager.mlua`의 `HitResource`에서 `resourceEntity`의 `ResourceOccupiedArea` (`OffsetXMin/Max`, `OffsetYMin/Max`)를 읽어, 자원의 크기(1×1, 2×2, 3×3, 4×4 등)와 상관없이 항상 해당 점유 영역의 기하학적 정중앙 오프셋을 가산하여 `dropPos`를 산출하도록 수정.
+- **검증**:
+  - `Stone` (1×1): offset (0, 0) ➡️ 피벗 중심.
+  - `Big Stone1` (3×3): offset (+1.0, -1.0) ➡️ 정확히 3×3 정중앙 `(pivotX + 1.5, pivotY - 0.5)`.
+  - `Big Stone2` (4×4): offset (+1.5, -1.5) ➡️ 정확히 4×4 정중앙 `(pivotX + 2.0, pivotY - 1.0)`.
+
+### 2026-08-21 [좌표계 복원] 타일 그리드 1.0 표준 좌표계 복원 및 시스템 정합
+
+- **배경**: 0.5 물리 그리드 분할로 인해 발생한 좌표계 복잡도(0.5 오프셋, 2x2 피벗 불일치, 스폰/드롭/조준 오차)를 원천 해소하고, 사용자 원래 의도에 맞춰 표준 1.0 정수 좌표계로 전면 복원.
+- **작업 내용**:
+  1. **맵 파일 복원 (`map/*.map`)**: `map01`, `town`, `template_field`, `template_boss` 4개 맵의 `GridSize`를 `Vector2(1.0, 1.0)` 및 1.0 정수 타일 배치로 복원.
+  2. **오브젝트 모델 복원 (`*.model`)**: 가구/프롭/나무/돌 등 18개 모델의 `ResourceOccupiedArea` (`OffsetXMin/Max`, `OffsetYMin/Max`)를 1.0 타일 단위로 원복.
+  3. **핵심 스크립트 복원 (`*.mlua`)**:
+     - `PlayerController.mlua`: 1.0 타일 조준선(Reticle 1.0), `GetAimedCell`, 채굴 거리, 상호작용 검색 복원 및 `TransformComponent` nil 안전 가드 유지.
+     - `PlayerInventory.mlua`: 지형 편집 및 가구 배치 1.0 정수 타일 로직 복원.
+     - `ResourceSpawner.mlua` & `MonsterSpawner.mlua`: 1.0 타일 중심 좌표계(`Vector3(x + 0.5, y + 0.5, 0)`) 스폰 복원.
+     - `TileDurabilityManager.mlua`: `dropPos = Vector3(gridData.pivotX + 0.5, gridData.pivotY + 0.5, 0)` 정중앙 드롭 복원.
+     - `itemreact.mlua`: 1.0 좌표계 기준 360도 균등 방사형 포물선 착지 물리 적용.
+- **검증**:
+  - 정적 파일 정합성 및 Git diff 검증 완료.
 
 ### 2026-08-20 월드 메타데이터(1000자 스토어 설명문·3분할 썸네일·스토리 바이블 전면 개정)
 

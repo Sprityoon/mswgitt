@@ -958,9 +958,9 @@ script PersistenceManager extends Logic
 				local townMap = dest.mapName or "town"
 				local tx = tonumber(dest.x) or 3.0
 				local ty = tonumber(dest.y) or 0.0
-				local townSafe = Vector2(tx, ty)
+				local townSafe = Vector2(tx + 0.5, ty + 0.5)
 				if _ResourceSpawner ~= nil then
-					local sp = _ResourceSpawner:FindSafeSpawnPosition(townMap, tx, ty)
+					local sp = _ResourceSpawner:FindSafeSpawnPosition(townMap, tx + 0.5, ty + 0.5)
 					if sp ~= nil then townSafe = sp end
 				end
 				player.PlayerComponent:MoveToMapPosition(townMap, townSafe)

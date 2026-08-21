@@ -1,11 +1,11 @@
 @Component
 script UIMinimapController extends Component
 
-	property number MapRadius = 75.0
+	property number MapRadius = 120.0
 
 	property integer GridCells = 15
 
-	property number TilesPerCell = 4.0
+	property number TilesPerCell = 6.0
 
 	property any updateTimer = nil
 
@@ -21,11 +21,27 @@ script UIMinimapController extends Component
 
 	property any mapNameText = nil
 
+	property boolean IsFullViewMode = false
+
+	property any fullViewVignette = nil
+
+	property any fullViewGuide = nil
+
+	property number defaultZoomRatio = 33.0
+
+	property Vector3 lastPlayerPos = Vector3(0, 0, 0)
+
+	property any keyHandler = nil
+
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
 		-- Caches the tilemap layers, then repaints the player-centered window on a light timer.
 		self:CacheTileMaps()
 		
+		-- Resolve FullView overlay entities
+		self.fullViewVignette = _EntityService:GetEntityByPath("/ui/HUDGroup/FullViewVignette")
+		self.fullViewGuide = _EntityService:GetEntityByPath("/ui/HUDGroup/FullViewGuide")
+
 		-- Spawn or find the Map Name UI Text entity
 		local mapNameEnt = self.Entity:GetChildByName("MapNameText")
 		if not isvalid(mapNameEnt) then
@@ -80,18 +96,125 @@ script UIMinimapController extends Component
 			end
 		end
 
+		-- Connect Minimap click button event
+		self.Entity:ConnectEvent(ButtonClickEvent, function(event)
+			self:ToggleFullView()
+		end)
+
+		-- Connect Tab key down event via InputService
+		self.keyHandler = _InputService:ConnectEvent(KeyDownEvent, function(event)
+			if event.key == KeyboardKey.Tab then
+				self:ToggleFullView()
+			end
+		end)
+
+		-- Periodic check for minimap repaint and Movement polling
 		self.updateTimer = _TimerService:SetTimerRepeat(function()
+			self:CheckMovement()
 			self:RepaintWindow()
-		end, 0.25)
+		end, 0.05)
 	end
 
 	@ExecSpace("ClientOnly")
 	method void OnEndPlay()
-		-- Releases the repaint timer.
+		-- Releases the repaint timer and restores camera zoom.
+		if self.IsFullViewMode then
+			self:ExitFullView()
+		end
+		if self.keyHandler then
+			_InputService:DisconnectEvent(KeyDownEvent, self.keyHandler)
+			self.keyHandler = nil
+		end
 		if self.updateTimer then
 			_TimerService:ClearTimer(self.updateTimer)
 			self.updateTimer = nil
 		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void CheckMovement()
+		-- If in full view mode, auto-exit when player moves
+		if self.IsFullViewMode then
+			local player = _UserService.LocalPlayer
+			if isvalid(player) and isvalid(player.TransformComponent) then
+				local curPos = player.TransformComponent.WorldPosition
+				local dx = curPos.x - self.lastPlayerPos.x
+				local dy = curPos.y - self.lastPlayerPos.y
+				if (dx * dx + dy * dy) > 0.16 then
+					self:ExitFullView()
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ToggleFullView()
+		if self.IsFullViewMode then
+			self:ExitFullView()
+		else
+			self:EnterFullView()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method number GetOptimalZoomRatio(string mapName)
+		if mapName == nil or mapName == "" then return 8.5 end
+		if string.sub(mapName, 1, 5) == "Home_" then
+			return 9.0 -- 40x40 영지 전체 뷰
+		elseif mapName == "town" then
+			return 7.5 -- 60x40 마을 전체 뷰
+		elseif mapName == "template_field" then
+			return 8.0 -- 50x50 사냥터 전체 뷰
+		elseif mapName == "template_boss" then
+			return 10.0 -- 35x35 보스방 전체 뷰
+		end
+		return 8.5
+	end
+
+	@ExecSpace("ClientOnly")
+	method void EnterFullView()
+		local cam = _CameraService:GetCurrentCameraComponent()
+		if not isvalid(cam) then return end
+
+		local optimalZoom = self:GetOptimalZoomRatio(self.cachedMapName)
+		cam.ZoomRatio = optimalZoom
+
+		local player = _UserService.LocalPlayer
+		if isvalid(player) and isvalid(player.TransformComponent) then
+			local ppos = player.TransformComponent.WorldPosition
+			self.lastPlayerPos = ppos
+			-- Center camera to map origin (0, 0)
+			cam.CameraOffset = Vector2(-ppos.x, -ppos.y)
+		end
+
+		if isvalid(self.fullViewVignette) then
+			self.fullViewVignette.Enable = true
+		end
+		if isvalid(self.fullViewGuide) then
+			self.fullViewGuide.Enable = true
+		end
+
+		self.IsFullViewMode = true
+		log("[MINIMAP] Entered FullView mode with ZoomRatio=" .. tostring(optimalZoom))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ExitFullView()
+		local cam = _CameraService:GetCurrentCameraComponent()
+		if isvalid(cam) then
+			cam.ZoomRatio = self.defaultZoomRatio
+			cam.CameraOffset = Vector2(0, 0)
+		end
+
+		if isvalid(self.fullViewVignette) then
+			self.fullViewVignette.Enable = false
+		end
+		if isvalid(self.fullViewGuide) then
+			self.fullViewGuide.Enable = false
+		end
+
+		self.IsFullViewMode = false
+		log("[MINIMAP] Exited FullView mode, restored ZoomRatio=" .. tostring(self.defaultZoomRatio))
 	end
 
 	@ExecSpace("ClientOnly")
@@ -112,6 +235,17 @@ script UIMinimapController extends Component
 		local l2 = map:GetChildByName("RectTileMap2")
 		self.layer1 = isvalid(l1) and l1.RectTileMapComponent or nil
 		self.layer2 = isvalid(l2) and l2.RectTileMapComponent or nil
+
+		if not isvalid(self.layer1) then
+			local allMaps = map:GetChildComponentsByTypeName("MOD.Core.RectTileMapComponent", true)
+			if allMaps ~= nil and #allMaps > 0 then
+				self.layer1 = allMaps[1]
+				if #allMaps > 1 then
+					self.layer2 = allMaps[2]
+				end
+			end
+		end
+
 		if not isvalid(self.layer1) then
 			_TimerService:SetTimerOnce(function() self:CacheTileMaps() end, 0.5)
 			return

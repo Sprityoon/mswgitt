@@ -50,8 +50,8 @@
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 0.4,
-              "y": 0.2
+              "x": 0.8,
+              "y": 0.4
             }
           },
           {
@@ -63,8 +63,8 @@
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 0.0,
-              "y": 0.0
+              "x": 0,
+              "y": 0
             }
           },
           {
@@ -98,8 +98,8 @@
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 0.0,
-              "y": 0.0
+              "x": 0,
+              "y": 0
             }
           },
           {
@@ -118,7 +118,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 0.0
+            "Value": 0
           },
           {
             "TargetType": "script.ResourceOccupiedArea",
@@ -127,7 +127,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 0.0
+            "Value": 1
           },
           {
             "TargetType": "script.ResourceOccupiedArea",
@@ -136,7 +136,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 0.0
+            "Value": 0
           },
           {
             "TargetType": "script.ResourceOccupiedArea",
@@ -145,7 +145,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 0.0
+            "Value": 1
           },
           {
             "TargetType": "script.ResourceReaction",
@@ -163,7 +163,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 1.0
+            "Value": 1
           },
           {
             "TargetType": "script.ResourceReaction",
@@ -172,7 +172,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 1.0
+            "Value": 1
           },
           {
             "TargetType": null,
@@ -183,9 +183,9 @@
             },
             "Value": {
               "$type": "MOD.Core.MODVector3, MOD.Core",
-              "x": 1.5,
-              "y": 1.5,
-              "z": 1.0
+              "x": 3,
+              "y": 3,
+              "z": 2
             }
           },
           {
@@ -215,10 +215,10 @@
             },
             "Value": {
               "$type": "MOD.Core.MODQuaternion, MOD.Core",
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0,
-              "w": 1.0
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
             }
           },
           {
@@ -232,7 +232,7 @@
               "$type": "MOD.Core.MODVector3, MOD.Core",
               "x": 1.5,
               "y": 1.5,
-              "z": 1.0
+              "z": 1
             }
           },
           {
@@ -291,8 +291,8 @@
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 1.0,
-              "y": 1.0
+              "x": 1,
+              "y": 1
             }
           },
           {

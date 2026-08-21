@@ -415,7 +415,15 @@ MSW 아바타 및 다수의 NPC 스프라이트는 **발밑(y = 0)이 피벗(원
 - ✅ 이렇게 설정하면 박스의 바닥면이 항상 발밑 접지선 `y = 0`에 정확히 일치하여 Scale 배율이 변해도 접지선이 유지된다.
 - ❌ 바닥 정렬을 하겠다고 음수 오프셋(`-BoxSize.y / 2`)을 넣지 않는다.
 
-**사고 실례 (2026-08-19)**: 마을 주민 7종의 `ColliderOffset.y`가 `-0.35`로 설정되어 콜라이더가 땅속(`-0.75 ~ +0.05`)에 박히고 Y-sort 정렬 및 F키 대화 조준이 어긋남. `ColliderOffset.y = +0.35`로 일괄 교정.
+### 규칙 35. `_InputService`에는 `IsKeyDown`이 없다 — `ConnectEvent(KeyDownEvent)` 또는 `IsKeyPressed` 사용
+
+MSW `_InputService`에는 `IsKeyDown` 메서드가 존재하지 않는다(호출 시 `[LEA-2011] AttemptToCall : 'IsKeyDown'은 nil입니다` 런타임 크래시). 단발성 키 입력은 **`_InputService:ConnectEvent(KeyDownEvent, ...)`** 이벤트 리스너를 사용하고, 지속적인 프레임 단위 키 홀드 감지는 **`_InputService:IsKeyPressed(KeyboardKey.XXX)`** 를 사용해야 한다.
+
+- ✅ 단발 키 토글: `self.keyHandler = _InputService:ConnectEvent(KeyDownEvent, function(event) if event.key == KeyboardKey.Tab then self:Toggle() end end)`
+- ✅ `OnEndPlay` 시 리스너 해제: `_InputService:DisconnectEvent(KeyDownEvent, self.keyHandler)`
+- ❌ `_InputService:IsKeyDown(...)` 호출 금지.
+
+**사고 실례 (2026-08-21)**: `UIMinimapController.mlua`에서 `_InputService:IsKeyDown(KeyboardKey.Tab)` 호출로 `LEA-2011` 클라이언트 에러 발생 → `ConnectEvent(KeyDownEvent)`로 교정.
 
 ---
 
@@ -427,3 +435,4 @@ MSW 아바타 및 다수의 NPC 스프라이트는 **발밑(y = 0)이 피벗(원
 - 상시 디자인 정책: [design-policy.md](./design-policy.md)
 - 리소스 검색 API 함정: [reference/resource-api-pitfalls.md](./reference/resource-api-pitfalls.md)
 - 사고별 원본 기록: [agents/reports/](./agents/reports/) (T번호별 보고서)
+

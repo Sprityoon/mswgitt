@@ -16,9 +16,13 @@ script itemreact extends Component
 
 	property boolean IsCollected = false
 
-	property Vector3 Velocity = Vector3(0,0,0)
+	property Vector3 StartGroundPosition = Vector3(0,0,0)
 
-	property number ScatterTime = 0.0
+	property Vector3 TargetGroundPosition = Vector3(0,0,0)
+
+	property number ScatterDuration = 0.0
+
+	property number ScatterProgress = 0.0
 
 	property number PickupGrace = 0.0
 
@@ -36,6 +40,8 @@ script itemreact extends Component
 		else
 			-- 서버에서는 물리 속성을 초기화합니다.
 			self.BasePosition = self.Entity.TransformComponent.WorldPosition
+			self.StartGroundPosition = self.BasePosition
+			self.TargetGroundPosition = self.BasePosition
 			self.ElapsedTime = math.random() * 10 -- Randomize start phase for sine wave float
 			self.IsCollected = false
 		end
@@ -85,16 +91,17 @@ script itemreact extends Component
 	method void Init(string name)
 		self.ItemName = name
 		
-		-- Scatter effect initialization
-		-- Generate a random angle in the upper semi-circle (30 to 150 degrees) for natural upward/sideways spread
-		local minAngle = math.pi * 0.15 -- ~27 degrees
-		local maxAngle = math.pi * 0.85 -- ~153 degrees
-		local angle = minAngle + math.random() * (maxAngle - minAngle)
-		local speed = 1.2 + math.random() * 1.6
+		-- 360도 균등 방사형 스캐터 + 포물선 착지 연출
+		local spawnPos = self.Entity.TransformComponent.WorldPosition
+		self.StartGroundPosition = spawnPos
+		self.BasePosition = spawnPos
 		
-		self.Velocity = Vector3(math.cos(angle) * speed, math.sin(angle) * speed * 2.2, 0)
-		self.ScatterTime = 0.55 + math.random() * 0.15
-		self.BasePosition = self.Entity.TransformComponent.WorldPosition
+		local angle = math.random() * math.pi * 2.0
+		local dist = 0.6 + math.random() * 0.9 -- 0.6 ~ 1.5 월드 유닛 분산 (2배 스케일 오브젝트 기준)
+		self.TargetGroundPosition = Vector3(spawnPos.x + math.cos(angle) * dist, spawnPos.y + math.sin(angle) * dist * 0.75, spawnPos.z)
+		
+		self.ScatterDuration = 0.4 + math.random() * 0.15 -- 0.4 ~ 0.55초 동안 비행
+		self.ScatterProgress = 0.0
 	end
 
 	@ExecSpace("ServerOnly")
@@ -110,30 +117,23 @@ script itemreact extends Component
 		local transform = self.Entity.TransformComponent
 		if not isvalid(transform) then return end
 
-		-- 1. Apply scatter velocity if ScatterTime > 0
-		if self.ScatterTime > 0 then
-			self.ScatterTime = self.ScatterTime - delta
-			-- Apply gravity to vertical velocity
-			self.Velocity.y = self.Velocity.y - 9.8 * delta
-			-- Update base position based on velocity
-			self.BasePosition = self.BasePosition + self.Velocity * delta
+		-- 1. Apply smooth parabolic scatter
+		if self.ScatterProgress < self.ScatterDuration then
+			self.ScatterProgress = self.ScatterProgress + delta
+			local t = math.min(1.0, self.ScatterProgress / self.ScatterDuration)
+			-- Ease out quad for ground displacement
+			local easeOutT = 1.0 - (1.0 - t) * (1.0 - t)
+			self.BasePosition = self.StartGroundPosition + (self.TargetGroundPosition - self.StartGroundPosition) * easeOutT
 			
-			if self.ScatterTime <= 0 then
-				self.Velocity = Vector3(0, 0, 0)
-			end
-		end
-
-		-- 2. Apply floating visual offset (sine wave) after scatter is done
-		local floatOffset = 0
-		if self.ScatterTime <= 0 then
-			floatOffset = math.sin(self.ElapsedTime * 3.0) * 0.15
-		end
-		transform.WorldPosition = Vector3(self.BasePosition.x, self.BasePosition.y + floatOffset, self.BasePosition.z)
-
-		-- Don't start pull or pickup check until scattering is completed
-		if self.ScatterTime > 0 then
+			-- Parabolic jump arc (starts at 0, peaks at 0.6, lands exactly at 0)
+			local jumpArc = math.sin(t * math.pi) * 0.6
+			transform.WorldPosition = Vector3(self.BasePosition.x, self.BasePosition.y + jumpArc, self.BasePosition.z)
 			return
 		end
+
+		-- 2. Apply floating visual offset (sine wave) after landing
+		local floatOffset = math.sin(self.ElapsedTime * 3.0) * 0.15
+		transform.WorldPosition = Vector3(self.BasePosition.x, self.BasePosition.y + floatOffset, self.BasePosition.z)
 
 		-- Discard-drop grace: stay on the ground (no magnet) until the grace window elapses.
 		if self.PickupGrace > 0 then

@@ -101,7 +101,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 1.2
+          "Value": 2.4
         },
         {
           "TargetType": "script.Monster",
@@ -201,6 +201,20 @@
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 0.7
+        },
+        {
+          "TargetType": "MOD.Core.TransformComponent",
+          "Name": "Scale",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector3, MOD.Core",
+            "x": 2,
+            "y": 2,
+            "z": 2
+          }
         }
       ],
       "EventLinks": [],

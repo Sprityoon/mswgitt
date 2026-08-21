@@ -142,7 +142,7 @@
           "Name": "OffsetXMax",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 1
         },
@@ -160,7 +160,7 @@
           "Name": "OffsetYMax",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 1
         },
@@ -200,8 +200,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 1.2,
-            "y": 0.85
+            "x": 2.4,
+            "y": 1.7
           }
         },
         {
@@ -214,7 +214,7 @@
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
             "x": 0,
-            "y": -0.1
+            "y": -0.2
           }
         },
         {
@@ -234,6 +234,20 @@
             "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": false
+        },
+        {
+          "TargetType": "MOD.Core.TransformComponent",
+          "Name": "Scale",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector3, MOD.Core",
+            "x": 2,
+            "y": 2,
+            "z": 2
+          }
         }
       ],
       "EventLinks": [],

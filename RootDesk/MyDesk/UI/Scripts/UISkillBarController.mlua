@@ -25,7 +25,7 @@ script UISkillBarController extends Component
 		self.UpdateTimer = _TimerService:SetTimerRepeat(function()
 			if not isvalid(self) or not isvalid(self.Entity) then return end
 			self:UpdateSlots()
-		end, 0.1)
+		end, 0.04)
 		log("[SKILL-BAR] OnBeginPlay")
 	end
 
@@ -359,10 +359,24 @@ script UISkillBarController extends Component
 				end
 
 				if remain > 0.05 then
-					if isvalid(overlay) then overlay.Enable = true end
+					if isvalid(overlay) then
+						overlay.Enable = true
+						local spr = overlay.SpriteGUIRendererComponent
+						if isvalid(spr) and cd > 0 then
+							spr.Type = 3 -- Filled
+							spr.FillMethod = 4 -- Radial360
+							spr.FillOrigin = 2 -- Top
+							spr.FillClockWise = false
+							spr.FillAmount = math.min(1.0, math.max(0.0, remain / cd))
+						end
+					end
 					if isvalid(cdText) and isvalid(cdText.TextComponent) then
 						cdText.Enable = true
-						cdText.TextComponent.Text = string.format("%.1f", remain)
+						if remain >= 10.0 then
+							cdText.TextComponent.Text = tostring(math.ceil(remain))
+						else
+							cdText.TextComponent.Text = string.format("%.1f", remain)
+						end
 					end
 				else
 					if isvalid(overlay) then overlay.Enable = false end

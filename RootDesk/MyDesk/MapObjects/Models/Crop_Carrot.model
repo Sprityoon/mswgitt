@@ -118,9 +118,9 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 0.55,
-            "y": 0.55,
-            "z": 1
+            "x": 1.1,
+            "y": 1.1,
+            "z": 2
           }
         },
         {
@@ -146,7 +146,7 @@
           "Name": "OffsetXMax",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 1
         },
@@ -164,7 +164,7 @@
           "Name": "OffsetYMax",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 1
         }

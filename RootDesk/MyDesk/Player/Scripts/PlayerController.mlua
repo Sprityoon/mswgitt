@@ -60,11 +60,7 @@ script PlayerController extends Component
 
 	property string ReticleSpriteRUID = "662fd2de11094cf08be40d8b3fab11bc"
 
-	property number ReticleScale = 0.5
-
-	property number ReticleOffsetX = 0.0
-
-	property number ReticleOffsetY = 0.0
+	property number ReticleScale = 1.0
 
 	@Sync
 	property number IFrameTimer = 0.0
@@ -175,7 +171,7 @@ script PlayerController extends Component
 			
 				local movement = self.Entity.MovementComponent
 				if isvalid(movement) then
-					movement.InputSpeed = 3.6  -- Set top-down movement speed
+					movement.InputSpeed = 7.2  -- Set top-down movement speed (2x scale)
 				end
 
 				local stateComp = self.Entity.StateComponent
@@ -600,7 +596,11 @@ script PlayerController extends Component
 
 		local currentMap = self.Entity.CurrentMap
 		if not isvalid(currentMap) then return end
-		local targetCell = self:GetAimedCell(currentMap)
+		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
+		if not isvalid(tilemap) then return end
+		local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
+		if playerCell == nil then return end
+		local targetCell = Vector2Int(playerCell.x + self.LastDirectionX, playerCell.y + self.LastDirectionY)
 
 		local isPlaceable = false
 		local terrainAction = ""
@@ -922,33 +922,35 @@ script PlayerController extends Component
 			return
 		end
 		
-		-- 서버 위치와 서버가 보관한 방향으로 바라보는 인접 1x1 타일 셀 검증.
-		local playerWorldPos = self.Entity.TransformComponent.WorldPosition
-		local playerCell = tilemap:ToCellPosition(playerWorldPos)
-		if playerCell == nil then return end
-		local dist = math.max(math.abs(playerCell.x - targetCellX), math.abs(playerCell.y - targetCellY))
-		if dist > 3 then
-			log_warning("Player " .. self.Entity.Name .. " attempted invalid mine target: dist " .. dist)
+		-- 서버 위치와 서버가 보관한 방향으로 바라보는 인접 셀만 허용한다.
+		local cellPos = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
+		if cellPos == nil then return end
+		local expectedX = cellPos.x + self.LastDirectionX
+		local expectedY = cellPos.y + self.LastDirectionY
+		if targetCellX ~= expectedX or targetCellY ~= expectedY then
+			log_warning("Player " .. self.Entity.Name .. " attempted invalid mine target.")
 			return
 		end
 		
+		-- Locate cell targeted by client
 		local targetCell = Vector2Int(targetCellX, targetCellY)
 		
-		-- Combat: if a monster occupies the aimed cell, attack it instead of mining.
-		local targetWorldPos = tilemap:ToWorldPosition(targetCell)
-		local monsterEntity = self:FindMonsterAt(currentMap, targetWorldPos)
+		-- Combat: if a monster is within the front attack range, attack in front instead of mining.
+		local playerPos = self.Entity.TransformComponent.WorldPosition
+		local monsterEntity = self:FindMonsterInFront(currentMap, playerPos, self.LastDirectionX, self.LastDirectionY)
 		if isvalid(monsterEntity) then
 			local combat = self.Entity:GetComponent("script.PlayerCombat")
 			if isvalid(combat) then
 				---@type PlayerCombat
 				local pc = combat
-				pc:DoAttackAt(Vector2(targetWorldPos.x, targetWorldPos.y))
+				pc:DoAttackInFront(Vector2(playerPos.x, playerPos.y), self.LastDirectionX, self.LastDirectionY)
 			end
 			self:ClientPlayMineEffect(true, monsterEntity)
 			return
 		end
 		
 		-- Query the spawned resource entity occupying the target cell (entity-only mining)
+		local key = math.floor(targetCell.x) .. "_" .. math.floor(targetCell.y)
 		local resourceSpawner = _ResourceSpawner
 		local pivotKey = nil
 		---@type Entity
@@ -956,7 +958,6 @@ script PlayerController extends Component
 		
 		local gridToEntity = resourceSpawner and resourceSpawner:GetGridToEntity(currentMap.Name)
 		if gridToEntity then
-			local key = targetCell.x .. "_" .. targetCell.y
 			local gridData = gridToEntity[key]
 			if gridData and (gridData.isTile or isvalid(gridData.entity)) then
 				pivotKey = math.floor(gridData.pivotX) .. "_" .. math.floor(gridData.pivotY)
@@ -965,6 +966,7 @@ script PlayerController extends Component
 		end
 		
 		if pivotKey ~= nil then
+		
 			-- Play hit effect on all clients (attached to target resource entity)
 			self:ClientPlayMineEffect(true, targetEntity)
 		
@@ -973,8 +975,57 @@ script PlayerController extends Component
 		else
 			-- Play air swing effect on all clients (attached to player)
 			self:ClientPlayMineEffect(false, nil)
-			log("No resource entity found at target cell " .. targetCell.x .. "," .. targetCell.y)
+			log("No resource entity found at target cell " .. tostring(targetCell))
 		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method Entity FindMonsterInFront(Entity map, Vector3 playerPos, integer dirX, integer dirY)
+		-- 플레이어가 바라보는 전방 범위(너비 ~1.8m, 전방 ~1.8m) 내의 가장 가까운 생존 몬스터 검색
+		if not isvalid(map) then return nil end
+		local monsters = map:GetChildComponentsByTypeName("script.Monster", false)
+		if monsters == nil then return nil end
+		
+		local bestMonster = nil
+		local minDistanceSq = 999999.0
+		
+		for i, mc in ipairs(monsters) do
+			if isvalid(mc) and isvalid(mc.Entity) then
+				---@type Monster
+				local mon = mc
+				if not mon.IsDead and isvalid(mc.Entity.TransformComponent) then
+					local p = mc.Entity.TransformComponent.WorldPosition
+					local dx = p.x - playerPos.x
+					local dy = p.y - playerPos.y
+					local distSq = dx * dx + dy * dy
+					
+					-- 기본 최대 감지 반경 2.0m
+					if distSq <= 4.0 then
+						local inFront = false
+						if math.abs(dirX) > 0 then
+							-- X축(좌우)을 바라볼 때: 앞쪽(dx*dirX >= -0.2)이고 상하 오차(|dy| <= 1.2)
+							if (dx * dirX >= -0.2) and (math.abs(dy) <= 1.2) and (math.abs(dx) <= 1.8) then
+								inFront = true
+							end
+						elseif math.abs(dirY) > 0 then
+							-- Y축(상하)을 바라볼 때: 앞쪽(dy*dirY >= -0.2)이고 좌우 오차(|dx| <= 1.2)
+							if (dy * dirY >= -0.2) and (math.abs(dx) <= 1.2) and (math.abs(dy) <= 1.8) then
+								inFront = true
+							end
+						else
+							-- 방향이 없는 경우 주변 1.2m
+							if distSq <= 1.44 then inFront = true end
+						end
+						
+						if inFront and distSq < minDistanceSq then
+							minDistanceSq = distSq
+							bestMonster = mc.Entity
+						end
+					end
+				end
+			end
+		end
+		return bestMonster
 	end
 
 	@ExecSpace("ServerOnly")
@@ -987,11 +1038,11 @@ script PlayerController extends Component
 			if isvalid(mc) and isvalid(mc.Entity) then
 				---@type Monster
 				local mon = mc
-				if not mon.IsDead then
+				if not mon.IsDead and isvalid(mc.Entity.TransformComponent) then
 					local p = mc.Entity.TransformComponent.WorldPosition
 					local dx = p.x - worldPos.x
 					local dy = p.y - worldPos.y
-					if dx * dx + dy * dy <= 0.81 then return mc.Entity end
+					if dx * dx + dy * dy <= 1.44 then return mc.Entity end
 				end
 			end
 		end
@@ -1022,33 +1073,17 @@ script PlayerController extends Component
 		end
 	end
 
-	method Vector2Int GetAimedCell(Entity currentMap)
-		-- 캐릭터 중심점(발 Y + 0.25)에서 바라보는 방향으로 0.45 전방의 타일 셀을 투영하여 캐릭터와 겹치지 않게 조준
-		if not isvalid(currentMap) then return Vector2Int(0, 0) end
-		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
-		if not isvalid(tilemap) then return Vector2Int(0, 0) end
-		local playerWorldPos = self.Entity.TransformComponent.WorldPosition
-		local aimX = playerWorldPos.x + self.LastDirectionX * 0.45
-		local aimY = playerWorldPos.y + 0.25 + self.LastDirectionY * 0.45
-		local cell = tilemap:ToCellPosition(Vector3(aimX, aimY, 0))
-		return cell or Vector2Int(0, 0)
-	end
-
 	@ExecSpace("ClientOnly")
 	method void UpdatePlacementPreview()
 		-- description: Updates the local placement preview entity when holding placeable furniture or tiles.
 		if self.Entity ~= _UserService.LocalPlayer then return end
-		if self.IsSleeping then
-			local preview = self._T.PlacementPreviewEntity
-			if isvalid(preview) then preview.Enable = false end
-			return
-		end
 		
 		local inv = self.Entity:GetComponent("script.PlayerInventory")
 		if not isvalid(inv) then return end
 		
 		local slots = _HttpService:JSONDecode(inv.QuickSlotsJson) or {}
 		local activeItem = slots[inv.SelectedQuickSlotIndex] or ""
+		-- log("[PREVIEW] Active Item: " .. activeItem .. " Slot: " .. inv.SelectedQuickSlotIndex)
 		
 		local isPlaceable = false
 		local iconRuid = ""
@@ -1072,9 +1107,11 @@ script PlayerController extends Component
 		if isPlaceable then
 			local tilemap = self.Entity.CurrentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
 			if isvalid(tilemap) then
-				local targetCell = self:GetAimedCell(self.Entity.CurrentMap)
-				local tileWorldPos = tilemap:ToWorldPosition(targetCell)
-				local cellWorldPos = Vector3(tileWorldPos.x + self.ReticleOffsetX, tileWorldPos.y + self.ReticleOffsetY, 0)
+				local playerWorldPos = self.Entity.TransformComponent.WorldPosition
+				local playerCell = tilemap:ToCellPosition(playerWorldPos)
+				if playerCell == nil then return end
+				local targetCell = Vector2Int(playerCell.x + self.LastDirectionX, playerCell.y + self.LastDirectionY)
+				local cellWorldPos = Vector3(targetCell.x + 0.5, targetCell.y + 0.5, 0)
 				
 				local preview = self._T.PlacementPreviewEntity
 				if not isvalid(preview) then
@@ -1110,7 +1147,8 @@ script PlayerController extends Component
 					-- Client-side occupancy check using collision simulator
 					local simulator = _CollisionService:GetSimulator(self.Entity)
 					if simulator then
-						local checkShape = BoxShape(Vector2(cellWorldPos.x, cellWorldPos.y), Vector2(0.9, 0.9), 0)
+						-- Use a slightly larger shape to ensure we catch nearby obstacles
+						local checkShape = BoxShape(Vector2(targetCell.x + 0.5, targetCell.y + 0.5), Vector2(0.9, 0.9), 0)
 						-- Check all relevant collision groups
 						local groups = { CollisionGroups.Default, CollisionGroups.TriggerBox, CollisionGroups.HitBox }
 						local overlaps = simulator:OverlapAll(groups, checkShape)
@@ -1157,25 +1195,114 @@ script PlayerController extends Component
 						end
 						local mapRadius = 75
 						if _ResourceSpawner then mapRadius = _ResourceSpawner.MapRadius end
-						sprite.OrderInLayer = math.floor((mapRadius - (targetCell.y * 0.5)) * 100) + 1
+						sprite.OrderInLayer = math.floor((mapRadius - targetCell.y) * 100) + 1
 					end
 				end
 			end
 		else
-			-- Mining mode (tool / bare-hand / empty slot): show the mining target-cell reticle.
-			self:UpdateMineReticle()
+				-- Mining mode (tool / bare-hand / empty slot): show the mining target-cell reticle.
+				self:UpdateMineReticle()
 		end
+
+		-- 조준점과 **별개로**, 지형 편집 도구를 들고 있으면 실제로 영향받는 셀들을 함께 표시한다.
+		self:UpdateTerrainAffectPreview(isPlaceable, activeItem)
 	end
 
 	@ExecSpace("ClientOnly")
 	method void UpdateTerrainAffectPreview(boolean isPlaceable, string activeItem)
-		-- 2x2 메인 조준점 개편에 따라 서브셀 보조 조준점(16개 풀)은 비활성화.
+		-- 삽/괭이/씨앗/물삽을 들었을 때 이번 한 번의 편집이 건드릴 셀을 미리 칠한다.
+		-- 진한 노랑 = 직접 파이는 셀 / 옅은 노랑 = 프린지(½셀 마진)만 받는 셀.
+		-- 셀 집합은 _ResourceSpawner:GetTerrainEditAffectedCells 단일 소스에서 온다(규칙 18).
 		local pool = self._T.TerrainAffectPool
-		if pool ~= nil then
-			for i = 1, 16 do
-				local ent = pool[i]
-				if isvalid(ent) then
+		if pool == nil then
+			pool = {}
+			self._T.TerrainAffectPool = pool
+		end
+
+		local action = ""
+		if not isPlaceable and activeItem ~= "" and _ResourceSpawner ~= nil then
+			local inv = self.Entity:GetComponent("script.PlayerInventory")
+			if isvalid(inv) then
+				local ds = _DataService:GetTable("item_dataset")
+				if ds ~= nil then
+					local row = ds:FindRow("Name", inv:GetBaseItemName(activeItem))
+					if row ~= nil then
+						local ok, v = pcall(function() return row:GetItem("TerrainEditAction") end)
+						if ok and v ~= nil then action = v end
+					end
+				end
+			end
+		end
+
+		local cells = {}
+		if action ~= "" then
+			local currentMap = self.Entity.CurrentMap
+			local tilemap = nil
+			if isvalid(currentMap) then
+				tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
+			end
+			if isvalid(tilemap) then
+				local worldPos = self.Entity.TransformComponent.WorldPosition
+				local playerCell = tilemap:ToCellPosition(worldPos)
+				if playerCell ~= nil then
+					local tx = playerCell.x + self.LastDirectionX
+					local ty = playerCell.y + self.LastDirectionY
+					local axis = ""
+					local side = ""
+					if action == "digPath" then
+						local ax = _ResourceSpawner:DeriveDigPathAxisSide(
+							self.LastDirectionX, self.LastDirectionY, worldPos.x, worldPos.y)
+						axis = ax.axis
+						side = ax.side
+					end
+					-- 물삽은 조준 셀이 아니라 **블록 원점** 기준이다 (서버 적용과 같은 함수 — 규칙 18).
+					if action == "dig_water" or action == "fill_water" then
+						local origin = _ResourceSpawner:GetWaterDigOrigin(
+							tx, ty, self.LastDirectionX, self.LastDirectionY)
+						tx = origin.x
+						ty = origin.y
+					end
+					cells = _ResourceSpawner:GetTerrainEditAffectedCells(action, tx, ty, axis, side)
+				end
+			end
+		end
+
+		local mapRadius = 75
+		if _ResourceSpawner ~= nil then mapRadius = _ResourceSpawner.MapRadius end
+
+		-- 풀 크기 = 물 2×2 + 둘레 1칸 = 4×4 = 16 (지형 편집 중 최대 영향 셀 수).
+		for i = 1, 16 do
+			local ent = pool[i]
+			if not isvalid(ent) then
+				local currentMap = self.Entity.CurrentMap
+				if isvalid(currentMap) then
+					ent = currentMap:GetChildByName("TerrainAffect_" .. tostring(i))
+					pool[i] = ent
+				end
+			end
+			if isvalid(ent) then
+				local c = cells[i]
+				if c == nil then
 					ent.Enable = false
+				else
+					ent.Enable = true
+					ent.Visible = true
+					ent.TransformComponent.WorldPosition = Vector3(c.x + 0.5, c.y + 0.5, 0)
+					-- 조준점과 **같은 박스 스프라이트·같은 스케일**을 쓴다 (별도 아트 도입 금지).
+					-- 구분은 오직 틴팅 알파로 한다.
+					ent.TransformComponent.Scale = Vector3(self.ReticleScale, self.ReticleScale, 1.0)
+					local sprite = ent.SpriteRendererComponent
+					if isvalid(sprite) then
+						if sprite.SpriteRUID ~= self.ReticleSpriteRUID then
+							sprite.SpriteRUID = self.ReticleSpriteRUID
+						end
+						if c.tier == 1 then
+							sprite.Color = Color(1.0, 0.85, 0.25, 0.55)
+						else
+							sprite.Color = Color(1.0, 0.85, 0.25, 0.22)
+						end
+						sprite.OrderInLayer = math.floor((mapRadius - c.y) * 100)
+					end
 				end
 			end
 		end
@@ -1188,24 +1315,27 @@ script PlayerController extends Component
 	end
 
 	method boolean IsAimTargetCore(Entity target, boolean verbose)
-		-- 1x1 타일(0.5x0.5 월드 단위) 조준 영역 ∩ 대상 콜라이더/Footprint
+		-- T67: 조준선 셀(playerCell+LastDirection)이 대상 footprint 안이면 true.
+		-- T82: TriggerComponent가 있으면(유효 AABB)면 조준 셀 월드 1×1과 Trigger AABB 겹침으로 판정.
+		-- Trigger 없으면 기존 AimFootprintW/H 경로(기본 1×1, 대형은 컴포넌트 프로퍼티 — 이름 분기 금지).
 		if not isvalid(target) then return false end
 		local currentMap = self.Entity.CurrentMap
 		if not isvalid(currentMap) then return false end
 		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
 		if not isvalid(tilemap) then return false end
-		local aimCell = self:GetAimedCell(currentMap)
+		local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
+		if playerCell == nil then return false end
+		local aimCell = Vector2Int(playerCell.x + self.LastDirectionX, playerCell.y + self.LastDirectionY)
 		local targetName = target.Name
 		if targetName == nil then targetName = "?" end
 
-		-- T82: Trigger AABB ∩ aim-cell world rect (0.5x0.5 world unit)
+		-- T82: Trigger AABB ∩ aim-cell world rect
 		local box = { minX = 0, maxX = 0, minY = 0, maxY = 0 }
 		if self:GetColliderAABB(target, box) then
-			local tileWorldPos = tilemap:ToWorldPosition(aimCell)
-			local aimMinX = tileWorldPos.x - 0.25
-			local aimMaxX = tileWorldPos.x + 0.25
-			local aimMinY = tileWorldPos.y - 0.25
-			local aimMaxY = tileWorldPos.y + 0.25
+			local aimMinX = aimCell.x
+			local aimMaxX = aimCell.x + 1
+			local aimMinY = aimCell.y
+			local aimMaxY = aimCell.y + 1
 			local eps = 0.001
 			local hit = aimMaxX > (box.minX - eps) and aimMinX < (box.maxX + eps)
 				and aimMaxY > (box.minY - eps) and aimMinY < (box.maxY + eps)
@@ -1215,18 +1345,20 @@ script PlayerController extends Component
 			return hit
 		end
 
-		local targetPos = target.TransformComponent.WorldPosition
-		local targetCell = tilemap:ToCellPosition(targetPos)
-		if targetCell ~= nil then
-			local dx = math.abs(aimCell.x - targetCell.x)
-			local dy = math.abs(aimCell.y - targetCell.y)
-			local hit = dx <= 2 and dy <= 2
-			if verbose then
-				log(string.format("[T82][AIM] target=%s mode=footprint hit=%s", targetName, tostring(hit)))
-			end
-			return hit
+		local targetCell = tilemap:ToCellPosition(target.TransformComponent.WorldPosition)
+		if targetCell == nil then return false end
+		local fp = self:ReadAimFootprint(target)
+		local fw = fp.x
+		local fh = fp.y
+		local maxDx = math.floor((fw - 1) / 2)
+		local maxDy = math.floor((fh - 1) / 2)
+		local dx = math.abs(aimCell.x - targetCell.x)
+		local dy = math.abs(aimCell.y - targetCell.y)
+		local hit = dx <= maxDx and dy <= maxDy
+		if verbose then
+			log(string.format("[T82][AIM] target=%s mode=footprint hit=%s", targetName, tostring(hit)))
 		end
-		return false
+		return hit
 	end
 
 	method Vector2Int ReadAimFootprint(Entity target)
@@ -1256,20 +1388,22 @@ script PlayerController extends Component
 				end
 			end
 		end
-		return Vector2Int(2, 2)
+		return Vector2Int(1, 1)
 	end
 
 	@ExecSpace("ClientOnly")
 	method void UpdateMineReticle()
-		-- Highlights the 1x1 tile cell (0.5x0.5 world unit) the next Ctrl mine will hit.
+		-- Highlights the cell the next Ctrl mine will hit (aim = LastDirection*), reusing the
+		-- PlacementPreview entity. Mutually exclusive with the furniture placement preview.
 		local currentMap = self.Entity.CurrentMap
 		if not isvalid(currentMap) then return end
 		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
 		if not isvalid(tilemap) then return end
 		
-		local targetCell = self:GetAimedCell(currentMap)
-		local tileWorldPos = tilemap:ToWorldPosition(targetCell)
-		local cellWorldPos = Vector3(tileWorldPos.x + self.ReticleOffsetX, tileWorldPos.y + self.ReticleOffsetY, 0)
+		local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
+		if playerCell == nil then return end
+		local targetCell = Vector2Int(playerCell.x + self.LastDirectionX, playerCell.y + self.LastDirectionY)
+		local cellWorldPos = Vector3(targetCell.x + 0.5, targetCell.y + 0.5, 0)
 		
 		local preview = self._T.PlacementPreviewEntity
 		if not isvalid(preview) then
@@ -1293,7 +1427,7 @@ script PlayerController extends Component
 			sprite.Color = Color(1, 1, 1, 0.85)
 			local mapRadius = 75
 			if _ResourceSpawner then mapRadius = _ResourceSpawner.MapRadius end
-			sprite.OrderInLayer = math.floor((mapRadius - (targetCell.y * 0.5)) * 100) + 1
+			sprite.OrderInLayer = math.floor((mapRadius - targetCell.y) * 100) + 1
 		end
 	end
 
@@ -1413,15 +1547,19 @@ script PlayerController extends Component
 		end
 		if self:IsAimTileWaterCore(false) then
 			local currentMap = self.Entity.CurrentMap
-			local tilemap = isvalid(currentMap) and currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent") or nil
-			if isvalid(tilemap) then
-				local targetCell = self:GetAimedCell(currentMap)
-				local tileWorldPos = tilemap:ToWorldPosition(targetCell)
-				out.label = self.WaterAimInteractLabel
-				out.ax = tileWorldPos.x
-				out.ay = tileWorldPos.y + 0.65
-				return out
+			if isvalid(currentMap) then
+				local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
+				if isvalid(tilemap) then
+					local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
+					if playerCell ~= nil then
+						out.label = self.WaterAimInteractLabel
+						out.ax = playerCell.x + self.LastDirectionX + 0.5
+						out.ay = playerCell.y + self.LastDirectionY + 1.4
+						return out
+					end
+				end
 			end
+			return out
 		end
 		return self:FindAimedDistributedInteractable()
 	end
@@ -1688,7 +1826,7 @@ script PlayerController extends Component
 		-- Optionally, could add interaction logic here in the future
 	end
 
-	method void OnMapEnter(Entity enteredMap)
+	method void OnMapEnter()
 		-- 맵 진입 시 영지 밖 좌표 가드. 세이브 오염·포탈 타깃 오류가 벽 너머로 워프시키는 것을 차단한다.
 		if self:IsServer() then
 			self:GuardHomeBounds()
@@ -2574,8 +2712,8 @@ script PlayerController extends Component
 	end
 
 	method number GetBuffedMoveSpeed()
-		-- T16 MoveSpeed: base 3.6 * mult + add
-		local base = 3.6
+		-- T16 MoveSpeed: base 7.2 * mult + add (2x scale)
+		local base = 7.2
 		local buffs = self.Entity:GetComponent("script.PlayerBuffs")
 		if isvalid(buffs) then
 			return base * buffs:GetStatMult("MoveSpeed") + buffs:GetStatAdd("MoveSpeed")
@@ -3405,25 +3543,26 @@ script PlayerController extends Component
 
 	@ExecSpace("ClientOnly")
 	method boolean IsAimTileWaterCore(boolean verbose)
-		-- 1x1 타일(0.5x0.5 월드 단위)에 물 타일이 있는지 판정.
+		-- 조준 셀(L1)이 물 타일인지 판정. 셀 환산·바라보는 방향은 채광/설치와 **같은 단일 규약**을 쓴다
+		-- (T67 조준선 = tilemap:ToCellPosition + LastDirectionX/Y). 자체 환산을 두면 조준선과 어긋난다.
 		local currentMap = self.Entity.CurrentMap
 		if not isvalid(currentMap) then return false end
+
+		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
+		if not isvalid(tilemap) then return false end
+		local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
+		if playerCell == nil then return false end
+		local aimCell = Vector2Int(playerCell.x + self.LastDirectionX, playerCell.y + self.LastDirectionY)
 
 		local l1 = currentMap:GetChildByName("RectTileMap")
 		if not isvalid(l1) or not isvalid(l1.RectTileMapComponent) then return false end
 
-		local targetCell = self:GetAimedCell(currentMap)
-
-		local isWater = false
 		local tileName = "nil"
-		local tile = l1.RectTileMapComponent:GetTile(targetCell)
-		if tile ~= nil and tile.Name == "Water" then
-			isWater = true
-			tileName = "Water"
-		end
-
+		local tile = l1.RectTileMapComponent:GetTile(aimCell)
+		if tile ~= nil then tileName = tile.Name end
+		local isWater = (tileName == "Water")
 		if verbose then
-			log("[FISHING] aimCell=(" .. targetCell.x .. "," .. targetCell.y .. ") tile=" .. tileName
+			log("[FISHING] aim=(" .. aimCell.x .. "," .. aimCell.y .. ") tile=" .. tileName
 				.. " water=" .. tostring(isWater))
 		end
 		return isWater
@@ -3501,10 +3640,12 @@ script PlayerController extends Component
 		local spot = spotEnt:GetComponent("script.FishingSpot")
 		if not isvalid(spot) then return end
 		
-		local myPos = self.Entity.TransformComponent.WorldPosition
-		local spotPos = spotEnt.TransformComponent.WorldPosition
-		local dist = Vector2.Distance(Vector2(myPos.x, myPos.y), Vector2(spotPos.x, spotPos.y))
-		if dist > 2.5 then return end
+		if isvalid(self.Entity.TransformComponent) and isvalid(spotEnt.TransformComponent) then
+			local myPos = self.Entity.TransformComponent.WorldPosition
+			local spotPos = spotEnt.TransformComponent.WorldPosition
+			local dist = Vector2.Distance(Vector2(myPos.x, myPos.y), Vector2(spotPos.x, spotPos.y))
+			if dist > 2.5 then return end
+		end
 		
 		if not self:IsEquippedFishingRod() then
 			self:ClientShowMineFeedback("낚싯대를 장착해야 합니다.")

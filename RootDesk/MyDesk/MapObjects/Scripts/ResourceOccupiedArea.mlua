@@ -3,11 +3,11 @@ script ResourceOccupiedArea extends Component
 
 	property number OffsetXMin = 0
 
-	property number OffsetXMax = 1
+	property number OffsetXMax = 0
 
 	property number OffsetYMin = 0
 
-	property number OffsetYMax = 1
+	property number OffsetYMax = 0
 
 	-- T36: 플레이어 이동 차단 여부. GrownGrass 등 통과 허용 자원은 모델에서 false.
 	property boolean BlocksMovement = true

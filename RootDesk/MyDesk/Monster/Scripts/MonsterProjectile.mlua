@@ -6,9 +6,9 @@ script MonsterProjectile extends AttackComponent
 
 	property Entity Owner = nil
 	property Vector2 Direction = Vector2(1, 0)
-	property number Speed = 5.0
+	property number Speed = 10.0
 	property number LifeTime = 3.0
-	property number HitRadius = 0.5
+	property number HitRadius = 1.0
 	property integer ProjectileDamage = 5
 	property number ElapsedTime = 0.0
 	property boolean Fired = false

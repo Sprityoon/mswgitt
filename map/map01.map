@@ -33,12 +33,12 @@
               "@type": "MOD.Core.MapComponent",
               "IsInstanceMap": false,
               "LeftBottom": {
-                "x": -50,
-                "y": -50
+                "x": -50.0,
+                "y": -50.0
               },
               "RightTop": {
-                "x": 50,
-                "y": 50
+                "x": 50.0,
+                "y": 50.0
               },
               "TileMapMode": 1,
               "Enable": true
@@ -71,27 +71,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -103,7 +103,7 @@
               "SpriteRUID": "ecb83722d7fa4a3ab425302401032701",
               "Color": {
                 "r": 0.2,
-                "g": 1,
+                "g": 1.0,
                 "b": 0.2,
                 "a": 0.6
               },
@@ -135,7 +135,7 @@
                 "r": 0.549019635,
                 "g": 0.34117648,
                 "b": 0.164705887,
-                "a": 1
+                "a": 1.0
               },
               "TemplateRUID": "794ad8421e2543d8a6d2c70307637450",
               "Type": 2,
@@ -207,22 +207,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 1000
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1000.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -29999,11 +29999,7 @@
                   },
                   "tileIndex": 9
                 }
-              ],
-              "GridSize": {
-                "x": 0.5,
-                "y": 0.5
-              }
+              ]
             }
           ],
           "@version": 1
@@ -30071,22 +30067,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 1000
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1000.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -57895,11 +57891,7 @@
                   },
                   "tileIndex": 7
                 }
-              ],
-              "GridSize": {
-                "x": 0.5,
-                "y": 0.5
-              }
+              ]
             }
           ],
           "@version": 1
@@ -57967,22 +57959,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 1000
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1000.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -57990,11 +57982,7 @@
               "SortingLayer": "MapLayer3",
               "TileSetRUID": "tileset://7e240dde-c5fe-4d2e-ad41-0a80f4b3ec7d",
               "Enable": true,
-              "tileMap": [],
-              "GridSize": {
-                "x": 0.5,
-                "y": 0.5
-              }
+              "tileMap": []
             }
           ],
           "@version": 1
@@ -58062,22 +58050,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 1000
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1000.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -63654,11 +63642,7 @@
                   },
                   "tileIndex": 0
                 }
-              ],
-              "GridSize": {
-                "x": 0.5,
-                "y": 0.5
-              }
+              ]
             }
           ],
           "@version": 1
@@ -63726,22 +63710,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 1000
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1000.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -69318,11 +69302,7 @@
                   },
                   "tileIndex": 39
                 }
-              ],
-              "GridSize": {
-                "x": 0.5,
-                "y": 0.5
-              }
+              ]
             }
           ],
           "@version": 1
@@ -69390,22 +69370,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 1000
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1000.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -69413,11 +69393,7 @@
               "SortingLayer": "MapLayer5",
               "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
               "Enable": true,
-              "tileMap": [],
-              "GridSize": {
-                "x": 0.5,
-                "y": 0.5
-              }
+              "tileMap": []
             }
           ],
           "@version": 1
@@ -69449,27 +69425,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -69481,13 +69457,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -69524,27 +69500,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -69556,13 +69532,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -69599,27 +69575,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -69631,13 +69607,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -69674,27 +69650,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -69706,13 +69682,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -69749,27 +69725,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -69781,13 +69757,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -69824,27 +69800,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -69856,13 +69832,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -69899,27 +69875,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -69931,13 +69907,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -69974,27 +69950,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -70006,13 +69982,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -70049,27 +70025,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -70081,13 +70057,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -70124,27 +70100,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -70156,13 +70132,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -70199,27 +70175,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -70231,13 +70207,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -70274,27 +70250,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -70306,13 +70282,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -70349,27 +70325,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -70381,13 +70357,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -70424,27 +70400,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -70456,13 +70432,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -70499,27 +70475,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -70531,13 +70507,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45
@@ -70574,27 +70550,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -70606,13 +70582,13 @@
               "FlipY": false,
               "IgnoreMapLayerCheck": true,
               "OrderInLayer": 2,
-              "PlayRate": 1,
+              "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer3",
               "SpriteRUID": "662fd2de11094cf08be40d8b3fab11bc",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
+                "r": 1.0,
                 "g": 0.85,
                 "b": 0.25,
                 "a": 0.45

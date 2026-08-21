@@ -43,8 +43,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 0.96,
-            "y": 0.4424419
+            "x": 1.92,
+            "y": 0.8848838
           }
         },
         {
@@ -56,8 +56,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 0.5,
-            "y": -0.7133789
+            "x": 1,
+            "y": -1.4267578
           }
         },
         {
@@ -100,7 +100,7 @@
           "Name": "OffsetXMin",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 0
         },
@@ -109,25 +109,25 @@
           "Name": "OffsetXMax",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 5
+          "Value": 3
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
           "Name": "OffsetYMin",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": -5
+          "Value": -3
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
           "Name": "OffsetYMax",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 0
         },
@@ -341,9 +341,9 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 2,
-            "y": 2,
-            "z": 2
+            "x": 4,
+            "y": 4,
+            "z": 4
           }
         }
       ],

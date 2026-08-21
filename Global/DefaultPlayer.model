@@ -36,7 +36,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 1
+          "Value": 2
         },
         {
           "TargetType": null,
@@ -244,8 +244,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 1.4,
-            "y": 1.4,
+            "x": 2.8,
+            "y": 2.8,
             "z": 1
           }
         },
@@ -256,7 +256,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 66
+          "Value": 33
         },
         {
           "TargetType": "MOD.Core.AvatarStateAnimationComponent",

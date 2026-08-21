@@ -61,10 +61,10 @@
           },
           "Value": {
             "$type": "UnityEngine.Color, UnityEngine.CoreModule",
-            "r": 1.0,
+            "r": 1,
             "g": 0.75,
             "b": 0.2,
-            "a": 1.0
+            "a": 1
           }
         },
         {
@@ -84,6 +84,20 @@
             "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": true
+        },
+        {
+          "TargetType": "MOD.Core.TransformComponent",
+          "Name": "Scale",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector3, MOD.Core",
+            "x": 2,
+            "y": 2,
+            "z": 2
+          }
         }
       ],
       "EventLinks": [],

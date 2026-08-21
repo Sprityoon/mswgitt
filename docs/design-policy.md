@@ -134,6 +134,18 @@ CharAtk = 8 + 버프. MagicAtk = 0 + MagicPower 버프. 스탯 투자는 `GetCha
 
 ---
 
+## 7. 카메라·비주얼 스케일 및 조망 (⚖️ 2026-08-21)
+
+| 구분 | 규칙 |
+|---|---|
+| 물리·좌표계 | `1.0 × 1.0` 표준 타일 그리드 유지. 물리 좌표계를 분수 단위로 쪼개지 않는다 |
+| 기본 카메라 줌 | `CameraComponent.ZoomRatio = 33.0` (기존 66 대비 0.5배 줌아웃으로 2배 넓은 시야 확보) |
+| 캐릭터·오브젝트 스케일 | 플레이어(2.8배), 몬스터/NPC/자연자원/가구/프롭/드롭아이템(2.0배), 점유 영역(나무/바위 등 2×2, 4×4 점유) |
+| 이동속도 | 기본 플레이어 이동속도 `7.2` (기존 3.6 대비 2배 가속), 몬스터/동물 `InputSpeed` 2배 가속 |
+| 전경 조망 모드 (Eagle-Eye) | `Tab` 키 또는 우측 상단 미니맵 클릭 시 맵 맞춤형 초광각 동적 줌(`ZoomRatio 7.5~10.0`) 및 맵 중심 `(0, 0)` 자동 정렬. 외곽 비네팅 마스크 표시. 이동/Tab 재입력 시 즉시 복귀 |
+
+---
+
 ## 관련 문서
 
 - 전체 게임 설계: [../game_design.md](../game_design.md)
@@ -141,3 +153,4 @@ CharAtk = 8 + 버프. MagicAtk = 0 + MagicPower 버프. 스탯 투자는 `GetCha
 - Phase 15 살아있는 월드 기획: [design/phase15-living-world.md](./design/phase15-living-world.md)
 - 아트워크 명세: [design/artwork-spec.md](./design/artwork-spec.md)
 - 함정 사전: [pitfalls.md](./pitfalls.md)
+
