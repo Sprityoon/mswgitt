@@ -27,11 +27,29 @@ script UIMinimapController extends Component
 
 	property any fullViewGuide = nil
 
+	property any fullViewCloseBtn = nil
+
 	property number defaultZoomRatio = 33.0
+
+	property number defaultZoomRatioMin = 1.0
 
 	property Vector3 lastPlayerPos = Vector3(0, 0, 0)
 
+	property Vector2 panCamPos = Vector2(0, 0)
+
+	property Vector2 dragStartMousePos = Vector2(0, 0)
+
+	property Vector2 dragStartCamPos = Vector2(0, 0)
+
+	property boolean isDraggingMap = false
+
 	property any keyHandler = nil
+
+	property any touchHandler = nil
+
+	property any touchHoldHandler = nil
+
+	property any touchReleaseHandler = nil
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
@@ -41,6 +59,12 @@ script UIMinimapController extends Component
 		-- Resolve FullView overlay entities
 		self.fullViewVignette = _EntityService:GetEntityByPath("/ui/HUDGroup/FullViewVignette")
 		self.fullViewGuide = _EntityService:GetEntityByPath("/ui/HUDGroup/FullViewGuide")
+		self.fullViewCloseBtn = _EntityService:GetEntityByPath("/ui/HUDGroup/FullViewCloseBtn")
+		if isvalid(self.fullViewCloseBtn) then
+			self.fullViewCloseBtn:ConnectEvent(ButtonClickEvent, function()
+				self:ExitFullView()
+			end)
+		end
 
 		-- Spawn or find the Map Name UI Text entity
 		local mapNameEnt = self.Entity:GetChildByName("MapNameText")
@@ -50,22 +74,22 @@ script UIMinimapController extends Component
 		if isvalid(mapNameEnt) then
 			local sprite = mapNameEnt.SpriteGUIRendererComponent
 			if isvalid(sprite) then
-				sprite.Color = Color(0, 0, 0, 0)
+				sprite.Color = Color(0.06, 0.08, 0.11, 0.75)
 			end
 			local transform = mapNameEnt.UITransformComponent
 			if isvalid(transform) then
-				transform.AlignmentOption = AlignmentType.CastFrom("Left")
-				transform.anchoredPosition = Vector2(-110, 0)
-				transform.RectSize = Vector2(150, 30)
+				transform.AlignmentOption = AlignmentType.CastFrom("TopCenter")
+				transform.anchoredPosition = Vector2(0, 18)
+				transform.RectSize = Vector2(166, 26)
 			end
 			self.mapNameText = mapNameEnt.TextComponent
 			if isvalid(self.mapNameText) then
-				self.mapNameText.FontSize = 22
-				self.mapNameText.FontColor = Color(1.0, 1.0, 1.0, 1.0)
+				self.mapNameText.FontSize = 17
+				self.mapNameText.FontColor = Color(1.0, 0.92, 0.70, 1.0)
 				self.mapNameText.UseOutLine = true
 				self.mapNameText.OutlineColor = Color(0.0, 0.0, 0.0, 1.0)
 				self.mapNameText.OutlineWidth = 1.0
-				self.mapNameText.Alignment = 2 -- MiddleRight
+				self.mapNameText.Alignment = 4 -- MiddleCenter
 			end
 		end
 
@@ -96,21 +120,62 @@ script UIMinimapController extends Component
 			end
 		end
 
-		-- Connect Minimap click button event
-		self.Entity:ConnectEvent(ButtonClickEvent, function(event)
+		-- Connect Minimap click button event (Entity and Bg child)
+		local onMinimapClick = function()
+			local mainMenu = _EntityService:GetEntityByPath("/ui/MainMenuGroup")
+			if isvalid(mainMenu) and mainMenu.Enable then return end
 			self:ToggleFullView()
-		end)
+		end
+		self.Entity:ConnectEvent(ButtonClickEvent, onMinimapClick)
+		local bgEnt = self.Entity:GetChildByName("Bg")
+		if isvalid(bgEnt) then
+			bgEnt:ConnectEvent(ButtonClickEvent, onMinimapClick)
+		end
 
-		-- Connect Tab key down event via InputService
+		-- Connect Tab / ESC key down event via InputService
 		self.keyHandler = _InputService:ConnectEvent(KeyDownEvent, function(event)
+			local mainMenu = _EntityService:GetEntityByPath("/ui/MainMenuGroup")
+			if isvalid(mainMenu) and mainMenu.Enable then return end
 			if event.key == KeyboardKey.Tab then
 				self:ToggleFullView()
+			elseif event.key == KeyboardKey.Escape and self.IsFullViewMode then
+				self:ExitFullView()
 			end
 		end)
 
-		-- Periodic check for minimap repaint and Movement polling
+		-- Connect Mouse/Touch drag events for Free-Pan Camera (Drag Only)
+		self.touchHandler = _InputService:ConnectEvent(ScreenTouchEvent, function(event)
+			if not self.IsFullViewMode then return end
+			self.isDraggingMap = true
+			self.dragStartMousePos = event.TouchPoint
+			self.dragStartCamPos = Vector2(self.panCamPos.x, self.panCamPos.y)
+		end)
+
+		self.touchHoldHandler = _InputService:ConnectEvent(ScreenTouchHoldEvent, function(event)
+			if not self.IsFullViewMode or not self.isDraggingMap then return end
+			local delta = event.TouchPoint - self.dragStartMousePos
+			local factor = 30.0
+			local worldDeltaX = -delta.x / factor
+			local worldDeltaY = -delta.y / factor
+
+			local panRadius = self:GetMapPanRadius(self.cachedMapName)
+			self.panCamPos.x = math.max(-panRadius, math.min(panRadius, self.dragStartCamPos.x + worldDeltaX))
+			self.panCamPos.y = math.max(-panRadius, math.min(panRadius, self.dragStartCamPos.y + worldDeltaY))
+
+			local cam = _CameraService:GetCurrentCameraComponent()
+			local player = _UserService.LocalPlayer
+			if isvalid(cam) and isvalid(player) and isvalid(player.TransformComponent) then
+				local ppos = player.TransformComponent.WorldPosition
+				cam.CameraOffset = Vector2(self.panCamPos.x - ppos.x, self.panCamPos.y - ppos.y)
+			end
+		end)
+
+		self.touchReleaseHandler = _InputService:ConnectEvent(ScreenTouchReleaseEvent, function(event)
+			self.isDraggingMap = false
+		end)
+
+		-- Periodic check for minimap repaint
 		self.updateTimer = _TimerService:SetTimerRepeat(function()
-			self:CheckMovement()
 			self:RepaintWindow()
 		end, 0.05)
 	end
@@ -125,6 +190,18 @@ script UIMinimapController extends Component
 			_InputService:DisconnectEvent(KeyDownEvent, self.keyHandler)
 			self.keyHandler = nil
 		end
+		if self.touchHandler then
+			_InputService:DisconnectEvent(ScreenTouchEvent, self.touchHandler)
+			self.touchHandler = nil
+		end
+		if self.touchHoldHandler then
+			_InputService:DisconnectEvent(ScreenTouchHoldEvent, self.touchHoldHandler)
+			self.touchHoldHandler = nil
+		end
+		if self.touchReleaseHandler then
+			_InputService:DisconnectEvent(ScreenTouchReleaseEvent, self.touchReleaseHandler)
+			self.touchReleaseHandler = nil
+		end
 		if self.updateTimer then
 			_TimerService:ClearTimer(self.updateTimer)
 			self.updateTimer = nil
@@ -132,19 +209,18 @@ script UIMinimapController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
-	method void CheckMovement()
-		-- If in full view mode, auto-exit when player moves
-		if self.IsFullViewMode then
-			local player = _UserService.LocalPlayer
-			if isvalid(player) and isvalid(player.TransformComponent) then
-				local curPos = player.TransformComponent.WorldPosition
-				local dx = curPos.x - self.lastPlayerPos.x
-				local dy = curPos.y - self.lastPlayerPos.y
-				if (dx * dx + dy * dy) > 0.16 then
-					self:ExitFullView()
-				end
-			end
+	method number GetMapPanRadius(string mapName)
+		if mapName == nil or mapName == "" then return 30.0 end
+		if string.sub(mapName, 1, 5) == "Home_" or mapName == "map01" then
+			return 30.0
+		elseif mapName == "town" then
+			return 35.0
+		elseif mapName == "template_field" then
+			return 30.0
+		elseif mapName == "template_boss" then
+			return 15.0
 		end
+		return 30.0
 	end
 
 	@ExecSpace("ClientOnly")
@@ -158,17 +234,63 @@ script UIMinimapController extends Component
 
 	@ExecSpace("ClientOnly")
 	method number GetOptimalZoomRatio(string mapName)
-		if mapName == nil or mapName == "" then return 8.5 end
-		if string.sub(mapName, 1, 5) == "Home_" then
-			return 9.0 -- 40x40 영지 전체 뷰
-		elseif mapName == "town" then
-			return 7.5 -- 60x40 마을 전체 뷰
-		elseif mapName == "template_field" then
-			return 8.0 -- 50x50 사냥터 전체 뷰
-		elseif mapName == "template_boss" then
-			return 10.0 -- 35x35 보스방 전체 뷰
+		local ds = _DataService:GetTable("MapCameraDataSet")
+		if ds ~= nil then
+			local rowCount = ds:GetRowCount()
+			local defaultZoom = 3.0
+			for i = 1, rowCount do
+				local key = ds:GetCell(i, "MapKey")
+				local zoom = tonumber(ds:GetCell(i, "FullViewZoomRatio")) or 3.0
+				if key == "default" then
+					defaultZoom = zoom
+				end
+				if mapName ~= nil and mapName ~= "" then
+					if key == "Home" and (string.sub(mapName, 1, 5) == "Home_" or mapName == "map01") then
+						return zoom
+					elseif key == mapName then
+						return zoom
+					end
+				end
+			end
+			return defaultZoom
 		end
-		return 8.5
+
+		-- Fallback
+		if mapName ~= nil and (string.sub(mapName, 1, 5) == "Home_" or mapName == "map01") then
+			return 3.0
+		elseif mapName == "town" then
+			return 2.8
+		elseif mapName == "template_field" then
+			return 3.0
+		elseif mapName == "template_boss" then
+			return 4.5
+		end
+		return 3.0
+	end
+
+	@ExecSpace("ClientOnly")
+	method number GetDefaultZoomRatio(string mapName)
+		local ds = _DataService:GetTable("MapCameraDataSet")
+		if ds ~= nil then
+			local rowCount = ds:GetRowCount()
+			local defaultZoom = 33.0
+			for i = 1, rowCount do
+				local key = ds:GetCell(i, "MapKey")
+				local zoom = tonumber(ds:GetCell(i, "DefaultZoomRatio")) or 33.0
+				if key == "default" then
+					defaultZoom = zoom
+				end
+				if mapName ~= nil and mapName ~= "" then
+					if key == "Home" and (string.sub(mapName, 1, 5) == "Home_" or mapName == "map01") then
+						return zoom
+					elseif key == mapName then
+						return zoom
+					end
+				end
+			end
+			return defaultZoom
+		end
+		return self.defaultZoomRatio or 33.0
 	end
 
 	@ExecSpace("ClientOnly")
@@ -177,14 +299,28 @@ script UIMinimapController extends Component
 		if not isvalid(cam) then return end
 
 		local optimalZoom = self:GetOptimalZoomRatio(self.cachedMapName)
+		pcall(function()
+			self.defaultZoomRatioMin = cam.ZoomRatioMin
+			cam.ZoomRatioMin = 30.0
+		end)
 		cam.ZoomRatio = optimalZoom
 
 		local player = _UserService.LocalPlayer
 		if isvalid(player) and isvalid(player.TransformComponent) then
 			local ppos = player.TransformComponent.WorldPosition
 			self.lastPlayerPos = ppos
+			self.panCamPos = Vector2(0, 0)
 			-- Center camera to map origin (0, 0)
-			cam.CameraOffset = Vector2(-ppos.x, -ppos.y)
+			cam.CameraOffset = Vector2(self.panCamPos.x - ppos.x, self.panCamPos.y - ppos.y)
+		end
+
+		-- Hide other HUD UI elements during FullView
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		if isvalid(hud) then
+			local c = hud:GetComponent("script.UIHUDController")
+			if isvalid(c) then
+				c:SetPlayHudVisible(false)
+			end
 		end
 
 		if isvalid(self.fullViewVignette) then
@@ -193,16 +329,24 @@ script UIMinimapController extends Component
 		if isvalid(self.fullViewGuide) then
 			self.fullViewGuide.Enable = true
 		end
+		if isvalid(self.fullViewCloseBtn) then
+			self.fullViewCloseBtn.Enable = true
+		end
 
+		self.isDraggingMap = false
 		self.IsFullViewMode = true
-		log("[MINIMAP] Entered FullView mode with ZoomRatio=" .. tostring(optimalZoom))
+		log("[MINIMAP] Entered Free-Pan FullView mode with ZoomRatio=" .. tostring(optimalZoom))
 	end
 
 	@ExecSpace("ClientOnly")
 	method void ExitFullView()
 		local cam = _CameraService:GetCurrentCameraComponent()
 		if isvalid(cam) then
-			cam.ZoomRatio = self.defaultZoomRatio
+			local defaultZoom = self:GetDefaultZoomRatio(self.cachedMapName)
+			cam.ZoomRatio = defaultZoom
+			pcall(function()
+				cam.ZoomRatioMin = self.defaultZoomRatioMin or 30.0
+			end)
 			cam.CameraOffset = Vector2(0, 0)
 		end
 
@@ -212,7 +356,20 @@ script UIMinimapController extends Component
 		if isvalid(self.fullViewGuide) then
 			self.fullViewGuide.Enable = false
 		end
+		if isvalid(self.fullViewCloseBtn) then
+			self.fullViewCloseBtn.Enable = false
+		end
 
+		-- Restore other HUD UI elements after FullView
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		if isvalid(hud) then
+			local c = hud:GetComponent("script.UIHUDController")
+			if isvalid(c) then
+				c:SetPlayHudVisible(true)
+			end
+		end
+
+		self.isDraggingMap = false
 		self.IsFullViewMode = false
 		log("[MINIMAP] Exited FullView mode, restored ZoomRatio=" .. tostring(self.defaultZoomRatio))
 	end

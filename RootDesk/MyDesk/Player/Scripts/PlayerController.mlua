@@ -671,6 +671,11 @@ script PlayerController extends Component
 	method void OnKeyDown(KeyDownEvent event)
 		-- description: Handle keyboard input events on client.
 		if self.Entity ~= _UserService.LocalPlayer then return end
+		
+		-- 메인 메뉴(타이틀/슬롯선택/커스텀)가 열려있으면 단축키 비활성화
+		local mainMenu = _EntityService:GetEntityByPath("/ui/MainMenuGroup")
+		if isvalid(mainMenu) and mainMenu.Enable then return end
+
 		if self.IsSleeping then
 			self:ServerRequestWakeUp()
 			return

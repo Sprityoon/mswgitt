@@ -51,14 +51,17 @@
 - **배경**: 미니맵을 클릭하거나 단축키를 눌렀을 때, 현재 맵 전체를 실시간 카메라 뷰로 시원하게 조망할 수 있는 전경 모드 도입. 외곽 빈 여백은 부드러운 비네팅 섀도우 마스크로 자연스럽게 가림.
 - **작업 내용**:
   1. `ui/HUDGroup.ui`:
-     - `FullViewVignette`: 화면 전체(1920×1080) 외곽 암부 비네팅 마스크 엔티티 추가 (`BlocksRaycasts = false`).
-     - `FullViewGuide`: 상단 중앙 `[ 🗺️ 전체 조망 모드 (Tab / 이동 시 복귀) ]` 텍스트 엔티티 추가.
-     - `Minimap`: `ButtonComponent` 연결로 클릭 상호작용 지원.
+     - `FullViewVignette`: 틴팅 효과 제거(투명도 0)로 맑고 선명한 전경 뷰 유지 (`BlocksRaycasts = false`).
+     - `FullViewGuide`: 상단 중앙 `[ 🗺️  전경 탐색 모드   |   마우스 드래그 이동   |   Tab / ESC 키로 복귀 ]` 다크 글래스 캡슐 배너 적용 (`AlignmentOption: 3` 정밀 중앙 정렬).
+     - `FullViewCloseBtn`: 안내 배너 바로 우측에 일체형으로 정렬된 `[ ✕ ]` 닫기 버튼 (모바일 터치 및 PC 클릭 지원, 전경 모드 진입 시 활성화).
+     - `Minimap`: `ButtonComponent` 및 `Bg` `RaycastTarget = true` 연결로 미니맵 클릭 상호작용 지원.
   2. `UIMinimapController.mlua`:
-     - **맵 맞춤형 동적 줌**: 영지(`9.0`), 마을(`7.5`), 사냥터(`8.0`), 보스방(`10.0`) 등 맵 전체가 시원하게 화면에 쏙 들어오도록 초광각 `ZoomRatio` 및 맵 중심 `(0, 0)` 오프셋 자동 정렬 적용.
-     - **단축키 및 토글**: `Tab` 키 및 미니맵 클릭 시 `ToggleFullView()` 실행.
-     - **이동 시 자동 복귀**: 전경 모드 중 플레이어가 방향키/WASD로 이동하면 즉시 원래 시점(`ZoomRatio: 33.0`, Offset 0)으로 자동 복원.
+     - **화면 드래그 자유 패닝 (Drag-Pan Camera)**: 마우스/터치 드래그(`ScreenTouchHoldEvent`)로 카메라를 상하좌우로 부드럽게 패닝하여 맵 전체를 자유롭게 탐색. 맵별 경계(`GetMapPanRadius`) 자동 가드.
+     - **데이터 주도 줌 배율 (`MapCameraDataSet`)**: `MapCameraDataSet.csv` 데이터셋을 신설하여 맵별 `FullViewZoomRatio`(`30.0`) 및 `DefaultZoomRatio`(`33.0`) 관리·연동.
+     - **단축키, 닫기 버튼 및 토글**: `Tab` 키, 미니맵 클릭, `ESC` 키, 상단 `[ ✕ ]` 버튼으로 모바일/PC 모두 편리하게 복귀.
+     - **전경 모드 시 다른 HUD 자동 숨김/복원**: 전경 모드 진입 시 `UIHUDController:SetPlayHudVisible(false)`로 다른 HUD 크롬을 숨기고, 복귀 시 자동 복원.
   3. `PlayerController.mlua`:
+     - **메인 메뉴 단축키 가드**: 타이틀/슬롯선택/커스텀 등 메인 메뉴가 열려있는 동안 모든 단축키 입력을 차단하고, 게임에 진입했을 때만 단축키 활성화.
      - **플레이어 이동속도 2배 실반영**: 스크립트 내 하드코딩되던 `InputSpeed = 3.6` 및 `GetBuffedMoveSpeed()` 기준치를 `7.2` (2배)로 완벽 수정.
 - **검증**:
   - `UIBuilder` 유효성 검사 및 `maker_refresh_workspace` 완료 (build `dateTime: 18:33:15`, Error 0건).
