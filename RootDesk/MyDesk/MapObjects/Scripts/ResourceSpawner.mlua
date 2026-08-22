@@ -624,140 +624,131 @@ script ResourceSpawner extends Logic
 		if editSide == nil then editSide = "" end
 
 		if action == "digPath" then
-			-- 수평 밴드: 아래 셀 윗줄 + 위 셀 아랫줄. 수직 밴드: 좌 셀 오른열 + 우 셀 왼열.
-			-- 자유 끝단: 축 방향 양쪽 이웃 페어(4셀)에 오목 코너 캡 비트 합집합 (build_maps walk 끝단 캡).
-			local x1 = x
-			local y1 = y
-			local x2 = x
-			local y2 = y
-			local add1 = 0
-			local add2 = 0
-			if axis == "h" then
-				add1 = 12  -- TL|TR
-				add2 = 3   -- BL|BR
-				if editSide == "up" then
-					y1 = y
-					y2 = y + 1
-				else
-					-- down: 경계 = (y-1 | y)
-					y1 = y - 1
-					y2 = y
-				end
-			elseif axis == "v" then
-				add1 = 10  -- BR|TR
-				add2 = 5   -- BL|TL
-				if editSide == "right" then
-					x1 = x
-					x2 = x + 1
-				else
-					-- left: 경계 = (x-1 | x)
-					x1 = x - 1
-					x2 = x
-				end
-			else
-				return false
+			-- 2×2 영역 중심을 향해 4개의 오목 코너 타일(Corner) 흙 모서리가 모여 감싼 흙길 시작 형태 형성.
+			local cells = {
+				{ x,     y,     8 }, -- SW: 북동쪽(TR) 안쪽 모서리 흙 (GrassRTCorner, 마스크 8)
+				{ x + 1, y,     4 }, -- SE: 북서쪽(TL) 안쪽 모서리 흙 (GrassLTCorner, 마스크 4)
+				{ x,     y + 1, 2 }, -- NW: 남동쪽(BR) 안쪽 모서리 흙 (GrassRDCorner, 마스크 2)
+				{ x + 1, y + 1, 1 }, -- NE: 남서쪽(BL) 안쪽 모서리 흙 (GrassLDCorner, 마스크 1)
+			}
+			for _, c in ipairs(cells) do
+				if not self:IsTerrainCellEditable(map, c[1], c[2]) then return false end
+				if self:IsGridOccupied(mapName, c[1], c[2]) then return false end
 			end
 
-			if not self:IsTerrainCellEditable(map, x1, y1) then return false end
-			if not self:IsTerrainCellEditable(map, x2, y2) then return false end
-			if self:IsGridOccupied(mapName, x1, y1) then return false end
-			if self:IsGridOccupied(mapName, x2, y2) then return false end
-
-			local m1 = self:GetCellMask(tilemap2, tilemap1, x1, y1)
-			local m2 = self:GetCellMask(tilemap2, tilemap1, x2, y2)
-			if m1 < 0 or m2 < 0 then return false end
-			local n1 = m1 | add1
-			local n2 = m2 | add2
-
-			-- 캡 대상: 축 방향 양쪽 이웃 페어 총 4셀. {cx, cy, bits}
-			-- 수평: 동=아래TL·위BL, 서=아래TR·위BR / 수직: 북=좌BR·우BL, 남=좌TR·우TL
-			local caps = {}
-			if axis == "h" then
-				caps = {
-					{ x1 + 1, y1, 4 },  -- E lower: TL
-					{ x2 + 1, y2, 1 },  -- E upper: BL
-					{ x1 - 1, y1, 8 },  -- W lower: TR
-					{ x2 - 1, y2, 2 },  -- W upper: BR
-				}
-			else
-				caps = {
-					{ x1, y1 + 1, 2 },  -- N left: BR
-					{ x2, y2 + 1, 1 },  -- N right: BL
-					{ x1, y1 - 1, 8 },  -- S left: TR
-					{ x2, y2 - 1, 4 },  -- S right: TL
-				}
+			local anyChange = false
+			local newMasks = {}
+			for _, c in ipairs(cells) do
+				local cx, cy, cbit = c[1], c[2], c[3]
+				local cm = self:GetCellMask(tilemap2, tilemap1, cx, cy)
+				if cm < 0 then return false end
+				local cn = cm | cbit
+				if cn ~= cm then anyChange = true end
+				table.insert(newMasks, { cx, cy, cn })
 			end
+			if not anyChange then return false end  -- 이미 4개 코너 이상으로 파여 있음
 
-			local capApplied = {}
-			local anyChange = (n1 ~= m1) or (n2 ~= m2)
-			for _, c in ipairs(caps) do
-				local cx = c[1]
-				local cy = c[2]
-				local cbits = c[3]
-				-- 벽/편집불가 스킵(플러시 컷). 점유는 digHole 프린지와 같이 허용.
-				if self:IsTerrainCellEditable(map, cx, cy) then
-					local cm = self:GetCellMask(tilemap2, tilemap1, cx, cy)
-					if cm >= 0 then
-						local cn = cm | cbits
-						if cn ~= cm then
-							anyChange = true
-						end
-						table.insert(capApplied, { cx, cy, cn })
-					end
-				end
-			end
-
-			if not anyChange then return false end  -- 주 밴드+캡 전부 변화 없음
-
-			self:SetCellMaskExact(tilemap2, x1, y1, n1)
-			self:SetCellMaskExact(tilemap2, x2, y2, n2)
-			for _, c in ipairs(capApplied) do
-				self:SetCellMaskExact(tilemap2, c[1], c[2], c[3])
+			for _, nm in ipairs(newMasks) do
+				self:SetCellMaskExact(tilemap2, nm[1], nm[2], nm[3])
 			end
 
 		elseif action == "digHole" then
-			-- 문법 2: 대상=홀(15) + 8이웃 ½셀 프린지 마진 합집합.
-			if not self:IsTerrainCellEditable(map, x, y) then return false end
-			if self:IsGridOccupied(mapName, x, y) then return false end
-			local m0 = self:GetCellMask(tilemap2, tilemap1, x, y)
-			if m0 < 0 then return false end
-			if m0 == 15 then return false end  -- 이미 파여 있음
+			-- 2×2 중심 흙 구덩이(홀, 마스크 15) + 둘레 12이웃 ½셀 프린지 자동 도장.
+			local cells = {
+				{ x, y }, { x + 1, y }, { x, y + 1 }, { x + 1, y + 1 }
+			}
+			for _, c in ipairs(cells) do
+				if not self:IsTerrainCellEditable(map, c[1], c[2]) then return false end
+				if self:IsGridOccupied(mapName, c[1], c[2]) then return false end
+			end
 
-			self:SetCellMaskExact(tilemap2, x, y, 15)
-			local fringes = self:GetTerrainFringeTable()
-			for _, f in ipairs(fringes) do
-				local nx = x + f[1]
-				local ny = y + f[2]
+			local anyChange = false
+			for _, c in ipairs(cells) do
+				local cm = self:GetCellMask(tilemap2, tilemap1, c[1], c[2])
+				if cm < 0 then return false end
+				if cm ~= 15 then anyChange = true end
+			end
+			if not anyChange then return false end  -- 이미 2×2 전체가 홀
+
+			for _, c in ipairs(cells) do
+				self:SetCellMaskExact(tilemap2, c[1], c[2], 15)
+			end
+
+			-- 2×2 영역 둘레 12개 외곽 셀에 홀 방향 ½셀 프린지 적용
+			local fringes2x2 = {
+				-- 서쪽 2셀 (오른쪽 2서브셀 흙 = BR|TR = 10)
+				{ x - 1, y,     10 },
+				{ x - 1, y + 1, 10 },
+				-- 동쪽 2셀 (왼쪽 2서브셀 흙 = BL|TL = 5)
+				{ x + 2, y,     5 },
+				{ x + 2, y + 1, 5 },
+				-- 남쪽 2셀 (위쪽 2서브셀 흙 = TL|TR = 12)
+				{ x,     y - 1, 12 },
+				{ x + 1, y - 1, 12 },
+				-- 북쪽 2셀 (아래쪽 2서브셀 흙 = BL|BR = 3)
+				{ x,     y + 2, 3 },
+				{ x + 1, y + 2, 3 },
+				-- 4개 코너 (대각 모서리 1서브셀 흙)
+				{ x - 1, y - 1, 8 }, -- SW: TR (8)
+				{ x + 2, y - 1, 4 }, -- SE: TL (4)
+				{ x - 1, y + 2, 2 }, -- NW: BR (2)
+				{ x + 2, y + 2, 1 }, -- NE: BL (1)
+			}
+			for _, f in ipairs(fringes2x2) do
+				local nx = f[1]
+				local ny = f[2]
+				local bits = f[3]
 				if self:IsTerrainCellEditable(map, nx, ny) then
 					local nm = self:GetCellMask(tilemap2, tilemap1, nx, ny)
 					if nm >= 0 then
-						self:SetCellMaskExact(tilemap2, nx, ny, nm | f[3])
+						self:SetCellMaskExact(tilemap2, nx, ny, nm | bits)
 					end
 				end
 			end
 
 		elseif action == "plantGrass" then
-			-- digHole 대칭 역연산(T12): 대상 마스크=0 + 8이웃 대상쪽 비트 AND NOT.
-			-- fringe 테이블은 digHole과 단일 소스. 감산 결과 대각(6/9)도 SubGrass 타일로 그대로 표현 (2026-07-15).
-			if not self:IsTerrainCellEditable(map, x, y) then return false end
-			if self:IsGridOccupied(mapName, x, y) then return false end
-			local m = self:GetCellMask(tilemap2, tilemap1, x, y)
-			if m < 0 then return false end
-			if m == 0 then return false end  -- 이미 FullGrass
-			self:SetCellMaskExact(tilemap2, x, y, 0)
-			local fringes = self:GetTerrainFringeTable()
-			for _, f in ipairs(fringes) do
-				local fdx = f[1]
-				local fdy = f[2]
-				local fbits = f[3]
-				local nx = x + fdx
-				local ny = y + fdy
-				-- 이웃 점유여도 마진 클리어는 허용 (digHole 마진 합집합과 대칭).
+			-- 2×2 영역 FullGrass(0) 복원 + 외곽 12이웃 프린지 비트 감산
+			local cells = {
+				{ x, y }, { x + 1, y }, { x, y + 1 }, { x + 1, y + 1 }
+			}
+			for _, c in ipairs(cells) do
+				if not self:IsTerrainCellEditable(map, c[1], c[2]) then return false end
+				if self:IsGridOccupied(mapName, c[1], c[2]) then return false end
+			end
+
+			local anyChange = false
+			for _, c in ipairs(cells) do
+				local cm = self:GetCellMask(tilemap2, tilemap1, c[1], c[2])
+				if cm > 0 then anyChange = true end
+			end
+			if not anyChange then return false end  -- 이미 전부 FullGrass
+
+			for _, c in ipairs(cells) do
+				self:SetCellMaskExact(tilemap2, c[1], c[2], 0)
+			end
+
+			local fringes2x2 = {
+				{ x - 1, y,     10 },
+				{ x - 1, y + 1, 10 },
+				{ x + 2, y,     5 },
+				{ x + 2, y + 1, 5 },
+				{ x,     y - 1, 12 },
+				{ x + 1, y - 1, 12 },
+				{ x,     y + 2, 3 },
+				{ x + 1, y + 2, 3 },
+				{ x - 1, y - 1, 8 },
+				{ x + 2, y - 1, 4 },
+				{ x - 1, y + 2, 2 },
+				{ x + 2, y + 2, 1 },
+			}
+			for _, f in ipairs(fringes2x2) do
+				local nx = f[1]
+				local ny = f[2]
+				local bits = f[3]
 				if self:IsTerrainCellEditable(map, nx, ny) then
 					local nm = self:GetCellMask(tilemap2, tilemap1, nx, ny)
 					if nm >= 0 then
-						-- AND NOT bits (unary ~ 의존 회피: nm에서 fbits 겹침만 제거)
-						local cleared = nm - (nm & fbits)
+						local cleared = nm - (nm & bits)
 						self:SetCellMaskExact(tilemap2, nx, ny, cleared)
 					end
 				end

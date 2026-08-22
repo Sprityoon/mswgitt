@@ -617,8 +617,8 @@ script PlayerController extends Component
 		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
 		if not isvalid(tilemap) then return end
 		local playerPos = self.Entity.TransformComponent.WorldPosition
-		local aimWorldX = playerPos.x + self.LastDirectionX * 1.0
-		local aimWorldY = playerPos.y + self.LastDirectionY * 1.0
+		local aimWorldX = playerPos.x + self.LastDirectionX * 1.8
+		local aimWorldY = playerPos.y + self.LastDirectionY * 1.8
 		local targetCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
 		if targetCell == nil then return end
 
@@ -954,7 +954,7 @@ script PlayerController extends Component
 		local dx = targetCenterX - playerPos.x
 		local dy = targetCenterY - playerPos.y
 		local distSq = dx * dx + dy * dy
-		if distSq > 6.25 then
+		if distSq > 12.25 then
 			log_warning("Player " .. self.Entity.Name .. " attempted out-of-range mine target.")
 			return
 		end
@@ -999,10 +999,10 @@ script PlayerController extends Component
 				targetEntity = gridData.entity
 			end
 			
-			-- 타겟 셀에서 미검출 시, 바라보는 방향 전방(1.2 유닛) 셀 추가 탐색 (좌우 채광 판정 균형)
+			-- 타겟 셀에서 미검출 시, 바라보는 방향 전방(2.0 유닛) 셀 추가 탐색 (2배 스케일 채광 판정)
 			if pivotKey == nil then
-				local probeX = math.floor(playerPos.x + self.LastDirectionX * 1.2)
-				local probeY = math.floor(playerPos.y + self.LastDirectionY * 1.2)
+				local probeX = math.floor(playerPos.x + self.LastDirectionX * 2.0)
+				local probeY = math.floor(playerPos.y + self.LastDirectionY * 2.0)
 				local probeKey = probeX .. "_" .. probeY
 				local pData = gridToEntity[probeKey]
 				if pData and (pData.isTile or isvalid(pData.entity)) then
@@ -1155,11 +1155,13 @@ script PlayerController extends Component
 			local tilemap = self.Entity.CurrentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
 			if isvalid(tilemap) then
 				local playerWorldPos = self.Entity.TransformComponent.WorldPosition
-				local aimWorldX = playerWorldPos.x + self.LastDirectionX * 1.0
-				local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.0
+				local aimWorldX = playerWorldPos.x + self.LastDirectionX * 1.8
+				local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.8
 				local targetCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
 				if targetCell == nil then return end
-				local cellWorldPos = Vector3(targetCell.x + 0.5, targetCell.y + 0.5, 0)
+				local is2x2 = (placedTileName == "")
+				local cellWorldPos = is2x2 and Vector3(targetCell.x + 1.0, targetCell.y + 1.0, 0) or Vector3(targetCell.x + 0.5, targetCell.y + 0.5, 0)
+				local previewScale = is2x2 and Vector3(2.0, 2.0, 1.0) or Vector3(1.0, 1.0, 1.0)
 				
 				local preview = self._T.PlacementPreviewEntity
 				if not isvalid(preview) then
@@ -1170,7 +1172,7 @@ script PlayerController extends Component
 				if isvalid(preview) then
 					preview.Enable = true
 					preview.Visible = true
-					preview.TransformComponent.Scale = Vector3(1.0, 1.0, 1.0)
+					preview.TransformComponent.Scale = previewScale
 					
 					local sprite = preview.SpriteRendererComponent
 					if isvalid(sprite) then
@@ -1195,8 +1197,9 @@ script PlayerController extends Component
 					-- Client-side occupancy check using collision simulator
 					local simulator = _CollisionService:GetSimulator(self.Entity)
 					if simulator then
-						-- Use a slightly larger shape to ensure we catch nearby obstacles
-						local checkShape = BoxShape(Vector2(targetCell.x + 0.5, targetCell.y + 0.5), Vector2(0.9, 0.9), 0)
+						local checkCenter = is2x2 and Vector2(targetCell.x + 1.0, targetCell.y + 1.0) or Vector2(targetCell.x + 0.5, targetCell.y + 0.5)
+						local checkSize = is2x2 and Vector2(1.8, 1.8) or Vector2(0.9, 0.9)
+						local checkShape = BoxShape(checkCenter, checkSize, 0)
 						-- Check all relevant collision groups
 						local groups = { CollisionGroups.Default, CollisionGroups.TriggerBox, CollisionGroups.HitBox }
 						local overlaps = simulator:OverlapAll(groups, checkShape)
@@ -1285,9 +1288,11 @@ script PlayerController extends Component
 		if not isvalid(currentMap) then return false end
 		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
 		if not isvalid(tilemap) then return false end
-		local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
-		if playerCell == nil then return false end
-		local aimCell = Vector2Int(playerCell.x + self.LastDirectionX, playerCell.y + self.LastDirectionY)
+		local playerWorldPos = self.Entity.TransformComponent.WorldPosition
+		local aimWorldX = playerWorldPos.x + self.LastDirectionX * 1.8
+		local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.8
+		local aimCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
+		if aimCell == nil then return false end
 		local targetName = target.Name
 		if targetName == nil then targetName = "?" end
 
@@ -1363,11 +1368,11 @@ script PlayerController extends Component
 		if not isvalid(tilemap) then return end
 		
 		local playerWorldPos = self.Entity.TransformComponent.WorldPosition
-		local aimWorldX = playerWorldPos.x + self.LastDirectionX * 1.0
-		local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.0
+		local aimWorldX = playerWorldPos.x + self.LastDirectionX * 1.8
+		local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.8
 		local targetCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
 		if targetCell == nil then return end
-		local cellWorldPos = Vector3(targetCell.x + 0.5, targetCell.y + 0.5, 0)
+		local cellWorldPos = Vector3(targetCell.x + 1.0, targetCell.y + 1.0, 0)
 		
 		local preview = self._T.PlacementPreviewEntity
 		if not isvalid(preview) then
@@ -3514,9 +3519,11 @@ script PlayerController extends Component
 
 		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
 		if not isvalid(tilemap) then return false end
-		local playerCell = tilemap:ToCellPosition(self.Entity.TransformComponent.WorldPosition)
-		if playerCell == nil then return false end
-		local aimCell = Vector2Int(playerCell.x + self.LastDirectionX, playerCell.y + self.LastDirectionY)
+		local playerWorldPos = self.Entity.TransformComponent.WorldPosition
+		local aimWorldX = playerWorldPos.x + self.LastDirectionX * 1.8
+		local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.8
+		local aimCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
+		if aimCell == nil then return false end
 
 		local l1 = currentMap:GetChildByName("RectTileMap")
 		if not isvalid(l1) or not isvalid(l1.RectTileMapComponent) then return false end
@@ -3608,7 +3615,7 @@ script PlayerController extends Component
 			local myPos = self.Entity.TransformComponent.WorldPosition
 			local spotPos = spotEnt.TransformComponent.WorldPosition
 			local dist = Vector2.Distance(Vector2(myPos.x, myPos.y), Vector2(spotPos.x, spotPos.y))
-			if dist > 2.5 then return end
+			if dist > 3.5 then return end
 		end
 		
 		if not self:IsEquippedFishingRod() then

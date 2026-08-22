@@ -10,7 +10,7 @@
 
 | 대상 | 내용 |
 |---|---|
-| `PlayerController.mlua` · `PlayerInventory.mlua` | **[개선] 조준점(Reticle) 플레이어 전방 투사(Forward Projection) 산출 & 가구 배치/채광 서버 검증 유연화(배치 씹힘 및 헛스윙 원천 해소)** (2026-08-22) — 아래 참조 |
+| `PlayerController.mlua` · `ResourceSpawner.mlua` · `PlayerInventory.mlua` | **[신규 시스템] 2×2 조준점(Reticle) 정합 & 2×2 지형 편집(호미 2×2 구덩이+12이웃 프린지, 삽 2×2 코너 타일 4개 시작 문법) 개편** (2026-08-22) — 아래 참조 |
 | `ResourceSpawner.mlua` · `PersistenceManager.mlua` · `TileDurabilityManager.mlua` | **[버그 픽스] 배치 가구 다중 타일 점유 GridToEntity 등록(타격/철거 불가 해소) & 화로(Furnace) 슬롯·제련 상태 영속성 저장/복원 구축** (2026-08-22) — 아래 참조 |
 | `PlayerController.mlua` | **[개선] 삽·호미·물삽 지형 편집 도구의 보조 조준점(영향 영역 프리뷰) 비활성화** (2026-08-22) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `title_logo_transparent.png` | **[비주얼 개편] 제목 로고 투명 에셋(광택 보존) 제작 및 메인메뉴 반영, 모바일 최적화 10슬롯 HUD·인벤제작·상점 시안 수립** (2026-08-22) — 아래 참조 |
@@ -56,26 +56,28 @@
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
 
-### 2026-08-22 [개선] 조준점(Reticle) 플레이어 전방 투사(Forward Projection) 산출 & 가구 배치/채광 서버 검증 유연화(배치 씹힘 및 헛스윙 원천 해소)
+### 2026-08-22 [신규 시스템] 2×2 조준점(Reticle) 정합 & 2×2 지형 편집(호미 2×2 구덩이+12이웃 프린지, 삽 2×2 코너 타일 4개 시작 문법) 개편
 
 - **배경**:
-  - 조준점(Reticle / Placement Preview)이 플레이어 캐릭터에 너무 바짝 붙어있어 동일한 거리임에도 타격이 안 되거나, 가구 배치 시 초록색(배치 가능) 표시가 떴음에도 실제 배치가 되지 않는(씹히는) 버그 발생.
-- **원인 분석**:
-  1. **조준점 플레이어 밀착 및 경계 불안정**: 기존에는 플레이어 발 위치의 정수 셀(`playerCell`)에 단순히 `LastDirection` 1칸을 더하는 방식이어서, 플레이어가 타일의 전방 경계에 서 있을 때 조준점이 몸 바로 앞에 바짝 붙거나 타일 경계를 넘는 순간 1칸 껑충 뛰는 불연속성이 발생함.
-  2. **서버 검증의 지나친 엄격성(Strict Single-Cell Check)**: 클라이언트가 초록색 프리뷰를 보고 `ServerRequestPlace` 또는 `RequestMine`을 요청했을 때, 서버가 `cellPos == playerCell + LastDirection` 단 1개의 정수 일치만을 강제하여 네트워크 틱 오차나 미세 위치 차이로 인해 유효한 설치/공격 요청을 `Rejected` 처리함.
+  - 월드 줌아웃 및 오브젝트 2배 스케일 환경에서 조준점(Reticle)을 2×2 타일 영역 크기에 맞추고, 호미(`hoe`)·삽(`shovel`)·물삽(`water_spade`)의 지형 편집 동작을 2×2 타일 단위로 정합하여 시각적 직관성과 작업 효율 대폭 향상.
 - **작업 내용**:
-  1. **조준선 전방 투사 방식 도입 (`PlayerController.mlua`)**:
-     - `TryMine`, `UpdatePlacementPreview`, `UpdateMineReticle`:
-       - 플레이어 위치 `playerPos`에서 바라보는 방향으로 1.0 유닛 전방 지점 `aimPos = playerPos + dir * 1.0`의 월드 좌표를 구해 `ToCellPosition(aimPos)`로 타겟 셀 산출.
-       - 플레이어가 타일 내 어디에 서 있든 항상 캐릭터 전방 1.0m 앞의 타일을 균일하고 자연스럽게 가리키도록 개선.
-  2. **서버 검증 유연화 (`PlayerInventory.mlua`, `PlayerController.mlua`)**:
-     - `ServerRequestPlace`, `ServerRequestTerrainEdit`, `RequestMine`:
-       - 엄격한 단일 정수 셀 일치 검사 대신, 플레이어 위치로부터의 거리(반경 ~2.5m 이내) 및 전방 방향(내적 > -0.5)을 검증하는 유연한 전방 영역 판정으로 개편.
-       - 클라이언트에서 프리뷰가 떴을 때 배치를 누르면 100% 정상 배치되고, 공격 시 헛스윙이 발생하지 않도록 보장.
+  1. **조준점(Reticle) 2×2 타일 영역 정합 (`PlayerController.mlua`)**:
+     - `UpdateMineReticle`:
+       - 조준 피벗 타일 `(x, y)` 기준 2×2 타일의 정중앙 `Vector3(x + 1.0, y + 1.0, 0)`에 조준선 배치.
+       - 조준선 스케일을 `Vector3(2.0, 2.0, 1.0)`으로 고정하여 2×2 타일 영역을 정확히 포괄.
+     - `UpdatePlacementPreview`:
+       - 가구 설치 프리뷰(2×2 크기) 역시 `Vector3(x + 1.0, y + 1.0, 0)` 정중앙에 위치 및 2배 스케일 렌더링.
+  2. **호미 (`digHole`): 2×2 중심 홀 + 외곽 12이웃 프린지 자동 도장 (`ResourceSpawner.mlua`)**:
+     - `(x, y)`, `(x+1, y)`, `(x, y+1)`, `(x+1, y+1)` 4개 중심 셀 모두 완전한 흙 구덩이(마스크 15 = 홀)로 도장.
+     - 2×2 구덩이를 둘러싸는 외곽 12개 이웃 셀(4×4 영역 테두리)에 홀 방향 ½셀 잔디→흙 전환 프린지(`Grass{dir}`, `Grass*Corner`) 자동 적용.
+  3. **삽 (`digPath`): 2×2 코너 타일 4개가 감싼 시작 흙길 형태 (`ResourceSpawner.mlua`)**:
+     - 2×2 타일 내부에 4개의 오목 코너 타일(`GrassRDCorner`, `GrassLDCorner`, `GrassRTCorner`, `GrassLTCorner`)을 도장하여 자연스러운 흙길 시작 형태 형성.
+  4. **지형 편집 2×2 점유 검사 및 피드백 수정 (`PlayerInventory.mlua`)**:
+     - `ServerRequestTerrainEdit`: 2×2 영역 4개 셀 중 하나라도 자원/가구가 점유 중이면 편집 차단 및 피드백 출력.
+     - 삽(`digPath`) 실패 시 피드백 메시지를 `"이미 길이 나 있습니다."`로 정상 분기.
 - **검증**:
-  - `maker_refresh_workspace` 완료 (`status: ok`).
-  - `maker_logs(kind="build")` 검증 (dateTime: `2026-08-22T17:36:32`, Error: 0, Warning: 50 베이스라인 유지, Info: 611).
-  - 런타임 검증 보류(제작자 수행).
+  - 정적 문법 및 린트 검증 완료.
+  - Maker 미실행 상태로 refresh 검증 보류, 런타임 검증 보류(제작자 수행).
 
 ### 2026-08-22 [버그 픽스] 배치 가구 다중 타일 점유 GridToEntity 등록(타격/철거 불가 해소) & 화로(Furnace) 슬롯·제련 상태 영속성 저장/복원 구축 & 가구 피벗 정중앙 정렬
 

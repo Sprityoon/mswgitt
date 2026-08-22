@@ -1805,7 +1805,7 @@ script PlayerInventory extends Component
 		local dx = targetCenterX - playerPos.x
 		local dy = targetCenterY - playerPos.y
 		local distSq = dx * dx + dy * dy
-		if distSq > 6.25 then
+		if distSq > 12.25 then
 			log_warning("Rejected placement too far from player.")
 			return
 		end
@@ -2104,7 +2104,7 @@ script PlayerInventory extends Component
 		local dx = targetCenterX - playerPos.x
 		local dy = targetCenterY - playerPos.y
 		local distSq = dx * dx + dy * dy
-		if distSq > 6.25 then
+		if distSq > 12.25 then
 			log_warning("Rejected terrain edit too far from player.")
 			return
 		end
@@ -2212,7 +2212,17 @@ script PlayerInventory extends Component
 			editX = origin.x
 			editY = origin.y
 		else
-			if resourceSpawner:IsGridOccupied(mapName, cellX, cellY) then
+			local occupied = false
+			for nx = cellX, cellX + 1 do
+				for ny = cellY, cellY + 1 do
+					if resourceSpawner:IsGridOccupied(mapName, nx, ny) then
+						occupied = true
+						break
+					end
+				end
+				if occupied then break end
+			end
+			if occupied then
 				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
 				return
 			end
@@ -2228,8 +2238,12 @@ script PlayerInventory extends Component
 					pc:ShowMineFeedback("여기에 되메울 수 없습니다.")
 				elseif action == "digHole" then
 					pc:ShowMineFeedback("이미 파여 있습니다.")
-				else
+				elseif action == "digPath" then
+					pc:ShowMineFeedback("이미 길이 나 있습니다.")
+				elseif action == "plantGrass" then
 					pc:ShowMineFeedback("여기엔 잔디를 심을 수 없습니다.")
+				else
+					pc:ShowMineFeedback("더 이상 편집할 수 없습니다.")
 				end
 			end
 			return
