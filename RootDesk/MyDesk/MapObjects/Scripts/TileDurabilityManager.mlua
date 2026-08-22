@@ -520,8 +520,16 @@ script TileDurabilityManager extends Logic
 				end
 			elseif isFurniture then
 				resourceSpawner:RemovePlacedFurniture(mapName, gridData.pivotX, gridData.pivotY)
+				resourceSpawner:RemoveEntity(mapName, pivotKey)
 				resourceEntity:Destroy()
 				log("Furniture demolished: " .. gridData.itemName .. " at " .. pivotKey)
+				if _PersistenceManager then
+					if string.sub(mapName, 1, 5) == "Home_" then
+						_PersistenceManager:MarkPlayerDirty(string.sub(mapName, 6))
+					elseif isvalid(attacker) and attacker.PlayerComponent ~= nil then
+						_PersistenceManager:MarkPlayerDirty(attacker.PlayerComponent.UserId)
+					end
+				end
 			else
 				local sourceName = resourceEntity.Name or ""
 				

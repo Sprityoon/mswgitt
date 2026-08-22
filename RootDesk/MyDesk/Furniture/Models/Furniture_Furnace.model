@@ -204,6 +204,42 @@
             "y": 2,
             "z": 2
           }
+        },
+        {
+          "TargetType": "script.ResourceOccupiedArea",
+          "Name": "OffsetXMin",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0
+        },
+        {
+          "TargetType": "script.ResourceOccupiedArea",
+          "Name": "OffsetXMax",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1
+        },
+        {
+          "TargetType": "script.ResourceOccupiedArea",
+          "Name": "OffsetYMin",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0
+        },
+        {
+          "TargetType": "script.ResourceOccupiedArea",
+          "Name": "OffsetYMax",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1
         }
       ],
       "EventLinks": [],

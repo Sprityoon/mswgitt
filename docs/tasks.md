@@ -10,6 +10,9 @@
 
 | 대상 | 내용 |
 |---|---|
+| `PlayerController.mlua` · `PlayerInventory.mlua` | **[개선] 조준점(Reticle) 플레이어 전방 투사(Forward Projection) 산출 & 가구 배치/채광 서버 검증 유연화(배치 씹힘 및 헛스윙 원천 해소)** (2026-08-22) — 아래 참조 |
+| `ResourceSpawner.mlua` · `PersistenceManager.mlua` · `TileDurabilityManager.mlua` | **[버그 픽스] 배치 가구 다중 타일 점유 GridToEntity 등록(타격/철거 불가 해소) & 화로(Furnace) 슬롯·제련 상태 영속성 저장/복원 구축** (2026-08-22) — 아래 참조 |
+| `PlayerController.mlua` | **[개선] 삽·호미·물삽 지형 편집 도구의 보조 조준점(영향 영역 프리뷰) 비활성화** (2026-08-22) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `title_logo_transparent.png` | **[비주얼 개편] 제목 로고 투명 에셋(광택 보존) 제작 및 메인메뉴 반영, 모바일 최적화 10슬롯 HUD·인벤제작·상점 시안 수립** (2026-08-22) — 아래 참조 |
 | `map/town.map` | **[핫픽스] town 맵 `UseCustomBound: true` 적용 및 LWA-3019 스폰 영역 경고 해소** (2026-08-21) — 아래 참조 |
 | `ResourceSpawner.mlua` · `PlayerController.mlua` | **[개선] 나무/자원 채광 좌우 타격 판정 불균형 해소 (다중 타일 자원 중심 정렬 & 전방 1.2m 채광 프로브 적용)** (2026-08-21) — 아래 참조 |
@@ -52,6 +55,61 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-22 [개선] 조준점(Reticle) 플레이어 전방 투사(Forward Projection) 산출 & 가구 배치/채광 서버 검증 유연화(배치 씹힘 및 헛스윙 원천 해소)
+
+- **배경**:
+  - 조준점(Reticle / Placement Preview)이 플레이어 캐릭터에 너무 바짝 붙어있어 동일한 거리임에도 타격이 안 되거나, 가구 배치 시 초록색(배치 가능) 표시가 떴음에도 실제 배치가 되지 않는(씹히는) 버그 발생.
+- **원인 분석**:
+  1. **조준점 플레이어 밀착 및 경계 불안정**: 기존에는 플레이어 발 위치의 정수 셀(`playerCell`)에 단순히 `LastDirection` 1칸을 더하는 방식이어서, 플레이어가 타일의 전방 경계에 서 있을 때 조준점이 몸 바로 앞에 바짝 붙거나 타일 경계를 넘는 순간 1칸 껑충 뛰는 불연속성이 발생함.
+  2. **서버 검증의 지나친 엄격성(Strict Single-Cell Check)**: 클라이언트가 초록색 프리뷰를 보고 `ServerRequestPlace` 또는 `RequestMine`을 요청했을 때, 서버가 `cellPos == playerCell + LastDirection` 단 1개의 정수 일치만을 강제하여 네트워크 틱 오차나 미세 위치 차이로 인해 유효한 설치/공격 요청을 `Rejected` 처리함.
+- **작업 내용**:
+  1. **조준선 전방 투사 방식 도입 (`PlayerController.mlua`)**:
+     - `TryMine`, `UpdatePlacementPreview`, `UpdateMineReticle`:
+       - 플레이어 위치 `playerPos`에서 바라보는 방향으로 1.0 유닛 전방 지점 `aimPos = playerPos + dir * 1.0`의 월드 좌표를 구해 `ToCellPosition(aimPos)`로 타겟 셀 산출.
+       - 플레이어가 타일 내 어디에 서 있든 항상 캐릭터 전방 1.0m 앞의 타일을 균일하고 자연스럽게 가리키도록 개선.
+  2. **서버 검증 유연화 (`PlayerInventory.mlua`, `PlayerController.mlua`)**:
+     - `ServerRequestPlace`, `ServerRequestTerrainEdit`, `RequestMine`:
+       - 엄격한 단일 정수 셀 일치 검사 대신, 플레이어 위치로부터의 거리(반경 ~2.5m 이내) 및 전방 방향(내적 > -0.5)을 검증하는 유연한 전방 영역 판정으로 개편.
+       - 클라이언트에서 프리뷰가 떴을 때 배치를 누르면 100% 정상 배치되고, 공격 시 헛스윙이 발생하지 않도록 보장.
+- **검증**:
+  - `maker_refresh_workspace` 완료 (`status: ok`).
+  - `maker_logs(kind="build")` 검증 (dateTime: `2026-08-22T17:36:32`, Error: 0, Warning: 50 베이스라인 유지, Info: 611).
+  - 런타임 검증 보류(제작자 수행).
+
+### 2026-08-22 [버그 픽스] 배치 가구 다중 타일 점유 GridToEntity 등록(타격/철거 불가 해소) & 화로(Furnace) 슬롯·제련 상태 영속성 저장/복원 구축 & 가구 피벗 정중앙 정렬
+
+- **배경**:
+  - 배치한 가구(화로, 상자 등)를 공격/채광(Ctrl)으로 타격하려 할 때 타격점이 오른쪽으로 치우치거나 허공 스윙이 되며 때려지지 않는 현상 발생.
+  - 화로에 광석(재료) 및 나무(연료)를 넣고 게임을 종료/재접속했을 때 화로 안의 자원이 유실되는 현상 발생.
+- **원인 및 해결**:
+  1. **가구 타격 불가 및 오른쪽 치우침**:
+     - 가구 모델(`Furniture_WoodenChest`, `Furniture_Bed` 등)은 2배 스케일 및 2x2 점유 영역(`0~1, 0~1`)을 가지나, `Furniture_Furnace`와 `Furniture_CookingPot` 모델은 점유 영역이 1x1로 누락되어 있었음 ➡️ `ModelBuilder`로 2x2 점유 영역 일괄 정합.
+     - 가구 스폰 시 엔티티 위치가 `(x+0.5, y+0.5)`(왼쪽 아래 셀)에 고정되어 시각적 스프라이트 중심과 점유 타일(오른쪽)이 불일치하던 문제 ➡️ 나무(Tree) 정합 선례와 동일하게 점유 영역 기하학적 정중앙 `cx = (xMin + xMax + 1) * 0.5, cy = (yMin + yMax + 1) * 0.5`로 `WorldPosition` 자동 중심 정렬 적용 (`PlayerInventory.mlua`, `ResourceSpawner.mlua`).
+     - 가구의 점유 셀 전체(`nx = xMin ~ xMax`, `ny = yMin ~ yMax`)를 `GridToEntity`에 일괄 등록하여 가구의 어느 면을 바라보고 때려도 피벗 엔티티가 감지되도록 개선.
+     - `TileDurabilityManager.mlua`에서 가구 철거 시 `RemovePlacedFurniture`뿐 아니라 `RemoveEntity`를 호출하여 점유했던 모든 그리드 셀을 완벽히 정리하고 세이브 dirty 마킹.
+  2. **화로 자원 증발**:
+     - `PersistenceManager.mlua`의 `SaveHomeMap`에 영지 내 `script.Furnace` 컴포넌트 스캔 및 `furnaceData`(`inputName`, `inputCount`, `fuelName`, `fuelCount`, `outputName`, `outputCount`, `fuelTime`, `progressTime`, `isSmelting`) 수집·직렬화 루틴 추가.
+     - `PersistenceManager.mlua`의 `LoadHomeMap` 및 `ResourceSpawner.mlua`의 `ReconstructWorldPlacementsForMap`에 화로 데이터 복원 로직 추가.
+  3. **시그니처 교정**:
+     - `PlayerController.mlua`의 `OnMapEnter(Entity enteredMap)` 라이프사이클 파라미터 시그니처 정합(LEA-4004 해소).
+- **검증**:
+  - `maker_refresh_workspace` 완료 (`status: ok`).
+  - `maker_logs(kind="build")` 검증 (dateTime: `2026-08-22T17:32:25`, Error: 0, Warning: 50 베이스라인 유지, Info: 606).
+  - 런타임 검증 보류(제작자 수행).
+
+### 2026-08-22 [개선] 삽·호미·물삽 지형 편집 도구의 보조 조준점(영향 영역 프리뷰) 비활성화
+
+- **배경**:
+  - 삽(길 파기), 호미(구덩이 파기), 물삽(물 파기) 등 지형 편집 도구를 들었을 때 정면 1칸 기본 조준점 외에 주변 영향 영역에 노란색 보조 조준점(`TerrainAffect_1` ~ `16`)이 함께 표시되던 기능을 불필요하여 비활성화 요청.
+- **작업 내용**:
+  - `PlayerController.mlua`:
+    - `UpdateTerrainAffectPreview`에서 `TerrainAffect_1` ~ `16` 풀 엔티티 중 켜져있는 엔티티들을 모두 `Enable = false`로 안전하게 비활성화하고 추가 노란색 프리뷰 타일 표시 로직을 제거.
+    - 기본 1칸 조준선(`UpdateMineReticle`) 및 가구/타일 설치 프리뷰(`UpdatePlacementPreview`)는 정상 유지.
+- **검증**:
+  - `maker_refresh_workspace` 완료 (`status: ok`).
+  - `maker_logs(kind="build")` 검증 (dateTime: `2026-08-22T16:53:59`, Error: 0, Warning: 0).
+  - 런타임 검증 보류(제작자 수행).
 
 ### 2026-08-22 [비주얼 개편] 제목 로고 투명 에셋(광택 보존) 제작 및 메인메뉴 반영, 모바일 최적화 10슬롯 HUD·인벤제작·상점 시안 수립
 

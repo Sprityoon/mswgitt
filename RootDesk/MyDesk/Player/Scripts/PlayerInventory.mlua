@@ -1797,14 +1797,24 @@ script PlayerInventory extends Component
 			return
 		end
 		
-		-- 서버 위치와 서버 방향 기준으로 바라보는 인접 셀만 허용한다.
+		-- 서버 위치와 서버 방향 기준으로 타겟 셀의 거리 및 전방 방향 검증
 		local playerPos = self.Entity.TransformComponent.WorldPosition
-		local playerCell = tilemap:ToCellPosition(playerPos)
-		if playerCell == nil or not isvalid(pc) then return end
-		local expectedX = playerCell.x + pc.LastDirectionX
-		local expectedY = playerCell.y + pc.LastDirectionY
-		if cellPos.x ~= expectedX or cellPos.y ~= expectedY then
-			log_warning("Rejected placement outside the aimed adjacent cell.")
+		if not isvalid(pc) then return end
+		local targetCenterX = cellPos.x + 0.5
+		local targetCenterY = cellPos.y + 0.5
+		local dx = targetCenterX - playerPos.x
+		local dy = targetCenterY - playerPos.y
+		local distSq = dx * dx + dy * dy
+		if distSq > 6.25 then
+			log_warning("Rejected placement too far from player.")
+			return
+		end
+		if pc.LastDirectionX ~= 0 and (dx * pc.LastDirectionX < -0.5) then
+			log_warning("Rejected placement behind player X.")
+			return
+		end
+		if pc.LastDirectionY ~= 0 and (dy * pc.LastDirectionY < -0.5) then
+			log_warning("Rejected placement behind player Y.")
 			return
 		end
 		
@@ -1888,6 +1898,10 @@ script PlayerInventory extends Component
 			end
 			
 			local xMin, xMax, yMin, yMax = cellPos.x, cellPos.x, cellPos.y, cellPos.y
+			if not isCropSeed then
+				xMax = cellPos.x + 1
+				yMax = cellPos.y + 1
+			end
 			
 			-- Check player collision overlap
 			local players = _UserService:GetUsersByMapComponent(currentMap.MapComponent)
@@ -1959,6 +1973,17 @@ script PlayerInventory extends Component
 				currentMap
 			)
 			if isvalid(spawnedEntity) then
+				local occ = spawnedEntity:GetComponent("script.ResourceOccupiedArea")
+				if isvalid(occ) then
+					local fxMin = math.floor(cellPos.x + (tonumber(occ.OffsetXMin) or 0))
+					local fxMax = math.floor(cellPos.x + (tonumber(occ.OffsetXMax) or 0))
+					local fyMin = math.floor(cellPos.y + (tonumber(occ.OffsetYMin) or 0))
+					local fyMax = math.floor(cellPos.y + (tonumber(occ.OffsetYMax) or 0))
+					local cx = (fxMin + fxMax + 1.0) * 0.5
+					local cy = (fyMin + fyMax + 1.0) * 0.5
+					spawnedEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+				end
+
 				local sprite = spawnedEntity.SpriteRendererComponent
 				if isvalid(sprite) then
 					sprite.IgnoreMapLayerCheck = true
@@ -2069,16 +2094,26 @@ script PlayerInventory extends Component
 		if ok and v ~= nil then action = v end
 		if action == "" then return end   -- 편집 도구/아이템이 아님
 
-		-- 서버 위치와 서버 방향 기준으로 바라보는 인접 셀만 허용한다.
-		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
-		if not isvalid(tilemap) then return end
+		-- 서버 위치와 서버 방향 기준으로 타겟 셀의 거리 및 전방 방향 검증
 		local playerPos = self.Entity.TransformComponent.WorldPosition
-		local playerCell = tilemap:ToCellPosition(playerPos)
-		if playerCell == nil or not isvalid(pc) then return end
+		if not isvalid(pc) then return end
 		dirX = pc.LastDirectionX
 		dirY = pc.LastDirectionY
-		if cellX ~= playerCell.x + dirX or cellY ~= playerCell.y + dirY then
-			log_warning("Rejected terrain edit outside the aimed adjacent cell.")
+		local targetCenterX = cellX + 0.5
+		local targetCenterY = cellY + 0.5
+		local dx = targetCenterX - playerPos.x
+		local dy = targetCenterY - playerPos.y
+		local distSq = dx * dx + dy * dy
+		if distSq > 6.25 then
+			log_warning("Rejected terrain edit too far from player.")
+			return
+		end
+		if dirX ~= 0 and (dx * dirX < -0.5) then
+			log_warning("Rejected terrain edit behind player X.")
+			return
+		end
+		if dirY ~= 0 and (dy * dirY < -0.5) then
+			log_warning("Rejected terrain edit behind player Y.")
 			return
 		end
 

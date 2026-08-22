@@ -577,10 +577,9 @@ script UIHUDController extends Component
 		
 					if itemName ~= "" then
 						local baseName = inv:GetBaseItemName(itemName)
-						-- Set rarity background color
+						-- Keep slot background transparent (base sprite has slot graphics)
 						if isvalid(slotEntity.SpriteGUIRendererComponent) then
-							local rarity = self:GetItemRarity(baseName)
-							slotEntity.SpriteGUIRendererComponent.Color = self:GetQuickSlotColor(rarity)
+							slotEntity.SpriteGUIRendererComponent.Color = Color(0, 0, 0, 0)
 						end
 						
 						-- Get Icon from dataset
@@ -611,9 +610,9 @@ script UIHUDController extends Component
 							countTextEntity.TextComponent.Text = tostring(inv:GetItemCount(itemName))
 						end
 					else
-						-- Clear Slot
+						-- Clear Slot (Keep transparent)
 						if isvalid(slotEntity.SpriteGUIRendererComponent) then
-							slotEntity.SpriteGUIRendererComponent.Color = Color(0.13, 0.16, 0.13, 1.0)
+							slotEntity.SpriteGUIRendererComponent.Color = Color(0, 0, 0, 0)
 						end
 						if isvalid(iconEntity) then
 							iconEntity.Enable = false

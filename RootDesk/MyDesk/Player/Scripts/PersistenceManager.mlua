@@ -910,20 +910,49 @@ script PersistenceManager extends Logic
 					furnList = decoded
 				end
 			end
-			local chestComps = map:GetChildComponentsByTypeName("script.Chest", true)
 			local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
-			if chestComps and isvalid(tilemap) then
-				for _, comp in ipairs(chestComps) do
-					local ent = comp.Entity
-					if isvalid(ent) then
-						local entCell = tilemap:ToCellPosition(ent.TransformComponent.WorldPosition)
-						if entCell then
-							for _, furn in ipairs(furnList) do
-								if furn.x == entCell.x and furn.y == entCell.y then
-									if furn.chestItems then
-										comp:SetItems(furn.chestItems)
+			if isvalid(tilemap) then
+				local chestComps = map:GetChildComponentsByTypeName("script.Chest", true)
+				if chestComps then
+					for _, comp in ipairs(chestComps) do
+						local ent = comp.Entity
+						if isvalid(ent) then
+							local entCell = tilemap:ToCellPosition(ent.TransformComponent.WorldPosition)
+							if entCell then
+								for _, furn in ipairs(furnList) do
+									if furn.x == entCell.x and furn.y == entCell.y then
+										if furn.chestItems then
+											comp:SetItems(furn.chestItems)
+										end
+										break
 									end
-									break
+								end
+							end
+						end
+					end
+				end
+
+				local furnaceComps = map:GetChildComponentsByTypeName("script.Furnace", true)
+				if furnaceComps then
+					for _, comp in ipairs(furnaceComps) do
+						local ent = comp.Entity
+						if isvalid(ent) then
+							local entCell = tilemap:ToCellPosition(ent.TransformComponent.WorldPosition)
+							if entCell then
+								for _, furn in ipairs(furnList) do
+									if furn.x == entCell.x and furn.y == entCell.y and furn.furnaceData then
+										local fd = furn.furnaceData
+										comp.InputItemName = fd.inputName or ""
+										comp.InputItemCount = math.floor(tonumber(fd.inputCount) or 0)
+										comp.FuelItemName = fd.fuelName or ""
+										comp.FuelItemCount = math.floor(tonumber(fd.fuelCount) or 0)
+										comp.OutputItemName = fd.outputName or ""
+										comp.OutputItemCount = math.floor(tonumber(fd.outputCount) or 0)
+										comp.FuelTimeRemaining = tonumber(fd.fuelTime) or 0.0
+										comp.ProgressTime = tonumber(fd.progressTime) or 0.0
+										comp.IsSmelting = fd.isSmelting == true
+										break
+									end
 								end
 							end
 						end
@@ -1144,19 +1173,49 @@ script PersistenceManager extends Logic
 		
 		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
 		if isvalid(map) then
-			local chestComps = map:GetChildComponentsByTypeName("script.Chest", true)
 			local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
-			if chestComps and isvalid(tilemap) then
-				for _, comp in ipairs(chestComps) do
-					local ent = comp.Entity
-					if isvalid(ent) then
-						local entCell = tilemap:ToCellPosition(ent.TransformComponent.WorldPosition)
-						if entCell then
-							for _, furn in ipairs(furnList) do
-								if furn.x == entCell.x and furn.y == entCell.y then
-									-- 원본 스냅샷(정제 전). 빈 {} 는 아래 정제에서 제거한다.
-									furn.chestItems = comp:GetItems()
-									break
+			if isvalid(tilemap) then
+				local chestComps = map:GetChildComponentsByTypeName("script.Chest", true)
+				if chestComps then
+					for _, comp in ipairs(chestComps) do
+						local ent = comp.Entity
+						if isvalid(ent) then
+							local entCell = tilemap:ToCellPosition(ent.TransformComponent.WorldPosition)
+							if entCell then
+								for _, furn in ipairs(furnList) do
+									if furn.x == entCell.x and furn.y == entCell.y then
+										-- 원본 스냅샷(정제 전). 빈 {} 는 아래 정제에서 제거한다.
+										furn.chestItems = comp:GetItems()
+										break
+									end
+								end
+							end
+						end
+					end
+				end
+
+				local furnaceComps = map:GetChildComponentsByTypeName("script.Furnace", true)
+				if furnaceComps then
+					for _, comp in ipairs(furnaceComps) do
+						local ent = comp.Entity
+						if isvalid(ent) then
+							local entCell = tilemap:ToCellPosition(ent.TransformComponent.WorldPosition)
+							if entCell then
+								for _, furn in ipairs(furnList) do
+									if furn.x == entCell.x and furn.y == entCell.y then
+										furn.rawFurnace = {
+											inputName = comp.InputItemName or "",
+											inputCount = math.floor(tonumber(comp.InputItemCount) or 0),
+											fuelName = comp.FuelItemName or "",
+											fuelCount = math.floor(tonumber(comp.FuelItemCount) or 0),
+											outputName = comp.OutputItemName or "",
+											outputCount = math.floor(tonumber(comp.OutputItemCount) or 0),
+											fuelTime = tonumber(comp.FuelTimeRemaining) or 0.0,
+											progressTime = tonumber(comp.ProgressTime) or 0.0,
+											isSmelting = comp.IsSmelting == true
+										}
+										break
+									end
 								end
 							end
 						end
@@ -1165,7 +1224,7 @@ script PersistenceManager extends Logic
 			end
 		end
 
-		-- 상자 내용 정제: 빈 중첩 chestItems={} → LEA-3001. 비어 있으면 생략, 있으면 평문 복사만.
+		-- 상자 / 화로 내용 정제: 빈 중첩 구조 → LEA-3001. 비어 있으면 생략, 있으면 평문 복사만.
 		for _, furn in ipairs(furnList) do
 			local rawItems = furn.chestItems
 			furn.chestItems = nil
@@ -1186,6 +1245,30 @@ script PersistenceManager extends Logic
 				end
 				if #clean > 0 then
 					furn.chestItems = clean
+				end
+			end
+
+			local rawFurn = furn.rawFurnace
+			furn.rawFurnace = nil
+			furn.furnaceData = nil
+			if rawFurn ~= nil and type(rawFurn) == "table" then
+				local hasContent = (rawFurn.inputCount > 0 and rawFurn.inputName ~= "")
+					or (rawFurn.fuelCount > 0 and rawFurn.fuelName ~= "")
+					or (rawFurn.outputCount > 0 and rawFurn.outputName ~= "")
+					or (rawFurn.fuelTime > 0.0)
+					or (rawFurn.progressTime > 0.0)
+				if hasContent then
+					furn.furnaceData = {
+						inputName = rawFurn.inputName,
+						inputCount = rawFurn.inputCount,
+						fuelName = rawFurn.fuelName,
+						fuelCount = rawFurn.fuelCount,
+						outputName = rawFurn.outputName,
+						outputCount = rawFurn.outputCount,
+						fuelTime = rawFurn.fuelTime,
+						progressTime = rawFurn.progressTime,
+						isSmelting = rawFurn.isSmelting
+					}
 				end
 			end
 		end

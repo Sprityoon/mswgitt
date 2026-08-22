@@ -2633,6 +2633,17 @@ script ResourceSpawner extends Logic
 					map
 				)
 				if isvalid(spawnedEntity) then
+					local occAlign = spawnedEntity:GetComponent("script.ResourceOccupiedArea")
+					if isvalid(occAlign) then
+						local axMin = math.floor(fx + (tonumber(occAlign.OffsetXMin) or 0))
+						local axMax = math.floor(fx + (tonumber(occAlign.OffsetXMax) or 0))
+						local ayMin = math.floor(fy + (tonumber(occAlign.OffsetYMin) or 0))
+						local ayMax = math.floor(fy + (tonumber(occAlign.OffsetYMax) or 0))
+						local cx = (axMin + axMax + 1.0) * 0.5
+						local cy = (ayMin + ayMax + 1.0) * 0.5
+						spawnedEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+					end
+
 					local sprite = spawnedEntity.SpriteRendererComponent
 					if isvalid(sprite) then
 						sprite.IgnoreMapLayerCheck = true
@@ -2683,17 +2694,48 @@ script ResourceSpawner extends Logic
 					end
 
 					
-					local key = fx .. "_" .. fy
+					-- Restore Furnace state if present in save data
+					if f.furnaceData ~= nil and type(f.furnaceData) == "table" then
+						local furnaceComp = spawnedEntity:GetComponent("script.Furnace")
+						if isvalid(furnaceComp) then
+							local fd = f.furnaceData
+							furnaceComp.InputItemName = fd.inputName or ""
+							furnaceComp.InputItemCount = math.floor(tonumber(fd.inputCount) or 0)
+							furnaceComp.FuelItemName = fd.fuelName or ""
+							furnaceComp.FuelItemCount = math.floor(tonumber(fd.fuelCount) or 0)
+							furnaceComp.OutputItemName = fd.outputName or ""
+							furnaceComp.OutputItemCount = math.floor(tonumber(fd.outputCount) or 0)
+							furnaceComp.FuelTimeRemaining = tonumber(fd.fuelTime) or 0.0
+							furnaceComp.ProgressTime = tonumber(fd.progressTime) or 0.0
+							furnaceComp.IsSmelting = fd.isSmelting == true
+						end
+					end
+
 					local plantedAt = math.floor(tonumber(f.plantedAt) or 0)
-					gridToEntity[key] = {
-						entity = spawnedEntity,
-						pivotX = fx,
-						pivotY = fy,
-						isFurniture = true,
-						isCrop = isCrop,
-						itemName = f.itemName,
-						plantedAt = plantedAt
-					}
+					local xMin, xMax, yMin, yMax = fx, fx, fy, fy
+					local occ = spawnedEntity:GetComponent("script.ResourceOccupiedArea")
+					if isvalid(occ) then
+						xMin = math.floor(fx + (tonumber(occ.OffsetXMin) or 0))
+						xMax = math.floor(fx + (tonumber(occ.OffsetXMax) or 0))
+						yMin = math.floor(fy + (tonumber(occ.OffsetYMin) or 0))
+						yMax = math.floor(fy + (tonumber(occ.OffsetYMax) or 0))
+					end
+
+					for nx = xMin, xMax do
+						for ny = yMin, yMax do
+							local gKey = nx .. "_" .. ny
+							gridToEntity[gKey] = {
+								entity = spawnedEntity,
+								pivotX = fx,
+								pivotY = fy,
+								isFurniture = true,
+								isCrop = isCrop,
+								itemName = f.itemName,
+								plantedAt = plantedAt
+							}
+						end
+					end
+					local key = fx .. "_" .. fy
 					spawnedEntities[key] = spawnedEntity
 				end
 			end
@@ -2756,6 +2798,17 @@ script ResourceSpawner extends Logic
 			return false
 		end
 
+		local occAlign = ent:GetComponent("script.ResourceOccupiedArea")
+		if isvalid(occAlign) then
+			local axMin = math.floor(fx + (tonumber(occAlign.OffsetXMin) or 0))
+			local axMax = math.floor(fx + (tonumber(occAlign.OffsetXMax) or 0))
+			local ayMin = math.floor(fy + (tonumber(occAlign.OffsetYMin) or 0))
+			local ayMax = math.floor(fy + (tonumber(occAlign.OffsetYMax) or 0))
+			local cx = (axMin + axMax + 1.0) * 0.5
+			local cy = (ayMin + ayMax + 1.0) * 0.5
+			ent.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+		end
+
 		local sprite = ent.SpriteRendererComponent
 		if isvalid(sprite) then
 			sprite.IgnoreMapLayerCheck = true
@@ -2816,18 +2869,39 @@ script ResourceSpawner extends Logic
 		table.insert(furniture, fData)
 		self:SetPlacedFurnitureJson(mapName, _HttpService:JSONEncode(furniture))
 		
-		local key = x .. "_" .. y
 		local gridToEntity = self:GetGridToEntity(mapName)
 		local spawnedEntities = self:GetSpawnedEntities(mapName)
-		gridToEntity[key] = {
-			entity = spawnedEntity,
-			pivotX = x,
-			pivotY = y,
-			isFurniture = true,
-			isCrop = isCrop,
-			itemName = fData.itemName,
-			plantedAt = math.floor(tonumber(fData.plantedAt) or 0)
-		}
+		local plantedAt = math.floor(tonumber(fData.plantedAt) or 0)
+
+		local xMin, xMax, yMin, yMax = x, x, y, y
+		if isvalid(spawnedEntity) then
+			local occ = spawnedEntity:GetComponent("script.ResourceOccupiedArea")
+			if isvalid(occ) then
+				xMin = math.floor(x + (tonumber(occ.OffsetXMin) or 0))
+				xMax = math.floor(x + (tonumber(occ.OffsetXMax) or 0))
+				yMin = math.floor(y + (tonumber(occ.OffsetYMin) or 0))
+				yMax = math.floor(y + (tonumber(occ.OffsetYMax) or 0))
+				local cx = (xMin + xMax + 1.0) * 0.5
+				local cy = (yMin + yMax + 1.0) * 0.5
+				spawnedEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+			end
+		end
+
+		for nx = xMin, xMax do
+			for ny = yMin, yMax do
+				local gKey = nx .. "_" .. ny
+				gridToEntity[gKey] = {
+					entity = spawnedEntity,
+					pivotX = x,
+					pivotY = y,
+					isFurniture = true,
+					isCrop = isCrop,
+					itemName = fData.itemName,
+					plantedAt = plantedAt
+				}
+			end
+		end
+		local key = x .. "_" .. y
 		spawnedEntities[key] = spawnedEntity
 		log("Added placed furniture " .. tostring(fData.itemName)
 			.. " at (" .. x .. ", " .. y .. ") in map " .. mapName
