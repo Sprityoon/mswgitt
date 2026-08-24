@@ -39,6 +39,10 @@ script ResourceSpawner extends Logic
 	property number DefaultHomeSpawnX = -3.0
 	property number DefaultHomeSpawnY = 0.0
 	property integer SpawnZoneRadius = 5
+	-- 맵 경계 벽으로부터 자원이 떨어져야 하는 안전 여백(타일).
+	-- MapRadius=30, WallThickness=3(wallInner=28) 기준 Margin=3이면 |x|,|y| <= 25 범위에서만 스폰.
+	-- 2×2, 4×4 대형 자원도 외곽 벽을 침범하지 않고 벽과 자원 사이에 자연스러운 통로 형성.
+	property integer ResourceBoundaryMargin = 3
 	-- 물삽 1회가 파는 정사각 블록의 한 변(셀). ⚖️ 2026-08-06 = 2.
 	-- 🔴 1로 내리지 말 것: 물가 오버행 문법(docs/tile-scheme.md §4-bis)상 사방이 잔디인 1×1 물은
 	--    오버행이 셀을 전부 덮어 물이 사라지므로 degenerate 가드가 홀로 되돌린다
@@ -1515,6 +1519,22 @@ script ResourceSpawner extends Logic
 
 		local existing = map:GetChildComponentsByTypeName("script.TreasureChest", true)
 		local existingCount = (existing and #existing) or 0
+
+		-- 기존 상자들의 스케일도 최신 데이터셋 기준으로 동기화 보정
+		if existing ~= nil then
+			for eIdx, comp in ipairs(existing) do
+				if isvalid(comp) and isvalid(comp.Entity) and rows[eIdx] ~= nil then
+					local c = rows[eIdx]
+					local tr = comp.Entity.TransformComponent
+					if isvalid(tr) then
+						local sc = c.scale
+						if sc == nil or sc <= 0 then sc = 2.2 end
+						tr.Scale = Vector3(sc, sc, 1)
+					end
+				end
+			end
+		end
+
 		if existingCount >= #rows then return end
 
 		local modelId = _EntryService:GetModelIdByName("TreasureChest")
@@ -1886,8 +1906,10 @@ script ResourceSpawner extends Logic
 				-- 3. Resource Spawning
 				local spawnZoneRadius = self.SpawnZoneRadius
 				local inSpawnZone = (x >= -spawnZoneRadius and x <= spawnZoneRadius and y >= -spawnZoneRadius and y <= spawnZoneRadius)
+				local maxResCoord = wallInner - self.ResourceBoundaryMargin
+				local nearBoundary = (math.abs(x) > maxResCoord or math.abs(y) > maxResCoord)
 				
-				if not inSpawnZone and choice ~= "Water" then
+				if not inSpawnZone and not nearBoundary and choice ~= "Water" then
 					local gKey = x .. "_" .. y
 					local existing = gridToEntity[gKey]
 					
@@ -1920,6 +1942,7 @@ script ResourceSpawner extends Logic
 		local mapName = map.Name
 		local seedVal = self:GetMapSeed(mapName)
 		local mapRadius = self.MapRadius
+		local wallInner = mapRadius - self.WallThickness + 1
 		local gridToEntity = self:GetGridToEntity(mapName)
 		local spawnedEntities = self:GetSpawnedEntities(mapName)
 		local destroyedResources = self:GetDestroyedResources(mapName)
@@ -1991,15 +2014,23 @@ script ResourceSpawner extends Logic
 		end
 	
 		local canPlace = true
-		for nx = xMin, xMax do
-			for ny = yMin, yMax do
-				local gKey = math.floor(nx) .. "_" .. math.floor(ny)
-				if gridToEntity[gKey] ~= nil then
-					canPlace = false
-					break
+		-- 외곽 벽 밴드(|coord| >= wallInner) 침범 전수 차단
+		if math.abs(xMin) >= wallInner or math.abs(xMax) >= wallInner
+			or math.abs(yMin) >= wallInner or math.abs(yMax) >= wallInner then
+			canPlace = false
+		end
+
+		if canPlace then
+			for nx = xMin, xMax do
+				for ny = yMin, yMax do
+					local gKey = math.floor(nx) .. "_" .. math.floor(ny)
+					if gridToEntity[gKey] ~= nil then
+						canPlace = false
+						break
+					end
 				end
+				if not canPlace then break end
 			end
-			if not canPlace then break end
 		end
 	
 		if not canPlace then
@@ -2483,6 +2514,13 @@ script ResourceSpawner extends Logic
 			local cx = (xMin + xMax + 1.0) * 0.5
 			local cy = (yMin + yMax + 1.0) * 0.5
 			resEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+		end
+		
+		local wallInner = self.MapRadius - self.WallThickness + 1
+		if math.abs(xMin) >= wallInner or math.abs(xMax) >= wallInner
+			or math.abs(yMin) >= wallInner or math.abs(yMax) >= wallInner then
+			resEntity:Destroy()
+			return nil
 		end
 		
 		local gridToEntity = self:GetGridToEntity(mapName)

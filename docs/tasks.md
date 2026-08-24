@@ -10,6 +10,10 @@
 
 | 대상 | 내용 |
 |---|---|
+| `UIMainMenuController.mlua` | **[개선] 메인메뉴 투명 버튼 마우스 호버 틴팅 (텍스트 골드 틴트 + 반투명 백드롭 바 + 스케일 1.04배 피드백 복합 효과)** (2026-08-23) — 아래 참조 |
+| `ResourceSpawner.mlua` | **[버그 픽스] 맵 경계 근처 자원 생성 방지 (자원 스폰 안전 여백 ResourceBoundaryMargin=3 도입 및 다중 타일 점유 외곽 벽 침범 전수 차단)** (2026-08-23) — 아래 참조 |
+| `TreasureChest.model` · `TreasureChestSpawnDataSet.csv` · `TreasureChest.mlua` · `SkillDataSet.csv` · `PlayerController.mlua` · `PlayerCombat.mlua` · `Projectile.mlua` | **[개선] 사냥터 보물상자 2.2배 스케일/Trigger 정합(상호작용 복구) & 전반적 스킬 범위/사거리/도약/투사체/이펙트 2배 확장** (2026-08-23) — 아래 참조 |
+| `MonsterSpawner.mlua` · `MonsterAI.mlua` · `ObstacleQuery.mlua` · `Tree1/Tree2/Stone.model` | **[버그 픽스] 몬스터-자원 점유 겹침 버그 해소 (2×2 다중 셀 점유 스폰 가드, ObstacleRadius 0.6 상향, 자원 Trigger BoxSize 정합)** (2026-08-23) — 아래 참조 |
 | `PlayerController.mlua` · `ResourceSpawner.mlua` · `PlayerInventory.mlua` | **[신규 시스템] 2×2 조준점(Reticle) 정합 & 2×2 지형 편집(호미 2×2 구덩이+12이웃 프린지, 삽 2×2 코너 타일 4개 시작 문법) 개편** (2026-08-22) — 아래 참조 |
 | `ResourceSpawner.mlua` · `PersistenceManager.mlua` · `TileDurabilityManager.mlua` | **[버그 픽스] 배치 가구 다중 타일 점유 GridToEntity 등록(타격/철거 불가 해소) & 화로(Furnace) 슬롯·제련 상태 영속성 저장/복원 구축** (2026-08-22) — 아래 참조 |
 | `PlayerController.mlua` | **[개선] 삽·호미·물삽 지형 편집 도구의 보조 조준점(영향 영역 프리뷰) 비활성화** (2026-08-22) — 아래 참조 |
@@ -55,6 +59,87 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-23 [개선] 메인메뉴 투명 버튼 마우스 호버 틴팅 (텍스트 골드 틴트 + 스케일 1.05배 피드백, 백드롭 제외)
+
+- **배경**:
+  - 메인 타이틀 메뉴의 3대 버튼(`새로하기`, `이어하기`, `종료하기`)이 배경 투명 상태에서 마우스를 올렸을 때의 시각적 반응(틴팅 피드백)이 없어 밋밋하던 점 개선.
+- **작업 내용**:
+  1. **`UIMainMenuController.mlua`에 `BindTransparentTitleBtn` 구현 및 타이틀 버튼 연동**:
+     - **평소 (Normal)**: 텍스트 아이보리(`1.0, 0.96, 0.88`), 배경 100% 투명(`Alpha = 0`), Scale 1.0.
+     - **마우스 오버 (Hover)**: `uiHoverSfx` 사운드 재생 + 텍스트 화사한 황금빛 틴트(`1.0, 0.86, 0.32`) + 버튼 `1.05`배 부드러운 스케일 강조 (배경 바는 100% 투명 유지).
+     - **클릭 (Pressed)**: 텍스트 딥 골드(`0.92, 0.72, 0.20`) + `0.97`배 눌림 피드백.
+- **검증**:
+  - `maker_refresh_workspace`: `status: ok`
+  - `maker_logs(kind="build")`: Build Timestamp `2026-08-23T18:34:50` (refresh 시각 일치), **Error = 0**.
+
+### 2026-08-23 [버그 픽스] 맵 경계 근처 자원 생성 방지 (자원 스폰 안전 여백 ResourceBoundaryMargin=3 도입 및 다중 타일 점유 외곽 벽 침범 전수 차단)
+
+- **배경**:
+  - 자원이 맵 외곽 경계 벽(Layer 4 Big Wall) 근처에 바짝 붙어 생성되거나, 2×2 / 4×4 등 다중 타일 점유 자원의 외곽이 경계 벽 타일 위로 삐져나와 생성되는 문제 해결.
+- **원인 분석**:
+  1. `LoadChunk` 내 자원 스폰 후보 검사가 외곽 벽(`|coord| >= 28`) 바로 앞 1칸(`|x|=27, |y|=27`)까지 전부 허용하고 있었음.
+  2. 2×2 및 4×4 대형 자원은 피벗 `(x, y)` 기준 `x+1, y+1` 등으로 확장되므로, `x=27`에 스폰되면 `xMax=28`이 되어 외곽 벽 위로 침범함.
+  3. `TrySpawnResourceInChunk` 및 `SpawnResourceWithAnimation`에서 점유 타일의 외곽 벽 침범 검사가 누락되어 있었음.
+- **작업 내용**:
+  1. **자원 스폰 안전 여백 도입 (`ResourceSpawner.mlua`)**:
+     - `property integer ResourceBoundaryMargin = 3` 추가.
+     - `LoadChunk` 자원 스폰 루프에서 `maxResCoord = wallInner - ResourceBoundaryMargin` (즉 `|coord| <= 25`) 이내에서만 자원 스폰을 허용하여 외곽 벽과 자원 사이에 2~3타일의 자연스러운 통로 확보.
+  2. **다중 점유 영역 외곽 벽 침범 전수 차단 (`ResourceSpawner.mlua`)**:
+     - `TrySpawnResourceInChunk` 및 `SpawnResourceWithAnimation`: 자원의 점유 타일 `xMin, xMax, yMin, yMax` 중 단 1칸이라도 `|coord| >= wallInner`(28)에 닿거나 넘어가면 생성을 즉시 차단(`resEntity:Destroy()`).
+- **검증**:
+  - `maker_refresh_workspace`: `status: ok`
+  - `maker_logs(kind="build")`: Build Timestamp `2026-08-23T18:12:51` (refresh 시각 일치), **Error = 0**, Warning 50건(기존 baseline 유지).
+  - `LEA-2004` (TrySpawnResourceInChunk 내 wallInner 로컬 변수 누락) 즉시 핫픽스 완료.
+
+### 2026-08-23 [개선] 사냥터 보물상자 2.2배 스케일/Trigger 정합(상호작용 복구) & 전반적 스킬 범위/사거리/도약/투사체/이펙트 2배 확장
+
+- **배경**:
+  - 카메라 0.5배 줌아웃 및 월드 2배 스케일링 환경에서 사냥터 보물상자가 1배 시절 크기(1.35)로 남아 있고 상호작용(F키)이 되지 않던 버그 해소.
+  - 플레이어 및 몬스터 크기 2배 확대에 맞춰 스킬 타격 범위, 사거리, 도약 거리, 투사체 크기, 시각 이펙트 배율을 2배로 확장하여 시원한 전투 플레이 체감 복원.
+- **작업 내용**:
+  1. **사냥터 보물상자 2.2배 스케일 & TriggerComponent 조준선 정합**:
+     - `TreasureChestSpawnDataSet.csv`: 사냥터 상자 `Scale` `1.35` ➡️ **`2.2`** 상향.
+     - `TreasureChest.model`: `TriggerComponent`(`BoxSize: 1.2 × 0.8`) 추가 및 기본 Scale `(2.2, 2.2, 2)` 설정.
+     - `TreasureChest.mlua`: `AimFootprintW/H = 2`, `InteractDistance = 4.5`, `ServerOpenDistance = 6.0` 상향으로 F키 개봉 원활화.
+     - `ResourceSpawner.mlua`: `SpawnTreasureChestsForMap`에서 기존 맵에 이미 배치된 상자의 Scale도 2.2로 자동 동기화 보정.
+  2. **스킬 타격 범위 및 사거리 2배 확장 (`PlayerController.mlua`, `PlayerCombat.mlua`, `Projectile.mlua`)**:
+     - **근접 스킬 (`power_strike`)**: `ExecuteAreaDamageSkill` 호출 시 `reach = 1.6`, `boxSize = 3.0` (기존 1.2, 1.8)으로 확장.
+     - **광역 궁극기 (`earth_shatter`)**: `ExecuteAreaDamageSkill` 호출 시 `boxSize = 8.0` (기존 5.0)으로 확장.
+     - **이동 스킬 (`dash`)**: `maxDist = 5.0` (기존 3.0), 경로 피해 타격 박스 `±1.2` (기존 `±0.6`)로 2배 확장.
+     - **원거리 투사체 (`fireball`, `hand_axe_throw`)**: `Projectile.mlua` 충돌 박스 `0.8 × 0.8` ➡️ **`1.6 × 1.6`** 확장, 발사 오프셋 `1.2m` 적용.
+     - **일반 공격 (Ctrl)**: `AttackBoxSize = 3.2` (기존 2.4), `DoAttackInFront` 전방 거리 `1.5m`, 너비 `3.4 × 2.8` 확장.
+  3. **스킬 시각 이펙트 2배 확대 (`SkillDataSet.csv`)**:
+     - 모든 액티브 스킬의 `EffectScale`을 `2.0 ~ 2.4`로 확대 (`power_strike: 2.0`, `fireball: 2.0`, `dash: 2.0`, `earth_shatter: 2.4`, `hand_axe_throw: 2.0`).
+- **검증**:
+  - `TreasureChest.model`, `SkillDataSet.csv`, `TreasureChestSpawnDataSet.csv` 정적 문법 및 컴포넌트 유효성 검증 완료.
+
+### 2026-08-23 [버그 픽스] 몬스터-자원 점유 겹침 버그 해소 (2×2 다중 셀 점유 스폰 가드, ObstacleRadius 0.6 상향, 자원 Trigger BoxSize 정합)
+
+- **배경**:
+  - 카메라 0.5배 줌아웃(시야 2배) 및 자원/몬스터 2배 스케일링, 2×2 다중 타일 점유 도입 이후 몬스터가 나무·돌 등 자원 내부에 겹쳐서 스폰되거나 이동 중 자원 속으로 파고드는 버그 발생.
+- **원인 분석**:
+  1. `MonsterSpawner.mlua`에서 스폰 위치 검사 시 단일 셀 `(rx, ry)` 1칸만 확인하여 2×2 다중 점유 자원 및 2배 스케일 몬스터의 몸체 충돌 미반영.
+  2. `MonsterAI.mlua`의 `ObstacleRadius = 0.3` (1배 시절 30cm) 고정값으로 인해 2배 스케일 몬스터가 이동 시 자원 중심에 닿을 때까지 충돌을 감지하지 못함.
+  3. 2×2 점유 자원들(`Tree1`, `Tree2`, `Stone`)의 `TriggerComponent.BoxSize`가 과거 작은 밑동 크기(`0.4×0.2`)로 남아 있어 물리 콜라이더가 점유 영역을 커버하지 못함.
+  4. `ObstacleQuery.mlua`의 `maxPush = 0.5` 제한으로 다중 타일 자원 내 스폰 시 탈출 불가.
+- **작업 내용**:
+  1. **스폰 시 2×2 다중 셀 점유 및 ObstacleQuery 오버랩 가드 (`MonsterSpawner.mlua`)**:
+     - 스폰 후보 지점 주변 9개 셀 중 몬스터 반경 내의 모든 셀에 대해 `gridToEntity` 점유 및 거리(1.4m 이내) 검사.
+     - `_ObstacleQuery:IsObstacle(map, checkPos, 0.7, nil, 2.5)` 오버랩 사전 검사를 통해 자원 콜라이더 및 벽 타일 겹침 원천 차단.
+  2. **몬스터 AI 회피 반경 및 쿼리 반경 상향 (`MonsterAI.mlua`)**:
+     - `ObstacleRadius`를 `0.3` ➡️ **`0.6`** 으로 상향하여 2배 스케일 몬스터의 몸체 충돌 정밀 감지.
+     - `ObstacleQueryRadius`를 `2.5` ➡️ **`3.0`** 으로 상향.
+     - `TryPushOutOfObstacles` 및 `MoveDirVec` 내 폴백값 동기화.
+  3. **공용 장애물 쿼리 및 탈출 밀어내기 강화 (`ObstacleQuery.mlua`)**:
+     - `IsWallAt`에서 `mover`가 `Map` 엔티티인 경우에도 정상 판정 지원.
+     - `ComputeOverlapPush`의 `maxPush`를 `0.5` ➡️ **`1.0`** 으로 확장하여 다중 타일 자원 내 스폰 시 단번에 완전 탈출 지원.
+  4. **자원 모델 트리거 콜라이더 박스 정합 (`Tree1.model`, `Tree2.model`, `Stone.model`)**:
+     - `Tree1.model` / `Tree2.model`: `TriggerComponent.BoxSize` `(0.4, 0.2)` ➡️ **`(0.8, 0.6)`** (Scale 1.5 적용 시 실물 `1.2m × 0.9m`).
+     - `Stone.model`: `TriggerComponent.BoxSize` `(1.0, 0.5)` ➡️ **`(0.9, 0.6)`** (Scale 1.5 적용 시 실물 `1.35m × 0.9m`).
+- **검증**:
+  - `maker_refresh_workspace`: `status: ok`
+  - `maker_logs(kind="build")`: Build Timestamp `2026-08-23T15:44:03` (refresh 시각 일치), **Error = 0**, Warning 21건(기존 baseline 유지).
 
 ### 2026-08-22 [신규 시스템] 2×2 조준점(Reticle) 정합 & 2×2 지형 편집(호미 2×2 구덩이+12이웃 프린지, 삽 2×2 코너 타일 4개 시작 문법) 개편
 

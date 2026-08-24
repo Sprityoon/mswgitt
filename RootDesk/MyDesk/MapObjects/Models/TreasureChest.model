@@ -21,7 +21,8 @@
         "MOD.Core.TransformComponent",
         "MOD.Core.SpriteRendererComponent",
         "MOD.Core.TouchReceiveComponent",
-        "script.TreasureChest"
+        "script.TreasureChest",
+        "MOD.Core.TriggerComponent"
       ],
       "Properties": [],
       "Values": [
@@ -94,9 +95,35 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 2,
-            "y": 2,
-            "z": 2
+            "x": 2.2,
+            "y": 2.2,
+            "z": 2.2
+          }
+        },
+        {
+          "TargetType": "MOD.Core.TriggerComponent",
+          "Name": "BoxSize",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 1.2,
+            "y": 0.8
+          }
+        },
+        {
+          "TargetType": "MOD.Core.TriggerComponent",
+          "Name": "ColliderOffset",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 0,
+            "y": 0
           }
         }
       ],

@@ -62,7 +62,7 @@ script Projectile extends Component
 		local myPos2D = nextPos:ToVector2()
 		local sim = _CollisionService:GetSimulator(self.Entity)
 		if not sim then return end
-		local shape = BoxShape(myPos2D, Vector2(0.8, 0.8), 0)
+		local shape = BoxShape(myPos2D, Vector2(1.6, 1.6), 0)
 		local overlaps = sim:OverlapAll({ CollisionGroups.HitBox }, shape)
 
 		if overlaps and #overlaps > 0 then

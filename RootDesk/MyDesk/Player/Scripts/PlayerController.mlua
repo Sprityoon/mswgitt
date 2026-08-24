@@ -2558,9 +2558,9 @@ script PlayerController extends Component
 		end
 
 		if skillType == "Melee" then
-			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(dirX, dirY), 1.8, 1.2)
+			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(dirX, dirY), 3.0, 1.6)
 		elseif skillType == "Ultimate" then
-			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(0, 0), 5.0, 0.0)
+			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(0, 0), 8.0, 0.0)
 		elseif skillType == "Dash" then
 			self:ExecuteDashSkill(skillId, dirX, dirY, damageMul)
 		elseif skillType == "Projectile" then
@@ -3063,7 +3063,7 @@ script PlayerController extends Component
 		end
 		dirVec = dirVec:Normalize()
 		
-		local maxDist = 3.0
+		local maxDist = 5.0
 		local step = 0.5
 		local finalPos = currentPos
 		for d = step, maxDist, step do
@@ -3085,12 +3085,12 @@ script PlayerController extends Component
 				---@type PlayerCombat
 				local c = combat
 				local finalDmg = self:ComputeSkillDamage(skillId, mul)
-				local minX = math.min(currentPos.x, finalPos.x) - 0.6
-				local maxX = math.max(currentPos.x, finalPos.x) + 0.6
-				local minY = math.min(currentPos.y, finalPos.y) - 0.6
-				local maxY = math.max(currentPos.y, finalPos.y) + 0.6
+				local minX = math.min(currentPos.x, finalPos.x) - 1.2
+				local maxX = math.max(currentPos.x, finalPos.x) + 1.2
+				local minY = math.min(currentPos.y, finalPos.y) - 1.2
+				local maxY = math.max(currentPos.y, finalPos.y) + 1.2
 				local center = Vector2((minX + maxX) * 0.5, (minY + maxY) * 0.5)
-				local size = Vector2(math.max(1.0, maxX - minX), math.max(1.0, maxY - minY))
+				local size = Vector2(math.max(1.5, maxX - minX), math.max(1.5, maxY - minY))
 				local prev = c.PendingDamage
 				c.PendingDamage = finalDmg
 				c:AttackFast(BoxShape(center, size, 0), nil, CollisionGroups.HitBox)
@@ -3115,7 +3115,7 @@ script PlayerController extends Component
 		
 		local finalDmg = self:ComputeSkillDamage(skillId, damageMul)
 		local myPos = self.Entity.TransformComponent.WorldPosition
-		local spawnPos = Vector3(myPos.x + dirX * 0.8, myPos.y + dirY * 0.8, myPos.z)
+		local spawnPos = Vector3(myPos.x + dirX * 1.2, myPos.y + dirY * 1.2, myPos.z)
 		
 		local proj = _SpawnService:SpawnByModelId(modelId, "Projectile_" .. skillId, spawnPos, parentMap)
 		if not isvalid(proj) then return end

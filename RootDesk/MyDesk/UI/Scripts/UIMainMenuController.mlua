@@ -110,9 +110,9 @@ script UIMainMenuController extends Component
 		self:SetPlayHudVisible(false)
 		if isvalid(self.namePrompt) then self.namePrompt.Enable = false end
 
-		self:BindBtn(self.btnNew, function() self:OnTitleNew() end)
-		self:BindBtn(self.btnContinue, function() self:OnTitleContinue() end)
-		self:BindBtn(self.btnQuit, function() self:OnTitleQuit() end)
+		self:BindTransparentTitleBtn(self.btnNew, function() self:OnTitleNew() end)
+		self:BindTransparentTitleBtn(self.btnContinue, function() self:OnTitleContinue() end)
+		self:BindTransparentTitleBtn(self.btnQuit, function() self:OnTitleQuit() end)
 		self:BindBtn(self.btnSlotBack, function() self:ShowPanel("title") end)
 		self:BindBtn(self.btnCustomBack, function() self:ShowPanel("slot") end)
 		self:BindBtn(self.btnCustomStart, function() self:OnCustomStart() end)
@@ -175,6 +175,47 @@ script UIMainMenuController extends Component
 		ent:ConnectEvent(ButtonStateChangeEvent, function(ev)
 			if ev ~= nil and ev.state == ButtonState.Hover then
 				self:PlayUiHover()
+			end
+		end)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BindTransparentTitleBtn(ButtonComponent btn, any fn)
+		-- 배경이 투명한 타이틀 메뉴 버튼용: 마우스 호버 시 텍스트 골드 틴트 + 스케일 1.05배 강조 피드백
+		if isvalid(btn) == false or isvalid(btn.Entity) == false then
+			return
+		end
+		local ent = btn.Entity
+		local sprite = ent.SpriteGUIRendererComponent
+		local text = ent.TextGUIRendererComponent
+		local tr = ent.UITransformComponent
+
+		local normalFontColor = Color(1.0, 0.96, 0.88, 1.0)
+		local hoverFontColor = Color(1.0, 0.86, 0.32, 1.0)
+		local pressFontColor = Color(0.92, 0.72, 0.20, 1.0)
+
+		-- 배경은 항상 100% 투명 유지
+		local transparentBgColor = Color(0.55, 0.40, 0.26, 0.0)
+
+		if isvalid(text) then text.FontColor = normalFontColor end
+		if isvalid(sprite) then sprite.Color = transparentBgColor end
+
+		ent:ConnectEvent(ButtonClickEvent, function()
+			self:PlayUiClick()
+			fn()
+		end)
+		ent:ConnectEvent(ButtonStateChangeEvent, function(ev)
+			if ev == nil then return end
+			if ev.state == ButtonState.Hover then
+				self:PlayUiHover()
+				if isvalid(text) then text.FontColor = hoverFontColor end
+				if isvalid(tr) then tr.Scale = Vector3(1.05, 1.05, 1) end
+			elseif ev.state == ButtonState.Pressed then
+				if isvalid(text) then text.FontColor = pressFontColor end
+				if isvalid(tr) then tr.Scale = Vector3(0.97, 0.97, 1) end
+			else -- Normal / Disabled
+				if isvalid(text) then text.FontColor = normalFontColor end
+				if isvalid(tr) then tr.Scale = Vector3(1, 1, 1) end
 			end
 		end)
 	end

@@ -80,8 +80,8 @@ script MonsterAI extends Component
 	property number StandMax = 2.0
 
 	-- T99: 엔티티 장애물(자원·가구) — ObstacleQuery 공용. 임계값은 프로퍼티.
-	property number ObstacleRadius = 0.3
-	property number ObstacleQueryRadius = 2.5
+	property number ObstacleRadius = 0.6
+	property number ObstacleQueryRadius = 3.0
 	property number ObstacleStuckSeconds = 1.5
 	property number ObstacleStuckCooldown = 4.0
 	property number ObstacleEscapeStep = 0.75
@@ -986,9 +986,9 @@ script MonsterAI extends Component
 		dy = dy / len
 		local currentPos = self:Pos2D()
 		local r = self.ObstacleRadius
-		if r == nil or r <= 0 then r = 0.3 end
+		if r == nil or r <= 0 then r = 0.6 end
 		local queryR = self.ObstacleQueryRadius
-		if queryR == nil or queryR < r then queryR = 2.5 end
+		if queryR == nil or queryR < r then queryR = 3.0 end
 		local step = mc.InputSpeed * delta
 		local moved = false
 		local outDx = 0
@@ -1089,9 +1089,9 @@ script MonsterAI extends Component
 		if _ObstacleQuery == nil then return false end
 		local p = self:Pos2D()
 		local r = self.ObstacleRadius
-		if r == nil or r <= 0 then r = 0.3 end
+		if r == nil or r <= 0 then r = 0.6 end
 		local queryR = self.ObstacleQueryRadius
-		if queryR == nil or queryR < r then queryR = 2.5 end
+		if queryR == nil or queryR < r then queryR = 3.0 end
 		local push = _ObstacleQuery:ComputeOverlapPush(self.Entity, p, r, queryR, p.x, p.y)
 		if push.x == 0 and push.y == 0 then return false end
 		local target = Vector2(p.x + push.x, p.y + push.y)

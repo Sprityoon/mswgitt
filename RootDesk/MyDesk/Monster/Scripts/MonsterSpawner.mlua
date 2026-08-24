@@ -173,9 +173,42 @@ script MonsterSpawner extends Logic
 				
 				-- Safe Zone filtering (no spawn in green_island)
 				if biomeId ~= "green_island" and biomeConfigs[biomeId] ~= nil then
-					local gridKey = rx .. "_" .. ry
-					-- Occupancy check
-					if gridToEntity[gridKey] == nil then
+					-- Occupancy check (다중 타일 자원 및 2배 스케일 몬스터 몸집 고려)
+					local cellFree = true
+					for ox = -1, 1 do
+						for oy = -1, 1 do
+							local checkKey = (rx + ox) .. "_" .. (ry + oy)
+							local occ = gridToEntity[checkKey]
+							if occ ~= nil then
+								if ox == 0 and oy == 0 then
+									cellFree = false
+									break
+								end
+								if isvalid(occ.entity) then
+									local tr = occ.entity.TransformComponent
+									if isvalid(tr) then
+										local ePos = tr.WorldPosition
+										local distSq = (ePos.x - (rx + 0.5))^2 + (ePos.y - (ry + 0.5))^2
+										if distSq < 2.0 then
+											cellFree = false
+											break
+										end
+									end
+								end
+							end
+						end
+						if not cellFree then break end
+					end
+
+					-- ObstacleQuery 장애물/벽 타일 오버랩 사전 검사
+					if cellFree and _ObstacleQuery ~= nil then
+						local checkPos = Vector2(rx + 0.5, ry + 0.5)
+						if _ObstacleQuery:IsObstacle(map, checkPos, 0.7, nil, 2.5) then
+							cellFree = false
+						end
+					end
+
+					if cellFree then
 						-- Player proximity check: spawn kills prevention
 						local playerOk = true
 						local users = _UserService:GetUsersByMapComponent(map.MapComponent)

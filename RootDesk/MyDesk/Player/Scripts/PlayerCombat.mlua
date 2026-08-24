@@ -4,7 +4,7 @@ script PlayerCombat extends AttackComponent
 	-- (mine/attack) flow: when a monster occupies the aimed cell, attack instead of mining.
 
 	property integer BaseDamage = 8
-	property number AttackBoxSize = 2.4
+	property number AttackBoxSize = 3.2
 	@HideFromInspector property integer PendingDamage = 8
 	-- T66: 스킬 피격 이펙트 RUID — AttackFast 직전 설정, HandleHitEvent에서 소비
 	@HideFromInspector property string PendingHitEffectRUID = ""
@@ -61,11 +61,11 @@ script PlayerCombat extends AttackComponent
 		self.PendingDamage = dmg
 		self.PendingHitEffectRUID = ""
 		
-		-- 바라보는 방향으로 전방 1.2 지점에 너비 2.6 x 2.2 영역 타격
-		local centerX = playerPos.x + dirX * 1.2
-		local centerY = playerPos.y + dirY * 1.2
-		local sizeX = (math.abs(dirX) > 0.1) and 2.6 or 2.2
-		local sizeY = (math.abs(dirY) > 0.1) and 2.6 or 2.2
+		-- 바라보는 방향으로 전방 1.5 지점에 너비 3.4 x 2.8 영역 타격
+		local centerX = playerPos.x + dirX * 1.5
+		local centerY = playerPos.y + dirY * 1.5
+		local sizeX = (math.abs(dirX) > 0.1) and 3.4 or 2.8
+		local sizeY = (math.abs(dirY) > 0.1) and 3.4 or 2.8
 		
 		local shape = BoxShape(Vector2(centerX, centerY), Vector2(sizeX, sizeY), 0)
 		self:AttackFast(shape, nil, CollisionGroups.HitBox)

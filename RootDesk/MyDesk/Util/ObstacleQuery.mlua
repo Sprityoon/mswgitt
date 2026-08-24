@@ -12,7 +12,13 @@ script ObstacleQuery extends Logic
 		-- (2026-08-07: 잔디·프린지는 L2 전용 — L4에 있으면 ObstacleQuery가 전부 벽으로 오판해 통행 불가).
 		if not isvalid(mover) then return false end
 		local map = mover.CurrentMap
-		if not isvalid(map) then return false end
+		if not isvalid(map) then
+			if mover.MapComponent ~= nil then
+				map = mover
+			else
+				return false
+			end
+		end
 		local mapName = map.Name
 		if self.WallLayerByMap == nil then self.WallLayerByMap = {} end
 		local wallLayer = self.WallLayerByMap[mapName]
@@ -213,7 +219,7 @@ script ObstacleQuery extends Logic
 		end
 		if not hit then return Vector2.zero end
 		local mag = math.sqrt(pushX * pushX + pushY * pushY)
-		local maxPush = 0.5
+		local maxPush = 1.0
 		if mag > maxPush and mag > 0.0001 then
 			local s = maxPush / mag
 			pushX = pushX * s
