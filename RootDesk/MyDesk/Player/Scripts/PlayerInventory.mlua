@@ -2099,6 +2099,16 @@ script PlayerInventory extends Component
 		if not isvalid(pc) then return end
 		dirX = pc.LastDirectionX
 		dirY = pc.LastDirectionY
+
+		local l1Ent = currentMap:GetChildByName("RectTileMap")
+		local tilemap1 = (isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent)) and l1Ent.RectTileMapComponent or nil
+		local playerCell = nil
+		if tilemap1 ~= nil then
+			playerCell = tilemap1:ToCellPosition(playerPos)
+		else
+			playerCell = Vector2Int(math.floor(playerPos.x), math.floor(playerPos.y))
+		end
+
 		local targetCenterX = cellX + 0.5
 		local targetCenterY = cellY + 0.5
 		local dx = targetCenterX - playerPos.x
@@ -2131,36 +2141,6 @@ script PlayerInventory extends Component
 			side = ax.side
 		end
 
-		-- 점유 셀 사전 검사 (digPath는 두 셀 모두 — Apply 내부와 동일 규칙, 피드백 메시지용).
-		if action == "digPath" then
-			local x1 = cellX
-			local y1 = cellY
-			local x2 = cellX
-			local y2 = cellY
-			if axis == "h" then
-				if side == "up" then
-					y2 = cellY + 1
-				else
-					y1 = cellY - 1
-				end
-			else
-				if side == "right" then
-					x2 = cellX + 1
-				else
-					x1 = cellX - 1
-				end
-			end
-			if resourceSpawner:IsGridOccupied(mapName, x1, y1) or resourceSpawner:IsGridOccupied(mapName, x2, y2) then
-				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
-				return
-			end
-			if not resourceSpawner:IsTerrainCellEditable(currentMap, x1, y1)
-				or not resourceSpawner:IsTerrainCellEditable(currentMap, x2, y2) then
-				if isvalid(pc) then pc:ShowMineFeedback("여기는 팔 수 없습니다.") end
-				return
-			end
-		end
-
 		-- 물 파기 (Water Spade = dig_water만). 되메움(fill_water)은 별도 도구 — 토글 금지(2026-08-07).
 		-- 🔴 물은 **n×n 블록 단위**로 판다(ResourceSpawner.WaterDigSize, 현재 2). 1×1은 오버행 문법상
 		--    degenerate라 프린지가 아예 안 붙는다 — 자세한 이유는 그 프로퍼티 주석 참조.
@@ -2173,7 +2153,6 @@ script PlayerInventory extends Component
 		local editX = cellX
 		local editY = cellY
 		if action == "dig_water" then
-			local l1Ent = currentMap:GetChildByName("RectTileMap")
 			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
 				local curTile = l1Ent.RectTileMapComponent:GetTile(Vector2Int(cellX, cellY))
 				if curTile ~= nil and curTile.Name == "Water" then
@@ -2188,7 +2167,7 @@ script PlayerInventory extends Component
 			editX = origin.x
 			editY = origin.y
 			-- 플레이어가 블록 안에 있으면 물에 갇힌다 → 차단.
-			if playerCell.x >= editX and playerCell.x <= editX + origin.size - 1
+			if playerCell ~= nil and playerCell.x >= editX and playerCell.x <= editX + origin.size - 1
 				and playerCell.y >= editY and playerCell.y <= editY + origin.size - 1 then
 				if isvalid(pc) then pc:ShowMineFeedback("발 밑 셀에는 물을 갤 수 없습니다.") end
 				return
@@ -2211,6 +2190,82 @@ script PlayerInventory extends Component
 			local origin = resourceSpawner:GetWaterDigOrigin(cellX, cellY, dirX, dirY)
 			editX = origin.x
 			editY = origin.y
+		elseif action == "digPath" then
+			-- 2×2 영역 점유 검사
+			local occupied = false
+			for nx = cellX, cellX + 1 do
+				for ny = cellY, cellY + 1 do
+					if resourceSpawner:IsGridOccupied(mapName, nx, ny) then
+						occupied = true
+						break
+					end
+				end
+				if occupied then break end
+			end
+			if occupied then
+				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
+				return
+			end
+			-- 삽(길) 완화된 물 방어: 대상 2×2 영역 내에 물이 직접 포함되어 있는지 검사 (물가 바로 옆 산책로는 허용)
+			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
+				local isWaterOnPath = false
+				for nx = cellX, cellX + 1 do
+					for ny = cellY, cellY + 1 do
+						if resourceSpawner:IsWaterCell(l1Ent.RectTileMapComponent, nx, ny) then
+							isWaterOnPath = true
+							break
+						end
+					end
+					if isWaterOnPath then break end
+				end
+				if isWaterOnPath then
+					if isvalid(pc) then
+						pc:ShowMineFeedback("물 위에는 길을 낼 수 없습니다.")
+					end
+					return
+				end
+			end
+			for nx = cellX, cellX + 1 do
+				for ny = cellY, cellY + 1 do
+					if not resourceSpawner:IsTerrainCellEditable(currentMap, nx, ny) then
+						if isvalid(pc) then pc:ShowMineFeedback("여기는 팔 수 없습니다.") end
+						return
+					end
+				end
+			end
+		elseif action == "digHole" then
+			-- 2×2 영역 점유 검사
+			local occupied = false
+			for nx = cellX, cellX + 1 do
+				for ny = cellY, cellY + 1 do
+					if resourceSpawner:IsGridOccupied(mapName, nx, ny) then
+						occupied = true
+						break
+					end
+				end
+				if occupied then break end
+			end
+			if occupied then
+				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
+				return
+			end
+			-- ⚖️ 호미(밭/구덩이) 엄격한 물 방어: 2×2 영역 및 둘레 1칸(4×4)에 물이 있으면 물·흙 프린지 경합 방지
+			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
+				if resourceSpawner:HasWaterNearDirtDig(l1Ent.RectTileMapComponent, cellX, cellY, 2, 2) then
+					if isvalid(pc) then
+						pc:ShowMineFeedback("물 근처에는 땅을 팔 수 없습니다.")
+					end
+					return
+				end
+			end
+			for nx = cellX, cellX + 1 do
+				for ny = cellY, cellY + 1 do
+					if not resourceSpawner:IsTerrainCellEditable(currentMap, nx, ny) then
+						if isvalid(pc) then pc:ShowMineFeedback("여기는 팔 수 없습니다.") end
+						return
+					end
+				end
+			end
 		else
 			local occupied = false
 			for nx = cellX, cellX + 1 do

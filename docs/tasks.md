@@ -10,6 +10,9 @@
 
 | 대상 | 내용 |
 |---|---|
+| `tileimg/pond_*.png` · `pond_tileset_strip_1024x64.png` | **[에셋] 64×64 픽셀 규격 메이플크래프트 전용 연못 타일 세트(Pond Tileset) 16종 및 가로 통합 시트 제작** (2026-08-25) — 아래 참조 |
+| `PlayerInventory.mlua` · `ResourceSpawner.mlua` | **[버그 픽스] 물삽 땅 파기 시 LEA-2007 (playerCell nil) 서버 오류 해결 및 삽·호미 물 근처 지형 편집 방어 로직 구축** (2026-08-25) — 아래 참조 |
+| `Stone.model` · `GrownGrass.model` | **[비주얼/판정 개선] Stone 및 GrownGrass 크기 75% 축소(Scale: 1.5) 및 Stone 충돌 영역(PhysicsCollider / Trigger) 정밀 축소·피벗 정합** (2026-08-25) — 아래 참조 |
 | `UIMainMenuController.mlua` | **[개선] 메인메뉴 투명 버튼 마우스 호버 틴팅 (텍스트 골드 틴트 + 반투명 백드롭 바 + 스케일 1.04배 피드백 복합 효과)** (2026-08-23) — 아래 참조 |
 | `ResourceSpawner.mlua` | **[버그 픽스] 맵 경계 근처 자원 생성 방지 (자원 스폰 안전 여백 ResourceBoundaryMargin=3 도입 및 다중 타일 점유 외곽 벽 침범 전수 차단)** (2026-08-23) — 아래 참조 |
 | `TreasureChest.model` · `TreasureChestSpawnDataSet.csv` · `TreasureChest.mlua` · `SkillDataSet.csv` · `PlayerController.mlua` · `PlayerCombat.mlua` · `Projectile.mlua` | **[개선] 사냥터 보물상자 2.2배 스케일/Trigger 정합(상호작용 복구) & 전반적 스킬 범위/사거리/도약/투사체/이펙트 2배 확장** (2026-08-23) — 아래 참조 |
@@ -59,6 +62,55 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-25 [에셋] 64×64 픽셀 규격 메이플크래프트 전용 연못 타일 세트(Pond Tileset) 16종 및 가로 통합 시트 제작
+
+- **배경**:
+  - 기존 `water_tile.png`는 단순 단색 노이즈에 불과하여 연못 지형의 깊이감, 수면 굴절광(윤슬), 수련/연잎 및 물가 트랜지션 등의 디테일이 부족함.
+  - 프로젝트의 표준 타일 규격인 64×64 픽셀(1 Tile = 64×64 px = 1 World Unit)에 정밀하게 맞춰 연못 및 수면 생태 타일 세트 제작 요청.
+- **작업 내용**:
+  1. **개별 64×64 PNG 타일 16종 제작 (`tileimg/`)**:
+     - 기본/수면 효과: `pond_water_base.png`(맑은 수면), `pond_water_deep.png`(깊은 물), `pond_water_ripple.png`(파문), `pond_water_caustics.png`(햇살 윤슬).
+     - 수면 생태/소품: `pond_lilypad.png`(연잎), `pond_water_lily.png`(수련 꽃), `pond_stepping_stone.png`(징검다리 디딤돌), `pond_fish.png`(물고기 실루엣).
+     - 둔치/트랜지션: `pond_shore_t/d/l/r.png`(상하좌우 잔디 둔치 에지), `pond_shore_corner_ld/rd.png`(코너 모서리), `pond_shore_sand.png`(모래사장), `pond_shore_channel.png`(수로 연결부).
+  2. **가로 통합 타일셋 스트립 및 프리뷰 제작 (`tileimg/`)**:
+     - 기존 `tileset.png`(1280×64)와 동일한 포맷의 `pond_tileset_strip_1024x64.png`(16칸 통합 가로 시트) 및 4×4 뷰어 생성.
+- **검증**:
+  - 16종 개별 PNG의 64×64 px 규격 및 가로 스트립 1024×64 px 무결성 검증 완료.
+
+### 2026-08-25 [버그 픽스] 물삽 땅 파기 시 LEA-2007 (playerCell nil) 서버 오류 해결 및 삽·호미 물 근처 지형 편집 방어 로직 구축
+
+- **배경**:
+  - 물삽(Water Spade)으로 물을 갤 때 `ServerRequestTerrainEdit` 내에서 선언되지 않은 `playerCell`을 인덱싱하여 `[LEA-2007] AttemptToIndex : 'playerCell'은 nil입니다` 서버 런타임 오류 발생.
+  - 물삽은 근처에 드러난 흙이 있을 때 방어 로직(`HasExposedDirtNearWaterDig`)이 있었으나, 삽(Shovel)과 호미(Hoe)는 물 근처에서 흙을 파낼 때 물가 오버행/프린지와의 경합 방어 로직이 누락되어 프린지 비트가 꼬이거나 물 타일이 훼손되는 문제 발생.
+- **작업 내용**:
+  1. **`playerCell` nil 오류 해소 (`PlayerInventory.mlua`)**:
+     - `ServerRequestTerrainEdit` 도입부에서 `l1Ent.RectTileMapComponent:ToCellPosition(playerPos)`를 통해 `playerCell`을 정확히 획득하고, nil 체크 가드를 적용하여 발 밑 물 파기 차단 판정이 안정적으로 동작하도록 수정.
+  2. **삽(길) 및 호미(밭/홀) 물 근처 지형 편집 차단 로직 차등 적용 (`ResourceSpawner.mlua`, `PlayerInventory.mlua`)**:
+     - **호미(`digHole`) 엄격한 방어**: 2×2 영역 전체를 100% 흙 홀(마스크 15)로 파내고 외곽 12이웃에 ½셀 프린지를 전파하므로, 물가 잔디 오버행 훼손 및 프린지 경합을 막기 위해 2×2 및 둘레 1칸(4×4 영향권) 내 물 존재 시 편집 차단 (`HasWaterNearDirtDig`).
+     - **삽(`digPath`) 완화된 방어**: 2×2 영역의 안쪽 코너만 오목 흙길로 깎고 외곽 이웃에 프린지를 전파하지 않으며(바깥쪽 모서리는 잔디 유지), 물가 산책로 조성을 위해 **대상 2×2 셀 자체가 물인 경우만 직접 차단**하고 물가 바로 옆 인접 배치는 허용.
+     - `PlayerInventory.ServerRequestTerrainEdit`: 삽은 물 위 배치 시 `"물 위에는 길을 낼 수 없습니다."`, 호미는 물 근처 시 `"물 근처에는 땅을 팔 수 없습니다."`로 분기 안내.
+- **검증**:
+  - `PlayerInventory.mlua`, `ResourceSpawner.mlua` 린트 및 문법 정적 검증 완료.
+
+### 2026-08-25 [비주얼/판정 개선] Stone 및 GrownGrass 크기 75% 축소(Scale: 1.5) 및 Stone 충돌 영역(PhysicsCollider / Trigger) 정밀 축소·피벗 정합
+
+- **배경**:
+  - 카메라 0.5배 줌아웃 당시 일괄 2배 확대(Scale: 2.0)되었던 기본 자원 중 `Stone`과 `GrownGrass`의 비주얼 크기가 다소 커서 약 75%(Scale: 1.5)로 조정 요청.
+  - `Stone`의 경우 기존 `PhysicsColliderComponent`의 `BoxSize`가 `(2.0, 1.0)`(실물 월드 박스 4.0×2.0)으로 너무 커서 플레이어 이동 시 보이지 않는 벽에 걸리는 느낌이 있었으며, 스프라이트 기준점(중앙 `0, 0`)에 맞춰 충돌 박스를 정밀 축소할 필요성 대두.
+- **작업 내용**:
+  1. **Stone 모델 크기 및 충돌체 정밀 조정 (`Stone.model`)**:
+     - `TransformComponent.Scale`: `(2.0, 2.0, 2.0)` ➡️ **`(1.5, 1.5, 1.5)`** (75% 축소).
+     - `PhysicsColliderComponent.BoxSize`: `(2.0, 1.0)` ➡️ **`(0.8, 0.45)`** (실물 월드 박스 1.2×0.675로 자연스러운 바닥 충돌체 형성).
+     - `PhysicsColliderComponent.ColliderOffset`: 스프라이트 정중앙 기준점 **`(0, 0)`** 정합.
+     - `TriggerComponent.BoxSize`: `(0.9, 0.6)` ➡️ **`(0.85, 0.55)`** (실물 월드 1.275×0.825로 근접 타격 시 원활한 히트박스 제공).
+     - `TriggerComponent.ColliderOffset`: 스프라이트 정중앙 기준점 **`(0, 0)`** 정합.
+  2. **GrownGrass 모델 크기 조정 (`GrownGrass.model`)**:
+     - `TransformComponent.Scale`: `(2.0, 2.0, 2.0)` ➡️ **`(1.5, 1.5, 1.5)`** (75% 축소).
+     - (※ GrownGrass는 `BlocksMovement: false`인 비충돌 관통 자원임).
+- **검증**:
+  - `Stone.model` 및 `GrownGrass.model` JSON 직렬화 및 `$type` 메타데이터 무결성 검증 완료.
+  - `git diff`를 통한 스케일 및 충돌 박스/오프셋 변경 내역 정합성 확인.
 
 ### 2026-08-23 [개선] 메인메뉴 투명 버튼 마우스 호버 틴팅 (텍스트 골드 틴트 + 스케일 1.05배 피드백, 백드롭 제외)
 

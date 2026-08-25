@@ -472,6 +472,28 @@ script ResourceSpawner extends Logic
 		return false
 	end
 
+	method boolean HasWaterNearDirtDig(any tilemap1, integer x0, integer y0, integer w, integer h)
+		-- 흙 파기(호미 2×2 홀, 삽 2×2 길) 둘레 1칸(프린지 영향권) 및 영역 내에 물이 있으면 물·흙 프린지 경합 방지.
+		if not isvalid(tilemap1) then return false end
+		if w < 1 then w = 1 end
+		if h < 1 then h = 1 end
+		local y = y0 - 1
+		local yMax = y0 + h
+		local xMin = x0 - 1
+		local xMax = x0 + w
+		while y <= yMax do
+			local x = xMin
+			while x <= xMax do
+				if self:IsWaterCell(tilemap1, x, y) then
+					return true
+				end
+				x = x + 1
+			end
+			y = y + 1
+		end
+		return false
+	end
+
 	method void ForceGrassCoverCell(any tilemap1, any tilemap2, any tilemap4, integer x, integer y)
 		-- 구 forceGrass 델타 재생: 중심 기준 3×3을 L1=Soil + L2=FullGrass + L4 오적재 제거.
 		self:ForceGrassCoverRect(tilemap1, tilemap2, tilemap4, x - 1, y - 1, 3, 3)
@@ -638,6 +660,8 @@ script ResourceSpawner extends Logic
 			for _, c in ipairs(cells) do
 				if not self:IsTerrainCellEditable(map, c[1], c[2]) then return false end
 				if self:IsGridOccupied(mapName, c[1], c[2]) then return false end
+				-- 삽(길): 대상 셀 자체가 물인 경우만 차단 (물가 바로 옆 산책로는 허용)
+				if isvalid(tilemap1) and self:IsWaterCell(tilemap1, c[1], c[2]) then return false end
 			end
 
 			local anyChange = false
@@ -664,6 +688,11 @@ script ResourceSpawner extends Logic
 			for _, c in ipairs(cells) do
 				if not self:IsTerrainCellEditable(map, c[1], c[2]) then return false end
 				if self:IsGridOccupied(mapName, c[1], c[2]) then return false end
+			end
+
+			-- ⚖️ 물 근처 방어 로직: 2×2 영역 및 둘레 1칸에 물이 있으면 물·흙 프린지 경합 방지
+			if isvalid(tilemap1) and self:HasWaterNearDirtDig(tilemap1, x, y, 2, 2) then
+				return false
 			end
 
 			local anyChange = false
