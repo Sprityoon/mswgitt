@@ -8,8 +8,8 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
-| 대상 | 내용 |
-|---|---|
+| `Water*` · `wall.tileset` · `ResourceSpawner.mlua` · `map01.map` · `tile-scheme.md` | **[지형/에셋] 물 프린지 타일셋(Water* 12종) wall.tileset 연동 및 물-지반 상호 보완(퍼즐식 여집합) 오버레이 4단 체계 구축** (2026-08-28 ⚖️ 확정) — 아래 참조 |
+| `WetRim*` · `RectTileMap6` · `ResourceSpawner.mlua` · `map01.map` · `fix_water_fringe.cjs` | **[지형/에셋] 미사용 레이어(RectTileMap6) 활용 수변 림/윤슬 오버레이(WetRim* 12종) 구축 및 4단 지형 아키텍처(L0 Water ➔ L1 Soil ➔ L2 Grass ➔ L6 WetRim) 완성** (2026-08-28 ⚖️ 확정) — 아래 참조 |
 | `Soil*` · `ResourceSpawner.mlua` · `PersistenceManager.mlua` · `map01.map` · `wall.tileset` | **[핫픽스/지형] 이어하기(LoadPlayerData) 지형 복원 크래시 해소 및 3단 분리 체계(L0 Water ➔ L1 Soil ➔ L2 Grass) 안전 방어 구축** (2026-08-28 ⚖️ 확정) — 아래 참조 |
 | `WetRim_*` · `ResourceSpawner.mlua` · `PlayerInventory.mlua` · `map01.map` | **[지형/에셋] 2단 레이어 복원 및 살짝 젖은 흙빛(Wet Sand Rim) 독립형 수변 프린지(WetRim_* 12종) 구축 & 물길 확장 파기 정상화** (2026-08-28 ⚖️ 확정) — 아래 참조 |
 | `wall.tileset` · `GrassSand_*` · `map01.map` · `ResourceSpawner.mlua` · `fix_water_fringe.cjs` | **[지형/에셋] 투명 모래톱 수변 프린지 타일셋(GrassSand_* 12종) wall.tileset 연동 및 map01/런타임 물가 프린지 적용** (2026-08-28) — 아래 참조 |
@@ -66,6 +66,58 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-28 [지형/에셋] 물 프린지 타일셋(Water* 12종) wall.tileset 연동 및 물-지반 상호 보완(퍼즐식 여집합) 오버레이 4단 체계 구축 (⚖️ 확정)
+
+- **배경**:
+  - 기존 지반에 구멍을 뚫고 물을 밑에 까는 방식에서 벗어나, **지반(L1 Soil 전면 흙 지반, L2 Grass 잔디/흙길)을 밑에 온전히 보존하고 그 위에 물 프린지 타일셋(`Water*` 12종)과 윤슬(`WetRim*` 12종)을 상위 레이어(`MapLayer3`)로 얹는 역발상 오버레이 아키텍처**를 채택.
+  - 땅의 구멍(홀) 영역을 물이 100% 가득 채우는 상호 보완(퍼즐식 여집합) 규칙을 적용하여, 잔디밭과 흙길이 만나는 다중 지형에서도 0px 단차의 완벽한 픽셀아트 일체형 연못 구현.
+- **작업 내용**:
+  1. **정통 픽셀아트 규격 물 프린지 타일셋 13종 제작 및 스트립/그리드/카드뷰 생성 (`tileimg/`)**:
+     - `FullWater.png` + `WaterLT` ~ `WaterRDCorner` 12종 (64×64 PNG).
+     - 기존 `Grass*` / `Soil*`의 고유 픽셀 윤곽선과 1:1로 맞물리는 여집합 마스크(`waterAlpha = 255 - grassAlpha`) 및 도트 엣지 음영 처리.
+     - 가로 스트립(`water_fringe_12tiles_strip.png`, `water_fringe_13tiles_strip.png`), 그리드(`water_fringe_12tiles_grid.png`), 카드뷰(`water_fringe_12tiles_card_view.png`), 복합 렌더링 프리뷰(`water_overlay_prototype_preview.png`) 생성 완료.
+  2. **`wall.tileset` 타일명 정합**:
+     - Index 139~150에 등록된 타일을 `WaterLT` ~ `WaterRDCorner` 12종 공식 명칭으로 정합.
+  3. **런타임 지형 엔진 전면 개편 (`ResourceSpawner.mlua`)**:
+     - `MaskToWaterTileName(mask)` 메서드 신설 (2×2 서브셀 마스크 ➔ `Water*` 12종 직결).
+     - `IsWaterTileName(name)` 확장 (`"Water"` 및 `"Water*"` 12종 포함).
+     - `TileNameToMask`에 `Water*` 12종 매핑 지원.
+     - `RefreshWaterAreaRect`: L1 Soil 전면 지반 보존, L0에 `Water`/`Water*`, L6에 `WetRim*`을 독립 렌더링하도록 일원화.
+     - `ApplyTerrainEdit` (`dig_water` / `fill_water`): L1 Soil을 파괴하지 않고 L0/L6 물 및 수변 오버레이 갱신.
+  4. **영지 맵(`map/map01.map`) 실배치 동기화 (`scripts/apply_water_overlay_to_map.cjs`)**:
+     - `RectTileMap0` (L0 Water): `MapLayer3` (Z: 1000) 상위 레이어 전환 및 61개 셀(`Water` + `Water*`) 실배치.
+     - `RectTileMap6` (L6 WetRim): `MapLayer3` (Z: 1000) 32개 수변 윤슬 셀 배치.
+     - `RectTileMap` (L1 Soil): 연못 하부를 포함한 전면 `Soil` 지반 3,721셀 보존.
+- **검증**:
+  - `maker_refresh_workspace`: status ok.
+  - `maker_logs(kind="build")`: **Build Error=0**, Warning=13 확인.
+  - 런타임 문법 분석(`<eof>`) 에러(중복 end 키워드) 확인 및 즉시 해소.
+
+### 2026-08-28 [지형 아키텍처/에셋] 미사용 레이어(RectTileMap6) 활용 수변 림/윤슬 오버레이(WetRim* 12종) 구축 및 4단 지형 아키텍처(L0 Water ➔ L1 Soil ➔ L2 Grass ➔ L6 WetRim) 완성 (⚖️ 확정)
+
+- **배경**:
+  - 기존 3단 지형 아키텍처(L0 Water 수면 ➔ L1 Soil 지반/흙프린지 ➔ L2 Grass 잔디/잔디프린지) 위에, 물과 육지가 만나는 경계선에 은은하게 반짝이는 햇살 윤슬 및 수변 림 효과(`WetRim*` 12종)를 독립 오버레이 레이어로 합성하기 위해 **미사용 중이던 `RectTileMap6` 레이어를 활성화**하여 4단 지형 아키텍처 완성.
+- **작업 내용**:
+  1. **미사용 타일맵 레이어(`RectTileMap6`) 활성화 및 정렬 레이어 정합 (`map/map01.map`, `scripts/build_maps.cjs`)**:
+     - `map/map01.map`의 `RectTileMap6` SortingLayer를 `MapLayer3`로 정합 (L0 수면, L1 흙, L2 잔디 위에서 자연스럽게 렌더링).
+     - `scripts/build_maps.cjs`의 `scheme` 및 `DEFAULT_LAYER_NAMES`에 `{ slot: "rim", name: "RectTileMap6", sl: "MapLayer3" }` 등록.
+  2. **영지 맵(`map/map01.map`) 연못 수변 림 타일 32셀 일괄 적용 (`scripts/fix_water_fringe.cjs`)**:
+     - `fix_water_fringe.cjs`에 `L6 (RectTileMap6)` 연동 및 `WetRim*` 12종 타일 인덱스 매핑 지원.
+     - `map01.map` 연못 둘레 32개 경계 수면 셀에 `WetRim*` 12종 림 타일 전수 배치 완료.
+  3. **런타임 지형 엔진 연동 (`ResourceSpawner.mlua`)**:
+     - `TileNameToMask`에 `WetRim*` 12종 매핑 지원.
+     - `MaskToWetRimTileName` 메서드 신설 (2×2 서브셀 마스크 ➔ `WetRim*` 12종 매핑).
+     - `RefreshWaterAreaRect`: 물 셀 경계 영역 갱신 시 `tilemapRim (RectTileMap6)`에 `WetRim*` 타일을 동적으로 도장/제거하도록 일원화.
+- **검증**:
+  - `scripts/fix_water_fringe.cjs map/map01.map`: `SAVED L6 RectTileMap6 (MapLayer3) — WetRim tiles=32` 정상 적용.
+  - `map01.map` 레이어별 타일 카운트 검증:
+    - L0 `RectTileMap0` (Water, MapLayer0): 61셀
+    - L1 `RectTileMap` (Soil + Soil* 12종, MapLayer1): 3,692셀
+    - L2 `RectTileMap2` (FullGrass + Grass* 12종, MapLayer2): 3,475셀
+    - L6 `RectTileMap6` (WetRim* 12종, MapLayer3): 32셀
+  - `maker_refresh_workspace`: status ok.
+  - `maker_logs(kind="build")`: Build Error=0 확인.
 
 ### 2026-08-28 [지형 아키텍처/에셋] 물-흙-잔디 3단 분리 체계(L0 Water ➔ L1 Soil ➔ L2 Grass) 및 순수 흙 프린지(Soil* 12종) 구축 & 물길 확장 연동 (⚖️ 확정)
 

@@ -189,6 +189,7 @@ function normalizeLayers(m, layerNames, forceSL) {
     { slot: "floors", name: layerNames.floors || "RectTileMap3",     sl: "MapLayer3", ts: TILE1_TILESET_RUID }, // 설치 바닥(Baram_167)
     { slot: "walls",  name: layerNames.walls  || "RectTileMap4",     sl: "MapLayer4", ts: WALL_TILESET_RUID },
     { slot: "deco",   name: layerNames.deco   || "RectTileMap5",     sl: "MapLayer5", ts: WALL_TILESET_RUID },
+    { slot: "rim",    name: layerNames.rim    || "RectTileMap6",     sl: "MapLayer3", ts: WALL_TILESET_RUID },
   ];
   // 현재 타일 레이어 수집
   const layers = [];
@@ -264,7 +265,7 @@ function setTiles(slot, cells) {
 }
 
 // ---------- 페인터 ----------
-const DEFAULT_LAYER_NAMES = { water: "RectTileMap0", base: "RectTileMap", grass: "RectTileMap2", floors: "RectTileMap3", walls: "RectTileMap4", deco: "RectTileMap5" };
+const DEFAULT_LAYER_NAMES = { water: "RectTileMap0", base: "RectTileMap", grass: "RectTileMap2", floors: "RectTileMap3", walls: "RectTileMap4", deco: "RectTileMap5", rim: "RectTileMap6" };
 
 // design(d): d.plaza(...)/d.walk(...)/d.island(...) 호출로 흙 마스크를 구성하는 콜백.
 // inspect: 보고용 점검 포인트 [{ kind, at, note }].

@@ -88,6 +88,8 @@ const VALID_GRASS = new Set([
   "GrassT", "GrassRT", "GrassR", "GrassRD", "GrassD", "GrassLD", "GrassL", "GrassLT",
   "GrassLTCorner", "GrassRTCorner", "GrassLDCorner", "GrassRDCorner",
   "SubGrassLTRD", "SubGrassRTLD",
+  "WetRimT", "WetRimRT", "WetRimR", "WetRimRD", "WetRimD", "WetRimLD", "WetRimL", "WetRimLT",
+  "WetRimLTCorner", "WetRimRTCorner", "WetRimLDCorner", "WetRimRDCorner",
   "WetRim_T", "WetRim_RT", "WetRim_R", "WetRim_RD", "WetRim_D", "WetRim_LD", "WetRim_L", "WetRim_LT",
   "WetRim_LTCorner", "WetRim_RTCorner", "WetRim_LDCorner", "WetRim_RDCorner",
 ]);
@@ -100,6 +102,9 @@ function tileNameToMask(name) {
     GrassLT: 13, GrassRT: 14, GrassLD: 7, GrassRD: 11,
     GrassLTCorner: 4, GrassRTCorner: 8, GrassLDCorner: 1, GrassRDCorner: 2,
     SubGrassLTRD: 6, SubGrassRTLD: 9,
+    WetRimT: 12, WetRimD: 3, WetRimL: 5, WetRimR: 10,
+    WetRimLT: 13, WetRimRT: 14, WetRimLD: 7, WetRimRD: 11,
+    WetRimLTCorner: 4, WetRimRTCorner: 8, WetRimLDCorner: 1, WetRimRDCorner: 2,
     WetRim_T: 12, WetRim_D: 3, WetRim_L: 5, WetRim_R: 10,
     WetRim_LT: 13, WetRim_RT: 14, WetRim_LD: 7, WetRim_RD: 11,
     WetRim_LTCorner: 4, WetRim_RTCorner: 8, WetRim_LDCorner: 1, WetRim_RDCorner: 2,
@@ -130,24 +135,28 @@ function maskToTileIndex(IDX, x, y, mask) {
 }
 
 function maskToWaterTileIndex(IDX, x, y, mask) {
-  if (mask === 15) return null; // hole
+  if (mask === 15 || mask <= 0) return null; // hole
   const waterMap = {
-    12: "WetRim_T",
-    3: "WetRim_D",
-    5: "WetRim_L",
-    10: "WetRim_R",
-    13: "WetRim_LT",
-    14: "WetRim_RT",
-    7: "WetRim_LD",
-    11: "WetRim_RD",
-    4: "WetRim_LTCorner",
-    8: "WetRim_RTCorner",
-    1: "WetRim_LDCorner",
-    2: "WetRim_RDCorner",
+    12: "WetRimT",
+    3: "WetRimD",
+    5: "WetRimL",
+    10: "WetRimR",
+    13: "WetRimLT",
+    14: "WetRimRT",
+    7: "WetRimLD",
+    11: "WetRimRD",
+    4: "WetRimLTCorner",
+    8: "WetRimRTCorner",
+    1: "WetRimLDCorner",
+    2: "WetRimRDCorner",
   };
   const name = waterMap[mask];
   if (name && IDX[name] !== undefined) {
     return IDX[name];
+  }
+  const altName = name ? name.replace("WetRim", "WetRim_") : null;
+  if (altName && IDX[altName] !== undefined) {
+    return IDX[altName];
   }
   return maskToTileIndex(IDX, x, y, mask);
 }
@@ -225,6 +234,7 @@ function main() {
   const L0 = findLayer(ents, "RectTileMap0");
   const L1 = findLayer(ents, "RectTileMap");
   const L2 = findLayer(ents, "RectTileMap2");
+  const L6 = findLayer(ents, "RectTileMap6");
   if (!L1 || !L2) {
     console.error("RectTileMap / RectTileMap2 not found");
     process.exit(1);
@@ -355,11 +365,7 @@ function main() {
     const [x, y] = key.split(",").map(Number);
     let newIdx;
     try {
-      if (water.has(key)) {
-        newIdx = maskToWaterTileIndex(IDX, x, y, mask);
-      } else {
-        newIdx = maskToTileIndex(IDX, x, y, mask);
-      }
+      newIdx = maskToTileIndex(IDX, x, y, mask);
     } catch (e) {
       console.error(e.message);
       process.exit(1);
@@ -471,6 +477,18 @@ function main() {
   }
 
   writeTileMap(L2, l2After);
+  if (L6) {
+    const l6RimMap = new Map();
+    for (const [key, mask] of newMask) {
+      if (water.has(key) && mask > 0 && mask < 15) {
+        const rimIdx = maskToWaterTileIndex(IDX, 0, 0, mask);
+        if (rimIdx != null) l6RimMap.set(key, rimIdx);
+      }
+    }
+    L6.tc.SortingLayer = "MapLayer3";
+    writeTileMap(L6, l6RimMap);
+    console.log(`SAVED L6 RectTileMap6 (MapLayer3) — WetRim tiles=${l6RimMap.size}`);
+  }
   // Also bump entity componentNames sync? tileMap only change — jsonString updated in writeTileMap
   fs.writeFileSync(mapPath, JSON.stringify(json, null, 2));
   console.log(`SAVED ${mapRel} — L2 changes=${changes.length}`);
