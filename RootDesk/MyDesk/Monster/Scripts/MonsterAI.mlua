@@ -67,7 +67,7 @@ script MonsterAI extends Component
 	-- 미니언 소환(보스 패턴). Interval<=0 또는 ModelId 빈 값이면 비활성.
 	property number MinionSummonInterval = 0
 	property string MinionModelId = ""
-	property integer MinionSummonCount = 4
+	property number MinionSummonCount = 4
 	property number MinionSummonRadius = 2.5
 
 	property number KnockbackSpeed = 7.0
@@ -95,7 +95,7 @@ script MonsterAI extends Component
 	-- 모델명이 들어가면 윈드업 만료 시점에 근접 대신 투사체를 발사한다(모델 프로퍼티 = 데이터 주도, 이름 분기 금지).
 	property string ProjectileModelId = ""
 	property number ProjectileSpeed = 4.5
-	property integer ProjectileDamage = 5
+	property number ProjectileDamage = 5
 	property number ProjectileLifeTime = 1.5
 	property number ProjectileHitRadius = 0.4
 

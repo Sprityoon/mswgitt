@@ -370,12 +370,13 @@ script UISkillBarController extends Component
 							spr.FillAmount = math.min(1.0, math.max(0.0, remain / cd))
 						end
 					end
-					if isvalid(cdText) and isvalid(cdText.TextComponent) then
+					local txtComp = isvalid(cdText) and (cdText.TextComponent or cdText.TextGUIRendererComponent) or nil
+					if isvalid(txtComp) then
 						cdText.Enable = true
 						if remain >= 10.0 then
-							cdText.TextComponent.Text = tostring(math.ceil(remain))
+							txtComp.Text = tostring(math.ceil(remain))
 						else
-							cdText.TextComponent.Text = string.format("%.1f", remain)
+							txtComp.Text = string.format("%.1f", remain)
 						end
 					end
 				else

@@ -10,6 +10,9 @@
 
 | 대상 | 내용 |
 |---|---|
+| `Soil*` · `ResourceSpawner.mlua` · `PersistenceManager.mlua` · `map01.map` · `wall.tileset` | **[핫픽스/지형] 이어하기(LoadPlayerData) 지형 복원 크래시 해소 및 3단 분리 체계(L0 Water ➔ L1 Soil ➔ L2 Grass) 안전 방어 구축** (2026-08-28 ⚖️ 확정) — 아래 참조 |
+| `WetRim_*` · `ResourceSpawner.mlua` · `PlayerInventory.mlua` · `map01.map` | **[지형/에셋] 2단 레이어 복원 및 살짝 젖은 흙빛(Wet Sand Rim) 독립형 수변 프린지(WetRim_* 12종) 구축 & 물길 확장 파기 정상화** (2026-08-28 ⚖️ 확정) — 아래 참조 |
+| `wall.tileset` · `GrassSand_*` · `map01.map` · `ResourceSpawner.mlua` · `fix_water_fringe.cjs` | **[지형/에셋] 투명 모래톱 수변 프린지 타일셋(GrassSand_* 12종) wall.tileset 연동 및 map01/런타임 물가 프린지 적용** (2026-08-28) — 아래 참조 |
 | `tileimg/master_water_tileset_sheet.jpg` · `water_tileset_in_game_showcase.jpg` | **[에셋] 메이플크래프트 전용 종합 수역 마스터 타일셋 세트(Master Water Tileset Sheet) 및 인게임 연출 쇼케이스 제작** (2026-08-27) — 아래 참조 |
 | `tileimg/pond_*.png` · `pond_tileset_strip_1024x64.png` | **[에셋] 64×64 픽셀 규격 메이플크래프트 전용 연못 타일 세트(Pond Tileset) 16종 및 가로 통합 시트 제작** (2026-08-25) — 아래 참조 |
 | `PlayerInventory.mlua` · `ResourceSpawner.mlua` | **[버그 픽스] 물삽 땅 파기 시 LEA-2007 (playerCell nil) 서버 오류 해결 및 삽·호미 물 근처 지형 편집 방어 로직 구축** (2026-08-25) — 아래 참조 |
@@ -63,6 +66,60 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-28 [지형 아키텍처/에셋] 물-흙-잔디 3단 분리 체계(L0 Water ➔ L1 Soil ➔ L2 Grass) 및 순수 흙 프린지(Soil* 12종) 구축 & 물길 확장 연동 (⚖️ 확정)
+
+- **배경**:
+  - 흙길이 물과 직접 만나는 곳(선착장/해변/길 끝단) 및 잔디밭과 물이 만나는 다층 수변 환경에서 완벽한 프린지 처리를 위해 **물 레이어와 흙 레이어를 분리**하고, Grass와 동일 규격의 **순수 흙 프린지 타일셋(Soil* 12종)**을 흙 레이어에 배치하는 3단 분리 지형 아키텍처 도입.
+- **작업 내용**:
+  1. **순수 흙(Soil) 프린지 타일셋 12종 제작 (`tileimg/Soil*.png`)**:
+     - `SoilLT` ~ `SoilRDCorner` 12종 (64×64 PNG: 림 제외 순수 흙 몸통 + 가장자리 음영 + 배경 100% 완전 투명).
+     - 가로 스트립(`soil_fringe_12tiles_strip.png`), 그리드(`soil_fringe_12tiles_grid.png`), 카드 뷰(`soil_fringe_12tiles_card_view.png`), 쇼케이스(`soil_fringe_12tiles_showcase.png`) 제작 완료.
+     - `RootDesk/MyDesk/wall.tileset`에 `SoilLT` ~ `SoilRDCorner` 12종 공식 명명 및 바인딩 완료.
+  2. **3단 레이어 체계 구축 (`map/map01.map`, `scripts/build_maps.cjs`)**:
+     - `RectTileMap0` (L0 Water 수면, SL: `MapLayer0`, 61셀)
+     - `RectTileMap` (L1 Soil 지반 + `Soil*` 12종 흙 프린지, SL: `MapLayer1`, 3689셀)
+     - `RectTileMap2` (L2 FullGrass + `Grass*` 12종 잔디 프린지, SL: `MapLayer2`, 3443셀)
+     - `RectTileMap3` (L3 설치 바닥, SL: `MapLayer3`), `RectTileMap4` (L4 외곽 벽, SL: `MapLayer4`), `RectTileMap5` (L5 데코, SL: `MapLayer5`).
+  3. **런타임 지형 엔진 및 물 확장 파기 개선 (`ResourceSpawner.mlua`, `PlayerInventory.mlua`)**:
+     - `TileNameToMask` / `MaskToSoilTileName`에 `Soil*` 12종 완벽 연동.
+     - `IsWaterCell`: L0 Water 또는 L1 Water 셀 검사로 3단 지형 지원.
+     - `RefreshWaterAreaRect`: 물 셀(L0 Water 수면 + L1 Soil* 흙 프린지 + L2 잔디 홀) 및 육지 셀(L1 Soil + L2 Grass* 잔디 프린지) 3단계 합성 엔진 일원화.
+     - `PlayerInventory.mlua`: 물삽(`dig_water`) 사용 시 3단 레이어 기반 물길 연속 확장 허용.
+- **검증**:
+  - `check_mlua_duplicates.cjs`: 전 스크립트 중복 메서드/프로퍼티 전수 검사 ➔ **0건 (중복 제거 완료)**.
+  - `fix_all_warnings.cjs` & `fix_all_modnative_types.cjs`:
+    - `LWA-1111` (UnbalancedAssignment in `PlayerInventory.mlua`, `UICharacterController.mlua`) ➔ **0건 해결**.
+    - `LWA-1106` (NotRecommendedAssignment in `UISkillBarController.mlua`) ➔ **0건 해결**.
+    - `LWA-4012` (ModelComponentPropertyValueTypeMismatch in `.model` files: Single->Double, missing `$type`, null-target properties, `Color` MODColor 변환) ➔ **전체 모델 데이터 정합화 완료**.
+  - `maker_refresh_workspace`: status ok.
+  - `maker_logs(kind="build")`: Build Error=0 확인.
+  - `map01_3tier_water_soil_grass_preview.png`: L0 Water + L1 Soil/프린지 + L2 Grass/프린지 3계층 실측 렌더링 검증 완료.
+
+### 2026-08-28 [지형 아키텍처/에셋] 수변 림 전용 오버레이 레이어(RectTileMap_Rim) 신설 및 젖은 흙빛(WetRim_* 12종) 연동 (이전 기록)
+
+- **배경**:
+  - 잔디/물/흙길이 복합 배치된 환경에서 잔디 문법(1축 마스크)을 훼손하지 않으면서도, 안팎이 100% 투명한 순수 림 라인(`WetRim_*`)이 완벽히 합성될 수 있도록 수변 림 전용 오버레이 레이어(RectTileMap_Rim) 신설 및 타일 연동 완료.
+
+### 2026-08-28 [지형/에셋] 투명 모래톱 수변 프린지 타일셋(GrassSand_* 12종) wall.tileset 연동 및 map01/런타임 물가 프린지 적용
+
+- **배경**:
+  - 제작자가 Maker 에디터에서 `wall.tileset`에 `GrassSand_*` 12종(상하좌우 에지, 볼록 모서리 4종, 오목 코너 4종)을 정식 등록 완료함.
+  - 기존의 단색 잔디 프린지(물과 칼같이 맞닿는 형태) 대신, 5~6px 두께의 도톰한 따뜻한 모래 둑 및 하얀 파도 거품선이 포함된 투명 수변 타일셋(`GrassSand_*`)을 맵 및 런타임 지형 시스템에 연동 요청.
+- **작업 내용**:
+  1. **오프라인 맵 보정 스크립트 갱신 (`scripts/fix_water_fringe.cjs`)**:
+     - `VALID_GRASS` 및 `tileNameToMask`에 `GrassSand_*` 12종 등록.
+     - `water-overhang` 셀(L1이 Water인 경계 셀의 L2)에 대해 `maskToWaterTileIndex`를 통해 `GrassSand_*` 타일로 매핑하도록 전환.
+  2. **영지 맵 (`map/map01.map`) 수변 프린지 일괄 갱신**:
+     - `scripts/fix_water_fringe.cjs map/map01.map` 실행으로 연못 둘레 32개 L2 수변 셀을 `GrassSand_*` 타일로 전수 교체 완료.
+  3. **런타임 지형 편집 스크립트 연동 (`ResourceSpawner.mlua`)**:
+     - `TileNameToMask`에 `GrassSand_*` 12종 매핑 추가.
+     - `MaskToWaterSandTileName` 메서드 신설.
+     - `RefreshWaterAreaRect`에서 물 셀 둘레 잔디 오버행 도장 시 `MaskToWaterSandTileName`을 사용하여 `GrassSand_*` 타일을 동적으로 배치하도록 처리.
+- **검증**:
+  - `maker_refresh_workspace`: status ok.
+  - `maker_logs(kind="build")`: 2026-08-28T16:57:01 기준 Error=0 확인.
+  - `map01_actual_pond_fringe_preview.png`: 실제 `map01.map` 연못 둘레 32개 셀의 도톰한 모래 림 및 투명 물 레이어 렌더링 무결성 확인 완료.
 
 ### 2026-08-27 [에셋] 메이플크래프트 전용 종합 수역 마스터 타일셋 세트(Master Water Tileset Sheet) 및 인게임 연출 쇼케이스 제작
 

@@ -151,7 +151,7 @@
           "TargetType": "script.Furnace",
           "Name": "RecipeTableName",
           "ValueType": {
-            "": "MODNativeType",
+            "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": "CookingRecipeDataSet"
@@ -160,7 +160,7 @@
           "TargetType": "script.Furnace",
           "Name": "StationTitle",
           "ValueType": {
-            "": "MODNativeType",
+            "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": "조리 냄비"
@@ -169,7 +169,7 @@
           "TargetType": "script.Furnace",
           "Name": "DurationColumn",
           "ValueType": {
-            "": "MODNativeType",
+            "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": "CookDuration"

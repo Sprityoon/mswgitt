@@ -15,8 +15,8 @@ script Monster extends Component
 	-- unlocks the next-tier hunting-ground waypoint on death (game_design.md §2.2 ③).
 	@Sync property boolean IsBoss = false
 	property string BossDropItem = "copper ore"
-	property integer BossDropMin = 5
-	property integer BossDropMax = 10
+	property number BossDropMin = 5
+	property number BossDropMax = 10
 	-- Waypoint unlocked when this boss dies (matches a PortalDestinationDataSet DestinationId).
 	property string UnlockWaypointId = ""
 	property string UnlockWaypointName = ""

@@ -88,71 +88,6 @@
             },
             "Property": "SpriteRUID"
           }
-        },
-        {
-          "Type": {
-            "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Name": "SortYOffset",
-          "DisplayName": "SortYOffset",
-          "ShowInInspector": true,
-          "Link": {
-            "Target": null,
-            "Property": "SortYOffset"
-          }
-        },
-        {
-          "Type": {
-            "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Name": "OffsetXMin",
-          "DisplayName": "OffsetXMin",
-          "ShowInInspector": true,
-          "Link": {
-            "Target": null,
-            "Property": "OffsetXMin"
-          }
-        },
-        {
-          "Type": {
-            "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Name": "OffsetXMax",
-          "DisplayName": "OffsetXMax",
-          "ShowInInspector": true,
-          "Link": {
-            "Target": null,
-            "Property": "OffsetXMax"
-          }
-        },
-        {
-          "Type": {
-            "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Name": "OffsetYMin",
-          "DisplayName": "OffsetYMin",
-          "ShowInInspector": true,
-          "Link": {
-            "Target": null,
-            "Property": "OffsetYMin"
-          }
-        },
-        {
-          "Type": {
-            "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Name": "OffsetYMax",
-          "DisplayName": "OffsetYMax",
-          "ShowInInspector": true,
-          "Link": {
-            "Target": null,
-            "Property": "OffsetYMax"
-          }
         }
       ],
       "Values": [
@@ -250,7 +185,7 @@
           "Name": "SortYOffset",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 0
         },
@@ -268,7 +203,7 @@
           "Name": "OffsetXMin",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 0
         },
@@ -277,7 +212,7 @@
           "Name": "OffsetXMax",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 1
         },
@@ -286,7 +221,7 @@
           "Name": "OffsetYMin",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 0
         },
@@ -295,7 +230,7 @@
           "Name": "OffsetYMax",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 1
         },

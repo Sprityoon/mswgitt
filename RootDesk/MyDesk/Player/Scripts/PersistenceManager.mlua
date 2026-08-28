@@ -614,7 +614,10 @@ script PersistenceManager extends Logic
 			else
 				self.CharacterCostumeByUser[userId] = { useAccount = true }
 			end
-			self:LoadPlayerData(player)
+			local ok, err = pcall(function() self:LoadPlayerData(player) end)
+			if not ok then
+				log_warning("PersistenceManager: LoadPlayerData error: " .. tostring(err))
+			end
 		end
 
 		-- 퀘스트 DB 슬롯 로드
@@ -890,7 +893,7 @@ script PersistenceManager extends Logic
 			_ResourceSpawner:SetPlacedFurnitureJson(mapName, furnRaw)
 			_ResourceSpawner:SetTerrainEditsJson(mapName, editsRaw)
 			_ResourceSpawner:LoadDestroyedResourcesFromJson(mapName, destRaw)
-			_ResourceSpawner:ReconstructWorldPlacementsForMap(map)
+			pcall(function() _ResourceSpawner:ReconstructWorldPlacementsForMap(map) end)
 
 			-- T19: 가축 복원 (가구 재구성 이후)
 			local animalsRaw = data.homeAnimals or "[]"

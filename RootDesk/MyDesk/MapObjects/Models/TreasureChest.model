@@ -58,10 +58,10 @@
           "Name": "Color",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "UnityEngine.Color, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+            "type": "MOD.Core.MODColor, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
           },
           "Value": {
-            "$type": "UnityEngine.Color, UnityEngine.CoreModule",
+            "$type": "MOD.Core.MODColor, MOD.Core",
             "r": 1,
             "g": 0.75,
             "b": 0.2,

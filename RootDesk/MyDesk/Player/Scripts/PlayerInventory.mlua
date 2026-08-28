@@ -426,8 +426,8 @@ script PlayerInventory extends Component
 		local okB, vB = pcall(function() return row:GetItem("UseBuffId") end)
 		if okB and vB ~= nil then useBuffId = tostring(vB) end
 		if useBuffId ~= nil then
-			useBuffId = string.gsub(useBuffId, "^%s+", "")
-			useBuffId = string.gsub(useBuffId, "%s+$", "")
+			useBuffId = (string.gsub(useBuffId, "^%s+", ""))
+			useBuffId = (string.gsub(useBuffId, "%s+$", ""))
 		end
 		if useBuffId ~= nil and useBuffId ~= "" then
 			local buffs = self.Entity:GetComponent("script.PlayerBuffs")
@@ -477,8 +477,8 @@ script PlayerInventory extends Component
 		local okA, vA = pcall(function() return row:GetItem("UseAnimalId") end)
 		if okA and vA ~= nil then useAnimalId = tostring(vA) end
 		if useAnimalId ~= nil then
-			useAnimalId = string.gsub(useAnimalId, "^%s+", "")
-			useAnimalId = string.gsub(useAnimalId, "%s+$", "")
+			useAnimalId = (string.gsub(useAnimalId, "^%s+", ""))
+			useAnimalId = (string.gsub(useAnimalId, "%s+$", ""))
 		end
 		if useAnimalId ~= nil and useAnimalId ~= "" then
 			if not self:TrySpawnAnimalFromTicket(useAnimalId, baseName) then
@@ -492,8 +492,8 @@ script PlayerInventory extends Component
 		local okPet, vPet = pcall(function() return row:GetItem("UsePetId") end)
 		if okPet and vPet ~= nil then usePetId = tostring(vPet) end
 		if usePetId ~= nil then
-			usePetId = string.gsub(usePetId, "^%s+", "")
-			usePetId = string.gsub(usePetId, "%s+$", "")
+			usePetId = (string.gsub(usePetId, "^%s+", ""))
+			usePetId = (string.gsub(usePetId, "%s+$", ""))
 		end
 		if usePetId ~= nil and usePetId ~= "" then
 			self:TrySummonPet(usePetId)
@@ -2153,37 +2153,36 @@ script PlayerInventory extends Component
 		local editX = cellX
 		local editY = cellY
 		if action == "dig_water" then
+			-- 조준 셀 → 블록 원점 (클라 미리보기와 동일 함수를 쓴다 — 규칙 18).
+			local origin = resourceSpawner:GetWaterDigOrigin(cellX, cellY, dirX, dirY)
+			editX = origin.x
+			editY = origin.y
+
+			-- 블록 전체가 이미 전부 물인지 검사 (하나라도 땅이면 물길 확장 허용).
 			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
-				local curTile = l1Ent.RectTileMapComponent:GetTile(Vector2Int(cellX, cellY))
-				if curTile ~= nil and curTile.Name == "Water" then
+				local allWater = true
+				for by = editY, editY + origin.size - 1 do
+					for bx = editX, editX + origin.size - 1 do
+						if not resourceSpawner:IsWaterCell(l1Ent.RectTileMapComponent, bx, by) then
+							allWater = false
+							break
+						end
+					end
+					if not allWater then break end
+				end
+				if allWater then
 					if isvalid(pc) then
 						pc:ShowMineFeedback("이미 물입니다. 복구는 다른 도구를 사용하세요.")
 					end
 					return
 				end
 			end
-			-- 조준 셀 → 블록 원점 (클라 미리보기와 동일 함수를 쓴다 — 규칙 18).
-			local origin = resourceSpawner:GetWaterDigOrigin(cellX, cellY, dirX, dirY)
-			editX = origin.x
-			editY = origin.y
+
 			-- 플레이어가 블록 안에 있으면 물에 갇힌다 → 차단.
 			if playerCell ~= nil and playerCell.x >= editX and playerCell.x <= editX + origin.size - 1
 				and playerCell.y >= editY and playerCell.y <= editY + origin.size - 1 then
 				if isvalid(pc) then pc:ShowMineFeedback("발 밑 셀에는 물을 갤 수 없습니다.") end
 				return
-			end
-			-- 드러난 흙(L2 홀)이 둘레에 있으면 물·흙 프린지 경합 → 파기 금지.
-			local l2Ent = currentMap:GetChildByName("RectTileMap2")
-			if isvalid(l1Ent) and isvalid(l2Ent)
-				and isvalid(l1Ent.RectTileMapComponent) and isvalid(l2Ent.RectTileMapComponent) then
-				if resourceSpawner:HasExposedDirtNearWaterDig(
-					l1Ent.RectTileMapComponent, l2Ent.RectTileMapComponent,
-					editX, editY, origin.size, origin.size) then
-					if isvalid(pc) then
-						pc:ShowMineFeedback("드러난 흙 근처에는 물을 갤 수 없습니다.")
-					end
-					return
-				end
 			end
 		elseif action == "fill_water" then
 			-- 향후 복구 전용 도구용. Water Spade CSV는 dig_water만 쓴다.
@@ -2206,7 +2205,7 @@ script PlayerInventory extends Component
 				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
 				return
 			end
-			-- 삽(길) 완화된 물 방어: 대상 2×2 영역 내에 물이 직접 포함되어 있는지 검사 (물가 바로 옆 산책로는 허용)
+			-- 삽(길) 대상 2×2 영역 내에 물이 직접 포함되어 있는지 검사 (물가 바로 옆 산책로는 허용)
 			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
 				local isWaterOnPath = false
 				for nx = cellX, cellX + 1 do
@@ -2249,11 +2248,21 @@ script PlayerInventory extends Component
 				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
 				return
 			end
-			-- ⚖️ 호미(밭/구덩이) 엄격한 물 방어: 2×2 영역 및 둘레 1칸(4×4)에 물이 있으면 물·흙 프린지 경합 방지
+			-- 호미(밭/구덩이): 대상 영역 내에 물이 직접 포함되어 있는지 검사
 			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
-				if resourceSpawner:HasWaterNearDirtDig(l1Ent.RectTileMapComponent, cellX, cellY, 2, 2) then
+				local isWaterOnHole = false
+				for nx = cellX, cellX + 1 do
+					for ny = cellY, cellY + 1 do
+						if resourceSpawner:IsWaterCell(l1Ent.RectTileMapComponent, nx, ny) then
+							isWaterOnHole = true
+							break
+						end
+					end
+					if isWaterOnHole then break end
+				end
+				if isWaterOnHole then
 					if isvalid(pc) then
-						pc:ShowMineFeedback("물 근처에는 땅을 팔 수 없습니다.")
+						pc:ShowMineFeedback("물 위에는 땅을 팔 수 없습니다.")
 					end
 					return
 				end

@@ -9,18 +9,25 @@
 
 ---
 
-## 1. 레이어 구성
+## 1. 레이어 구성 (물-흙-잔디 3단 분리 체계 — ⚖️ 2026-08-28 확정)
 
-| 레이어 | 엔티티 이름 | 내용 |
-|---|---|---|
-| Layer 1 (SL0) | `RectTileMap` | **`Soil` 전면 깔림** (광장/밭 바닥이자 베이스 지반). 물 도입 후에는 `Water`도 이 레이어 |
-| Layer 2 (SL1) | `RectTileMap2` | **잔디 커버** — `FullGrass`(중앙) + `Grass{LT,T,RT,L,R,LD,D,RD}`(방향 에지 — 밀착 길·프린지) + `Grass{LT,RT,LD,RD}Corner`(오목 모서리) + `SubGrass{LTRD,RTLD}`(대각) |
-| Layer 3 (SL2) | `RectTileMap3` | 설치 바닥 (런타임 전용, tile1) |
-| Layer 4 (SL3) | `RectTileMap4` | `Big Wall` 충돌 밴드 (경계 3겹)만. **잔디·프린지 금지** — L2 전용. L4 오적재는 통행 오판·시각 덮임 원인 (2026-08-07 scrub) |
-| Layer 5 (SL4) | `RectTileMap5` | 경계 테라스 비주얼 (TerraceTop 링 + 북벽 CliffFace) |
-| MapLayer5 | (엔티티 전용) | 몬스터·NPC·자원·가구·드롭 |
+| 레이어 | 엔티티 이름 | SortingLayer | 내용 |
+|---|---|---|---|
+| Layer 0 | `RectTileMap0` | `MapLayer0` | **수면 베이스** — `Water` (연못/수로 수면). 물이 존재하는 영역에 배치 |
+| Layer 1 | `RectTileMap` | `MapLayer1` | **흙 지반 & 수변 흙 프린지** — `Soil`(전면 지반) + 물과 맞닿는 경계에 `Soil*`(흙 프린지 12종). 물 중심부는 홀(None) |
+| Layer 2 | `RectTileMap2` | `MapLayer2` | **잔디 커버 & 흙길 잔디 프린지** — `FullGrass`(잔디 커버) + 흙길/물 경계에 `Grass*`(잔디 프린지 12종). 물 및 흙길 중심부는 홀(None) |
+| Layer 3 | `RectTileMap3` | `MapLayer3` | **설치 바닥** — (런타임 전용, tile1 / Baram_167) |
+| Layer 4 | `RectTileMap4` | `MapLayer4` | **외곽 벽** — `Big Wall` 충돌 밴드 (경계 3겹)만. **잔디·프린지 금지** |
+| Layer 5 | `RectTileMap5` | `MapLayer5` | **경계 테라스 비주얼** — TerraceTop 링 + 북벽 CliffFace |
+| Entity | (엔티티 전용) | `Default` | 몬스터·NPC·자원·가구·드롭·플레이어 |
 
-**물(Water)의 위치** (⚖️ Phase 21): 잔디 마스크 문법은 "흙 vs 잔디" **1축**이다. 물을 3번째 지형으로 넣으면 마스크 전체가 2축으로 재설계돼야 한다. 대신 **`L2 홀 → L1이 `Soil`이면 흙 / `Water`면 물`** 로 두어 **L1 타일 이름만 가른다** — 잔디 에지·코너·대각 문법이 전량 무변경이고, 물가 테두리도 기존 프린지가 그대로 처리한다.
+**물-흙-잔디 3단 분리 체계의 강력한 이점**:
+1. **완벽한 다층 그라데이션**: 물(`L0 Water`) ➔ 수변 흙 프린지(`L1 Soil*`) ➔ 잔디 프린지(`L2 Grass*`)의 3단 단계형 수변 연출이 100% 자동 합성됨.
+2. **흙길 끝단 수변 마감**: 잔디가 없는 흙길(길/광장)이 물과 바로 만나는 곳에서도 `L1 Soil*` 흙 프린지가 물 위로 자연스럽게 오버행되어 완벽한 부둣가/해변 형성.
+3. **독립된 1축 서브셀 마스크 통일**:
+   - `L1 (Soil)`: "물 vs 흙" 1축 마스크 ➔ `Soil*` 12종
+   - `L2 (Grass)`: "흙 vs 잔디" 1축 마스크 ➔ `Grass*` 12종
+   - 두 레이어가 완전히 독립된 2×2 서브셀 마스크(`0`~`15`)로 작동하여 충돌 및 예외 상황 원천 배제.
 
 ---
 

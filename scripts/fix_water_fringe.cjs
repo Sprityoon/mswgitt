@@ -88,6 +88,8 @@ const VALID_GRASS = new Set([
   "GrassT", "GrassRT", "GrassR", "GrassRD", "GrassD", "GrassLD", "GrassL", "GrassLT",
   "GrassLTCorner", "GrassRTCorner", "GrassLDCorner", "GrassRDCorner",
   "SubGrassLTRD", "SubGrassRTLD",
+  "WetRim_T", "WetRim_RT", "WetRim_R", "WetRim_RD", "WetRim_D", "WetRim_LD", "WetRim_L", "WetRim_LT",
+  "WetRim_LTCorner", "WetRim_RTCorner", "WetRim_LDCorner", "WetRim_RDCorner",
 ]);
 
 function tileNameToMask(name) {
@@ -98,6 +100,9 @@ function tileNameToMask(name) {
     GrassLT: 13, GrassRT: 14, GrassLD: 7, GrassRD: 11,
     GrassLTCorner: 4, GrassRTCorner: 8, GrassLDCorner: 1, GrassRDCorner: 2,
     SubGrassLTRD: 6, SubGrassRTLD: 9,
+    WetRim_T: 12, WetRim_D: 3, WetRim_L: 5, WetRim_R: 10,
+    WetRim_LT: 13, WetRim_RT: 14, WetRim_LD: 7, WetRim_RD: 11,
+    WetRim_LTCorner: 4, WetRim_RTCorner: 8, WetRim_LDCorner: 1, WetRim_RDCorner: 2,
   };
   if (map[name] === undefined) return -1;
   return map[name];
@@ -122,6 +127,29 @@ function maskToTileIndex(IDX, x, y, mask) {
     throw new Error(`invalid diagonal mask ${mask} at (${x},${y}) after SubGrass check`);
   }
   return t;
+}
+
+function maskToWaterTileIndex(IDX, x, y, mask) {
+  if (mask === 15) return null; // hole
+  const waterMap = {
+    12: "WetRim_T",
+    3: "WetRim_D",
+    5: "WetRim_L",
+    10: "WetRim_R",
+    13: "WetRim_LT",
+    14: "WetRim_RT",
+    7: "WetRim_LD",
+    11: "WetRim_RD",
+    4: "WetRim_LTCorner",
+    8: "WetRim_RTCorner",
+    1: "WetRim_LDCorner",
+    2: "WetRim_RDCorner",
+  };
+  const name = waterMap[mask];
+  if (name && IDX[name] !== undefined) {
+    return IDX[name];
+  }
+  return maskToTileIndex(IDX, x, y, mask);
 }
 
 function indexToName(IDX, tileIndex) {
@@ -194,6 +222,7 @@ function main() {
 
   const json = JSON.parse(fs.readFileSync(mapPath, "utf8"));
   const ents = json.ContentProto.Entities;
+  const L0 = findLayer(ents, "RectTileMap0");
   const L1 = findLayer(ents, "RectTileMap");
   const L2 = findLayer(ents, "RectTileMap2");
   if (!L1 || !L2) {
@@ -201,15 +230,23 @@ function main() {
     process.exit(1);
   }
 
+  const l0 = L0 ? tileMapToMaps(L0.tc, IDX) : { byKey: new Map(), nameByKey: new Map() };
   const l1 = tileMapToMaps(L1.tc, IDX);
   const l2Before = tileMapToMaps(L2.tc, IDX);
 
   const water = new Set();
   const warnings = [];
-  for (const [key, idx] of l1.byKey) {
+
+  // Read water from L0 if present, else from L1
+  for (const [key, idx] of l0.byKey) {
     const name = indexToName(IDX, idx);
     if (name === "Water") water.add(key);
-    else if (name === "Name44") {
+  }
+  for (const [key, idx] of l1.byKey) {
+    const name = indexToName(IDX, idx);
+    if (name === "Water") {
+      water.add(key);
+    } else if (name === "Name44") {
       warnings.push(`L1 Name44 오배치 at (${key}) — 스킵(제작자 Maker 복구). Water 인덱스=${waterIdx}, Name44 인덱스=${name44Idx}`);
     }
   }
@@ -318,7 +355,11 @@ function main() {
     const [x, y] = key.split(",").map(Number);
     let newIdx;
     try {
-      newIdx = maskToTileIndex(IDX, x, y, mask);
+      if (water.has(key)) {
+        newIdx = maskToWaterTileIndex(IDX, x, y, mask);
+      } else {
+        newIdx = maskToTileIndex(IDX, x, y, mask);
+      }
     } catch (e) {
       console.error(e.message);
       process.exit(1);

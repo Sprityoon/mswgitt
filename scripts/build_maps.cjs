@@ -183,11 +183,12 @@ function normalizeLayers(m, layerNames, forceSL) {
   const root = mapRootName(m);
   const ents = m.json.ContentProto.Entities;
   const scheme = [
-    { slot: "base",   name: layerNames.base,   sl: "MapLayer0", ts: WALL_TILESET_RUID },
-    { slot: "grass",  name: layerNames.grass,  sl: "MapLayer1", ts: WALL_TILESET_RUID },
-    { slot: "floors", name: layerNames.floors, sl: "MapLayer2", ts: TILE1_TILESET_RUID }, // 설치 바닥(Baram_167)
-    { slot: "walls",  name: layerNames.walls,  sl: "MapLayer3", ts: WALL_TILESET_RUID },
-    { slot: "deco",   name: layerNames.deco,   sl: "MapLayer4", ts: WALL_TILESET_RUID },
+    { slot: "water",  name: layerNames.water  || "RectTileMap0",     sl: "MapLayer0", ts: WALL_TILESET_RUID },
+    { slot: "base",   name: layerNames.base   || "RectTileMap",      sl: "MapLayer1", ts: WALL_TILESET_RUID },
+    { slot: "grass",  name: layerNames.grass  || "RectTileMap2",     sl: "MapLayer2", ts: WALL_TILESET_RUID },
+    { slot: "floors", name: layerNames.floors || "RectTileMap3",     sl: "MapLayer3", ts: TILE1_TILESET_RUID }, // 설치 바닥(Baram_167)
+    { slot: "walls",  name: layerNames.walls  || "RectTileMap4",     sl: "MapLayer4", ts: WALL_TILESET_RUID },
+    { slot: "deco",   name: layerNames.deco   || "RectTileMap5",     sl: "MapLayer5", ts: WALL_TILESET_RUID },
   ];
   // 현재 타일 레이어 수집
   const layers = [];
@@ -263,7 +264,7 @@ function setTiles(slot, cells) {
 }
 
 // ---------- 페인터 ----------
-const DEFAULT_LAYER_NAMES = { base: "RectTileMap", grass: "RectTileMap2", floors: "RectTileMap3", walls: "RectTileMap4", deco: "RectTileMap5" };
+const DEFAULT_LAYER_NAMES = { water: "RectTileMap0", base: "RectTileMap", grass: "RectTileMap2", floors: "RectTileMap3", walls: "RectTileMap4", deco: "RectTileMap5" };
 
 // design(d): d.plaza(...)/d.walk(...)/d.island(...) 호출로 흙 마스크를 구성하는 콜백.
 // inspect: 보고용 점검 포인트 [{ kind, at, note }].

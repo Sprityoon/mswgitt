@@ -114,6 +114,27 @@ script ResourceSpawner extends Logic
 		return self.TerrainEditsJsonMap[mapName] or "[]"
 	end
 
+	method integer TileNameToMask(string name)
+		-- L2 잔디 / L1 흙 패밀리 타일명 → 2×2 마스크. 미지 타일은 -1.
+		if name == nil or name == "" then return -1 end
+		if name == "FullGrass" then return 0 end
+		if name == "GrassT" or name == "SoilT" or name == "Soil_T" or name == "GrassSand_T" or name == "WetRim_T" or name == "SoilSand_T" then return 12 end       -- TL|TR
+		if name == "GrassD" or name == "SoilD" or name == "Soil_D" or name == "GrassSand_D" or name == "WetRim_D" or name == "SoilSand_D" then return 3 end        -- BL|BR
+		if name == "GrassL" or name == "SoilL" or name == "Soil_L" or name == "GrassSand_L" or name == "WetRim_L" or name == "SoilSand_L" then return 5 end        -- TL|BL
+		if name == "GrassR" or name == "SoilR" or name == "Soil_R" or name == "GrassSand_R" or name == "WetRim_R" or name == "SoilSand_R" then return 10 end       -- TR|BR
+		if name == "GrassLT" or name == "SoilLT" or name == "Soil_LT" or name == "GrassSand_LT" or name == "WetRim_LT" or name == "SoilSand_LT" then return 13 end      -- !BR
+		if name == "GrassRT" or name == "SoilRT" or name == "Soil_RT" or name == "GrassSand_RT" or name == "WetRim_RT" or name == "SoilSand_RT" then return 14 end      -- !BL
+		if name == "GrassLD" or name == "SoilLD" or name == "Soil_LD" or name == "GrassSand_LD" or name == "WetRim_LD" or name == "SoilSand_LD" then return 7 end       -- !TR
+		if name == "GrassRD" or name == "SoilRD" or name == "Soil_RD" or name == "GrassSand_RD" or name == "WetRim_RD" or name == "SoilSand_RD" then return 11 end      -- !TL
+		if name == "GrassLTCorner" or name == "SoilLTCorner" or name == "Soil_LTCorner" or name == "GrassSand_LTCorner" or name == "WetRim_LTCorner" or name == "SoilSand_LTCorner" then return 4 end -- TL
+		if name == "GrassRTCorner" or name == "SoilRTCorner" or name == "Soil_RTCorner" or name == "GrassSand_RTCorner" or name == "WetRim_RTCorner" or name == "SoilSand_RTCorner" then return 8 end -- TR
+		if name == "GrassLDCorner" or name == "SoilLDCorner" or name == "Soil_LDCorner" or name == "GrassSand_LDCorner" or name == "WetRim_LDCorner" or name == "SoilSand_LDCorner" then return 1 end -- BL
+		if name == "GrassRDCorner" or name == "SoilRDCorner" or name == "Soil_RDCorner" or name == "GrassSand_RDCorner" or name == "WetRim_RDCorner" or name == "SoilSand_RDCorner" then return 2 end -- BR
+		if name == "SubGrassLTRD" then return 6 end  -- TL|BR (대각 — 2026-07-15 신설)
+		if name == "SubGrassRTLD" then return 9 end  -- TR|BL (대각 — 2026-07-15 신설)
+		return -1
+	end
+
 	method void SetTerrainEditsJson(string mapName, string jsonStr)
 		-- PersistenceManager가 로드 시 세이브값을 주입하는 진입점 (설치 타일 JSON과 동일 패턴).
 		self.TerrainEditsJsonMap[mapName] = jsonStr
@@ -140,27 +161,6 @@ script ResourceSpawner extends Logic
 		}
 	end
 
-	method integer TileNameToMask(string name)
-		-- L2 잔디 패밀리 타일명 → 2×2 흙 마스크. 미지 타일은 -1.
-		if name == nil or name == "" then return -1 end
-		if name == "FullGrass" then return 0 end
-		if name == "GrassT" then return 12 end       -- TL|TR
-		if name == "GrassD" then return 3 end        -- BL|BR
-		if name == "GrassL" then return 5 end        -- TL|BL
-		if name == "GrassR" then return 10 end       -- TR|BR
-		if name == "GrassLT" then return 13 end      -- !BR
-		if name == "GrassRT" then return 14 end      -- !BL
-		if name == "GrassLD" then return 7 end       -- !TR
-		if name == "GrassRD" then return 11 end      -- !TL
-		if name == "GrassLTCorner" then return 4 end -- TL
-		if name == "GrassRTCorner" then return 8 end -- TR
-		if name == "GrassLDCorner" then return 1 end -- BL
-		if name == "GrassRDCorner" then return 2 end -- BR
-		if name == "SubGrassLTRD" then return 6 end  -- TL|BR (대각 — 2026-07-15 신설)
-		if name == "SubGrassRTLD" then return 9 end  -- TR|BL (대각 — 2026-07-15 신설)
-		return -1
-	end
-
 	method string MaskToTileName(integer mask)
 		-- 마스크 → L2 타일명. 15(홀)은 "" (호출측 RemoveTile). cellTile()과 동일 매핑
 		-- (+ 대각 SubGrass 2종은 런타임 확장 — 생성기는 대각을 산출하지 않음).
@@ -183,25 +183,60 @@ script ResourceSpawner extends Logic
 		return "FullGrass"
 	end
 
+	method string MaskToSoilTileName(integer mask)
+		-- 흙-물 경계 흙 프린지(Soil* 12종) → L1 타일명 (2026-08-28 도입).
+		if mask == nil or mask == 0 or mask == 15 then return "" end
+		if mask == 12 then return "SoilT" end
+		if mask == 3 then return "SoilD" end
+		if mask == 5 then return "SoilL" end
+		if mask == 10 then return "SoilR" end
+		if mask == 13 then return "SoilLT" end
+		if mask == 14 then return "SoilRT" end
+		if mask == 7 then return "SoilLD" end
+		if mask == 11 then return "SoilRD" end
+		if mask == 4 then return "SoilLTCorner" end
+		if mask == 8 then return "SoilRTCorner" end
+		if mask == 1 then return "SoilLDCorner" end
+		if mask == 2 then return "SoilRDCorner" end
+		return ""
+	end
+
+	method string MaskToWaterSandTileName(integer mask)
+		-- 호환용 래퍼
+		return self:MaskToSoilTileName(mask)
+	end
+
+	method string MaskToSoilSandTileName(integer mask)
+		-- 호환용 래퍼
+		return self:MaskToSoilTileName(mask)
+	end
+
 	method table DeriveDigPathAxisSide(integer dirX, integer dirY, number playerWorldX, number playerWorldY)
 		-- digPath의 axis/side 결정 **단일 소스**. 적용 경로(PlayerInventory, 서버)와
 		-- 미리보기 경로(PlayerController, 클라)가 반드시 이걸 같이 쓴다.
 		-- ⚠️ 한쪽에 복제본을 만들면 미리보기와 실제 결과가 조용히 어긋난다(docs/pitfalls.md 규칙 18).
-		local axis = "h"
-		if math.abs(dirX) >= math.abs(dirY) and dirX ~= 0 then
-			axis = "h"
+		local side = 1
+		local axis = "y"
+		if dirX ~= 0 then
+			axis = "x"
+			local relY = playerWorldY - math.floor(playerWorldY)
+			if relY >= 0.5 then side = 1 else side = 0 end
 		elseif dirY ~= 0 then
-			axis = "v"
-		end
-		local side = ""
-		local fracX = playerWorldX - math.floor(playerWorldX)
-		local fracY = playerWorldY - math.floor(playerWorldY)
-		if axis == "h" then
-			if fracY >= 0.5 then side = "up" else side = "down" end
-		else
-			if fracX >= 0.5 then side = "right" else side = "left" end
+			axis = "y"
+			local relX = playerWorldX - math.floor(playerWorldX)
+			if relX >= 0.5 then side = 1 else side = 0 end
 		end
 		return { axis = axis, side = side }
+	end
+
+	method integer TileIndexFromLayer(any entity, integer x, integer y)
+		-- 맵 레이어 엔티티의 특정 좌표 타일 인덱스. 엔티티/컴포넌트/타일 부재 시 nil.
+		if not isvalid(entity) then return nil end
+		local tc = entity.RectTileMapComponent
+		if not isvalid(tc) then return nil end
+		local tile = tc:GetTile(x, y)
+		if tile == nil then return nil end
+		return tile.TileIndex
 	end
 
 	method table GetTerrainEditAffectedCells(string action, integer x, integer y, string axis, string side)
@@ -281,8 +316,18 @@ script ResourceSpawner extends Logic
 	end
 
 	method boolean IsWaterCell(any tilemap1, integer x, integer y)
-		-- L1이 Water 타일인지.
+		-- L0 Water 또는 L1 Water 타일인지 판정 (3단 지형 지원).
 		if not isvalid(tilemap1) then return false end
+		local map = tilemap1.Entity.CurrentMap or tilemap1.Entity.Parent
+		if isvalid(map) then
+			local l0Ent = map:GetChildByName("RectTileMap0")
+			if isvalid(l0Ent) and isvalid(l0Ent.RectTileMapComponent) then
+				local info0 = l0Ent.RectTileMapComponent:GetTile(x, y)
+				if info0 ~= nil and self:IsWaterTileName(info0.Name) then
+					return true
+				end
+			end
+		end
 		local info = tilemap1:GetTile(x, y)
 		return info ~= nil and self:IsWaterTileName(info.Name)
 	end
@@ -306,19 +351,23 @@ script ResourceSpawner extends Logic
 	end
 
 	method void RefreshWaterAreaRect(any tilemap1, any tilemap2, integer x0, integer y0, integer w, integer h)
-		-- 물가 문법(docs/tile-scheme.md §4-bis) 런타임 적용 — "잔디가 물을 덮는다".
-		-- (x0,y0)~(x0+w-1,y0+h-1) 블록 + 1칸 패딩을 재계산한다. L1은 호출 전에 이미 갱신돼 있어야 한다.
-		--  · 물 셀: 15에서 "잔디로 덮인 이웃" 방향의 자기 절반 비트를 제거 → ½셀 잔디 오버행.
-		--           전부 덮여 마스크 0이 되면(사방이 잔디인 1셀 연못) 물이 사라지므로 홀 유지.
-		--  · 잔디 셀: 물 유래 프린지 비트를 제거하고, 흙 홀 유래 비트는 살린다(흙 후광은 정상).
-		--  · L2 홀인 땅(광장/구덩이 바닥)은 그대로 둔다 — 홀은 프린지 대상이 아니다.
-		-- ⚠️ 오프라인 보정 스크립트 scripts/fix_water_fringe.cjs와 **같은 규칙**이다. 한쪽만 고치지 말 것.
-		-- 2026-08-07: ipairs+nested plan tables can stall in some call paths; unroll fringe and use parallel arrays.
-		if not isvalid(tilemap2) then return end
+		-- 3단 지형 아키텍처 (L0 Water ➔ L1 Soil + Soil* 프린지 ➔ L2 Grass + Grass* 프린지).
+		-- (x0,y0)~(x0+w-1,y0+h-1) 블록 + 1칸 패딩을 재계산한다.
+		if not isvalid(tilemap1) or not isvalid(tilemap2) then return end
+		local map = tilemap1.Entity.CurrentMap or tilemap1.Entity.Parent
+		local tilemap0 = nil
+		if isvalid(map) then
+			local l0Ent = map:GetChildByName("RectTileMap0")
+			if isvalid(l0Ent) and isvalid(l0Ent.RectTileMapComponent) then
+				tilemap0 = l0Ent.RectTileMapComponent
+			end
+		end
 
 		local planX = {}
 		local planY = {}
 		local planM = {}
+		local planSoilM = {}
+		local planIsWater = {}
 		local planN = 0
 
 		local y = y0 - 1
@@ -330,7 +379,19 @@ script ResourceSpawner extends Logic
 			while x <= xMax do
 				if self:IsWaterCell(tilemap1, x, y) then
 					local m = 15
-					-- Grass-covered neighbors only. MirrorFringeBits inlined.
+					local sm = 15
+
+					-- 1. Soil 이웃 판정 (L1 Soil* 흙 프린지가 물 위로 ½셀 오버행)
+					if not self:IsWaterCell(tilemap1, x, y + 1) then sm = self:ClearBits(sm, 12) end
+					if not self:IsWaterCell(tilemap1, x, y - 1) then sm = self:ClearBits(sm, 3) end
+					if not self:IsWaterCell(tilemap1, x + 1, y) then sm = self:ClearBits(sm, 10) end
+					if not self:IsWaterCell(tilemap1, x - 1, y) then sm = self:ClearBits(sm, 5) end
+					if not self:IsWaterCell(tilemap1, x + 1, y + 1) then sm = self:ClearBits(sm, 8) end
+					if not self:IsWaterCell(tilemap1, x - 1, y + 1) then sm = self:ClearBits(sm, 4) end
+					if not self:IsWaterCell(tilemap1, x + 1, y - 1) then sm = self:ClearBits(sm, 2) end
+					if not self:IsWaterCell(tilemap1, x - 1, y - 1) then sm = self:ClearBits(sm, 1) end
+
+					-- 2. Grass 이웃 판정 (L2 Grass* 잔디 프린지가 흙 위로 ½셀 오버행)
 					if (not self:IsWaterCell(tilemap1, x, y + 1)) and (tilemap2:GetTile(x, y + 1) ~= nil) then
 						m = self:ClearBits(m, 12)
 					end
@@ -355,64 +416,48 @@ script ResourceSpawner extends Logic
 					if (not self:IsWaterCell(tilemap1, x - 1, y - 1)) and (tilemap2:GetTile(x - 1, y - 1) ~= nil) then
 						m = self:ClearBits(m, 1)
 					end
-					if m == 0 then m = 15 end
+
 					planN = planN + 1
 					planX[planN] = x
 					planY[planN] = y
 					planM[planN] = m
+					planSoilM[planN] = sm
+					planIsWater[planN] = true
 				else
 					local base = self:GetCellMask(tilemap2, tilemap1, x, y)
 					if base >= 0 and base ~= 15 then
-						local waterBits = 0
 						local otherBits = 0
-						if self:IsWaterCell(tilemap1, x, y - 1) then
-							waterBits = waterBits | 3
-						elseif (tilemap2:GetTile(x, y - 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x, y - 1) then
+						if (tilemap2:GetTile(x, y - 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x, y - 1) then
 							otherBits = otherBits | 3
 						end
-						if self:IsWaterCell(tilemap1, x, y + 1) then
-							waterBits = waterBits | 12
-						elseif (tilemap2:GetTile(x, y + 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x, y + 1) then
+						if (tilemap2:GetTile(x, y + 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x, y + 1) then
 							otherBits = otherBits | 12
 						end
-						if self:IsWaterCell(tilemap1, x - 1, y) then
-							waterBits = waterBits | 5
-						elseif (tilemap2:GetTile(x - 1, y) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x - 1, y) then
+						if (tilemap2:GetTile(x - 1, y) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x - 1, y) then
 							otherBits = otherBits | 5
 						end
-						if self:IsWaterCell(tilemap1, x + 1, y) then
-							waterBits = waterBits | 10
-						elseif (tilemap2:GetTile(x + 1, y) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x + 1, y) then
+						if (tilemap2:GetTile(x + 1, y) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x + 1, y) then
 							otherBits = otherBits | 10
 						end
-						if self:IsWaterCell(tilemap1, x - 1, y - 1) then
-							waterBits = waterBits | 1
-						elseif (tilemap2:GetTile(x - 1, y - 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x - 1, y - 1) then
+						if (tilemap2:GetTile(x - 1, y - 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x - 1, y - 1) then
 							otherBits = otherBits | 1
 						end
-						if self:IsWaterCell(tilemap1, x + 1, y - 1) then
-							waterBits = waterBits | 2
-						elseif (tilemap2:GetTile(x + 1, y - 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x + 1, y - 1) then
+						if (tilemap2:GetTile(x + 1, y - 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x + 1, y - 1) then
 							otherBits = otherBits | 2
 						end
-						if self:IsWaterCell(tilemap1, x - 1, y + 1) then
-							waterBits = waterBits | 4
-						elseif (tilemap2:GetTile(x - 1, y + 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x - 1, y + 1) then
+						if (tilemap2:GetTile(x - 1, y + 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x - 1, y + 1) then
 							otherBits = otherBits | 4
 						end
-						if self:IsWaterCell(tilemap1, x + 1, y + 1) then
-							waterBits = waterBits | 8
-						elseif (tilemap2:GetTile(x + 1, y + 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x + 1, y + 1) then
+						if (tilemap2:GetTile(x + 1, y + 1) == nil) and self:IsTerrainCellEditableRaw(tilemap1, x + 1, y + 1) then
 							otherBits = otherBits | 8
 						end
-						-- Water-priority: clear contested subcells so grass separates dirt and water.
-						if waterBits ~= 0 then
-							local m = self:ClearBits(base | otherBits, waterBits)
-							planN = planN + 1
-							planX[planN] = x
-							planY[planN] = y
-							planM[planN] = m
-						end
+						local m = base | otherBits
+						planN = planN + 1
+						planX[planN] = x
+						planY[planN] = y
+						planM[planN] = m
+						planSoilM[planN] = 0
+						planIsWater[planN] = false
 					end
 				end
 				x = x + 1
@@ -422,14 +467,67 @@ script ResourceSpawner extends Logic
 
 		local i = 1
 		while i <= planN do
-			self:SetCellMaskExact(tilemap2, planX[i], planY[i], planM[i])
+			local x = planX[i]
+			local y = planY[i]
+			local m = planM[i]
+			local sm = planSoilM[i]
+
+			if planIsWater[i] then
+				-- L0: Water (수면)
+				if isvalid(tilemap0) then
+					pcall(function() tilemap0:SetTile("Water", x, y) end)
+				end
+				-- L1: Soil* Fringe or Hole
+				if isvalid(tilemap1) then
+					if sm ~= nil and sm > 0 and sm < 15 then
+						local sName = self:MaskToSoilTileName(sm)
+						if sName ~= nil and sName ~= "" and sName ~= "Soil" then
+							pcall(function() tilemap1:SetTile(sName, x, y) end)
+						else
+							pcall(function() tilemap1:RemoveTile(x, y) end)
+						end
+					else
+						pcall(function() tilemap1:RemoveTile(x, y) end)
+					end
+				end
+				-- L2: Grass* Fringe or Hole
+				if isvalid(tilemap2) then
+					if m ~= nil and m > 0 and m < 15 then
+						local gName = self:MaskToTileName(m)
+						if gName ~= nil and gName ~= "" and gName ~= "FullGrass" then
+							pcall(function() tilemap2:SetTile(gName, x, y) end)
+						else
+							pcall(function() tilemap2:RemoveTile(x, y) end)
+						end
+					else
+						pcall(function() tilemap2:RemoveTile(x, y) end)
+					end
+				end
+			else
+				-- 육지 셀: L1은 Soil, L2는 Grass 마스크
+				if isvalid(tilemap1) then
+					pcall(function() tilemap1:SetTile("Soil", x, y) end)
+				end
+				if isvalid(tilemap2) then
+					if m == 15 then
+						pcall(function() tilemap2:RemoveTile(x, y) end)
+					else
+						local tName = self:MaskToTileName(m)
+						if tName ~= nil and tName ~= "" then
+							pcall(function() tilemap2:SetTile(tName, x, y) end)
+						else
+							pcall(function() tilemap2:RemoveTile(x, y) end)
+						end
+					end
+				end
+			end
 			i = i + 1
 		end
-		log(string.format("[WATER-FRINGE] refreshed cells=%d origin=(%d,%d) size=%dx%d", planN, x0, y0, w, h))
+		log(string.format("[3TIER-WATER-SOIL-GRASS] refreshed cells=%d origin=(%d,%d) size=%dx%d", planN, x0, y0, w, h))
 	end
 
 	method boolean HasWaterNear(any tilemap1, integer x0, integer y0, integer w, integer h)
-		-- 범위 + 2칸 패딩 안에 물 셀이 하나라도 있는지. 물 없는 지형에서는 보정을 아예 건너뛴다.
+		-- 범위 + 2칸 패딩 안에 물 셀이 하나라도 있는지.
 		for y = y0 - 2, y0 + h + 1 do
 			for x = x0 - 2, x0 + w + 1 do
 				if self:IsWaterCell(tilemap1, x, y) then return true end
@@ -439,7 +537,6 @@ script ResourceSpawner extends Logic
 	end
 
 	method boolean IsExposedDirtCell(any tilemap1, any tilemap2, integer x, integer y)
-		-- L2 홀 + L1이 물 아님 = 드러난 흙(광장/길/구덩이).
 		if not isvalid(tilemap1) or not isvalid(tilemap2) then return false end
 		if self:IsWaterCell(tilemap1, x, y) then return false end
 		if tilemap1:GetTile(x, y) == nil then return false end
@@ -447,50 +544,12 @@ script ResourceSpawner extends Logic
 	end
 
 	method boolean HasExposedDirtNearWaterDig(any tilemap1, any tilemap2, integer x0, integer y0, integer w, integer h)
-		-- 물 블록 둘레 1칸(프린지 영향권)에 드러난 흙이 있으면 물·흙 프린지 경합이 난다.
-		-- 블록 **안**은 곧 물로 바뀌므로 검사하지 않는다. 서버·클라 공용(규칙 18).
-		if not isvalid(tilemap1) or not isvalid(tilemap2) then return false end
-		if w < 1 then w = 1 end
-		if h < 1 then h = 1 end
-		local y = y0 - 1
-		local yMax = y0 + h
-		local xMin = x0 - 1
-		local xMax = x0 + w
-		while y <= yMax do
-			local x = xMin
-			while x <= xMax do
-				local inside = (x >= x0 and x <= x0 + w - 1 and y >= y0 and y <= y0 + h - 1)
-				if not inside then
-					if self:IsExposedDirtCell(tilemap1, tilemap2, x, y) then
-						return true
-					end
-				end
-				x = x + 1
-			end
-			y = y + 1
-		end
+		-- 3단 지형 아키텍처 도입으로 물-흙 경합이 완전 해소됨 (가드 비활성화).
 		return false
 	end
 
 	method boolean HasWaterNearDirtDig(any tilemap1, integer x0, integer y0, integer w, integer h)
-		-- 흙 파기(호미 2×2 홀, 삽 2×2 길) 둘레 1칸(프린지 영향권) 및 영역 내에 물이 있으면 물·흙 프린지 경합 방지.
-		if not isvalid(tilemap1) then return false end
-		if w < 1 then w = 1 end
-		if h < 1 then h = 1 end
-		local y = y0 - 1
-		local yMax = y0 + h
-		local xMin = x0 - 1
-		local xMax = x0 + w
-		while y <= yMax do
-			local x = xMin
-			while x <= xMax do
-				if self:IsWaterCell(tilemap1, x, y) then
-					return true
-				end
-				x = x + 1
-			end
-			y = y + 1
-		end
+		-- 3단 지형 아키텍처 도입으로 물-흙 경합이 완전 해소됨 (가드 비활성화).
 		return false
 	end
 
@@ -801,28 +860,24 @@ script ResourceSpawner extends Logic
 				end
 			end
 
-			-- ⚖️ 2026-08-07: 드러난 흙이 둘레에 있으면 물 파기 금지 (물·흙 프린지 경합).
-			if action == "dig_water" then
-				if self:HasExposedDirtNearWaterDig(tilemap1, tilemap2, x, y, n, n) then
-					return false
-				end
-			end
+			local l0Ent = map:GetChildByName("RectTileMap0")
+			local tilemap0 = isvalid(l0Ent) and l0Ent.RectTileMapComponent or nil
 
 			for by = y, y + n - 1 do
 				for bx = x, x + n - 1 do
 					if action == "dig_water" then
-						tilemap1:SetTile("Water", bx, by)
-						-- 물은 L2 홀로 시작 → RefreshWaterAreaRect가 오버행을 얹는다.
+						if isvalid(tilemap0) then pcall(function() tilemap0:SetTile("Water", bx, by) end) end
+						tilemap1:RemoveTile(bx, by)
 						self:SetCellMaskExact(tilemap2, bx, by, 15)
 					else
-						-- fill_water: 흙 구덩이가 아니라 Soil+FullGrass로 복구.
-						-- (홀이면 남은 물과 다시 경합해 프린지가 꼬인다 — 2026-08-07)
-						tilemap1:SetTile("Soil", bx, by)
+						-- fill_water: 흙 지반 + 잔디 복구
+						if isvalid(tilemap0) then tilemap0:RemoveTile(bx, by) end
+						pcall(function() tilemap1:SetTile("Soil", bx, by) end)
 						self:SetCellMaskExact(tilemap2, bx, by, 0)
 					end
 				end
 			end
-			-- L1을 전부 바꾼 뒤 물가 오버행을 블록+1칸 패딩 범위로 재계산 (docs/tile-scheme.md §4-bis).
+			-- 물가 오버행 재계산
 			self:RefreshWaterAreaRect(tilemap1, tilemap2, x, y, n, n)
 			-- 물 편집 중 L4에 잔디/프린지가 쌓이지 않게 주변 오적재를 쓸어낸다 (L2만 프린지).
 			local layer4Entity = map:GetChildByName("RectTileMap4")
@@ -875,17 +930,26 @@ script ResourceSpawner extends Logic
 		if not isvalid(map) then return end
 		local mapName = map.Name
 		local json = self:GetTerrainEditsJson(mapName)
-		local edits = (json ~= nil and json ~= "") and _HttpService:JSONDecode(json) or {}
+		local edits = {}
+		if type(json) == "table" then
+			edits = json
+		elseif json ~= nil and json ~= "" then
+			local ok, decoded = pcall(function() return _HttpService:JSONDecode(json) end)
+			if ok and type(decoded) == "table" then edits = decoded end
+		end
 		local applied = 0
 		for _, e in ipairs(edits) do
-			if e.action ~= nil and e.x ~= nil and e.y ~= nil then
+			if type(e) == "table" and e.action ~= nil and e.x ~= nil and e.y ~= nil then
 				local act = e.action
 				if act == "removeGrass" then act = "digHole" end
 				local ax = ""
 				local sd = ""
 				if e.axis ~= nil then ax = e.axis end
 				if e.side ~= nil then sd = e.side end
-				if self:ApplyTerrainEdit(mapName, map, act, math.floor(e.x), math.floor(e.y), ax, sd, false) then
+				local ok, res = pcall(function()
+					return self:ApplyTerrainEdit(mapName, map, act, math.floor(e.x), math.floor(e.y), ax, sd, false)
+				end)
+				if ok and res == true then
 					applied = applied + 1
 				end
 			end
