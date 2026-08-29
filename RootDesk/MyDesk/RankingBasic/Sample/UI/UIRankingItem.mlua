@@ -30,8 +30,11 @@ script UIRankingItem extends Component
 		self.Text_Rank.Text = tostring(data.Rank)
 		self.Text_Score.Text = tostring(data.Score)
 		
-		local tagStr = data.Tag or ""
-		self.Text_Name.Text = tostring(data.ProfileCode) .. "," .. tagStr
+		local nameStr = data.Tag or ""
+		if nameStr == "" then
+			nameStr = "낚시꾼"
+		end
+		self.Text_Name.Text = nameStr
 	end
 
 	@ExecSpace("ClientOnly")
@@ -44,11 +47,17 @@ script UIRankingItem extends Component
 		self.Text_Rank.Text = myData.Rank ~= 0 and tostring(myData.Rank) or "-"
 		self.Text_Score.Text = tostring(myData.Score)
 		
-		local playerComp = _UserService.LocalPlayer.PlayerComponent
-		local profileCode = playerComp.ProfileCode
-		local nickName = playerComp.Nickname
+		local myName = ""
+		if myData.Tag ~= nil and myData.Tag ~= "" then
+			myName = myData.Tag
+		elseif isvalid(_UserService.LocalPlayer) and isvalid(_UserService.LocalPlayer.PlayerComponent) then
+			myName = _UserService.LocalPlayer.PlayerComponent.Nickname or ""
+		end
+		if myName == "" then
+			myName = "나"
+		end
 		
-		self.Text_Name.Text = tostring(profileCode) .. "," .. tostring(nickName)
+		self.Text_Name.Text = myName
 	end
 
 	@ExecSpace("ClientOnly")

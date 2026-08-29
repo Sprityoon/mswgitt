@@ -28,7 +28,7 @@ script MonsterAI extends Component
 	property number AttackWindup = 0.5
 	property number AttackCooldown = 1.5
 	-- (legacy) CONTACT 윈드업 접근 배율. 준비 상태에서는 전 타입 정지하므로 현재 미사용.
-	property number AttackApproachSpeedMultiplier = 0.5
+	@HideFromInspector property number AttackApproachSpeedMultiplier = 0.5
 	-- 리쉬 이탈/타겟 상실로 귀환할 때 이동 속도 배율. 1.0보다 크면 평시보다 빠르게 스폰으로 돌아간다.
 	property number ReturnSpeedMultiplier = 2.2
 
@@ -36,7 +36,7 @@ script MonsterAI extends Component
 	-- 돌진 이동 속도 배율(평시 InputSpeed 대비). 정지 텔레그래프 이후 이 속도로 고정 방향 직진.
 	property number ChargeSpeedMultiplier = 3.0
 	-- (legacy) 예전 고정 오버슈트 배율. 현재는 돌진 시작 시 유저 거리를 쓰고, 이후는 감속으로 멈춘다.
-	property number ChargeOvershootMultiplier = 1.2
+	@HideFromInspector property number ChargeOvershootMultiplier = 1.2
 	-- 전속 돌진 이후 감속 구간 지속시간(초). 이 시간 동안 속도가 0으로 줄어든다.
 	property number ChargeDecelDuration = 0.4
 	-- 돌진 단계 최대 지속시간 안전장치(벽 충돌 등으로 목표 거리에 못 미쳐도 이 시간이 지나면 강제 종료).
@@ -44,7 +44,7 @@ script MonsterAI extends Component
 
 	-- LEAP 전용 튜닝(AttackType == "LEAP"일 때만 사용). 크기는 고정, 위치 이동만 사용.
 	-- (legacy) 예전 스케일 연출용 — 더 이상 적용하지 않음.
-	property number LeapPeakScale = 1.0
+	@HideFromInspector property number LeapPeakScale = 1.0
 	property number LeapRiseFraction = 0.65
 	-- 예고 종료 후 스캔 방향 점프(FLY) 시간(초).
 	property number LeapRiseDuration = 0.5
@@ -55,8 +55,8 @@ script MonsterAI extends Component
 	-- 스캔 위치 대비 착지 지점 비율(0.8 = 시작~스캔의 80% 지점에서 내려찍기).
 	property number LeapLandingFraction = 0.8
 	-- (legacy)
-	property number LeapMidpointFraction = 1.0
-	property number LeapAnimHoldProgress = 0.7
+	@HideFromInspector property number LeapMidpointFraction = 1.0
+	@HideFromInspector property number LeapAnimHoldProgress = 0.7
 	-- 공중 체공 포즈로 고정할 공격 클립 프레임 인덱스(FLY/HANG).
 	property integer LeapAirFrameIndex = 2
 	-- 내려찍기 구간 애니 재생 배율.
@@ -67,24 +67,24 @@ script MonsterAI extends Component
 	-- 미니언 소환(보스 패턴). Interval<=0 또는 ModelId 빈 값이면 비활성.
 	property number MinionSummonInterval = 0
 	property string MinionModelId = ""
-	property number MinionSummonCount = 4
+	property integer MinionSummonCount = 4
 	property number MinionSummonRadius = 2.5
 
-	property number KnockbackSpeed = 7.0
-	property number KnockbackDuration = 0.18
+	@HideFromInspector property number KnockbackSpeed = 7.0
+	@HideFromInspector property number KnockbackDuration = 0.18
 	-- 피격 후 이 시간(초) 동안은 리쉬(귀환)를 보류하고 끝까지 추적/반격한다.
-	property number AggroGraceDuration = 4.0
-	property number WanderMin = 1.0
-	property number WanderMax = 2.5
-	property number StandMin = 1.0
-	property number StandMax = 2.0
+	@HideFromInspector property number AggroGraceDuration = 4.0
+	@HideFromInspector property number WanderMin = 1.0
+	@HideFromInspector property number WanderMax = 2.5
+	@HideFromInspector property number StandMin = 1.0
+	@HideFromInspector property number StandMax = 2.0
 
 	-- T99: 엔티티 장애물(자원·가구) — ObstacleQuery 공용. 임계값은 프로퍼티.
-	property number ObstacleRadius = 0.6
-	property number ObstacleQueryRadius = 3.0
-	property number ObstacleStuckSeconds = 1.5
-	property number ObstacleStuckCooldown = 4.0
-	property number ObstacleEscapeStep = 0.75
+	@HideFromInspector property number ObstacleRadius = 0.6
+	@HideFromInspector property number ObstacleQueryRadius = 3.0
+	@HideFromInspector property number ObstacleStuckSeconds = 1.5
+	@HideFromInspector property number ObstacleStuckCooldown = 4.0
+	@HideFromInspector property number ObstacleEscapeStep = 0.75
 	@HideFromInspector property number ObstacleStuckTimer = 0
 	@HideFromInspector property number ObstacleEscapeCooldownTimer = 0
 	@HideFromInspector property number ObstacleLastX = 0
@@ -95,7 +95,7 @@ script MonsterAI extends Component
 	-- 모델명이 들어가면 윈드업 만료 시점에 근접 대신 투사체를 발사한다(모델 프로퍼티 = 데이터 주도, 이름 분기 금지).
 	property string ProjectileModelId = ""
 	property number ProjectileSpeed = 4.5
-	property number ProjectileDamage = 5
+	property integer ProjectileDamage = 5
 	property number ProjectileLifeTime = 1.5
 	property number ProjectileHitRadius = 0.4
 

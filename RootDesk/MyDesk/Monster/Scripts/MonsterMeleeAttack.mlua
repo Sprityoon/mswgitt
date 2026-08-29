@@ -8,9 +8,9 @@ script MonsterMeleeAttack extends AttackComponent
 
 	-- T38: 접촉 데미지 (겹침 시 주기 타격)
 	property number TouchDamage = 2
-	property number TouchTickInterval = 0.5
-	property number TouchRadius = 0.55
-	property number TouchBoxSize = 1.1
+	@HideFromInspector property number TouchTickInterval = 0.5
+	@HideFromInspector property number TouchRadius = 0.55
+	@HideFromInspector property number TouchBoxSize = 1.1
 
 	@ExecSpace("ServerOnly")
 	method void DoAttack()

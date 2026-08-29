@@ -4,12 +4,12 @@ script Monster extends Component
 	-- HP uses `number` (double); the AI script reads IsDead to play the death clip.
 
 	@Sync property number MaxHp = 30
-	@Sync property number Hp = 0
+	@Sync @HideFromInspector property number Hp = 0
 	@Sync property boolean RespawnOn = false
 	@Sync @HideFromInspector property boolean IsDead = false
 	@Sync property number RespawnDelay = 5
-	@Sync property number DestroyDelay = 0.7
-	property string DamageSkinRUID = "02c22d93421b4038b3c413b3e40b57ec"
+	@Sync @HideFromInspector property number DestroyDelay = 0.7
+	@HideFromInspector property string DamageSkinRUID = "02c22d93421b4038b3c413b3e40b57ec"
 
 	-- Boss config (data-driven via the .model). A boss drops loot to its killer and
 	-- unlocks the next-tier hunting-ground waypoint on death (game_design.md §2.2 ③).

@@ -425,9 +425,9 @@ script PlayerInventory extends Component
 		local useBuffId = ""
 		local okB, vB = pcall(function() return row:GetItem("UseBuffId") end)
 		if okB and vB ~= nil then useBuffId = tostring(vB) end
-		if useBuffId ~= nil then
-			useBuffId = (string.gsub(useBuffId, "^%s+", ""))
-			useBuffId = (string.gsub(useBuffId, "%s+$", ""))
+		if useBuffId ~= nil and useBuffId ~= "" then
+			local trimmed = string.match(useBuffId, "^%s*(.-)%s*$")
+			if trimmed ~= nil then useBuffId = trimmed end
 		end
 		if useBuffId ~= nil and useBuffId ~= "" then
 			local buffs = self.Entity:GetComponent("script.PlayerBuffs")
@@ -476,9 +476,9 @@ script PlayerInventory extends Component
 		local useAnimalId = ""
 		local okA, vA = pcall(function() return row:GetItem("UseAnimalId") end)
 		if okA and vA ~= nil then useAnimalId = tostring(vA) end
-		if useAnimalId ~= nil then
-			useAnimalId = (string.gsub(useAnimalId, "^%s+", ""))
-			useAnimalId = (string.gsub(useAnimalId, "%s+$", ""))
+		if useAnimalId ~= nil and useAnimalId ~= "" then
+			local trimmedA = string.match(useAnimalId, "^%s*(.-)%s*$")
+			if trimmedA ~= nil then useAnimalId = trimmedA end
 		end
 		if useAnimalId ~= nil and useAnimalId ~= "" then
 			if not self:TrySpawnAnimalFromTicket(useAnimalId, baseName) then
@@ -491,9 +491,9 @@ script PlayerInventory extends Component
 		local usePetId = ""
 		local okPet, vPet = pcall(function() return row:GetItem("UsePetId") end)
 		if okPet and vPet ~= nil then usePetId = tostring(vPet) end
-		if usePetId ~= nil then
-			usePetId = (string.gsub(usePetId, "^%s+", ""))
-			usePetId = (string.gsub(usePetId, "%s+$", ""))
+		if usePetId ~= nil and usePetId ~= "" then
+			local trimmedP = string.match(usePetId, "^%s*(.-)%s*$")
+			if trimmedP ~= nil then usePetId = trimmedP end
 		end
 		if usePetId ~= nil and usePetId ~= "" then
 			self:TrySummonPet(usePetId)

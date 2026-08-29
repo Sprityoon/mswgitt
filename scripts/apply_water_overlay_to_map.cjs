@@ -83,6 +83,8 @@ function maskToWaterTileName(mask) {
   if (mask === 8) return "WaterRTCorner";
   if (mask === 1) return "WaterLDCorner";
   if (mask === 2) return "WaterRDCorner";
+  if (mask === 6) return "WaterLTRD";
+  if (mask === 9) return "WaterRTLD";
   return "Water";
 }
 
@@ -137,21 +139,34 @@ for (const key of waterCells) {
 l0Tiles.sort((a, b) => a.position.x - b.position.x || a.position.y - b.position.y);
 l6Tiles.sort((a, b) => a.position.x - b.position.x || a.position.y - b.position.y);
 
+// 4. Layer Configuration & Z-Fighting Prevention:
+// Assign dedicated SortingLayers to each layer so that the engine never has depth-fighting:
+//   L1 (RectTileMap, Soil base):        MapLayer0 (Z: 1000)
+//   L2 (RectTileMap2, Grass/Path):      MapLayer1 (Z: 999)
+//   L0 (RectTileMap0, Water Overlay):    MapLayer2 (Z: 998)
+//   L6 (RectTileMap6, Wet Rim/Glint):   MapLayer3 (Z: 997)
+
+L1.tc.SortingLayer = "MapLayer0";
+if (L1.tr) L1.tr.Position = { x: 0, y: 0, z: 1000 };
+
+L2.tc.SortingLayer = "MapLayer1";
+if (L2.tr) L2.tr.Position = { x: 0, y: 0, z: 999 };
+
 // Set L0 layer props
-L0.tc.SortingLayer = "MapLayer3";
-L0.tr.Position = { x: 0, y: 0, z: 1000 };
+L0.tc.SortingLayer = "MapLayer2";
+L0.tr.Position = { x: 0, y: 0, z: 998 };
 L0.tc.tileMap = l0Tiles;
 L0.js.revision = (L0.js.revision || 1) + 1;
 L0.e.jsonString = L0.js;
 
 // Set L6 layer props
 L6.tc.SortingLayer = "MapLayer3";
-L6.tr.Position = { x: 0, y: 0, z: 1000 };
+L6.tr.Position = { x: 0, y: 0, z: 997 };
 L6.tc.tileMap = l6Tiles;
 L6.js.revision = (L6.js.revision || 1) + 1;
 L6.e.jsonString = L6.js;
 
-// 4. Ensure L1 has Soil for all water cells
+// Ensure L1 has Soil for all water cells
 const l1Map = new Map();
 (L1.tc.tileMap || []).forEach(t => {
   l1Map.set(`${t.position.x},${t.position.y}`, t.tileIndex);
@@ -169,6 +184,24 @@ l1Tiles.sort((a, b) => a.position.x - b.position.x || a.position.y - b.position.
 L1.tc.tileMap = l1Tiles;
 L1.js.revision = (L1.js.revision || 1) + 1;
 L1.e.jsonString = L1.js;
+
+// Ensure L4 and L5 have correct SortingLayers (MapLayer4, MapLayer5)
+const L4 = findLayer("RectTileMap4");
+const L5 = findLayer("RectTileMap5");
+if (L4) { L4.tc.SortingLayer = "MapLayer4"; if (L4.tr) L4.tr.Position = { x: 0, y: 0, z: 996 }; }
+if (L5) { L5.tc.SortingLayer = "MapLayer5"; if (L5.tr) L5.tr.Position = { x: 0, y: 0, z: 995 }; }
+
+// 5. Ensure Entity Draw Order: L0 (Water) must render BEFORE L6 (WetRim)
+const l0Index = ents.findIndex(e => e.jsonString && e.jsonString.name === "RectTileMap0");
+const l6LayerIndex = ents.findIndex(e => e.jsonString && (e.jsonString.name === "MapleMapLayer6" || e.jsonString.name === "RectTileMap6"));
+
+if (l0Index !== -1 && l6LayerIndex !== -1 && l0Index > l6LayerIndex) {
+  // Move RectTileMap0 to just before MapleMapLayer6 / RectTileMap6
+  const [l0Ent] = ents.splice(l0Index, 1);
+  const targetPos = ents.findIndex(e => e.jsonString && (e.jsonString.name === "MapleMapLayer6" || e.jsonString.name === "RectTileMap6"));
+  ents.splice(targetPos, 0, l0Ent);
+  console.log(`Reordered RectTileMap0 (moved from index ${l0Index} to ${targetPos}) before RectTileMap6.`);
+}
 
 // Save map01.map
 fs.writeFileSync(mapPath, JSON.stringify(mapJson, null, 2), "utf8");

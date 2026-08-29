@@ -41,19 +41,13 @@
 
 - **신규 `.mlua`를 만들었으면 refresh 후 `.codeblock` 생성을 반드시 확인한다.** 쌍이 없으면 스크립트가 등록조차 안 된다.
 - 🔴 **build 로그는 refresh마다 갱신되지 않는다** ([규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라)). `maker_clear_logs`는 `normal`만 지우고 build는 보존하므로 강제로 비울 수단이 없다. **타임스탬프가 어긋나면 `Error=0`을 근거로 쓰지 말 것.**
-- **현재 Warning baseline = 17** (2026-08-08 실측, HEAD `3126192`). 내역 전량:
-
-  | 소유 | 코드 | 프로퍼티 | 건수 |
-  |---|---|---|---:|
-  | `Furnace` | `LWA-4012` | `RecipeTableName` · `StationTitle` · `DurationColumn` | 3 |
-  | `MonsterMeleeAttack` | `LWA-4012` | `TouchDamage` | 3 |
-  | `MonsterAI` | `LWA-4012` | `ProjectileDamage` · `MinionSummonCount` | 2 |
-  | `Monster` | `LWA-4012` | `BossDropMin` · `BossDropMax` | 2 |
-  | `SpriteRendererComponent` | `LWA-4012` | `Color` | 1 |
-  | (owner 없음) | `LWA-1111` | 인자 `2`/`1` | 6 |
-
-  - ✅ **구 baseline 48은 폐기.** T103(`c6c0a3c`)이 청소한 Prop `LWA-4012` 31건(`SortYOffset` 11 · Occ `Offset*` 20)은 **실측에서 부재**하며, 남은 17건이 종전 문서의 "상시 잔여 17"과 정확히 일치한다. T103 청소는 실효했다.
-  - ⚠️ 나흘간(08-05~08-08) 커밋 3건이 계속 "Warning 48"로 기록한 건 **[규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라)(고착된 build 로그)** 정황이 강하다. **48이 다시 보이면 회귀를 의심하기 전에 로그 `dateTime`부터 대조할 것.**
+- **현재 Warning baseline = 0** (2026-08-29 전면 청소 완료).
+  - ✅ **2026-08-29 상시 잔여 17건 전량 해소 완료**:
+    - `PlayerInventory.mlua`: `string.gsub` 2개 반환값 불일치 (`LWA-1111` 6건) ➔ `string.match` 단일 반환 트리밍으로 교체 (0건)
+    - `Furniture_Furnace.model`: `script.Furnace` 프로퍼티 누락 (`LWA-4012` 3건) ➔ `Values` 명시 (0건)
+    - `MonsterMeleeAttack.mlua` / 몬스터 모델 4종: `TouchDamage` 명시 및 내부 프로퍼티 `@HideFromInspector` (`LWA-4012` 3건) ➔ 해결 (0건)
+    - `MonsterAI.mlua` / `Monster.mlua`: 내부 튜닝 프로퍼티 `@HideFromInspector` 및 SlimeKing `BossDropMin/Max` 명시 (`LWA-4012` 4건) ➔ 해결 (0건)
+    - `TreasureChest.model`: `SpriteRendererComponent.Color` `Properties` 링크 누락 (`LWA-4012` 1건) ➔ 링크 연결 (0건)
 - `LWA-4012` = 모델에 프로퍼티 기본값 미명시 계열. 스크립트 기본값과 1:1인 프로퍼티를 모델 `Values`에 명시하면 사라진다.
 - MCP 미연결이면 LSP 진단까지만 수행하고 **"refresh 검증 보류"** 로 정확히 보고한다. 허위 `Error=0` 기재 금지.
 

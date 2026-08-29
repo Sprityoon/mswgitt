@@ -6,8 +6,27 @@
 
 ---
 
+## 0. 핵심 로드맵 & 기획 큐 (Roadmap & Design Queue — ⚖️ 2026-08-29 확정)
+
+| 마일스톤 | 핵심 과제 | 주요 구현 내역 및 설계 방향 | 상세 기획 |
+|---|---|---|:---:|
+| **Phase 22** | **개인 영지 '섬(Island)' 컨셉 전환 & 외곽 수역 테두리** | • 기존 외곽 돌벽(`Wall`) 전면 철거 ➔ L0 `Water` + L6 `WetRim` 수역 포위<br>• 모래톱/해변 프린지 타일셋(`GrassSand_*`, `WetRim_*`) 자연 해안선 조성<br>• 외곽 보이지 않는 충돌 경계벽(`Boundary Collider`) 및 선착장/부두(`Dock`) 출항 포탈 연출 | [game_design.md §Phase 22](../game_design.md#phase-22-개인-영지-섬island-컨셉-전환--수역-테두리-구축-⚖️-2026-08-29-확정) |
+| **Phase 23** | **커뮤니티 & 소셜 인프라 (채팅, 친구, 영지 초대/방문)** | • **채팅 & 말풍선**: 전체/마을/귓속말 탭 + 캐릭터 머리 위 메이플풍 둥근 말풍선<br>• **인터랙션 메뉴**: 타 유저 클릭 시 프로필/친구추가/영지초대/귓속말 팝업<br>• **친구 시스템**: `FriendListPopup` (온라인/위치 상태 실시간 표시)<br>• **영지 초대 & 방문**: 게스트 영지 방문 워프 + 영지 훼손 방지 권한 가드 + 방명록/좋아요 | [game_design.md §Phase 23](../game_design.md#phase-23-커뮤니티--소셜-인프라-채팅-친구-영지-초대방문-⚖️-2026-08-29-확정) |
+| **Phase 24** | **메이플 스타일 UI 고도화 & UX 개선** | • **윈도우 크롬 통일**: 인벤토리/스탯/제작/퀘스트 9-슬라이스 원목 프레임 통일<br>• **HUD 레이아웃**: 좌상단(프로필/HP)·우상단(미니맵)·하단(10슬롯 바) 정돈<br>• **상호작용 피드백**: 버튼 호버 틴트/스케일 펄스, 클릭 SFX, 장비 비교 툴팁 | [game_design.md §Phase 24](../game_design.md#phase-24-메이플-스타일-ui-고도화--ux-개선-⚖️-2026-08-29-확정) |
+| **Phase 25** | **퀘스트 라인 & 몬스터 생태계/패턴 확장** | • **메인 퀘스트**: 표류/정착 ➔ 집 짓기 ➔ 마을 방문 ➔ 낚시 입문 ➔ 연구소 ➔ 사냥터 원정<br>• **일일 의뢰**: 마을 퀘스트 게시판 매일 3종 무작위 의뢰<br>• **티어별 몬스터 생태계**: T1(숲: 달팽이/슬라임/버섯) ➔ T2(해변/늪: 꽃게/옥토퍼스/멧돼지) ➔ T3(유적: 스톤볼/골렘) 및 보스 패턴 | [game_design.md §Phase 25](../game_design.md#phase-25-퀘스트-라인--몬스터-생태계패턴-확장-⚖️-2026-08-29-확정) |
+
+---
+
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `UICharacterController.mlua` · `UISkillBarController.mlua` | **[코드 위생] UI 컨트롤러 잔여 경고 3건 해소 (LWA-1111 string.find 언밸런스 1건 + LWA-1106 Enum 할당 2건)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
+| `MonsterAI.mlua` · `SlimeKing.model` · `HornMushroom.model` | **[핫픽스/코드위생] MonsterAI 프로퍼티 타입 불일치(LWA-4012 TypeMismatch) 해소 (MinionSummonCount / ProjectileDamage: number ➔ integer 통일, LeapAirFrameIndex: Int64 ➔ Int32 정합)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
+| `UIRankingItem.mlua` · `RankingBasic` | **[UI/개인정보] 낚시왕 게시판 계정코드(ProfileCode) 노출 제거 및 캐릭터 닉네임만 표시되도록 정합** (2026-08-29 ⚖️ 확정) — 아래 참조 |
+| `PlayerInventory.mlua` · `Furniture_Furnace.model` · 몬스터 모델 4종 · `TreasureChest.model` | **[코드 위생] 빌드 콘솔 Warning 17건 전량 해소 (LWA-1111 6건 + LWA-4012 11건 ➔ Warning baseline 0 달성)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
+| `tileimg/SoilRTLD.png` · `generate_diagonal_fringe_tiles.cjs` | **[핫픽스/에셋] SoilRTLD 우하단(BR) 잘라낸 선 아티팩트 제거 (순수 4개 사분면 조립으로 100% 무결점 Full Soil 베이스 텍스처 복원 및 타일/스트립 재생성)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
+| `ResourceSpawner.mlua` · `GetWaterDigOrigin` | **[핫픽스/조작감] 물삽 조준점(Reticle)과 파지는 위치 100% 일치 정합 (과거 음수 방향 -1칸 시프트 제거 ➔ 호미/삽과 동일한 2×2 조준 셀 원점 일원화)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
+| `RectTileMap6` · `RectTileMap0` · `map01.map` · `apply_water_overlay_to_map.cjs` | **[핫픽스/지형] 수변 림(RectTileMap6)과 물(RectTileMap0) 엔티티 렌더링 순서 역전 해소 (물 ➔ 림 순서 보장으로 물 위에 젖은 흙 림 안착)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
+| `WaterLTRD`/`WaterRTLD` · `SoilLTRD`/`SoilRTLD` · `ResourceSpawner.mlua` · `generate_diagonal_fringe_tiles.cjs` | **[지형/에셋] 물·흙 대각선(LT-RD, RT-LD) 4종 타일 제작 및 4타일 가로 스트립(`water_soil_diagonal_4tiles_strip.png`) 구축 & 런타임 마스크(6, 9) 연동** (2026-08-29 ⚖️ 확정) — 아래 참조 |
 | `Water*` · `wall.tileset` · `ResourceSpawner.mlua` · `map01.map` · `tile-scheme.md` | **[지형/에셋] 물 프린지 타일셋(Water* 12종) wall.tileset 연동 및 물-지반 상호 보완(퍼즐식 여집합) 오버레이 4단 체계 구축** (2026-08-28 ⚖️ 확정) — 아래 참조 |
 | `WetRim*` · `RectTileMap6` · `ResourceSpawner.mlua` · `map01.map` · `fix_water_fringe.cjs` | **[지형/에셋] 미사용 레이어(RectTileMap6) 활용 수변 림/윤슬 오버레이(WetRim* 12종) 구축 및 4단 지형 아키텍처(L0 Water ➔ L1 Soil ➔ L2 Grass ➔ L6 WetRim) 완성** (2026-08-28 ⚖️ 확정) — 아래 참조 |
 | `Soil*` · `ResourceSpawner.mlua` · `PersistenceManager.mlua` · `map01.map` · `wall.tileset` | **[핫픽스/지형] 이어하기(LoadPlayerData) 지형 복원 크래시 해소 및 3단 분리 체계(L0 Water ➔ L1 Soil ➔ L2 Grass) 안전 방어 구축** (2026-08-28 ⚖️ 확정) — 아래 참조 |
@@ -66,6 +85,107 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-29 [코드 위생] UI 컨트롤러 잔여 경고 3건 해소 (⚖️ 확정)
+
+- **배경**:
+  - `[CLIENT] [LWA-1111] UnbalancedAssignment : 1개의 변수에 2개의 값을 할당했습니다. RefreshStats (UICharacterController:260)`
+  - `[CLIENT] [LWA-1106] NotRecommendedAssignment : 권장되지 않는 할당입니다. UpdateSlots (UISkillBarController:375, 376)`
+- **수정 내용**:
+  1. **`LWA-1111` 해소 ([UICharacterController.mlua](file:///c:/메이플월드/RootDesk/MyDesk/UI/Scripts/UICharacterController.mlua))**:
+     - `local nl, _ = string.find(statLine, "\n", 1, true)`로 2개 반환값을 명시적으로 받아 언밸런스 할당 해소 (0건).
+  2. **`LWA-1106` 해소 ([UISkillBarController.mlua](file:///c:/메이플월드/RootDesk/MyDesk/UI/Scripts/UISkillBarController.mlua))**:
+     - `spr.Type = ImageType.Filled`, `spr.FillMethod = FillMethodType.Radial360`로 Enum 정식 할당으로 교체하여 비권장 할당 해소 (0건).
+
+### 2026-08-29 [핫픽스/코드위생] MonsterAI 프로퍼티 타입 불일치(LWA-4012 TypeMismatch) 해소 (⚖️ 확정)
+
+- **배경**:
+  - `[CLIENT] [LWA-4012] ModelComponentPropertyValueTypeMismatch : 모델에서 'MonsterAI' 의 프로퍼티 'ProjectileDamage' / 'MinionSummonCount' 의 값이 올바르지 않습니다` 경고 발생.
+  - 조사 결과 모델 파일에서는 `System.Int32`로 저장되어 있으나 스크립트([MonsterAI.mlua](file:///c:/메이플월드/RootDesk/MyDesk/Monster/Scripts/MonsterAI.mlua))에서는 `property number`(`System.Double`)로 선언되어 있어 엔진 타입 불일치 발생.
+- **수정 내용**:
+  1. **스크립트 타입 정합 ([MonsterAI.mlua](file:///c:/메이플월드/RootDesk/MyDesk/Monster/Scripts/MonsterAI.mlua))**:
+     - `MinionSummonCount` (소환 수): `number` ➔ `integer` (`System.Int32`)로 수정.
+     - `ProjectileDamage` (투사체 데미지): `number` ➔ `integer` (`System.Int32`)로 수정 ([MonsterProjectile.mlua](file:///c:/메이플월드/RootDesk/MyDesk/Monster/Scripts/MonsterProjectile.mlua)와 동일 타입).
+  2. **모델 타입 정합 ([SlimeKing.model](file:///c:/메이플월드/RootDesk/MyDesk/Monster/Models/SlimeKing.model))**:
+     - `LeapAirFrameIndex`: `System.Int64` ➔ `System.Int32`로 정합.
+  3. **검증**: 전체 84개 모델 및 1,210개 스크립트 프로퍼티 간 타입 불일치 0건 전수 확인 완료.
+
+### 2026-08-29 [UI/개인정보] 낚시왕 게시판 계정코드(ProfileCode) 노출 제거 및 닉네임 전용 표시 (⚖️ 확정)
+
+- **배경**:
+  - 낚시왕 리더보드 게시판 UI에서 다른 플레이어 및 내 랭킹 행의 텍스트가 `ProfileCode,Nickname` (예: `User_12345,홍길동`) 형태로 계정코드가 콤마와 함께 노출되던 문제 확인.
+- **수정 내용**:
+  1. **UI 렌더링 정합 ([UIRankingItem.mlua](file:///c:/메이플월드/RootDesk/MyDesk/RankingBasic/Sample/UI/UIRankingItem.mlua))**:
+     - `SetData`: `ProfileCode` 및 콤마 결합을 제거하고 저장된 캐릭터 닉네임(`Tag`)만 단독 출력하도록 수정.
+     - `SetMyData`: `ProfileCode` 및 콤마 결합을 제거하고 내 캐릭터명/닉네임(`Tag` / `Nickname`)만 단독 출력하도록 수정.
+
+### 2026-08-29 [코드 위생] 빌드 콘솔 Warning 17건 전량 해소 (Warning baseline 0 달성) (⚖️ 확정)
+
+- **배경**:
+  - 오랫동안 빌드 콘솔에 상시 잔여하던 17건의 Warning(`LWA-1111` 6건 + `LWA-4012` 11건)을 전수 분석하여 원천 해소.
+- **수정 내용**:
+  1. **`LWA-1111` 6건 해소 ([PlayerInventory.mlua](file:///c:/메이플월드/RootDesk/MyDesk/Player/Scripts/PlayerInventory.mlua))**:
+     - `ServerRequestUseItem` 내 6개 `string.gsub` 호출이 2개 반환값을 1개 변수로 받아 언밸런스 경고 발생 ➔ `string.match(str, "^%s*(.-)%s*$")` 단일 반환 트리밍으로 교체 (0건).
+  2. **`LWA-4012` 3건 해소 ([Furniture_Furnace.model](file:///c:/메이플월드/RootDesk/MyDesk/Furniture/Models/Furniture_Furnace.model))**:
+     - `script.Furnace` 프로퍼티(`RecipeTableName`, `StationTitle`, `DurationColumn`, `IdleSpriteRUID`, `ActiveSpriteRUID`)를 `Values`에 명시 (0건).
+  3. **`LWA-4012` 7건 해소 ([MonsterMeleeAttack.mlua](file:///c:/메이플월드/RootDesk/MyDesk/Monster/Scripts/MonsterMeleeAttack.mlua), [MonsterAI.mlua](file:///c:/메이플월드/RootDesk/MyDesk/Monster/Scripts/MonsterAI.mlua), [Monster.mlua](file:///c:/메이플월드/RootDesk/MyDesk/Monster/Scripts/Monster.mlua), 몬스터 모델 4종)**:
+     - 몬스터 내부 튜닝/런타임 프로퍼티에 `@HideFromInspector` 부여 및 `Slime`, `HornMushroom`, `Boar`, `SlimeKing` 모델에 `TouchDamage = 2`, `SlimeKing`에 `BossDropMin/Max` 명시 (0건).
+  4. **`LWA-4012` 1건 해소 ([TreasureChest.model](file:///c:/메이플월드/RootDesk/MyDesk/MapObjects/Models/TreasureChest.model))**:
+     - `SpriteRendererComponent.Color`에 대한 `Properties` 인스펙터 링크 연결 (0건).
+  5. **검증**: 전체 84개 `.model` 파일 전수 정적 스캔 결과 누락된 인스펙터 프로퍼티 0건 확인 완료.
+
+### 2026-08-29 [핫픽스/에셋] SoilRTLD 우하단(BR) 잘라낸 선 아티팩트 제거 (⚖️ 확정)
+
+- **배경**:
+  - `SoilRTLD.png`의 오른쪽 아래(BR) 영역에 의도치 않은 잘라낸 선(어두운 구멍 쉐이딩 아티팩트)이 발생하는 현상 확인.
+  - 조사 결과 Full Soil 베이스 텍스처를 합성할 때 `SoilRDCorner` 타일의 구멍 엣지 쉐이딩이 베이스에 묻어나왔음.
+- **수정 내용**:
+  1. **순수 사분면 조립을 통한 100% 무결점 Full Soil 복원 (`generate_diagonal_fringe_tiles.cjs`)**:
+     - 4개 코너 타일의 구멍이 전혀 없는 반대편 순수 사분면(`SoilRDCorner` TL, `SoilLDCorner` TR, `SoilRTCorner` BL, `SoilLTCorner` BR)만을 1:1로 결합하여 어떠한 음영선도 없는 완전무결한 64×64 Full Soil 텍스처 구축.
+  2. **타일 및 스트립 재생성**:
+     - `SoilRTLD.png`, `SoilLTRD.png`, `water_soil_diagonal_4tiles_strip.png`, `water_soil_diagonal_4tiles_card_view.png` 전면 재생성 완료.
+
+### 2026-08-29 [핫픽스/조작감] 물삽 조준점(Reticle)과 파지는 위치 100% 일치 정합 (⚖️ 확정)
+
+- **배경**:
+  - 호미(`digHole`)와 삽(`digPath`)은 조준점(2×2 Reticle)과 파지는 영역이 정확히 일치하였으나, 물삽(`dig_water`)은 왼쪽이나 아래쪽을 바라볼 때 파지는 위치가 1칸씩 어긋나는 현상 발생.
+  - 조사 결과 `ResourceSpawner.mlua`의 `GetWaterDigOrigin`에 과거 2×2 전환 이전의 음수 방향 -1칸 시프트 코드(`dirX < 0 then ox = tx - 1`)가 남아있어 조준점과 1칸 괴리가 발생했음.
+- **수정 내용**:
+  1. **조준점 원점 체계 일원화 (`ResourceSpawner.mlua` `GetWaterDigOrigin`)**:
+     - 방향별 -1칸 시프트를 제거하고, 조준 셀 `(tx, ty)`를 그대로 2×2 블록의 원점으로 반환하도록 수정.
+     - 호미, 삽, 물삽 모두 조준점이 가리키는 2×2 영역과 100% 일치하도록 단일 소스 정합.
+
+### 2026-08-29 [핫픽스/지형] 수변 림(RectTileMap6)과 물(RectTileMap0) 엔티티 렌더링 순서 역전 해소 (⚖️ 확정)
+
+- **배경**:
+  - `RectTileMap0`(L0 물 수면)과 `RectTileMap6`(L6 수변 림/윤슬)이 둘 다 동일하게 `SortingLayer = "MapLayer3"`로 지정되어 있었으나, 엔티티 배열 상에서 `RectTileMap6`가 앞쪽(Index 14)에, `RectTileMap0`가 맨 뒤(Index 31)에 위치하여 같은 SortingLayer 내 렌더링 순서에 의해 **물이 림 위에 덮여 젖은 흙 림이 아래에 깔리던 현상** 발생.
+- **수정 내용**:
+  1. **엔티티 렌더링 순서 재배치 (`map/map01.map`, `scripts/apply_water_overlay_to_map.cjs`)**:
+     - `RectTileMap0`를 `MapleMapLayer6` / `RectTileMap6` 바로 앞(Index 13)으로 이동하여 `[L1 Soil] ➔ [L2 Grass] ➔ [L0 Water] ➔ [L6 WetRim]` 순서로 Draw Order 정합.
+     - `apply_water_overlay_to_map.cjs`에 엔티티 렌더링 순서 자동 보장 로직 내장.
+  2. **렌더링 검증**:
+     - `preview_water_overlay_composite.cjs` 렌더링 및 `map01.map` 엔티티 인덱스 실측 검증 완료.
+
+### 2026-08-29 [지형/에셋] 물·흙 대각선(LT-RD, RT-LD) 4종 타일 제작 및 4타일 가로 스트립 구축 & 런타임 연동 (⚖️ 확정)
+
+- **배경**:
+  - 지형 편집 및 연못/흙길 배치 중 대각선 방향으로 구멍이나 물이 2칸 접하는 경우(마스크 6 = LT+RD, 마스크 9 = RT+LD)에 대응하기 위해, 기존 잔디의 대각 타일(`SubGrassLTRD`, `SubGrassRTLD`)과 1:1로 맞물리는 **물(Water) 대각 타일 2종**과 **흙(Soil) 대각 타일 2종** 제작 및 통합 스트립 요청.
+- **작업 내용**:
+  1. **물(Water) 대각선 타일 2종 제작 (`tileimg/WaterLTRD.png`, `tileimg/WaterRTLD.png`)**:
+     - `WaterLTRD`: `SubGrassLTRD`의 여집합으로, LT(Top-Left)와 RD(Bottom-Right) 코너에 물이 채워지고 TR/BL은 투명한 픽셀 퍼즐식 타일.
+     - `WaterRTLD`: `SubGrassRTLD`의 여집합으로, RT(Top-Right)와 LD(Bottom-Left) 코너에 물이 채워지고 TL/BR은 투명한 픽셀 퍼즐식 타일.
+     - 잔디 경계면 접촉 에지 픽셀에 깊이 음영(0.82, 0.85, 0.95) 적용.
+  2. **흙(Soil) 대각선 타일 2종 제작 (`tileimg/SoilLTRD.png`, `tileimg/SoilRTLD.png` / `Soil_*.png`)**:
+     - 4개 코너 흙 타일에서 복원한 완전한 순수 흙(Full Soil) 베이스에 `SubGrassLTRD` / `SubGrassRTLD` 알파 마스크를 적용하여 대각선 2방향이 뚫린 흙 프린지 타일 제작.
+     - 구멍 경계면에 흙 고유의 엣지 쉐이딩(0.88) 적용.
+  3. **4타일 가로 통합 스트립 및 카드뷰 생성 (`tileimg/`)**:
+     - `water_soil_diagonal_4tiles_strip.png`: 4개 타일 가로 스트립 (256×64 px, 순서: `WaterLTRD`, `WaterRTLD`, `SoilLTRD`, `SoilRTLD`).
+     - `water_soil_diagonal_4tiles_card_view.png`: 다크 슬레이트 & 체커보드 배경의 고해상도 미리보기 카드.
+  4. **생성기 및 런타임 지형 엔진 연동**:
+     - `scripts/generate_diagonal_fringe_tiles.cjs` 신설 및 `scripts/generate_pixel_water_fringe.cjs` 갱신.
+     - `ResourceSpawner.mlua`: `TileNameToMask`, `MaskToSoilTileName`, `MaskToWaterTileName`에 마스크 6(LTRD), 9(RTLD) 매핑 추가.
+- **검증**:
+  - `_verify_diagonal_tiles.cjs`: 사분면(TL, TR, BL, BR) 알파값 분석으로 잔디-물 상호 보완(합 1.00) 및 흙 대각 형태 검증 완료.
 
 ### 2026-08-28 [지형/에셋] 물 프린지 타일셋(Water* 12종) wall.tileset 연동 및 물-지반 상호 보완(퍼즐식 여집합) 오버레이 4단 체계 구축 (⚖️ 확정)
 

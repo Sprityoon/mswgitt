@@ -116,6 +116,8 @@ function main() {
     { water: "WaterRTCorner", src: "GrassRTCorner" },
     { water: "WaterLDCorner", src: "GrassLDCorner" },
     { water: "WaterRDCorner", src: "GrassRDCorner" },
+    { water: "WaterLTRD", src: "SubGrassLTRD", altSrc: "69d4c5752a9a745f" },
+    { water: "WaterRTLD", src: "SubGrassRTLD", altSrc: "e50a634ceaa34ea9" },
   ];
 
   // 1. FullWater (Full 100% Water)

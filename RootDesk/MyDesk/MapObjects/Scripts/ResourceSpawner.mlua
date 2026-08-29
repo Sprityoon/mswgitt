@@ -130,8 +130,8 @@ script ResourceSpawner extends Logic
 		if name == "GrassRTCorner" or name == "SoilRTCorner" or name == "Soil_RTCorner" or name == "GrassSand_RTCorner" or name == "WetRim_RTCorner" or name == "WetRimRTCorner" or name == "SoilSand_RTCorner" or name == "WaterRTCorner" then return 8 end -- TR
 		if name == "GrassLDCorner" or name == "SoilLDCorner" or name == "Soil_LDCorner" or name == "GrassSand_LDCorner" or name == "WetRim_LDCorner" or name == "WetRimLDCorner" or name == "SoilSand_LDCorner" or name == "WaterLDCorner" then return 1 end -- BL
 		if name == "GrassRDCorner" or name == "SoilRDCorner" or name == "Soil_RDCorner" or name == "GrassSand_RDCorner" or name == "WetRim_RDCorner" or name == "WetRimRDCorner" or name == "SoilSand_RDCorner" or name == "WaterRDCorner" then return 2 end -- BR
-		if name == "SubGrassLTRD" then return 6 end  -- TL|BR (대각 — 2026-07-15 신설)
-		if name == "SubGrassRTLD" then return 9 end  -- TR|BL (대각 — 2026-07-15 신설)
+		if name == "SubGrassLTRD" or name == "SoilLTRD" or name == "Soil_LTRD" or name == "WaterLTRD" then return 6 end  -- TL|BR (대각 — 2026-07-15 / 2026-08-29 신설)
+		if name == "SubGrassRTLD" or name == "SoilRTLD" or name == "Soil_RTLD" or name == "WaterRTLD" then return 9 end  -- TR|BL (대각 — 2026-07-15 / 2026-08-29 신설)
 		return -1
 	end
 
@@ -184,7 +184,7 @@ script ResourceSpawner extends Logic
 	end
 
 	method string MaskToSoilTileName(integer mask)
-		-- 흙-물 경계 흙 프린지(Soil* 12종) → L1 타일명 (2026-08-28 도입).
+		-- 흙-물 경계 흙 프린지(Soil* 14종) → L1 타일명 (2026-08-28 도입, 대각 2종 추가).
 		if mask == nil or mask == 0 or mask == 15 then return "" end
 		if mask == 12 then return "SoilT" end
 		if mask == 3 then return "SoilD" end
@@ -198,6 +198,8 @@ script ResourceSpawner extends Logic
 		if mask == 8 then return "SoilRTCorner" end
 		if mask == 1 then return "SoilLDCorner" end
 		if mask == 2 then return "SoilRDCorner" end
+		if mask == 6 then return "SoilLTRD" end      -- TL|BR 대각
+		if mask == 9 then return "SoilRTLD" end      -- TR|BL 대각
 		return ""
 	end
 
@@ -230,7 +232,7 @@ script ResourceSpawner extends Logic
 	end
 
 	method string MaskToWaterTileName(integer mask)
-		-- 수역 오버레이 물 프린지(Water* 12종) → L0 타일명 (2026-08-28 도입).
+		-- 수역 오버레이 물 프린지(Water* 14종) → L0 타일명 (2026-08-28 도입, 대각 2종 추가).
 		if mask == nil or mask == 15 then return "" end
 		if mask == 0 then return "Water" end
 		if mask == 12 then return "WaterT" end
@@ -245,6 +247,8 @@ script ResourceSpawner extends Logic
 		if mask == 8 then return "WaterRTCorner" end
 		if mask == 1 then return "WaterLDCorner" end
 		if mask == 2 then return "WaterRDCorner" end
+		if mask == 6 then return "WaterLTRD" end     -- TL|BR 대각
+		if mask == 9 then return "WaterRTLD" end     -- TR|BL 대각
 		return "Water"
 	end
 
@@ -370,16 +374,11 @@ script ResourceSpawner extends Logic
 	end
 
 	method table GetWaterDigOrigin(integer tx, integer ty, integer dirX, integer dirY)
-		-- 물삽 1회가 파는 정사각 블록의 원점. 조준 셀을 **항상 포함**하며, 바라보는 쪽으로 뻗는다.
-		-- 🔴 서버(적용)·클라(미리보기) 공용 단일 소스 — 복제본 만들지 말 것(규칙 18).
-		-- 영속 델타에는 이 원점이 x,y로 저장되므로 재생 시 dir 없이도 재현된다.
+		-- 물삽 1회가 파는 2×2 정사각 블록의 원점. 조준점(Reticle, tx, ty)과 100% 일치하도록 기준 원점 반환.
+		-- 🔴 서버(적용)·클라(조준점) 공용 단일 소스 — 호미(digHole)/삽(digPath)과 동일한 2×2 원점 체계.
 		local n = self.WaterDigSize
 		if n < 1 then n = 1 end
-		local ox = tx
-		local oy = ty
-		if dirX < 0 then ox = tx - (n - 1) end
-		if dirY < 0 then oy = ty - (n - 1) end
-		return { x = ox, y = oy, size = n }
+		return { x = tx, y = ty, size = n }
 	end
 
 	method void RefreshWaterArea(any tilemap1, any tilemap2, integer cx, integer cy)

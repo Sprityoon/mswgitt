@@ -363,8 +363,8 @@ script UISkillBarController extends Component
 						overlay.Enable = true
 						local spr = overlay.SpriteGUIRendererComponent
 						if isvalid(spr) and cd > 0 then
-							spr.Type = 3 -- Filled
-							spr.FillMethod = 4 -- Radial360
+							spr.Type = ImageType.Filled
+							spr.FillMethod = FillMethodType.Radial360
 							spr.FillOrigin = 2 -- Top
 							spr.FillClockWise = false
 							spr.FillAmount = math.min(1.0, math.max(0.0, remain / cd))

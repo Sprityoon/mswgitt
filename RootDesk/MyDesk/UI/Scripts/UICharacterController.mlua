@@ -249,7 +249,7 @@ script UICharacterController extends Component
 						statLine = playerInv:FormatItemStatLines(playerInv:GetBaseItemName(equippedTool))
 					end
 					if statLine ~= nil and statLine ~= "" then
-						local nl = (string.find(statLine, "\n", 1, true))
+						local nl, _ = string.find(statLine, "\n", 1, true)
 						if nl ~= nil then
 							self.gatherVal.Text = string.sub(statLine, 1, nl - 1)
 						else

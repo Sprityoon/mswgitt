@@ -11,16 +11,16 @@
 
 ## 1. 레이어 구성 (물 프린지 오버레이 4단 체계 — ⚖️ 2026-08-28 확정)
 
-| 레이어 | 엔티티 이름 | SortingLayer | 내용 |
-|---|---|---|---|
-| Layer 1 | `RectTileMap` | `MapLayer1` | **전면 흙 지반** — `Soil` (전면 지반 유지). 물이 파여도 L1 Soil은 보존됨 |
-| Layer 2 | `RectTileMap2` | `MapLayer2` | **잔디 커버 & 흙길 잔디 프린지** — `FullGrass`(잔디 커버) + 흙길 경계에 `Grass*`(잔디 프린지 12종). 물과 무관하게 순수 지상 문법으로 동작 |
-| Layer 0 | `RectTileMap0` | `MapLayer3` | **수역 & 물 프린지 오버레이** — `Water`(중심 수면) + 육지와 맞닿는 경계에 `Water*`(물 프린지 12종 오버레이). 비수역 셀은 None(투명) |
-| Layer 6 | `RectTileMap6` | `MapLayer3` | **수변 림 & 윤슬 오버레이** — `WetRim*`(수변 림/윤슬 12종 오버레이). 물 경계선 위에 안착 |
-| Layer 3 | `RectTileMap3` | `MapLayer3` | **설치 바닥** — (런타임 전용, tile1 / Baram_167) |
-| Layer 4 | `RectTileMap4` | `MapLayer4` | **외곽 벽** — `Big Wall` 충돌 밴드 (경계 3겹)만. **잔디·프린지 금지** |
-| Layer 5 | `RectTileMap5` | `MapLayer5` | **경계 테라스 비주얼** — TerraceTop 링 + 북벽 CliffFace |
-| Entity | (엔티티 전용) | `Default` | 몬스터·NPC·자원·가구·드롭·플레이어 |
+| 레이어 | 엔티티 이름 | SortingLayer | Z-Order | 내용 |
+|---|---|---|---|---|
+| Layer 1 | `RectTileMap` | `MapLayer0` | 1000 | **전면 흙 지반** — `Soil` (전면 지반 유지). 물이 파여도 L1 Soil은 보존됨 |
+| Layer 2 | `RectTileMap2` | `MapLayer1` | 999 | **잔디 커버 & 흙길 잔디 프린지** — `FullGrass`(잔디 커버) + 흙길 경계에 `Grass*`(잔디 프린지 14종) |
+| Layer 0 | `RectTileMap0` | `MapLayer2` | 998 | **수역 & 물 프린지 오버레이** — `Water`(중심 수면) + `Water*`(물 프린지 14종 오버레이) |
+| Layer 6 | `RectTileMap6` | `MapLayer3` | 997 | **수변 림 & 윤슬 오버레이** — `WetRim*`(수변 림/윤슬 12종 오버레이). 물 수면 위에 안착 |
+| Layer 3 | `RectTileMap3` | `MapLayer3` | 1000 | **설치 바닥** — (런타임 전용, tile1 / Baram_167) |
+| Layer 4 | `RectTileMap4` | `MapLayer4` | 996 | **외곽 벽** — `Big Wall` 충돌 밴드 (경계 3겹)만. **잔디·프린지 금지** |
+| Layer 5 | `RectTileMap5` | `MapLayer5` | 995 | **경계 테라스 비주얼** — TerraceTop 링 + 북벽 CliffFace |
+| Entity | (엔티티 전용) | `Default` | - | 몬스터·NPC·자원·가구·드롭·플레이어 |
 
 **물 프린지 오버레이 체계의 강력한 이점**:
 1. **지상(잔디 vs 흙길)과의 완전한 독립**:
@@ -51,15 +51,20 @@
 - ※ 생성기(`build_maps.cjs`)는 대각을 산출하지 않는다 — 대각은 **런타임 편집 전용**이며, 생성기 산출 검사의 "대각 = 에러"는 자기 산출물 한정으로 유효하다.
 
 ### L2 잔디 패밀리 = 15종
+`FullGrass` + `Grass{dir}` 8 + `Grass*Corner` 4 + `SubGrass{LTRD|RTLD}` 2
 
-`FullGrass` + `Grass{dir}` 8 + `Grass*Corner` 4 + `SubGrass` 2
+### L0 물 프린지 패밀리 = 15종 (2026-08-28 도입, 2026-08-29 대각 2종 추가)
+`Water`(중심 수면) + `Water{T|D|L|R|LT|RT|LD|RD}` 8 + `Water*Corner` 4 + `Water{LTRD|RTLD}` 2 (퍼즐식 여집합)
+
+### L1 흙 프린지 패밀리 = 15종 (2026-08-28 도입, 2026-08-29 대각 2종 추가)
+`Soil`(전면 흙 지반) + `Soil{T|D|L|R|LT|RT|LD|RD}` 8 + `Soil*Corner` 4 + `Soil{LTRD|RTLD}` 2 (대각 구멍 뚫림)
 
 판정 함수 대응:
 - `IsGrassTileName` = `"FullGrass"` | prefix `"Grass"` | prefix `"SubGrass"`
 - `IsGrassEdgeTileName`(방향 에지 = 길 판정)에 **`SubGrass` 포함**
 - `IsSoilTileName` = 정확히 `"Soil"`
 
-> `wall.tileset`은 2026-07-07 리네임으로 프린지가 `Soil{dir}` → **`Grass{dir}` 8종**이 됐고, `Soil*2`(구 내부 모서리)는 폐기, `Grass*Corner` 4종이 추가됐다. 2026-07-15 제작자가 대각 `SubGrass{RTLD|LTRD}` 2종을 추가했다(아트 원본 `tileimg/`).
+> `wall.tileset`은 2026-07-07 리네임으로 프린지가 `Soil{dir}` → **`Grass{dir}` 8종**이 됐고, `Soil*2`(구 내부 모서리)는 폐기, `Grass*Corner` 4종이 추가됐다. 2026-07-15 제작자가 대각 `SubGrass{RTLD|LTRD}` 2종을 추가했다. 2026-08-29 제작자가 `WaterLTRD`, `WaterRTLD`, `SoilLTRD`, `SoilRTLD` 4종을 `wall.tileset`에 정식 등재 완료했다(Index 151~154).
 
 ---
 

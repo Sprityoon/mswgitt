@@ -240,6 +240,51 @@
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 1
+        },
+        {
+          "TargetType": "script.Furnace",
+          "Name": "RecipeTableName",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "SmeltingRecipeDataSet"
+        },
+        {
+          "TargetType": "script.Furnace",
+          "Name": "StationTitle",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "용광로"
+        },
+        {
+          "TargetType": "script.Furnace",
+          "Name": "DurationColumn",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "Duration"
+        },
+        {
+          "TargetType": "script.Furnace",
+          "Name": "IdleSpriteRUID",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "bb0eaecb69104c9ca4e1a067fa6e2ca9"
+        },
+        {
+          "TargetType": "script.Furnace",
+          "Name": "ActiveSpriteRUID",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "2fe7184cf4aa4f4db7a9a141aa570992"
         }
       ],
       "EventLinks": [],
