@@ -49,6 +49,7 @@
 | [35](#규칙-35-_inputservice에는-iskeydown이-없다--connecteventkeydownevent-또는-iskeypressed-사용) | `_InputService:IsKeyDown` 없음 | `LEA-2011` AttemptToCall |
 | [36](#규칙-36-mapcomponent-바운더리를-지정할-때는-usecustombound-true가-필수다) | `MapComponent` 바운더리 지정 = `UseCustomBound: true` | `LWA-3019` SpawnLocation 영역 밖 경고 |
 | [37](#규칙-37-다중-타일-점유-자원은-점유-박스-정중앙에-스폰해야-좌우-타격-판정이-일치한다) | 다중 타일 자원 스폰 피벗 = 점유 영역 정중앙 | 왼쪽은 딱붙고 오른쪽은 멀리서 쳐짐 |
+| [38](#규칙-38-model-파일의-properties-바인딩과-identrykey-일치-필수) | `.model` Properties 바인딩·Id 일치 필수 | `LEA-3054 CannotApply` NullRef 예외 |
 
 ---
 
@@ -205,18 +206,24 @@ Maker 에디터는 저장 시 **에디터 메모리 상태로 워크스페이스
 
 **사고 실례**: 이 갭 때문에 T96의 실측표가 틀렸다 — 자원 `Tree1`·`Tree2`·`Stone`·`IronNodeResource`를 "Trigger 미보유"로 기재했으나 **4종 모두 보유**였다. 그 표를 근거로 만든 T100의 작업 범위도 함께 틀어졌고, T101의 1차 영향범위 집계까지 연쇄 오염됐다.
 
-### 규칙 16. `.map`의 `jsonString`은 중첩 객체다 — 문자열 대입 금지
+### 규칙 16. `.map`의 `jsonString`은 중첩 객체다 — 문자열 대입 금지 & 타일 `type: 0` 누락 금지
 
 Maker/엔진은 `ContentProto.Entities[].jsonString`을 **`Newtonsoft.Json.Linq.JObject`** 로 역직렬화한다.
 
-스크립트가 `slot.e.jsonString = JSON.stringify(slot.js)`처럼 **JSON 문자열을 대입**하면 파일이 짧아지며(중첩이 한 줄로 붕괴), 로드 시 `[LEA-3015] Invalid cast from 'System.String' to 'JObject'`로 **맵이 통째로 실패**한다.
+1. **문자열 대입 금지**:
+   스크립트가 `slot.e.jsonString = JSON.stringify(slot.js)`처럼 **JSON 문자열을 대입**하면 파일이 짧아지며(중첩이 한 줄로 붕괴), 로드 시 `[LEA-3015] Invalid cast from 'System.String' to 'JObject'`로 **맵이 통째로 실패**한다.
+   - 🔴 `maker_logs(kind="build")`는 `.mlua` 빌드만 보므로 **이 구조 붕괴를 Error=0으로 통과시킨다.** refresh 통과 ≠ `.map` 로드 가능.
+   - **대입은 항상 객체로**: `slot.e.jsonString = slot.js`.
+   - **판정**: 쓰기 전후로 전 엔티티에 대해 `typeof e.jsonString === "object"`를 확인한다.
+2. **타일 객체 `type: 0` 누락 금지 (2026-08-29 실증)**:
+   - `RectTileMapComponent.tileMap`의 각 타일 원소는 반드시 **`{ "type": 0, "position": { "x": x, "y": y }, "tileIndex": idx }`** 형태여야 한다.
+   - `"type": 0`이 누락되면 엔진 로드 시 `[LEA-3015] Value cannot be null. Parameter name: value`로 맵 로드가 실패한다.
+3. **엔티티 래퍼 구조 보존**:
+   - `ContentProto.Entities` 배열의 원소는 `{ id, path, componentNames, jsonString }` 4개 필드를 갖는 래퍼 객체여야 한다.
 
-- 🔴 `maker_logs(kind="build")`는 `.mlua` 빌드만 보므로 **이 구조 붕괴를 Error=0으로 통과시킨다.** refresh 통과 ≠ `.map` 로드 가능.
-- **대입은 항상 객체로**: `slot.e.jsonString = slot.js`.
-- **판정**: 쓰기 전후로 전 엔티티에 대해 `typeof e.jsonString === "object"`를 확인한다. 줄 수가 급감한 커밋은 타일 diff만이 아니라 **직렬화 형태**를 먼저 의심한다.
-- 이미 붕괴된 파일은 `JSON.parse`로 객체 복원 후 `JSON.stringify(mapRoot, null, 2)`로 저장.
-
-**사고 실례**: T98의 `scripts/fix_water_fringe.cjs`가 `RectTileMap2`의 `jsonString`을 문자열로 저장 → `map01`이 69,231→41,805줄로 붕괴 · Play/로드 `LEA-3015`. 미푸시 상태에서 `d7b9479`로 복구. **스크립트가 범용이라 방치하면 `town`/`template_*` 재실행으로 동일 파괴가 난다.**
+**사고 실례**:
+- T98: `fix_water_fringe.cjs`의 문자열 대입 붕괴
+- 2026-08-29: 섬 지형 스크립트에서 타일 `type: 0` 누락으로 `LEA-3015` 발생 ➔ `type: 0` 전수 명시 및 32개 엔티티 원형 보존으로 해결.
 
 ---
 
@@ -439,6 +446,14 @@ MSW의 `MapComponent`에서 `LeftBottom`과 `RightTop` 프로퍼티로 커스텀
 
 - ✅ 다중 타일 자원의 스폰 좌표 공식: $\text{cx} = \frac{\text{xMin} + \text{xMax} + 1}{2}, \quad \text{cy} = \frac{\text{yMin} + \text{yMax} + 1}{2}$ (점유 영역의 기하학적 정중앙).
 - ✅ 이렇게 배치해야 스프라이트와 콜라이더가 점유 영역의 정중앙에 위치하여 좌우/상하 어디서 도끼질이나 곡괭이질을 해도 대칭적인 타격 거리가 보장된다.
+
+### 38. `.model` 파일의 `Properties` 바인딩과 `Id`/`EntryKey` 일치 필수
+
+MSW의 커스텀 모델(`.model`) 파일에서 `Properties` 배열을 비워두거나(`[]`), `EntryKey`(`model://<id>`)와 `ContentProto.Json.Id`가 일치하지 않으면 메이커가 모델을 엔티티에 적용(Apply)하거나 인스펙터에 로드할 때 **`[LEA-3054] CannotApply : 적용에 실패했습니다. Exception message : Object reference not set to an instance of an object.` (NullReferenceException)** 가 발생하며 적용이 중단된다.
+
+- ✅ 모든 `.model` 파일은 기본 트랜스폼 및 렌더러 링크(`Position`, `Rotation`, `Scale`, `renderguid`)를 `Properties` 배열에 명시해야 한다.
+- ✅ `EntryKey`는 반드시 `"model://" + Id` (예: `"model://furniture_pier"`, `"Id": "furniture_pier"`) 형태로 정합되어야 한다.
+- ❌ `Properties: []`로 프로퍼티 링크를 비워두지 않는다.
 
 ---
 

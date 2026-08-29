@@ -19,6 +19,7 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `map01.map` · `Structure_Pier.model` · `Boat_WoodenRaft.model` · `PersistenceManager.mlua` · `convert_map01_to_island.cjs` | **[지형/시스템] Phase 22 개인 영지 '섬(Island)' 컨셉 전환 & 외곽 수역 테두리(L0 Water + L6 WetRim) 및 선착장 부두·나룻배 출항 포탈 구축** (2026-08-29 ⚖️ 확정) — 아래 참조 |
 | `UICharacterController.mlua` · `UISkillBarController.mlua` | **[코드 위생] UI 컨트롤러 잔여 경고 3건 해소 (LWA-1111 string.find 언밸런스 1건 + LWA-1106 Enum 할당 2건)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
 | `MonsterAI.mlua` · `SlimeKing.model` · `HornMushroom.model` | **[핫픽스/코드위생] MonsterAI 프로퍼티 타입 불일치(LWA-4012 TypeMismatch) 해소 (MinionSummonCount / ProjectileDamage: number ➔ integer 통일, LeapAirFrameIndex: Int64 ➔ Int32 정합)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
 | `UIRankingItem.mlua` · `RankingBasic` | **[UI/개인정보] 낚시왕 게시판 계정코드(ProfileCode) 노출 제거 및 캐릭터 닉네임만 표시되도록 정합** (2026-08-29 ⚖️ 확정) — 아래 참조 |
@@ -85,6 +86,28 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-08-29 [지형/시스템] Phase 22 개인 영지 '섬(Island)' 컨셉 전환 & 외곽 수역 테두리 및 선착장 구축 (⚖️ 확정)
+
+- **배경**:
+  - 기존 개인 영지(`map/map01.map`)의 인공적인 돌벽/절벽(`Wall`/`Terrace`)을 전면 철거하고, 푸른 바다 위에 떠 있는 **아늑한 나만의 '초록 섬(Green Island)'** 컨셉으로 영지를 전면 전환.
+- **수정 내용**:
+  1. **외곽 수역 테두리 전면 구축 & 초광각 확장 ([convert_map01_to_island.cjs](file:///c:/메이플월드/scripts/convert_map01_to_island.cjs), [map01.map](file:///c:/메이플월드/map/map01.map))**:
+     - `RectTileMap4` (Wall) 및 `RectTileMap5` (Terrace) 타일 전면 비우기 (돌벽 완전 철거).
+     - 타일맵 그리드를 `-55 ~ 55` (111×111 = 12,321셀)로 대폭 확장하여, 섬 본토 외곽을 **10,146셀의 거대한 푸른 바다(`RectTileMap0` L0 `Water`)** 및 210셀의 수변 림(`RectTileMap6` L6 `WetRim*`)으로 둘러싸 화면 끝 갈색 여백을 원천 차단.
+     - `BackgroundComponent`의 단색 배경을 깊은 바다 톤(`Ocean Blue`, rgb 0.18, 0.45, 0.72)으로 정합.
+     - `RectTileMap2` (L2 `Grass`)는 섬 내부 2,173셀에 `FullGrass` + 해변 에지 `Grass*` 프린지로 정합하여 자연스러운 모래톱/백사장 노출.
+     - `RectTileMap` (L1 `Soil`) 전면 12,321셀 지반 유지.
+  2. **선착장 나무 부두 & 나룻배 출항 포탈 가구 구축 ([Furniture_Pier.model](file:///c:/메이플월드/RootDesk/MyDesk/Furniture/Models/Furniture_Pier.model), [Furniture_Boat.model](file:///c:/메이플월드/RootDesk/MyDesk/Furniture/Models/Furniture_Boat.model), [item_dataset.csv](file:///c:/메이플월드/RootDesk/MyDesk/item/DataSets/item_dataset.csv))**:
+     - `item_dataset.csv`에 `Pier`(나무 부두, structure) 및 `Boat`(나룻배, portal) 아이템 등록.
+     - 메이플스토리 감성의 고품질 원목 부두 스프라이트 등록 (RUID: `3c425e10b83940bc997ccf262a93c12c`).
+     - `Furniture_Pier.model` 및 `Furniture_Boat.model`의 `Properties` 바인딩(`Position`, `Rotation`, `Scale`, `renderguid`) 및 `EntryKey`(`model://furniture_*`) 정합 완료 (`LEA-3054 CannotApply` NullRef 함정 해소).
+     - 남쪽 해변가(`X: 0, Y: -24`)에 바다로 뻗은 나무 부두 데크(`Furniture_Pier`) 배치.
+     - 부두 끝 물 위(`X: 0, Y: -26`)에 정박된 나룻배(`Furniture_Boat`) 배치 및 마을(`town`) 출항 포탈 트리거 연결 (`InteractLabel = "마을로 출항하기"`).
+  3. **영지 기본 가구 및 포탈 스폰 자동 보장 ([PersistenceManager.mlua](file:///c:/메이플월드/RootDesk/MyDesk/Player/Scripts/PersistenceManager.mlua))**:
+     - `GetDefaultFurnitureJson` 및 영지 로드(`LoadPlayerData`) 시 `Pier`가 없으면 선착장(`X: 0, Y: -24`)에 항상 나무 부두가 스폰되도록 자동 보장.
+     - `BuildEstatePortalRecord`에서 영지 첫 포탈을 나룻배(`Boat`) 모델로 생성.
+     - `EstatePortalCellX = 0`, `EstatePortalCellY = -24`, 초기 영지 스폰 위치를 남쪽 선착장 앞마당(`X: 0, Y: -22`)으로 정합.
 
 ### 2026-08-29 [코드 위생] UI 컨트롤러 잔여 경고 3건 해소 (⚖️ 확정)
 

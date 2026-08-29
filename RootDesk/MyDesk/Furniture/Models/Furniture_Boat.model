@@ -1,7 +1,7 @@
 {
   "Id": "",
   "GameId": "",
-  "EntryKey": "model://furniture_furnace",
+  "EntryKey": "model://furniture_boat",
   "ContentType": "x-mod/model",
   "Content": "",
   "Usage": 0,
@@ -14,17 +14,15 @@
     "Use": "Json",
     "Json": {
       "Version": 1,
-      "Name": "Furniture_Furnace",
+      "Name": "Furniture_Boat",
       "BaseModelId": null,
-      "Id": "furniture_furnace",
+      "Id": "furniture_boat",
       "Components": [
         "MOD.Core.TransformComponent",
         "MOD.Core.SpriteRendererComponent",
-        "MOD.Core.TouchReceiveComponent",
-        "script.Furnace",
-        "script.ResourceOccupiedArea",
-        "script.PlaceableFurniture",
-        "MOD.Core.TriggerComponent"
+        "MOD.Core.TriggerComponent",
+        "script.PortalGate",
+        "script.PlaceableFurniture"
       ],
       "Properties": [
         {
@@ -100,34 +98,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "a3b810b8178847a0b9ec54bc4b63ba96"
-        },
-        {
-          "TargetType": "MOD.Core.TouchReceiveComponent",
-          "Name": "RelayEventToBehind",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": true
-        },
-        {
-          "TargetType": "MOD.Core.TouchReceiveComponent",
-          "Name": "AutoFitToSize",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": true
-        },
-        {
-          "TargetType": "script.PlaceableFurniture",
-          "Name": "ItemId",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": "Furnace"
+          "Value": "f92547c45c054369b2e6cf5a7f11c45a"
         },
         {
           "TargetType": "MOD.Core.SpriteRendererComponent",
@@ -145,7 +116,7 @@
             "$type": "MODNativeType",
             "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 2
+          "Value": 20
         },
         {
           "TargetType": "MOD.Core.TriggerComponent",
@@ -156,8 +127,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 1.8,
-            "y": 1.4
+            "x": 2,
+            "y": 2
           }
         },
         {
@@ -170,7 +141,7 @@
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
             "x": 0,
-            "y": -0.2
+            "y": 0
           }
         },
         {
@@ -192,6 +163,46 @@
           "Value": false
         },
         {
+          "TargetType": "script.PortalGate",
+          "Name": "TargetMapName",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "town"
+        },
+        {
+          "TargetType": "script.PortalGate",
+          "Name": "TargetPosition",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 10,
+            "y": -2
+          }
+        },
+        {
+          "TargetType": "script.PortalGate",
+          "Name": "InteractLabel",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "마을로 출항하기"
+        },
+        {
+          "TargetType": "script.PlaceableFurniture",
+          "Name": "ItemId",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "Boat"
+        },
+        {
           "TargetType": "MOD.Core.TransformComponent",
           "Name": "Scale",
           "ValueType": {
@@ -200,91 +211,10 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 2,
-            "y": 2,
-            "z": 2
+            "x": 2.5,
+            "y": 2.5,
+            "z": 1
           }
-        },
-        {
-          "TargetType": "script.ResourceOccupiedArea",
-          "Name": "OffsetXMin",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": 0
-        },
-        {
-          "TargetType": "script.ResourceOccupiedArea",
-          "Name": "OffsetXMax",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": 1
-        },
-        {
-          "TargetType": "script.ResourceOccupiedArea",
-          "Name": "OffsetYMin",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": 0
-        },
-        {
-          "TargetType": "script.ResourceOccupiedArea",
-          "Name": "OffsetYMax",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": 1
-        },
-        {
-          "TargetType": "script.Furnace",
-          "Name": "RecipeTableName",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": "SmeltingRecipeDataSet"
-        },
-        {
-          "TargetType": "script.Furnace",
-          "Name": "StationTitle",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": "용광로"
-        },
-        {
-          "TargetType": "script.Furnace",
-          "Name": "DurationColumn",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": "Duration"
-        },
-        {
-          "TargetType": "script.Furnace",
-          "Name": "IdleSpriteRUID",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": "a3b810b8178847a0b9ec54bc4b63ba96"
-        },
-        {
-          "TargetType": "script.Furnace",
-          "Name": "ActiveSpriteRUID",
-          "ValueType": {
-            "$type": "MODNativeType",
-            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          },
-          "Value": "3f06b48247e5497190ca26e57bf4729e"
         }
       ],
       "EventLinks": [],

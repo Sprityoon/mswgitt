@@ -23,9 +23,9 @@ script PersistenceManager extends Logic
 	-- MainMenuGroup.ui의 TextGUIRendererInputComponent.CharacterLimit도 같은 값이어야 한다.
 	property integer NickMinLen = 2
 	property integer NickMaxLen = 15
-	-- 영지 첫 포탈이 열리는 셀 (map01에 있던 TownPortal 자리). 퀘스트 보상으로 개통된다.
-	property integer EstatePortalCellX = -2
-	property integer EstatePortalCellY = 0
+	-- 영지 첫 포탈이 열리는 셀 (선착장 나룻배 자리). 퀘스트 보상으로 개통된다.
+	property integer EstatePortalCellX = 0
+	property integer EstatePortalCellY = -24
 
 	-- 월드 밤낮 시간 영속화 관련 속성
 	@HideFromInspector property number AccumulatedTime = 0
@@ -885,6 +885,14 @@ script PersistenceManager extends Logic
 							furn.targetPositionY = arriveY
 						end
 					end
+				end
+				-- 선착장 나무 부두 자동 보장
+				local hasPier = false
+				for _, furn in ipairs(furnList) do
+					if furn.itemName == "Pier" then hasPier = true break end
+				end
+				if not hasPier then
+					table.insert(furnList, { itemName = "Pier", x = 0, y = -24 })
 				end
 				furnRaw = _HttpService:JSONEncode(furnList)
 			end
@@ -1792,6 +1800,14 @@ script PersistenceManager extends Logic
 				table.insert(furnList, f)
 			end
 		end
+		-- 선착장 기본 나무 부두 데크 배치
+		local hasPier = false
+		for _, f in ipairs(furnList) do
+			if f.itemName == "Pier" then hasPier = true break end
+		end
+		if not hasPier then
+			table.insert(furnList, { itemName = "Pier", x = 0, y = -24 })
+		end
 		return _HttpService:JSONEncode(furnList)
 	end
 
@@ -1800,7 +1816,7 @@ script PersistenceManager extends Logic
 		-- 설치 셀은 EstatePortalCell* 프로퍼티, 목적지 정보는 PortalDestinationDataSet에서 읽는다
 		-- (규칙 1: 좌표/맵명 하드코딩 대신 프로퍼티 + 데이터셋).
 		local rec = {
-			itemName = "Portal",
+			itemName = "Boat",
 			x = self.EstatePortalCellX,
 			y = self.EstatePortalCellY,
 			targetMapName = "town", targetPositionX = 10, targetPositionY = -2,
@@ -1835,7 +1851,7 @@ script PersistenceManager extends Logic
 		_ResourceSpawner:SetPlacedFurnitureJson(mapName, self:GetDefaultFurnitureJson(inv))
 		_ResourceSpawner:SetTerrainEditsJson(mapName, "[]")
 		_ResourceSpawner:LoadDestroyedResourcesFromJson(mapName, "[]")
-		self.LastHomePos[userId] = { x = -3.0, y = 0.0 }
+		self.LastHomePos[userId] = { x = 0.0, y = -22.0 }
 		self.PendingHomeWarp[userId] = true
 		log("[SLOT] new estate seeded for " .. userId)
 	end
