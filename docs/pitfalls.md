@@ -466,9 +466,6 @@ MSW 메이커 및 엔진의 엔티티 직렬화/역직렬화기는 엔티티 `id
 
 MSW 맵 에디터의 레이어 트리 뷰포트는 각 `RectTileMap` 엔티티가 참조하는 `SortingLayer`(MapLayer0~5)에 대응되는 **`MapleMapLayer` 엔티티(`MapLayerComponent`)** 가 씬 파일(`.map`)에 존재해야 정상적으로 렌더링하고 편집을 허용한다. `MapleMapLayer` 엔티티가 누락되면 메이커 에디터에서 해당 타일맵 레이어들이 **`Invalid layer`** 로 표시되며 렌더링 및 편집이 불가능해진다.
 
-- ✅ `MapleMapLayer` (Layer1), `MapleMapLayer2` (Layer2), `MapleMapLayer3` (Layer3), `MapleMapLayer4` (Layer4), `MapleMapLayer5` (Layer5), `MapleMapLayer6` (Layer6)을 항상 씬에 함께 유지한다.
-- ❌ `RectTileMap`만 추가하고 `MapleMapLayer` 엔티티를 누락시키지 않는다.
-
 ### 41. 서브셀 타일셋 마스크 연산 방향 법칙 (Water/WetRim 감산 vs Grass 가산)
 
 MSW 서브셀 타일셋(wall.tileset)의 마스크 비트 체계(TL=4, TR=8, BL=1, BR=2)에서, 타일 종류에 따라 마스크 연산의 기준 방향이 정반대로 동작한다:
@@ -477,6 +474,16 @@ MSW 서브셀 타일셋(wall.tileset)의 마스크 비트 체계(TL=4, TR=8, BL=
 
 - ✅ 두 체계의 마스크 연산 시작값과 가/감산 법칙을 명확히 구분하여 적용한다.
 - ❌ Water 마스크를 0에서 가산하거나, Grass 마스크를 15에서 감산하면 타일 방향이 180도 반전(Inverted)되어 반대로 뒤집히는 그래픽 결함이 발생한다.
+
+### 42. 몬스터 이동 충돌(Obstacle)과 전투 접촉 피격(Combat)의 역할 분리 & 상시 접촉 틱 원칙
+
+몬스터를 지형/가구용 이동 차단 시스템(`ObstacleQuery:IsBlockingOverlapEntity`)에 등록하면, `GetColliderAABB`에서 스케일 배율이 곱해져 거대한 투명 벽이 생성되며 플레이어가 몬스터에 닿기도 전에 튕겨나가 **"데미지가 전혀 안 들어가고 그냥 밀려나가는 이상 현상"**이 발생한다.
+
+또한 보스 몬스터의 스폰 스킬 콤보 지연용 `SpawnGraceDuration` 동안 `TickTouchDamage`까지 차단하면, **보스방 입장 직후 수 초 동안 플레이어가 보스 젤리 몸체 안으로 쑥 파고들어도 데미지/넉백이 발동하지 않는 버그**가 발생한다.
+
+- ✅ 몬스터와의 모든 접촉/밀어내기는 이동 차단 벽이 아닌, **`MonsterMeleeAttack:DoTouchAttack` 및 플레이어 `HandlePlayerHit`(넉백)** 파이프라인이 전담하도록 설계한다.
+- ✅ `TickTouchDamage`는 스폰 유예(`SpawnGraceTimer`)와 무관하게 **상시 실행**되어 입장/스폰 직후 몸체 파고들기를 원천 차단한다.
+- ✅ 대형 보스 몬스터의 피격 손맛을 위해 `ApplyKnockback`에서 보스(`mon.IsBoss`)는 넉백 속도를 75% 감쇄(슈퍼아머)하여 묵직하게 버티도록 처리한다.
 
 ---
 

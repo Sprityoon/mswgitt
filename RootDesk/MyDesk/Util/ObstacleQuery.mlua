@@ -42,6 +42,7 @@ script ObstacleQuery extends Logic
 	method boolean IsBlockingOverlapEntity(Entity mover, Entity entity)
 		-- 데이터 주도 필터: 이름 분기 금지.
 		-- 차단 = ResourceOccupiedArea 또는 PlaceableFurniture (각 BlocksMovement).
+		-- 몬스터와의 접촉/밀어내기는 TouchDamage와 넉백(Hit) 시스템이 전담한다.
 		if not isvalid(entity) then return false end
 		if isvalid(mover) and entity == mover then return false end
 		if isvalid(entity:GetComponent("script.itemreact")) then return false end
@@ -57,12 +58,7 @@ script ObstacleQuery extends Logic
 	end
 
 	method boolean GetColliderAABB(Entity entity, table outBox)
-		-- TriggerComponent(없으면 PhysicsCollider) 박스 → 월드 AABB.
-		-- 🔴 엔진 콜라이더는 BoxSize·ColliderOffset에 Transform.Scale이 곱해진 것이 실물이다
-		--    (ResourceSpawner 2047행 "PhysicsCollider BoxSize * Scale" 주석과 동일 근거).
-		--    스케일을 빼먹으면 Scale≠1 모델에서 판정 박스가 실물보다 작고 오프셋도 덜 밀려
-		--    보이는 것보다 훨씬 안쪽까지 파고들 수 있다 = "조정했는데도 통과" 증상.
-		--    실측: Big Stone1 Scale=(2,2,2) → 판정 박스가 실물의 1/2 크기였다.
+		-- TriggerComponent / HitComponent / PhysicsColliderComponent 박스 → 월드 AABB.
 		local transform = entity.TransformComponent
 		if not isvalid(transform) then return false end
 		local boxSize = nil
@@ -73,11 +69,18 @@ script ObstacleQuery extends Logic
 			offX = trigger.ColliderOffset.x
 			offY = trigger.ColliderOffset.y
 		else
-			local collider = entity.PhysicsColliderComponent
-			if isvalid(collider) then
-				boxSize = collider.BoxSize
-				offX = collider.ColliderOffset.x
-				offY = collider.ColliderOffset.y
+			local hit = entity.HitComponent
+			if isvalid(hit) then
+				boxSize = hit.BoxSize
+				offX = hit.ColliderOffset.x
+				offY = hit.ColliderOffset.y
+			else
+				local collider = entity.PhysicsColliderComponent
+				if isvalid(collider) then
+					boxSize = collider.BoxSize
+					offX = collider.ColliderOffset.x
+					offY = collider.ColliderOffset.y
+				end
 			end
 		end
 		if boxSize == nil then return false end
@@ -162,7 +165,7 @@ script ObstacleQuery extends Logic
 
 	method boolean IsObstacle(Entity mover, Vector2 checkPos, number radius, any currentPos, number queryRadius)
 		-- 벽 타일 또는 차단 엔티티 AABB에 더 깊이 파고들면 true.
-		-- queryRadius: OverlapAll 후보 반경(기본 2.5). 엔진 공간 질의 — 전수 스캔 아님.
+		-- queryRadius: OverlapAll 후보 반경(기본 4.5). 엔진 공간 질의 — 전수 스캔 아님.
 		if not isvalid(mover) then return false end
 		if self:IsWallAt(mover, checkPos) then
 			return true
@@ -170,8 +173,8 @@ script ObstacleQuery extends Logic
 		local simulator = _CollisionService:GetSimulator(mover)
 		if not simulator then return false end
 		local queryR = queryRadius
-		if queryR == nil or queryR < radius then queryR = 2.5 end
-		local overlaps = simulator:OverlapAll(CollisionGroups.TriggerBox, CircleShape(checkPos, queryR))
+		if queryR == nil or queryR < 4.5 then queryR = 4.5 end
+		local overlaps = simulator:OverlapAll({ CollisionGroups.TriggerBox, CollisionGroups.HitBox }, CircleShape(checkPos, queryR))
 		local box = { minX = 0, maxX = 0, minY = 0, maxY = 0 }
 		for _, comp in ipairs(overlaps) do
 			if isvalid(comp) and isvalid(comp.Entity) then
@@ -199,8 +202,8 @@ script ObstacleQuery extends Logic
 		local simulator = _CollisionService:GetSimulator(mover)
 		if not simulator then return Vector2.zero end
 		local queryR = queryRadius
-		if queryR == nil or queryR < radius then queryR = 2.5 end
-		local overlaps = simulator:OverlapAll(CollisionGroups.TriggerBox, CircleShape(currentPos, queryR))
+		if queryR == nil or queryR < 4.5 then queryR = 4.5 end
+		local overlaps = simulator:OverlapAll({ CollisionGroups.TriggerBox, CollisionGroups.HitBox }, CircleShape(currentPos, queryR))
 		local pushX, pushY = 0.0, 0.0
 		local hit = false
 		local box = { minX = 0, maxX = 0, minY = 0, maxY = 0 }

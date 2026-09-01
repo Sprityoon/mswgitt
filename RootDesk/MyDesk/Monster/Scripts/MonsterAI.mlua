@@ -239,10 +239,8 @@ script MonsterAI extends Component
 			self.AggroGraceTimer = self.AggroGraceTimer - delta
 		end
 
-		-- T38: 접촉 데미지 틱 (교전 유예 중·미교전 시 입구 직격 방지)
-		if self.EngagementStarted and self.SpawnGraceTimer <= 0 then
-			self:TickTouchDamage(delta)
-		end
+		-- T38: 접촉 데미지 틱 (상시 발동하여 스폰/입장 직후 몸체 파고들기 방지)
+		self:TickTouchDamage(delta)
 
 		-- 미니언 소환 타이머(교전 시작 후에만 깎임 — 선스폰 중 30초 소진 방지)
 		if self.EngagementStarted then
@@ -395,10 +393,29 @@ script MonsterAI extends Component
 		local myPos = self:Pos2D()
 		local tp = self:EntityPos2D(target)
 		local dSq = self:DistSq(myPos, tp)
-		local r = atk.TouchRadius or 0.55
+		
+		-- 몬스터 크기(히트박스/TouchRadius)를 정확히 반영
+		local r = 0.8
+		local mon = self.Entity:GetComponent("script.Monster")
+		if isvalid(mon) and (mon.IsBoss or mon.MonsterId == "slime_king") then
+			r = 1.8
+		else
+			local hit = self.Entity.HitComponent
+			if isvalid(hit) then
+				r = math.max(hit.BoxSize.x, hit.BoxSize.y) * 0.55
+			end
+		end
+		if atk.TouchRadius ~= nil and atk.TouchRadius > 0 then
+			r = math.max(r, atk.TouchRadius)
+		end
+		
 		if dSq <= r * r then
 			atk:DoTouchAttack()
-			self.TouchCooldownTimer = atk.TouchTickInterval or 0.5
+			local interval = atk.TouchTickInterval or 0.35
+			if isvalid(mon) and (mon.IsBoss or mon.MonsterId == "slime_king") then
+				interval = 0.25
+			end
+			self.TouchCooldownTimer = interval
 		end
 	end
 
@@ -831,8 +848,20 @@ script MonsterAI extends Component
 		local dy = p.y - fromPos.y
 		local len = math.sqrt(dx * dx + dy * dy)
 		if len <= 0.0001 then dx = 1 dy = 0 len = 1 end
-		self.KnockVel = Vector2(dx / len * self.KnockbackSpeed, dy / len * self.KnockbackSpeed)
-		self.KnockTimer = self.KnockbackDuration
+		
+		local speed = self.KnockbackSpeed
+		local duration = self.KnockbackDuration
+		
+		-- 보스 및 대형 몬스터 넉백 면역/저항 (Super Armor / Knockback Resistance)
+		local mon = self.Entity:GetComponent("script.Monster")
+		if isvalid(mon) and (mon.IsBoss or mon.MonsterId == "slime_king") then
+			-- 슬라임킹은 넉백 속도 25%, 지속시간 50%로 대폭 감소하여 묵직하게 버팀
+			speed = speed * 0.25
+			duration = duration * 0.5
+		end
+		
+		self.KnockVel = Vector2(dx / len * speed, dy / len * speed)
+		self.KnockTimer = duration
 		-- 피격 시 어그로 유예 갱신: 귀환/복귀 중이어도 넉백이 끝나면 곧바로 추적/반격하도록 한다.
 		self.AggroGraceTimer = self.AggroGraceDuration
 		-- 원거리 선공으로 교전이 열린 경우에도 쿨/유예 시작

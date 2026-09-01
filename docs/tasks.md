@@ -19,6 +19,7 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `SlimeKing.model` · `Slime.model` · `MonsterAI.mlua` · `PlayerController.mlua` · `ObstacleQuery.mlua` | **[전투/보스] 슬라임킹 히트박스 실측 정합($3.4 \times 2.4$) & 몬스터 이동 벽 차단 제거 및 접촉 피격/넉백(0.4s i-frame, 2.4m 밀림) 정합 & 보스방 입장 직후 파고들기 버그 차단 & 슬라임킹 넉백 면역/저항(슈퍼아머 75%) 밸런스 패치** (2026-09-01 ⚖️ 확정) — 아래 참조 |
 | `map01.map` · `Structure_Pier.model` · `Boat_WoodenRaft.model` · `PersistenceManager.mlua` · `convert_map01_to_island.cjs` | **[지형/시스템] Phase 22 개인 영지 '섬(Island)' 컨셉 전환 & 외곽 수역 테두리(L0 Water + L6 WetRim) 및 선착장 부두·나룻배 출항 포탈 구축** (2026-08-29 ⚖️ 확정) — 아래 참조 |
 | `UICharacterController.mlua` · `UISkillBarController.mlua` | **[코드 위생] UI 컨트롤러 잔여 경고 3건 해소 (LWA-1111 string.find 언밸런스 1건 + LWA-1106 Enum 할당 2건)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
 | `MonsterAI.mlua` · `SlimeKing.model` · `HornMushroom.model` | **[핫픽스/코드위생] MonsterAI 프로퍼티 타입 불일치(LWA-4012 TypeMismatch) 해소 (MinionSummonCount / ProjectileDamage: number ➔ integer 통일, LeapAirFrameIndex: Int64 ➔ Int32 정합)** (2026-08-29 ⚖️ 확정) — 아래 참조 |

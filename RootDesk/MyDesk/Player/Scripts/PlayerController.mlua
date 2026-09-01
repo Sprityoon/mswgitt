@@ -1028,7 +1028,7 @@ script PlayerController extends Component
 
 	@ExecSpace("ServerOnly")
 	method Entity FindMonsterInFront(Entity map, Vector3 playerPos, integer dirX, integer dirY)
-		-- 플레이어가 바라보는 전방 범위(너비 ~1.8m, 전방 ~1.8m) 내의 가장 가까운 생존 몬스터 검색
+		-- 플레이어가 바라보는 전방 범위 내의 가장 가까운 생존 몬스터 검색 (보스 및 대형 몬스터 히트박스 반경 반영)
 		if not isvalid(map) then return nil end
 		local monsters = map:GetChildComponentsByTypeName("script.Monster", false)
 		if monsters == nil then return nil end
@@ -1046,22 +1046,38 @@ script PlayerController extends Component
 					local dy = p.y - playerPos.y
 					local distSq = dx * dx + dy * dy
 					
-					-- 기본 최대 감지 반경 2.0m
-					if distSq <= 4.0 then
+					-- 몬스터 크기(히트박스/보스)에 따른 유효 반경 가산
+					local hitRadius = 0.6
+					if mon.IsBoss or mon.MonsterId == "slime_king" then
+						hitRadius = 2.4
+					else
+						local hitComp = mc.Entity:GetComponent("MOD.Core.HitComponent")
+						if isvalid(hitComp) then
+							hitRadius = math.max(hitComp.BoxSize.x, hitComp.BoxSize.y) * 0.5
+						end
+					end
+					
+					local maxDist = 2.0 + hitRadius
+					if distSq <= maxDist * maxDist then
 						local inFront = false
+						local crossTol = 1.2 + hitRadius * 0.7
+						local fwdLimit = 1.8 + hitRadius
+						
 						if math.abs(dirX) > 0 then
-							-- X축(좌우)을 바라볼 때: 앞쪽(dx*dirX >= -0.2)이고 상하 오차(|dy| <= 1.2)
-							if (dx * dirX >= -0.2) and (math.abs(dy) <= 1.2) and (math.abs(dx) <= 1.8) then
+							-- X축(좌우)을 바라볼 때
+							if (dx * dirX >= -0.5) and (math.abs(dy) <= crossTol) and (math.abs(dx) <= fwdLimit) then
 								inFront = true
 							end
 						elseif math.abs(dirY) > 0 then
-							-- Y축(상하)을 바라볼 때: 앞쪽(dy*dirY >= -0.2)이고 좌우 오차(|dx| <= 1.2)
-							if (dy * dirY >= -0.2) and (math.abs(dx) <= 1.2) and (math.abs(dy) <= 1.8) then
+							-- Y축(상하)을 바라볼 때
+							if (dy * dirY >= -0.5) and (math.abs(dx) <= crossTol) and (math.abs(dy) <= fwdLimit) then
 								inFront = true
 							end
 						else
-							-- 방향이 없는 경우 주변 1.2m
-							if distSq <= 1.44 then inFront = true end
+							-- 방향이 없는 경우 주변
+							if distSq <= (1.2 + hitRadius) * (1.2 + hitRadius) then
+								inFront = true
+							end
 						end
 						
 						if inFront and distSq < minDistanceSq then
@@ -1077,7 +1093,7 @@ script PlayerController extends Component
 
 	@ExecSpace("ServerOnly")
 	method Entity FindMonsterAt(Entity map, Vector3 worldPos)
-		-- Returns a living monster entity whose center is within ~1 cell of worldPos, or nil.
+		-- Returns a living monster entity whose hitbox covers or is near worldPos, or nil.
 		if not isvalid(map) then return nil end
 		local monsters = map:GetChildComponentsByTypeName("script.Monster", false)
 		if monsters == nil then return nil end
@@ -1089,7 +1105,16 @@ script PlayerController extends Component
 					local p = mc.Entity.TransformComponent.WorldPosition
 					local dx = p.x - worldPos.x
 					local dy = p.y - worldPos.y
-					if dx * dx + dy * dy <= 1.44 then return mc.Entity end
+					local hitRadius = 1.2
+					if mon.IsBoss or mon.MonsterId == "slime_king" then
+						hitRadius = 2.6
+					else
+						local hitComp = mc.Entity:GetComponent("MOD.Core.HitComponent")
+						if isvalid(hitComp) then
+							hitRadius = math.max(1.2, math.max(hitComp.BoxSize.x, hitComp.BoxSize.y) * 0.6)
+						end
+					end
+					if dx * dx + dy * dy <= hitRadius * hitRadius then return mc.Entity end
 				end
 			end
 		end
@@ -3285,13 +3310,14 @@ script PlayerController extends Component
 		
 		-- Apply damage to player HP and start server-side IFrame cooldown
 		playerComp.Hp = math.max(0, playerComp.Hp - damage)
-		self.IFrameTimer = 1.0  -- 1 second i-frame
+		local iframeDuration = 0.4  -- 0.4 second i-frame (빠르고 즉각적인 피격 반응)
+		self.IFrameTimer = iframeDuration
 		_TimerService:SetTimerOnce(function()
 			if isvalid(self.Entity) then
 				self.IFrameTimer = 0.0
 				log("[IFRAME] Server reset player IFrameTimer to 0.0")
 			end
-		end, 1.0)
+		end, iframeDuration)
 		
 		-- Trigger hit animation state and schedule IDLE restore on server
 		local sc = self.Entity.StateComponent
@@ -3305,7 +3331,7 @@ script PlayerController extends Component
 						log("[KNOCKBACK] Server restored player state from HIT to IDLE")
 					end
 				end
-			end, 0.25)
+			end, 0.2)
 		end
 		
 		-- Apply Knockback (Server-side teleport push with obstacle checking)
@@ -3319,7 +3345,12 @@ script PlayerController extends Component
 		local dirX = kx / len
 		local dirY = ky / len
 		
-		local dist = 1.2
+		-- 보스 몬스터일 경우 넉백 거리를 2.2m로 대폭 증가하여 확실하게 밀어냄
+		local dist = 1.4
+		local attackerMon = event.AttackerEntity:GetComponent("script.Monster")
+		if isvalid(attackerMon) and (attackerMon.IsBoss or attackerMon.MonsterId == "slime_king") then
+			dist = 2.4
+		end
 		local targetPos = Vector3(pp.x + dirX * dist, pp.y + dirY * dist, pp.z)
 		local finalKnockPos = pp  -- Default to no movement
 		
@@ -3336,7 +3367,7 @@ script PlayerController extends Component
 			end
 		end
 		
-		self:ClientApplyKnockback(pp.x, pp.y, finalKnockPos.x, finalKnockPos.y, 0.25)
+		self:ClientApplyKnockback(pp.x, pp.y, finalKnockPos.x, finalKnockPos.y, 0.2)
 		
 		log("Player " .. self.Entity.Name .. " hit for " .. damage .. " damage. HP remaining: " .. playerComp.Hp)
 		
