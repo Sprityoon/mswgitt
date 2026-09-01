@@ -1984,11 +1984,36 @@ script PlayerInventory extends Component
 					spawnedEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
 				end
 
+				-- Check Walkable from dataset or component
+				local isWalkable = false
+				local itemDs = _DataService:GetTable("item_dataset")
+				if itemDs ~= nil and itemName ~= nil then
+					local row = itemDs:FindRow("Name", itemName)
+					if row ~= nil then
+						local okW, wVal = pcall(function() return row:GetItem("Walkable") end)
+						if okW and (wVal == "true" or wVal == true) then
+							isWalkable = true
+						end
+					end
+				end
+				local furnComp = spawnedEntity:GetComponent("script.PlaceableFurniture")
+				if isvalid(furnComp) then
+					if isWalkable or furnComp.IsWalkable then
+						furnComp.IsWalkable = true
+						furnComp.BlocksMovement = false
+						isWalkable = true
+					end
+				end
+
 				local sprite = spawnedEntity.SpriteRendererComponent
 				if isvalid(sprite) then
 					sprite.IgnoreMapLayerCheck = true
 					sprite.SortingLayer = _RenderLayers.EntityLayer
-					sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(spawnedEntity, 0)
+					if isWalkable then
+						sprite.OrderInLayer = _RenderLayers.MinEntityOrder or 2
+					else
+						sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(spawnedEntity, 0)
+					end
 				end
 				if isCropSeed then
 					-- 모델에 script.Crop이 등록돼 있어야 함. 미등록 시 서버 전용 AddComponent 폴백

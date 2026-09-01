@@ -6,4 +6,7 @@ script PlaceableFurniture extends Component
 	-- T36 재작업: 플레이어 이동 차단. 포탈 등 통과 필요 시 모델에서 false.
 	property boolean BlocksMovement = true
 
+	-- 사람이 밟고 올라갈 수 있는 발판/데크/바닥 오브젝트 여부 (true 시 플레이어 발 밑 레이어 렌더 및 통행 허용)
+	property boolean IsWalkable = false
+
 end

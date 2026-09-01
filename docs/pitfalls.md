@@ -455,6 +455,29 @@ MSW의 커스텀 모델(`.model`) 파일에서 `Properties` 배열을 비워두�
 - ✅ `EntryKey`는 반드시 `"model://" + Id` (예: `"model://furniture_pier"`, `"Id": "furniture_pier"`) 형태로 정합되어야 한다.
 - ❌ `Properties: []`로 프로퍼티 링크를 비워두지 않는다.
 
+### 39. MSW 엔티티 ID는 정규 36자리 GUIDv4(`8-4-4-4-12`) 형식이어야 한다
+
+MSW 메이커 및 엔진의 엔티티 직렬화/역직렬화기는 엔티티 `id`를 C# `Guid.Parse`로 엄격하게 검증한다. `Math.random()` 기반의 비정규 포맷이나 대시가 누락된 32자리 16진수 문자열을 사용할 경우 맵 로드 시 **`[LEA-3054] CannotApply : 적용에 실패했습니다. Exception message : Guid should contain 32 digits with 4 dashes (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).`** 오류가 발생하며 맵이 열리지 않는다.
+
+- ✅ 엔티티 ID를 생성할 때는 Node.js `crypto.randomUUID()`를 사용하여 표준 RFC 4122 v4 UUID(36자리, 4대시)를 생성한다.
+- ❌ 임의의 문자열 접두사(`"e" + ...`)나 대시 없는 32자리 hex 문자열을 `id`로 지정하지 않는다.
+
+### 40. 타일맵(`RectTileMap`) 레이어는 대응되는 `MapleMapLayer` 엔티티와 1:1 쌍을 이루어야 한다
+
+MSW 맵 에디터의 레이어 트리 뷰포트는 각 `RectTileMap` 엔티티가 참조하는 `SortingLayer`(MapLayer0~5)에 대응되는 **`MapleMapLayer` 엔티티(`MapLayerComponent`)** 가 씬 파일(`.map`)에 존재해야 정상적으로 렌더링하고 편집을 허용한다. `MapleMapLayer` 엔티티가 누락되면 메이커 에디터에서 해당 타일맵 레이어들이 **`Invalid layer`** 로 표시되며 렌더링 및 편집이 불가능해진다.
+
+- ✅ `MapleMapLayer` (Layer1), `MapleMapLayer2` (Layer2), `MapleMapLayer3` (Layer3), `MapleMapLayer4` (Layer4), `MapleMapLayer5` (Layer5), `MapleMapLayer6` (Layer6)을 항상 씬에 함께 유지한다.
+- ❌ `RectTileMap`만 추가하고 `MapleMapLayer` 엔티티를 누락시키지 않는다.
+
+### 41. 서브셀 타일셋 마스크 연산 방향 법칙 (Water/WetRim 감산 vs Grass 가산)
+
+MSW 서브셀 타일셋(wall.tileset)의 마스크 비트 체계(TL=4, TR=8, BL=1, BR=2)에서, 타일 종류에 따라 마스크 연산의 기준 방향이 정반대로 동작한다:
+- **`Water` & `WetRim` (수역/수변 림)**: 기본값 **`wm = 15`(Full Water)에서 시작하여 육지 이웃이 있는 방향의 비트를 빼야(`wm - (wm & bits)`)** 육지 쪽을 향해 깎인 정방향 물결/윤슬 타일이 선택된다.
+- **`Grass` (잔디 에지)**: 기본값 **`gm = 0`(Full Grass)에서 시작하여 바다/흙 이웃이 있는 방향의 비트를 더해야(`gm |= bits`)** 바다/흙 쪽을 향해 깎인 정방향 잔디 에지 타일이 선택된다.
+
+- ✅ 두 체계의 마스크 연산 시작값과 가/감산 법칙을 명확히 구분하여 적용한다.
+- ❌ Water 마스크를 0에서 가산하거나, Grass 마스크를 15에서 감산하면 타일 방향이 180도 반전(Inverted)되어 반대로 뒤집히는 그래픽 결함이 발생한다.
+
 ---
 
 ## 관련 문서
@@ -465,4 +488,5 @@ MSW의 커스텀 모델(`.model`) 파일에서 `Properties` 배열을 비워두�
 - 상시 디자인 정책: [design-policy.md](./design-policy.md)
 - 리소스 검색 API 함정: [reference/resource-api-pitfalls.md](./reference/resource-api-pitfalls.md)
 - 사고별 원본 기록: [agents/reports/](./agents/reports/) (T번호별 보고서)
+
 

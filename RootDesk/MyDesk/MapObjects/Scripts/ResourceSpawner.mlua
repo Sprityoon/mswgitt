@@ -1690,15 +1690,33 @@ script ResourceSpawner extends Logic
 
 	@ExecSpace("ServerOnly")
 	method void SpawnFixedPortal(Entity map, string portalName, integer px, integer py, string targetMap, Vector2 targetPos)
-		-- Spawns a fixed Furniture_Portal (which carries a TriggerComponent) at cell (px,py) that warps
-		-- to targetMap, attaches+configures script.PortalGate, and registers the cell as occupied so
-		-- procedural resources never overlap it. Used for the hunt return portal and the town hub entry.
-		local portalModelId = _EntryService:GetModelIdByName("Furniture_Portal")
-		if portalModelId == nil or portalModelId == "" then
-			log_warning("ResourceSpawner: Furniture_Portal model not found; portal '" .. portalName .. "' skipped.")
-			return
+		-- 맵 에디터에 배치된 포탈 엔티티를 우선 탐색하여, 제작자가 에디터에서 지정한 위치를 100% 존중합니다.
+		-- 에디터에 포탈 엔티티가 없는 경우에만 (px, py) 좌표로 모델을 폴백 스폰합니다.
+		local portal = nil
+		if isvalid(map) then
+			portal = map:GetChildByName(portalName)
 		end
-		local portal = _SpawnService:SpawnByModelId(portalModelId, portalName, Vector3(px + 0.5, py + 0.5, 0), map)
+
+		local posX = px + 0.5
+		local posY = py + 0.5
+
+		if not isvalid(portal) then
+			local portalModelId = _EntryService:GetModelIdByName("Furniture_Portal")
+			if portalModelId == nil or portalModelId == "" then
+				portalModelId = "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b1"
+			end
+			portal = _SpawnService:SpawnByModelId(portalModelId, portalName, Vector3(posX, posY, 0), map)
+		else
+			-- 맵 에디터에 이미 배치된 포탈이 있으면 에디터 위치 사용!
+			local tr = portal.TransformComponent
+			if isvalid(tr) then
+				posX = tr.Position.x
+				posY = tr.Position.y
+				px = math.floor(posX)
+				py = math.floor(posY)
+			end
+		end
+
 		if not isvalid(portal) then return end
 
 		local sprite = portal.SpriteRendererComponent
@@ -1714,8 +1732,10 @@ script ResourceSpawner extends Logic
 			pg = portal:GetComponent("script.PortalGate")
 		end
 		if isvalid(pg) then
-			pg.TargetMapName = targetMap
-			pg.TargetPosition = targetPos
+			if pg.TargetMapName == nil or pg.TargetMapName == "" or pg.TargetMapName == "town" then
+				pg.TargetMapName = targetMap
+				pg.TargetPosition = targetPos
+			end
 			if targetMap == "Home" then
 				pg.PortalColor = "blue"
 			else
@@ -1726,7 +1746,7 @@ script ResourceSpawner extends Logic
 		local gKey = px .. "_" .. py
 		self:GetGridToEntity(map.Name)[gKey] = { entity = portal, pivotX = px, pivotY = py, isFurniture = true, itemName = "Portal" }
 		self:GetSpawnedEntities(map.Name)[gKey] = portal
-		log("ResourceSpawner: Portal '" .. portalName .. "' -> " .. targetMap .. " spawned in map " .. map.Name)
+		log("ResourceSpawner: Portal '" .. portalName .. "' -> " .. targetMap .. " configured in map " .. map.Name .. " at (" .. px .. ", " .. py .. ")")
 	end
 
 	@ExecSpace("ServerOnly")
@@ -2662,13 +2682,16 @@ script ResourceSpawner extends Logic
 			gridToEntity[sKey] = nil
 		end
 
-		-- 2. Destroy any existing Maker-placed PlaceableFurniture that are not in gridToEntity
-		-- (This ensures the map is clean before we reconstruct from JSON)
+		-- 2. Destroy any existing Maker-placed PlaceableFurniture that are user-placed
+		-- (Keep static world features like Furniture_Pier and Furniture_Boat intact!)
 		local placeableComps = map:GetChildComponentsByTypeName("script.PlaceableFurniture", true)
 		if placeableComps then
 			for _, comp in ipairs(placeableComps) do
 				if isvalid(comp.Entity) then
-					comp.Entity:Destroy()
+					local eName = comp.Entity.Name
+					if eName ~= "Furniture_Pier" and eName ~= "Furniture_Boat" and eName ~= "Pier" and eName ~= "Boat" then
+						comp.Entity:Destroy()
+					end
 				end
 			end
 		end
@@ -2687,7 +2710,8 @@ script ResourceSpawner extends Logic
 		local placedFurniture = (furnitureJson ~= nil and furnitureJson ~= "") and _HttpService:JSONDecode(furnitureJson) or {}
 		local cropDs = _DataService:GetTable("CropDataSet")
 		for _, f in ipairs(placedFurniture) do
-			local fx, fy = math.floor(f.x), math.floor(f.y)
+			local fx = math.floor(f.x)
+			local fy = math.floor(f.y)
 			-- 작물 씨앗이면 Crop_{CropId} 모델, 아니면 Furniture_ 경로 (가구 JSON 패턴 재사용 + plantedAt).
 			local cropRow = nil
 			if cropDs ~= nil and f.itemName ~= nil then
@@ -2698,19 +2722,40 @@ script ResourceSpawner extends Logic
 			local spawnName = f.itemName
 			if isCrop and cropRow ~= nil then
 				local cropId = cropRow:GetItem("CropId") or ""
-				spawnName = "Crop_" .. string.gsub(cropId, " ", "")
+				local cleanCropId, _ = string.gsub(cropId, " ", "")
+				spawnName = "Crop_" .. cleanCropId
 				modelId = _EntryService:GetModelIdByName(spawnName)
 			else
-				modelId = _EntryService:GetModelIdByName("Furniture_" .. string.gsub(f.itemName, " ", ""))
+				local rawName = tostring(f.itemName or "")
+				local cleanName, _ = string.gsub(rawName, " ", "")
+				local capName = string.upper(string.sub(cleanName, 1, 1)) .. string.sub(cleanName, 2)
+				modelId = _EntryService:GetModelIdByName("Furniture_" .. cleanName)
+				if modelId == nil or modelId == "" then
+					modelId = _EntryService:GetModelIdByName("Furniture_" .. capName)
+				end
+				if modelId == nil or modelId == "" then
+					modelId = _EntryService:GetModelIdByName("furniture_" .. string.lower(cleanName))
+				end
 			end
-			if modelId ~= nil and modelId ~= "" then
+
+			-- Check if static map entity already exists (e.g. Furniture_Pier, Furniture_Boat)
+			local existingStaticEnt = nil
+			if f.itemName == "Pier" or f.itemName == "pier" then
+				existingStaticEnt = map:GetChildByName("Furniture_Pier") or map:GetChildByName("Pier")
+			elseif f.itemName == "Boat" or f.itemName == "boat" then
+				existingStaticEnt = map:GetChildByName("Furniture_Boat") or map:GetChildByName("Boat")
+			end
+
+			local spawnedEntity = existingStaticEnt
+			if not isvalid(spawnedEntity) and modelId ~= nil and modelId ~= "" then
 				local spawnPos = Vector3(fx + 0.5, fy + 0.5, 0)
-				local spawnedEntity = _SpawnService:SpawnByModelId(
+				spawnedEntity = _SpawnService:SpawnByModelId(
 					modelId,
 					spawnName,
 					spawnPos,
 					map
 				)
+			end
 				if isvalid(spawnedEntity) then
 					local occAlign = spawnedEntity:GetComponent("script.ResourceOccupiedArea")
 					if isvalid(occAlign) then
@@ -2723,11 +2768,37 @@ script ResourceSpawner extends Logic
 						spawnedEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
 					end
 
+					-- Check Walkable from dataset or component
+					local isWalkable = false
+					local itemDs = _DataService:GetTable("item_dataset")
+					if itemDs ~= nil and f.itemName ~= nil then
+						local row = itemDs:FindRow("Name", f.itemName)
+						if row ~= nil then
+							local okW, wVal = pcall(function() return row:GetItem("Walkable") end)
+							if okW and (wVal == "true" or wVal == true) then
+								isWalkable = true
+							end
+						end
+					end
+					local furnComp = spawnedEntity:GetComponent("script.PlaceableFurniture")
+					if isvalid(furnComp) then
+						if isWalkable or furnComp.IsWalkable then
+							furnComp.IsWalkable = true
+							furnComp.BlocksMovement = false
+							isWalkable = true
+						end
+					end
+
 					local sprite = spawnedEntity.SpriteRendererComponent
 					if isvalid(sprite) then
 						sprite.IgnoreMapLayerCheck = true
 						sprite.SortingLayer = _RenderLayers.EntityLayer
-						sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(spawnedEntity, 0)
+						if isWalkable then
+							-- 밟고 올라가는 데크/발판/카펫: 플레이어 발 밑 레이어(MinEntityOrder)로 고정
+							sprite.OrderInLayer = _RenderLayers.MinEntityOrder or 2
+						else
+							sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(spawnedEntity, 0)
+						end
 					end
 
 					if isCrop then
@@ -2818,7 +2889,6 @@ script ResourceSpawner extends Logic
 					spawnedEntities[key] = spawnedEntity
 				end
 			end
-		end
 		log("ResourceSpawner: Reconstructed " .. #placedTiles .. " tiles and " .. #placedFurniture .. " furniture entities in map " .. mapName)
 
 		-- 설치물 재구성 후 지형 편집 델타(삽/씨앗)를 베이스 잔디 위에 재생해 편집 상태를 복원한다.
@@ -2866,7 +2936,16 @@ script ResourceSpawner extends Logic
 		local fx = math.floor(tonumber(rec.x) or 0)
 		local fy = math.floor(tonumber(rec.y) or 0)
 
-		local modelId = _EntryService:GetModelIdByName("Furniture_" .. string.gsub(itemName, " ", ""))
+		local rawName = tostring(itemName or "")
+		local cleanName, _ = string.gsub(rawName, " ", "")
+		local capName = string.upper(string.sub(cleanName, 1, 1)) .. string.sub(cleanName, 2)
+		local modelId = _EntryService:GetModelIdByName("Furniture_" .. cleanName)
+		if modelId == nil or modelId == "" then
+			modelId = _EntryService:GetModelIdByName("Furniture_" .. capName)
+		end
+		if modelId == nil or modelId == "" then
+			modelId = _EntryService:GetModelIdByName("furniture_" .. string.lower(cleanName))
+		end
 		if modelId == nil or modelId == "" then
 			log_warning("ResourceSpawner: Furniture model not found for '" .. tostring(itemName) .. "'")
 			return false
@@ -2888,11 +2967,36 @@ script ResourceSpawner extends Logic
 			ent.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
 		end
 
+		-- Check Walkable from dataset or component
+		local isWalkable = false
+		local itemDs = _DataService:GetTable("item_dataset")
+		if itemDs ~= nil and itemName ~= nil then
+			local row = itemDs:FindRow("Name", itemName)
+			if row ~= nil then
+				local okW, wVal = pcall(function() return row:GetItem("Walkable") end)
+				if okW and (wVal == "true" or wVal == true) then
+					isWalkable = true
+				end
+			end
+		end
+		local furnComp = ent:GetComponent("script.PlaceableFurniture")
+		if isvalid(furnComp) then
+			if isWalkable or furnComp.IsWalkable then
+				furnComp.IsWalkable = true
+				furnComp.BlocksMovement = false
+				isWalkable = true
+			end
+		end
+
 		local sprite = ent.SpriteRendererComponent
 		if isvalid(sprite) then
 			sprite.IgnoreMapLayerCheck = true
 			sprite.SortingLayer = _RenderLayers.EntityLayer
-			sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(ent, 0)
+			if isWalkable then
+				sprite.OrderInLayer = _RenderLayers.MinEntityOrder or 2
+			else
+				sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(ent, 0)
+			end
 		end
 
 		local pg = ent:GetComponent("script.PortalGate")

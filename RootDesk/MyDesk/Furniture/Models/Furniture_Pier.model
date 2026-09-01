@@ -105,7 +105,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "MapLayer1"
+          "Value": "MapLayer5"
         },
         {
           "TargetType": "MOD.Core.SpriteRendererComponent",
@@ -114,7 +114,7 @@
             "$type": "MODNativeType",
             "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 10
+          "Value": 2
         },
         {
           "TargetType": "script.PlaceableFurniture",
@@ -135,6 +135,15 @@
           "Value": false
         },
         {
+          "TargetType": "script.PlaceableFurniture",
+          "Name": "IsWalkable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
           "TargetType": "MOD.Core.TransformComponent",
           "Name": "Scale",
           "ValueType": {
@@ -143,8 +152,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 0.15,
-            "y": 0.15,
+            "x": 0.25,
+            "y": 0.25,
             "z": 1.0
           }
         },

@@ -25,7 +25,7 @@ script PersistenceManager extends Logic
 	property integer NickMaxLen = 15
 	-- 영지 첫 포탈이 열리는 셀 (선착장 나룻배 자리). 퀘스트 보상으로 개통된다.
 	property integer EstatePortalCellX = 0
-	property integer EstatePortalCellY = -24
+	property integer EstatePortalCellY = -26
 
 	-- 월드 밤낮 시간 영속화 관련 속성
 	@HideFromInspector property number AccumulatedTime = 0
@@ -886,13 +886,18 @@ script PersistenceManager extends Logic
 						end
 					end
 				end
-				-- 선착장 나무 부두 자동 보장
+				-- 선착장 나무 부두 및 나룻배 출항 포탈 자동 보장
 				local hasPier = false
+				local hasBoat = false
 				for _, furn in ipairs(furnList) do
-					if furn.itemName == "Pier" then hasPier = true break end
+					if furn.itemName == "Pier" or furn.itemName == "pier" then hasPier = true end
+					if furn.itemName == "Boat" or furn.itemName == "boat" or self:IsPortalItemName(furn.itemName) then hasBoat = true end
 				end
 				if not hasPier then
 					table.insert(furnList, { itemName = "Pier", x = 0, y = -24 })
+				end
+				if not hasBoat then
+					table.insert(furnList, self:BuildEstatePortalRecord("town"))
 				end
 				furnRaw = _HttpService:JSONEncode(furnList)
 			end
@@ -1792,21 +1797,18 @@ script PersistenceManager extends Logic
 
 	@ExecSpace("ServerOnly")
 	method string GetDefaultFurnitureJson(Component inv)
-		-- ⚖️ 2026-08-10: 신규 영지에는 포탈을 두지 않는다.
-		-- 첫 포탈은 퀘스트 106(나만의 창고 짓기) 완료 보상으로 GrantEstatePortal이 설치한다.
-		local furnList = {}
-		for _, f in ipairs(self:CollectMap01FurnitureRecords()) do
-			if not self:IsPortalItemName(f.itemName) then
-				table.insert(furnList, f)
-			end
-		end
-		-- 선착장 기본 나무 부두 데크 배치
+		local furnList = self:CollectMap01FurnitureRecords()
 		local hasPier = false
+		local hasBoat = false
 		for _, f in ipairs(furnList) do
-			if f.itemName == "Pier" then hasPier = true break end
+			if f.itemName == "Pier" or f.itemName == "pier" then hasPier = true end
+			if f.itemName == "Boat" or f.itemName == "boat" or self:IsPortalItemName(f.itemName) then hasBoat = true end
 		end
 		if not hasPier then
 			table.insert(furnList, { itemName = "Pier", x = 0, y = -24 })
+		end
+		if not hasBoat then
+			table.insert(furnList, self:BuildEstatePortalRecord("town"))
 		end
 		return _HttpService:JSONEncode(furnList)
 	end

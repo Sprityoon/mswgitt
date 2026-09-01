@@ -13,7 +13,7 @@
 | **Phase 22** | **개인 영지 '섬(Island)' 컨셉 전환 & 외곽 수역 테두리** | • 기존 외곽 돌벽(`Wall`) 전면 철거 ➔ L0 `Water` + L6 `WetRim` 수역 포위<br>• 모래톱/해변 프린지 타일셋(`GrassSand_*`, `WetRim_*`) 자연 해안선 조성<br>• 외곽 보이지 않는 충돌 경계벽(`Boundary Collider`) 및 선착장/부두(`Dock`) 출항 포탈 연출 | [game_design.md §Phase 22](../game_design.md#phase-22-개인-영지-섬island-컨셉-전환--수역-테두리-구축-⚖️-2026-08-29-확정) |
 | **Phase 23** | **커뮤니티 & 소셜 인프라 (채팅, 친구, 영지 초대/방문)** | • **채팅 & 말풍선**: 전체/마을/귓속말 탭 + 캐릭터 머리 위 메이플풍 둥근 말풍선<br>• **인터랙션 메뉴**: 타 유저 클릭 시 프로필/친구추가/영지초대/귓속말 팝업<br>• **친구 시스템**: `FriendListPopup` (온라인/위치 상태 실시간 표시)<br>• **영지 초대 & 방문**: 게스트 영지 방문 워프 + 영지 훼손 방지 권한 가드 + 방명록/좋아요 | [game_design.md §Phase 23](../game_design.md#phase-23-커뮤니티--소셜-인프라-채팅-친구-영지-초대방문-⚖️-2026-08-29-확정) |
 | **Phase 24** | **메이플 스타일 UI 고도화 & UX 개선** | • **윈도우 크롬 통일**: 인벤토리/스탯/제작/퀘스트 9-슬라이스 원목 프레임 통일<br>• **HUD 레이아웃**: 좌상단(프로필/HP)·우상단(미니맵)·하단(10슬롯 바) 정돈<br>• **상호작용 피드백**: 버튼 호버 틴트/스케일 펄스, 클릭 SFX, 장비 비교 툴팁 | [game_design.md §Phase 24](../game_design.md#phase-24-메이플-스타일-ui-고도화--ux-개선-⚖️-2026-08-29-확정) |
-| **Phase 25** | **퀘스트 라인 & 몬스터 생태계/패턴 확장** | • **메인 퀘스트**: 표류/정착 ➔ 집 짓기 ➔ 마을 방문 ➔ 낚시 입문 ➔ 연구소 ➔ 사냥터 원정<br>• **일일 의뢰**: 마을 퀘스트 게시판 매일 3종 무작위 의뢰<br>• **티어별 몬스터 생태계**: T1(숲: 달팽이/슬라임/버섯) ➔ T2(해변/늪: 꽃게/옥토퍼스/멧돼지) ➔ T3(유적: 스톤볼/골렘) 및 보스 패턴 | [game_design.md §Phase 25](../game_design.md#phase-25-퀘스트-라인--몬스터-생태계패턴-확장-⚖️-2026-08-29-확정) |
+| **Phase 25** | **퀘스트 라인 & 몬스터 생태계 & 사냥터 템플릿 확장** | • **메인 퀘스트**: 표류/정착 ➔ 집 짓기 ➔ 마을 방문 ➔ 낚시 입문 ➔ 연구소 ➔ 사냥터 원정<br>• **일일 의뢰**: 마을 퀘스트 게시판 매일 3종 무작위 의뢰<br>• **티어별 몬스터 생태계**: T1(숲: 달팽이/슬라임/버섯) ➔ T2(해변/늪: 꽃게/옥토퍼스/멧돼지) ➔ T3(유적: 스톤볼/골렘) 및 보스 패턴<br>• **사냥터 템플릿 다변화**: 초원 숲(`field`) ➔ 해변/맹그로브(`beach`) ➔ 바위 고원(`rocky`) ➔ 고대 유적(`ruins`) 고유 맵 템플릿 & 에디터 자유 배치 선착장 연동 | [game_design.md §Phase 25](../game_design.md#phase-25-퀘스트-라인--몬스터-생태계패턴-확장-⚖️-2026-08-29-확정) |
 
 ---
 
@@ -98,17 +98,28 @@
      - `BackgroundComponent`의 단색 배경을 깊은 바다 톤(`Ocean Blue`, rgb 0.18, 0.45, 0.72)으로 정합.
      - `RectTileMap2` (L2 `Grass`)는 섬 내부 2,173셀에 `FullGrass` + 해변 에지 `Grass*` 프린지로 정합하여 자연스러운 모래톱/백사장 노출.
      - `RectTileMap` (L1 `Soil`) 전면 12,321셀 지반 유지.
-  2. **선착장 나무 부두 & 나룻배 출항 포탈 가구 구축 ([Furniture_Pier.model](file:///c:/메이플월드/RootDesk/MyDesk/Furniture/Models/Furniture_Pier.model), [Furniture_Boat.model](file:///c:/메이플월드/RootDesk/MyDesk/Furniture/Models/Furniture_Boat.model), [item_dataset.csv](file:///c:/메이플월드/RootDesk/MyDesk/item/DataSets/item_dataset.csv))**:
+  2. **선착장 나무 부두 & 나룻배 출항 포탈 가구 구축 ([Furniture_Pier.model](file:///c:/메이플월드/RootDesk/MyDesk/Furniture/Models/Furniture_Pier.model), [Furniture_Boat.model](file:///c:/메이플월드/RootDesk/MyDesk/Furniture/Models/Furniture_Boat.model), [item_dataset.csv](file:///c:/메이플월드/RootDesk/MyDesk/item/DataSets/item_dataset.csv), [Furniture_Boat.sprite](file:///c:/메이플월드/RootDesk/MyDesk/Furniture_Boat.sprite))**:
      - `item_dataset.csv`에 `Pier`(나무 부두, structure) 및 `Boat`(나룻배, portal) 아이템 등록.
-     - 메이플스토리 감성의 고품질 원목 부두 스프라이트 등록 (RUID: `3c425e10b83940bc997ccf262a93c12c`).
+     - 메이플스토리 감성의 고품질 원목 부두 스프라이트 등록 (RUID: `8d356cf966cd47a3a972e5bcf952c51c`).
+     - 메이플 스타일 전용 256×256 고해상도 1:1 밀도 원목 나룻배 픽셀 아트 신규 제작 및 MSW 정식 업로드 등록 (RUID: `d1e1d2b20a104e17950d35ec8860c349`, `Point/Clamp/0.5,0.5`).
      - `Furniture_Pier.model` 및 `Furniture_Boat.model`의 `Properties` 바인딩(`Position`, `Rotation`, `Scale`, `renderguid`) 및 `EntryKey`(`model://furniture_*`) 정합 완료 (`LEA-3054 CannotApply` NullRef 함정 해소).
-     - 남쪽 해변가(`X: 0, Y: -24`)에 바다로 뻗은 나무 부두 데크(`Furniture_Pier`) 배치.
-     - 부두 끝 물 위(`X: 0, Y: -26`)에 정박된 나룻배(`Furniture_Boat`) 배치 및 마을(`town`) 출항 포탈 트리거 연결 (`InteractLabel = "마을로 출항하기"`).
+     - [map01.map](file:///c:/메이플월드/map/map01.map) 씬 파일에 `Furniture_Pier`(`X: 0, Y: -23.8`, Scale 0.25, `SortingLayer: MapLayer5`)와 `Furniture_Boat`(`X: 0, Y: -25.8`, Scale 0.8, `SortingLayer: MapLayer5`) 정적 엔티티 등록 ➔ **육지 해변에서 바다 물 위로 시원하게 뻗어나가는 나무 부두와 선착장 나룻배 완벽 정합, 메이플월드 Maker 맵 에디터에서 즉시 표시 및 마우스 드래그/스케일 조절 가능**.
   3. **영지 기본 가구 및 포탈 스폰 자동 보장 ([PersistenceManager.mlua](file:///c:/메이플월드/RootDesk/MyDesk/Player/Scripts/PersistenceManager.mlua))**:
-     - `GetDefaultFurnitureJson` 및 영지 로드(`LoadPlayerData`) 시 `Pier`가 없으면 선착장(`X: 0, Y: -24`)에 항상 나무 부두가 스폰되도록 자동 보장.
+     - `CollectMap01FurnitureRecords()` 및 `GetDefaultFurnitureJson()` 연동으로 `map01.map` 에디터에서 조절한 부두/나룻배 위치가 신규 영지 템플릿에 자동 반영.
      - `BuildEstatePortalRecord`에서 영지 첫 포탈을 나룻배(`Boat`) 모델로 생성.
-     - `EstatePortalCellX = 0`, `EstatePortalCellY = -24`, 초기 영지 스폰 위치를 남쪽 선착장 앞마당(`X: 0, Y: -22`)으로 정합.
+     - `EstatePortalCellX = 0`, `EstatePortalCellY = -26`, 초기 영지 스폰 위치를 남쪽 선착장 앞마당(`X: 0, Y: -22`)으로 정합.
+   4. **보행 가능 발판/데크/바닥 가구 시스템 구축 (Data-Driven Walkable System)**:
+      - item_dataset.csv에 Walkable (boolean) 컬럼 추가 (pier = 	rue).
+      - PlaceableFurniture.mlua에 property boolean IsWalkable = false 추가.
+      - ResourceSpawner.mlua 및 PlayerInventory.mlua: Walkable == true인 가구(부두 데크, 카펫, 발판 등) 스폰 시 BlocksMovement = false 자동 보장 및 OrderInLayer = MinEntityOrder (2)로 설정하여 **물/지형 타일보다는 위에, 플레이어/유닛의 발 밑 레이어로 렌더링되어 플레이어가 밟고 올라선 모습 완벽 구현**.
+      - Furniture_Pier.model: IsWalkable = true, BlocksMovement = false, OrderInLayer = 2 정합 완료.
 
+   5. **전 맵(마을·사냥터·보스맵) 섬(Island) 컨셉 전환 & 외곽 수역 테두리 전면 구축 ([town.map](file:///c:/메이플월드/map/town.map), [template_field.map](file:///c:/메이플월드/map/template_field.map), [template_boss.map](file:///c:/메이플월드/map/template_boss.map))**:
+      - 모든 맵의 기존 돌벽(L4) 및 테라스(L5) 100% 완전 철거.
+      - 마을(town): 내부 3,344개 잔디/흙길 100% 보존, 외곽 |x|>=33/|y|>=33 영역에 8,096개 바다(L0 Water) + 704개 수변림(L6 WetRim) 정방향 안착.
+      - 사냥터(template_field): 내부 2,502개 잔디/벌판 100% 보존, 외곽 |x|>=28/|y|>=28 영역에 9,296개 바다(L0 Water) + 664개 수변림(L6 WetRim) 정방향 안착.
+      - 보스 아레나(template_boss): 내부 385개 잔디/아레나 100% 보존, 외곽 |x|>=13/|y|>=13 영역에 4,416개 바다(L0 Water) + 384개 수변림(L6 WetRim) 정방향 안착.
+      - 모든 맵의 Background SolidColor를 깊고 맑은 바다색(Ocean Blue)으로 통일하고, 4면 투명 경계 콜라이더(Boundary_Left/Right/Top/Bottom) 배치.
 ### 2026-08-29 [코드 위생] UI 컨트롤러 잔여 경고 3건 해소 (⚖️ 확정)
 
 - **배경**:

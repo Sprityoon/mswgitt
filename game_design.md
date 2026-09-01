@@ -860,3 +860,13 @@ graph TD
     - *스톤볼 (Stone Ball)*: 구르기 돌진, 자폭 기믹(처치 시 파편 폭발).
     - *스톤 골렘 (Stone Golem)*: 지면 내려치기(원형 충격파), 높은 체력/방어력.
     - *필드 보스: 고대 골렘 가디언 (Ancient Golem)*: 3페이즈(바위 낙하 ➔ 광폭화 회전 ➔ 지진파).
+- **25-D 컨셉별 사냥터 맵 템플릿 다변화 & 고유 테마 필드 아키텍처 (Themed Hunting Field Templates)**:
+  - **기획 의도**: 단일 초원 템플릿에 머무르지 않고, 몬스터 생태계 및 채집 자원 테크트리와 유기적으로 결합된 **다채로운 바이옴별 고유 사냥터 맵 템플릿**을 제공합니다.
+  - **사냥터 템플릿 라인업**:
+    1. *초원 숲 섬 (`template_field.map` / `hunt01`)*: 초록빛 잔디와 흙길, 초보자 슬라임/달팽이 서식지 & 기본 목재/석재 채집.
+    2. *모래 해변 & 맹그로브 섬 (`template_field_beach.map` / `hunt02`)*: 백사장과 야자수, 해안 수로 (꽃게/옥토퍼스 서식지, 바다 낚시 & 산호/조개 채집).
+    3. *황야 & 바위 고원 섬 (`template_field_rocky.map` / `hunt03`)*: 붉은 흙과 거친 암벽 고원 (멧돼지/스톤볼 서식지 & 구리/철 희귀 광맥 채광).
+    4. *고대 유적 & 깊은 늪지 섬 (`template_field_ruins.map` / `hunt04`)*: 이끼 낀 유적 기둥과 독안개 늪지 (스톤 골렘 & 고대 연구 두루마리 발굴).
+  - **데이터 주도 템플릿 스폰 & 포탈 위치 에디터 연동**:
+    - `PortalDestinationDataSet`의 `TemplateMap` 컬럼(`template_field`, `template_field_beach`, `template_field_rocky`, `template_field_ruins`)에 따라 해당 맵이 독립 인스턴스로 자동 복제·로드.
+    - 각 사냥터 템플릿 맵마다 제작자가 에디터에서 자유롭게 마우스로 배치한 **선착장 부두(`Furniture_Pier`) 및 나룻배(`Furniture_Boat`)**의 위치가 출항/귀환 스폰 지점으로 100% 자동 연동.
