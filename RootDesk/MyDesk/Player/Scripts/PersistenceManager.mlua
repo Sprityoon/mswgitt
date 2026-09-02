@@ -23,9 +23,9 @@ script PersistenceManager extends Logic
 	-- MainMenuGroup.ui의 TextGUIRendererInputComponent.CharacterLimit도 같은 값이어야 한다.
 	property integer NickMinLen = 2
 	property integer NickMaxLen = 15
-	-- 영지 첫 포탈이 열리는 셀 (선착장 나룻배 자리). 퀘스트 보상으로 개통된다.
-	property integer EstatePortalCellX = 0
-	property integer EstatePortalCellY = -26
+	-- 영지 첫 포탈이 열리는 셀 (영지 중앙). 퀘스트 보상으로 개통된다.
+	property integer EstatePortalCellX = -3
+	property integer EstatePortalCellY = 0
 
 	-- 월드 밤낮 시간 영속화 관련 속성
 	@HideFromInspector property number AccumulatedTime = 0
@@ -891,13 +891,22 @@ script PersistenceManager extends Logic
 				local hasBoat = false
 				for _, furn in ipairs(furnList) do
 					if furn.itemName == "Pier" or furn.itemName == "pier" then hasPier = true end
-					if furn.itemName == "Boat" or furn.itemName == "boat" or self:IsPortalItemName(furn.itemName) then hasBoat = true end
+					if furn.itemName == "Boat" or furn.itemName == "boat" then hasBoat = true end
 				end
 				if not hasPier then
 					table.insert(furnList, { itemName = "Pier", x = 0, y = -24 })
 				end
 				if not hasBoat then
-					table.insert(furnList, self:BuildEstatePortalRecord("town"))
+					table.insert(furnList, {
+						itemName = "Boat",
+						x = 0,
+						y = -26,
+						targetMapName = "town",
+						targetPositionX = 10,
+						targetPositionY = -2,
+						destinationGroup = "town",
+						portalColor = "white"
+					})
 				end
 				furnRaw = _HttpService:JSONEncode(furnList)
 			end
@@ -1802,13 +1811,22 @@ script PersistenceManager extends Logic
 		local hasBoat = false
 		for _, f in ipairs(furnList) do
 			if f.itemName == "Pier" or f.itemName == "pier" then hasPier = true end
-			if f.itemName == "Boat" or f.itemName == "boat" or self:IsPortalItemName(f.itemName) then hasBoat = true end
+			if f.itemName == "Boat" or f.itemName == "boat" then hasBoat = true end
 		end
 		if not hasPier then
 			table.insert(furnList, { itemName = "Pier", x = 0, y = -24 })
 		end
 		if not hasBoat then
-			table.insert(furnList, self:BuildEstatePortalRecord("town"))
+			table.insert(furnList, {
+				itemName = "Boat",
+				x = 0,
+				y = -26,
+				targetMapName = "town",
+				targetPositionX = 10,
+				targetPositionY = -2,
+				destinationGroup = "town",
+				portalColor = "white"
+			})
 		end
 		return _HttpService:JSONEncode(furnList)
 	end
@@ -1818,7 +1836,7 @@ script PersistenceManager extends Logic
 		-- 설치 셀은 EstatePortalCell* 프로퍼티, 목적지 정보는 PortalDestinationDataSet에서 읽는다
 		-- (규칙 1: 좌표/맵명 하드코딩 대신 프로퍼티 + 데이터셋).
 		local rec = {
-			itemName = "Boat",
+			itemName = "Portal",
 			x = self.EstatePortalCellX,
 			y = self.EstatePortalCellY,
 			targetMapName = "town", targetPositionX = 10, targetPositionY = -2,
@@ -1873,7 +1891,7 @@ script PersistenceManager extends Logic
 			if ok and type(decoded) == "table" then furnList = decoded end
 		end
 		for _, f in ipairs(furnList) do
-			if self:IsPortalItemName(f.itemName) then
+			if f.itemName == "Portal" or f.itemName == "portal" then
 				log("[PORTAL] estate portal already present for " .. userId .. " — skip")
 				return
 			end

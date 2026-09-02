@@ -19,6 +19,8 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `ChatManager.mlua` · `UIChatController.mlua` · `HUDGroup.ui` | **[소셜/채팅] Phase 23-A 채팅 시스템(전체/귓속말/시스템 탭) & HUD 좌하단 반투명 UI & 터치/클릭 입력 및 Enter/T 단축키 포커스 연동 (⚠️ 말풍선 고도화는 추후 작업 예정)** (2026-09-02 ⚖️ 확정) — 아래 참조 |
+| `PersistenceManager.mlua` | **[핫픽스/퀘스트] 영지 중앙 포탈(`Portal`, x=-3, y=0) 생성 로직 복원 및 나룻배(`Boat`) 포탈 중복 판정 충돌 분리 & 퀘스트 106/107 막힘 해결 (Backfill 구제 포함)** (2026-09-02 ⚖️ 확정) — 아래 참조 |
 | `SlimeKing.model` · `Slime.model` · `MonsterAI.mlua` · `PlayerController.mlua` · `ObstacleQuery.mlua` | **[전투/보스] 슬라임킹 히트박스 실측 정합($3.4 \times 2.4$) & 몬스터 이동 벽 차단 제거 및 접촉 피격/넉백(0.4s i-frame, 2.4m 밀림) 정합 & 보스방 입장 직후 파고들기 버그 차단 & 슬라임킹 넉백 면역/저항(슈퍼아머 75%) 밸런스 패치** (2026-09-01 ⚖️ 확정) — 아래 참조 |
 | `map01.map` · `Structure_Pier.model` · `Boat_WoodenRaft.model` · `PersistenceManager.mlua` · `convert_map01_to_island.cjs` | **[지형/시스템] Phase 22 개인 영지 '섬(Island)' 컨셉 전환 & 외곽 수역 테두리(L0 Water + L6 WetRim) 및 선착장 부두·나룻배 출항 포탈 구축** (2026-08-29 ⚖️ 확정) — 아래 참조 |
 | `UICharacterController.mlua` · `UISkillBarController.mlua` | **[코드 위생] UI 컨트롤러 잔여 경고 3건 해소 (LWA-1111 string.find 언밸런스 1건 + LWA-1106 Enum 할당 2건)** (2026-08-29 ⚖️ 확정) — 아래 참조 |
@@ -87,6 +89,18 @@
 | `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
 | `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+
+### 2026-09-02 [핫픽스/소셜] Phase 23-A 채팅 시스템 미작동 근본 원인 규명 및 수정 (⚖️ 확정)
+
+- **배경**: Phase 23-A 채팅 UI(HUD 좌하단 ChatPanel)·백엔드(`ChatManager`)·말풍선 연동을 구현했으나 실제로는 메시지가 전혀 전달되지 않는 상태였음. 정적 감사로 4가지 확정 버그를 찾아 수정.
+- **원인 및 수정 내용**:
+  1. **[크래시] 존재하지 않는 API 호출 ([ChatManager.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/Social/Scripts/ChatManager.mlua))**: `ServerSendMessage`의 첫 실행 문장이 `_UtilLogic:GetServerTime()`을 호출했는데, 이 메서드는 `UtilLogic.d.mlua`에 존재하지 않는다(프로젝트 전역에서 `_UtilLogic.ServerElapsedSeconds` 프로퍼티가 유일하게 검증된 관례 — `PlayerController`/`PersistenceManager`/`RankingViewLogic` 등에서 동일 패턴 확인). 메시지 전송 시도마다 첫 줄에서 즉시 런타임 오류로 중단되어 **채팅이 원천적으로 동작할 수 없었음**. `_UtilLogic.ServerElapsedSeconds`로 교체.
+  2. **[핵심 버그] `Client` RPC 인자 순서 오류 ([ChatManager.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/Social/Scripts/ChatManager.mlua))**: `@ExecSpace("Client")` RPC는 "선언된 파라미터 → 마지막에 targetUserId" 순서가 규약인데(`PlayerController.mlua`의 `ClientShowMineFeedback(msg, playerComp.UserId)` 등 기존 패턴과 대조 확인), `ClientReceiveMessage` 호출 5곳 전부가 targetUserId를 **첫 번째** 인자로 넣어 channel/senderName/message/authorUserId가 한 칸씩 밀려 전달되고 있었다. 그 결과 클라이언트가 받는 `channel` 값이 UUID 문자열이 되어 `UIChatController.OnReceiveChatMessage`의 분기(`if channel == "map" ...`)를 전혀 통과하지 못해 **로그에 아무것도 쌓이지 않았고**, 맵 브로드캐스트 루프는 매번 발신자 자신에게만 잘못 전송되고 있었다. 5곳 전부 `(channel, senderName, message, authorUserId, targetUserId)` 순서로 교정.
+  3. **[구조 오류] 말풍선이 `@Sync` 프로퍼티를 클라이언트에서 대입 ([ChatManager.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/Social/Scripts/ChatManager.mlua))**: `ChatBalloonComponent.Message`는 서버→클라이언트 단방향 `@Sync` 프로퍼티(`ChatBalloonComponent.d.mlua` 확인)인데, 기존 코드는 `@ExecSpace("Client")` RPC(`ClientShowChatBalloon`) 안에서 클라이언트가 이 값을 대입하려 했다 — 규약상 클라이언트發 대입은 전파되지 않는다. 이미 서버 공간인 `ServerSendMessage` 안에서 `player.ChatBalloonComponent.Message = message`를 직접 대입하도록 수정하고, 무의미해진 `ClientShowChatBalloon` RPC는 제거.
+  4. **`ChatBalloonComponent` 소유권 재확인 ([Global/DefaultPlayer.model](file:///c:/minho/메이플월드/Global/DefaultPlayer.model))**: `DefaultPlayer.model` 자체 컴포넌트 목록에는 `ChatBalloonComponent`가 없어 최초엔 "미부착"으로 오판, `ModelBuilder.addComponent()`로 추가했으나 곧 빌드 로그에 `LWA-4013`(중복 컴포넌트) 경고가 발생 — 공식 문서 조회 결과 `ChatBalloonComponent`는 `DefaultPlayer`가 상속하는 엔진 내장 base 모델(`BaseModelId: "player"`)에 이미 포함된 컴포넌트였다(Player 기본 프로퍼티 문서의 `message`/`chatModeEnabled` 항목으로 확인). 중복 추가를 되돌려 원래의 8-컴포넌트 상태로 복원 — 상속을 통해 이미 정상적으로 사용 가능한 상태였음.
+  5. **[UI 구조 결함] ChatPanel이 빌더를 우회해 생성됨 ([ui/HUDGroup.ui](file:///c:/minho/메이플월드/ui/HUDGroup.ui))**: 신규 ChatPanel 서브트리가 `UIBuilder`를 거치지 않고 만들어져(`scripts/add_chat_panel_to_hud.cjs`) `ui_lint` 검증에서 실제 오류가 드러났다 — 채팅 탭 라벨 4곳과 `TextLog`가 규칙 15(`docs/pitfalls.md`)와 동일한 유형의 레거시 `UIText` 모델 정체성(`L028`, Maker 재저장 시 `TextGUIRendererComponent`가 구식 `TextComponent`로 되돌아갈 위험)을 갖고 있었고, `TextLog`/`ChatInput`의 `HorizontalAlignment`가 유효하지 않은 `0`(`L006`)이었다. `UIBuilder.text()`로 5개 엔티티를 정식 재생성(`uitextguirenderer` 정체성 확보, 텍스트/색상/크기/기존 배치 보존)하고 `ChatInput`의 정렬값을 `Left(1)`로 패치.
+  6. **[정리] `ChatInput`의 불필요한 `ButtonComponent`/`TouchReceiveComponent` 제거**: 프로젝트에서 이미 검증된 입력창 패턴(`MainMenuGroup.ui`의 `NameInput`)은 `TextGUIRendererInputComponent` 자체의 `RaycastTarget`만으로 클릭 포커스가 동작하며(해당 파일 전체에 `ActivateInputField()` 수동 호출이 전혀 없음을 확인), 별도 `ButtonComponent`가 필요하지 않다. `ChatInput`에서 두 컴포넌트를 제거해 검증된 패턴과 일치시키고, `UIChatController.mlua`의 이제 무의미한 버튼 클릭 배선(`SafeConnectButton(inputEntity, ...)`)도 함께 정리.
+- **검증**: `mlua-diagnose` 각 수정 직후 0 error/0 warning 확인. `.ui` 재작성 후 `ui_lint` 0 error(경고 73건은 파일 전체의 기존 baseline, 이번 변경으로 신규 발생한 것 아님). `maker_refresh_workspace` status ok, 빌드 로그 신규 Error 없음(단, `Global/DefaultPlayer.model` 원복 이후 재확인한 빌드 로그가 동일 바이트 수·동일 타임스탬프로 반환되어 — 규칙 22 — **되돌린 `LWA-4013` 경고의 소멸 자체는 build 로그 갱신 미확인**; 파일 자체가 원상 복구됐음은 `ModelBuilder.listComponents()` 직접 조회로 확정). 런타임 검증 보류(제작자 Play 수행).
 
 ### 2026-08-29 [지형/시스템] Phase 22 개인 영지 '섬(Island)' 컨셉 전환 & 외곽 수역 테두리 및 선착장 구축 (⚖️ 확정)
 

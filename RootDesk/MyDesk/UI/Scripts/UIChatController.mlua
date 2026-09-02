@@ -1,0 +1,355 @@
+@Component
+script UIChatController extends Component
+
+	-- Phase 23-A: 메이플 스타일 채팅 UI 컨트롤러
+	-- 터치/클릭 입력 지원, Enter/T 키 단축키 포커스, 탭별(전체/귓속말/시스템) 필터링
+
+	property Entity chatPanel = nil
+	property Entity textLogEntity = nil
+	property Entity inputEntity = nil
+	property Entity btnSendEntity = nil
+	property Entity btnTabAllEntity = nil
+	property Entity btnTabWhisperEntity = nil
+	property Entity btnTabSystemEntity = nil
+	property Entity targetNickEntity = nil
+
+	property string CurrentChannel = "map" -- "map" (전체), "whisper" (귓속말), "system" (시스템)
+	property table AllLogs = {}
+	property table WhisperLogs = {}
+	property table SystemLogs = {}
+	property integer MaxLogCount = 50
+
+	property boolean IsFocused = false
+
+	-- 유휴 반투명화: 입력/수신이 없으면 IdleFadeDelaySeconds 뒤 IdleAlpha로 페이드.
+	property number IdleAlpha = 0.28
+	property number ActiveAlpha = 1.0
+	property number IdleFadeDelaySeconds = 4.0
+	property number FadeDuration = 0.35
+	property integer idleTimerId = 0
+	property any activeTweener = nil
+
+	-- Enter 키 제출 시 전역 키 리스너(HandleKeyDownEvent)와 입력창 자체의 TextInputSubmitEvent가
+	-- 동일 입력에 대해 겹쳐 발생할 수 있어, 짧은 시간 내 중복 SubmitChat 호출을 막는 디바운스.
+	property number lastSubmitElapsed = -1
+	property number SubmitDebounceSeconds = 0.15
+
+	-- 입력창을 직접 클릭/터치해 포커스하는 경우는 스크립트를 거치지 않는 네이티브 처리라
+	-- (FocusInput() 미호출) 매 프레임 포커스 상태 변화를 감지해서 활동 알림을 보낸다.
+	property boolean lastInputFocusedState = false
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		self.AllLogs = {}
+		self.WhisperLogs = {}
+		self.SystemLogs = {}
+		self.CurrentChannel = "map"
+		self.IsFocused = false
+
+		self:InitEntities()
+		self:BindUIEvents()
+		self:UpdateTabButtonVisuals()
+		self:RefreshLogDisplay()
+
+		-- 시작 시 즉시(트윈 없이) 유휴 상태로 — 부팅 때 잠깐 밝았다 꺼지는 깜빡임 방지.
+		local group = self.Entity:GetComponent("CanvasGroupComponent")
+		if isvalid(group) then group.GroupAlpha = self.IdleAlpha end
+
+		log("UIChatController: Initialized successfully.")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		if self.idleTimerId ~= 0 then
+			_TimerService:ClearTimer(self.idleTimerId)
+			self.idleTimerId = 0
+		end
+		if isvalid(self.activeTweener) then
+			self.activeTweener:Stop()
+			self.activeTweener = nil
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 클릭/터치로 입력창에 직접 포커스가 들어간 순간(상승 엣지)을 감지한다.
+		if not isvalid(self.inputEntity) then return end
+		local input = self.inputEntity:GetComponent("TextGUIRendererInputComponent")
+		if not isvalid(input) then return end
+		local focused = input.IsFocused
+		if focused and not self.lastInputFocusedState then
+			self.IsFocused = true
+			self:NotifyActivity()
+		end
+		self.lastInputFocusedState = focused
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetPanelAlpha(number targetAlpha)
+		-- CanvasGroup.GroupAlpha 하나로 배경·탭·로그·입력창을 한꺼번에 페이드한다.
+		local group = self.Entity:GetComponent("CanvasGroupComponent")
+		if not isvalid(group) then return end
+		if isvalid(self.activeTweener) then
+			self.activeTweener:Stop()
+		end
+		-- MakeTween은 생성만 하고 재생하지 않는다 (자동 재생은 PlayTween 전용 — TweenLogic.d.mlua 명세).
+		local startAlpha = group.GroupAlpha
+		self.activeTweener = _TweenLogic:PlayTween(startAlpha, targetAlpha, self.FadeDuration, EaseType.QuadEaseOut, function(v)
+			if isvalid(self.Entity) then
+				local g = self.Entity:GetComponent("CanvasGroupComponent")
+				if isvalid(g) then g.GroupAlpha = v end
+			end
+		end)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void NotifyActivity()
+		-- 포커스/송신/수신이 있을 때마다 호출 — 또렷하게 밝히고 유휴 타이머를 재시작한다.
+		self:SetPanelAlpha(self.ActiveAlpha)
+		if self.idleTimerId ~= 0 then
+			_TimerService:ClearTimer(self.idleTimerId)
+		end
+		self.idleTimerId = _TimerService:SetTimerOnce(function()
+			self:OnIdleTimeout()
+		end, self.IdleFadeDelaySeconds)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnIdleTimeout()
+		self.idleTimerId = 0
+		if self.IsFocused then return end -- 입력 중이면 페이드하지 않는다
+		self:SetPanelAlpha(self.IdleAlpha)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void InitEntities()
+		if not isvalid(self.btnTabAllEntity) then self.btnTabAllEntity = self.Entity:GetChildByName("TabAll", true) end
+		if not isvalid(self.btnTabWhisperEntity) then self.btnTabWhisperEntity = self.Entity:GetChildByName("TabWhisper", true) end
+		if not isvalid(self.btnTabSystemEntity) then self.btnTabSystemEntity = self.Entity:GetChildByName("TabSystem", true) end
+		if not isvalid(self.textLogEntity) then self.textLogEntity = self.Entity:GetChildByName("TextLog", true) end
+		if not isvalid(self.inputEntity) then self.inputEntity = self.Entity:GetChildByName("ChatInput", true) end
+		if not isvalid(self.btnSendEntity) then self.btnSendEntity = self.Entity:GetChildByName("BtnSend", true) end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BindUIEvents()
+		local function SafeConnectButton(ent, callback)
+			if not isvalid(ent) then return end
+			local btn = ent:GetComponent("ButtonComponent")
+			if isvalid(btn) then
+				pcall(function()
+					ent:ConnectEvent(ButtonClickEvent, callback)
+				end)
+			end
+		end
+
+		SafeConnectButton(self.btnTabAllEntity, function() self:SetChannel("map") end)
+		SafeConnectButton(self.btnTabWhisperEntity, function() self:SetChannel("whisper") end)
+		SafeConnectButton(self.btnTabSystemEntity, function() self:SetChannel("system") end)
+		SafeConnectButton(self.btnSendEntity, function() self:SubmitChat() end)
+
+		-- ChatInput은 TextGUIRendererInputComponent 자체의 RaycastTarget으로 클릭/터치 포커스를 처리한다
+		-- (MainMenuGroup의 NameInput과 동일한 검증된 패턴 — 별도 ButtonComponent 불필요).
+		if isvalid(self.inputEntity) then
+			pcall(function()
+				-- AutoClear가 내부적으로 입력값을 지우는 시점과 겹칠 수 있으므로, 뒤늦게
+				-- input.Text를 다시 읽지 않고 이벤트가 들고 온 제출 순간의 스냅샷을 그대로 쓴다.
+				self.inputEntity:ConnectEvent(TextInputSubmitEvent, function(event)
+					self:DoSubmit(event.Text or "")
+				end)
+			end)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetChannel(string channel)
+		self.CurrentChannel = channel
+		self:UpdateTabButtonVisuals()
+		self:RefreshLogDisplay()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateTabButtonVisuals()
+		local activeColor = Color(1.0, 0.9, 0.4, 1.0) -- Gold
+		local inactiveColor = Color(0.7, 0.7, 0.7, 1.0) -- Gray
+
+		local function SetTabTextColor(tabEnt, isActive)
+			if not isvalid(tabEnt) then return end
+			local t = tabEnt:GetComponent("TextGUIRendererComponent")
+			if not isvalid(t) then
+				local label = tabEnt:GetChildByName("Label", true)
+				if isvalid(label) then
+					t = label:GetComponent("TextGUIRendererComponent")
+				end
+			end
+			if isvalid(t) then
+				t.FontColor = isActive and activeColor or inactiveColor
+			end
+		end
+
+		SetTabTextColor(self.btnTabAllEntity, self.CurrentChannel == "map")
+		SetTabTextColor(self.btnTabWhisperEntity, self.CurrentChannel == "whisper")
+		SetTabTextColor(self.btnTabSystemEntity, self.CurrentChannel == "system")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void FocusInput()
+		if not isvalid(self.inputEntity) then self:InitEntities() end
+		if not isvalid(self.inputEntity) then return end
+		local input = self.inputEntity:GetComponent("TextGUIRendererInputComponent")
+		if isvalid(input) then
+			input:ActivateInputField()
+			self.IsFocused = true
+			self:NotifyActivity()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UnfocusInput()
+		self.IsFocused = false
+		self:NotifyActivity() -- 방금 막 입력을 끝냈으니 바로 페이드하지 않고 유예를 준다
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SubmitChat()
+		-- [전송] 버튼 클릭 경로 — AutoClear가 개입하지 않았으므로 입력창에서 직접 읽는다.
+		if not isvalid(self.inputEntity) then self:InitEntities() end
+		if not isvalid(self.inputEntity) then return end
+		local input = self.inputEntity:GetComponent("TextGUIRendererInputComponent")
+		if not isvalid(input) then return end
+		self:DoSubmit(input.Text or "")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void DoSubmit(string rawText)
+		-- 실제 전송 처리 공통 로직. [전송] 버튼과 TextInputSubmitEvent(Enter) 양쪽에서 호출된다.
+		local now = _UtilLogic.ElapsedSeconds
+		if self.lastSubmitElapsed >= 0 and (now - self.lastSubmitElapsed) < self.SubmitDebounceSeconds then
+			return
+		end
+		self.lastSubmitElapsed = now
+
+		-- Trim leading/trailing whitespace
+		local msg, _ = string.gsub(rawText, "^%s*(.-)%s*$", "%1")
+		if msg == "" then
+			self.IsFocused = false
+			return
+		end
+
+		local channel = self.CurrentChannel
+		local targetNick = ""
+
+		-- /w 닉네임 메시지 또는 /귓 닉네임 메시지 커맨드 파싱
+		if string.sub(msg, 1, 3) == "/w " or string.sub(msg, 1, 4) == "/귓 " then
+			channel = "whisper"
+			local startIdx = (string.sub(msg, 1, 3) == "/w ") and 4 or 5
+			local rest = string.sub(msg, startIdx)
+			local sp, _ = string.find(rest, " ")
+			if sp then
+				targetNick = string.sub(rest, 1, sp - 1)
+				msg = string.sub(rest, sp + 1)
+			else
+				targetNick = rest
+				msg = ""
+			end
+		elseif channel == "whisper" then
+			if isvalid(self.targetNickEntity) then
+				local nInput = self.targetNickEntity:GetComponent("TextGUIRendererInputComponent")
+				if isvalid(nInput) then targetNick = nInput.Text or "" end
+			end
+		end
+
+		if msg ~= "" and _ChatManager ~= nil then
+			_ChatManager:ServerSendMessage(channel, targetNick, msg)
+			self:NotifyActivity()
+		end
+
+		-- 입력창 초기화(안전망 — AutoClear가 이미 지웠어도 무해) 및 포커스 해제
+		if isvalid(self.inputEntity) then
+			local input = self.inputEntity:GetComponent("TextGUIRendererInputComponent")
+			if isvalid(input) then input.Text = "" end
+		end
+		self.IsFocused = false
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnReceiveChatMessage(string channel, string senderName, string message, string authorUserId)
+		local formattedLine = ""
+		if channel == "map" then
+			formattedLine = "<color=#FFFFFF>[" .. senderName .. "]</color> " .. message
+			table.insert(self.AllLogs, formattedLine)
+		elseif channel == "whisper_to" then
+			formattedLine = "<color=#FFB6C1>[귓속말 ➔ " .. senderName .. "]</color> " .. message
+			table.insert(self.AllLogs, formattedLine)
+			table.insert(self.WhisperLogs, formattedLine)
+		elseif channel == "whisper_from" then
+			formattedLine = "<color=#FF69B4>[" .. senderName .. " ➔ 귓속말]</color> " .. message
+			table.insert(self.AllLogs, formattedLine)
+			table.insert(self.WhisperLogs, formattedLine)
+		elseif channel == "system" then
+			formattedLine = "<color=#FFFF00>[시스템]</color> " .. message
+			table.insert(self.AllLogs, formattedLine)
+			table.insert(self.SystemLogs, formattedLine)
+		end
+
+		-- 로그 상한 유지
+		while #self.AllLogs > self.MaxLogCount do table.remove(self.AllLogs, 1) end
+		while #self.WhisperLogs > self.MaxLogCount do table.remove(self.WhisperLogs, 1) end
+		while #self.SystemLogs > self.MaxLogCount do table.remove(self.SystemLogs, 1) end
+
+		self:RefreshLogDisplay()
+		if formattedLine ~= "" then self:NotifyActivity() end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshLogDisplay()
+		if not isvalid(self.textLogEntity) then self:InitEntities() end
+		if not isvalid(self.textLogEntity) then return end
+		local textComp = self.textLogEntity:GetComponent("TextGUIRendererComponent")
+		if not isvalid(textComp) then return end
+
+		local currentList = self.AllLogs
+		if self.CurrentChannel == "whisper" then
+			currentList = self.WhisperLogs
+		elseif self.CurrentChannel == "system" then
+			currentList = self.SystemLogs
+		end
+
+		-- 최근 6줄만 표시 (채팅창을 퀘스트 트래커 위치로 이전하며 로그 영역 확대: 폰트 20 기준)
+		local maxDisplay = 6
+		local startIdx = math.max(1, #currentList - maxDisplay + 1)
+		local displayLines = {}
+		for i = startIdx, #currentList do
+			table.insert(displayLines, currentList[i])
+		end
+
+		textComp.Text = table.concat(displayLines, "\n")
+	end
+
+	@ExecSpace("ClientOnly")
+	@EventSender("Service", "InputService")
+	handler HandleKeyDownEvent(KeyDownEvent event)
+		local key = event.key
+
+		-- Enter 또는 T 키를 누르면 채팅창 포커스 활성화
+		if key == KeyboardKey.Return or key == KeyboardKey.KeypadEnter or key == KeyboardKey.T then
+			local isInputFocused = false
+			if not isvalid(self.inputEntity) then self:InitEntities() end
+			if isvalid(self.inputEntity) then
+				local input = self.inputEntity:GetComponent("TextGUIRendererInputComponent")
+				if isvalid(input) then
+					isInputFocused = input.IsFocused
+				end
+			end
+
+			-- 이미 포커스된 상태의 Enter 제출은 입력창 자체의 TextInputSubmitEvent가 전담한다
+			-- (여기서 SubmitChat까지 같이 부르면 같은 Enter 입력에 두 경로가 겹쳐 반응한다).
+			if not isInputFocused and not self.IsFocused then
+				self:FocusInput()
+			end
+		elseif key == KeyboardKey.Escape then
+			self:UnfocusInput()
+		end
+	end
+
+end

@@ -1,0 +1,131 @@
+@Logic
+script ChatManager extends Logic
+
+	-- Phase 23-A: 채팅 시스템 백엔드 & 메시지 라우터
+	-- 탭: map (전체/마을), whisper (귓속말), system (시스템 알림)
+
+	property number ChatCooldown = 0.5
+	property table LastChatTimes = {}
+
+	@ExecSpace("ServerOnly")
+	method void OnBeginPlay()
+		self.LastChatTimes = {}
+		log("ChatManager: Server-side chat router initialized.")
+	end
+
+	@ExecSpace("Server")
+	method void ServerSendMessage(string channel, string targetNickname, string message)
+		local player = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(player) then return end
+
+		local now = _UtilLogic.ServerElapsedSeconds or 0
+		local lastTime = self.LastChatTimes[senderUserId] or 0
+		if (now - lastTime) < self.ChatCooldown then
+			self:SendSystemMessageToUser(senderUserId, "메시지를 너무 빠르게 보낼 수 없습니다.")
+			return
+		end
+		self.LastChatTimes[senderUserId] = now
+
+		if message == nil or message == "" then return end
+		-- 60자 제한
+		if string.len(message) > 180 then
+			message = string.sub(message, 1, 180)
+		end
+
+		local senderName = ""
+		if _PersistenceManager ~= nil then
+			senderName = _PersistenceManager:GetCharacterName(senderUserId)
+		end
+		if senderName == nil or senderName == "" then
+			local pc = player.PlayerComponent
+			if isvalid(pc) then senderName = pc.Nickname end
+		end
+		if senderName == nil or senderName == "" then senderName = "모험가" end
+
+		if channel == "map" or channel == "all" then
+			-- 현재 맵 브로드캐스트
+			local currentMap = player.CurrentMap
+			if not isvalid(currentMap) then return end
+			local mapName = currentMap.Name
+
+			-- 머리 위 말풍선 표출 (ChatBalloonComponent.Message는 @Sync이므로 서버에서 직접 대입)
+			if isvalid(player.ChatBalloonComponent) then
+				player.ChatBalloonComponent.Message = message
+			end
+
+			-- 맵 내 모든 유저에게 메시지 전송 (targetUserId는 반드시 마지막 인자)
+			local allUsers = _UserService:GetUsersByMapName(mapName)
+			for _, u in ipairs(allUsers) do
+				local uid = u.PlayerComponent.UserId
+				self:ClientReceiveMessage("map", senderName, message, senderUserId, uid)
+			end
+			log("[CHAT/MAP] [" .. mapName .. "] " .. senderName .. ": " .. message)
+
+		elseif channel == "whisper" then
+			-- 귓속말 (1:1)
+			if targetNickname == nil or targetNickname == "" then
+				self:SendSystemMessageToUser(senderUserId, "귓속말 대상을 지정해주세요.")
+				return
+			end
+
+			local targetUserId = nil
+			local targetUserEntity = nil
+			local allPlayers = _UserService.UserEntities
+			for _, p in pairs(allPlayers) do
+				if isvalid(p) then
+					local uid = p.PlayerComponent.UserId
+					local pNick = ""
+					if _PersistenceManager ~= nil then
+						pNick = _PersistenceManager:GetCharacterName(uid)
+					end
+					if pNick == targetNickname or p.PlayerComponent.Nickname == targetNickname then
+						targetUserId = uid
+						targetUserEntity = p
+						break
+					end
+				end
+			end
+
+			if targetUserId == nil or not isvalid(targetUserEntity) then
+				self:SendSystemMessageToUser(senderUserId, "'" .. targetNickname .. "' 님을 찾을 수 없습니다.")
+				return
+			end
+
+			-- 발신자에게 전송 확인 (targetUserId는 반드시 마지막 인자)
+			self:ClientReceiveMessage("whisper_to", targetNickname, message, targetUserId, senderUserId)
+			-- 수신자에게 전송
+			self:ClientReceiveMessage("whisper_from", senderName, message, senderUserId, targetUserId)
+			log("[CHAT/WHISPER] " .. senderName .. " -> " .. targetNickname .. ": " .. message)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BroadcastSystemMessage(string message)
+		if message == nil or message == "" then return end
+		local allUsers = _UserService.UserEntities
+		for _, u in pairs(allUsers) do
+			if isvalid(u) then
+				local uid = u.PlayerComponent.UserId
+				self:ClientReceiveMessage("system", "[시스템]", message, "", uid)
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SendSystemMessageToUser(string userId, string message)
+		if userId == nil or userId == "" or message == nil or message == "" then return end
+		self:ClientReceiveMessage("system", "[시스템]", message, "", userId)
+	end
+
+	@ExecSpace("Client")
+	method void ClientReceiveMessage(string channel, string senderName, string message, string authorUserId)
+		local chatUi = _EntityService:GetEntityByPath("/ui/HUDGroup/ChatPanel")
+		if isvalid(chatUi) then
+			local ctrl = chatUi:GetComponent("script.UIChatController")
+			if isvalid(ctrl) then
+				ctrl:OnReceiveChatMessage(channel, senderName, message, authorUserId)
+			end
+		end
+	end
+
+end
