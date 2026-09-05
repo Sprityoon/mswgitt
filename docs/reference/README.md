@@ -9,6 +9,7 @@
 | [skill-routing.md](./skill-routing.md) | MSW 스킬 로딩 프로토콜 · 도메인 매트릭스 |
 | [hooks.md](./hooks.md) | 활성 훅 인벤토리 · 종료 코드 계약 · deny 대응 |
 | [resource-api-pitfalls.md](./resource-api-pitfalls.md) | 리소스 검색 API 실측 함정 (아바타 아이템 등) |
+| [announcement-template.md](./announcement-template.md) | 패치노트/업데이트 공지사항 작성 가이드 & 디스코드 템플릿 |
 | `avatar-item-catalog.csv` | 아바타 아이템 33,763개 전량 덤프 (아래) |
 
 ---

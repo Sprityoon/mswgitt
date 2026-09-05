@@ -85,6 +85,8 @@ script PlayerDBManager extends Component
 		log("[SLOT] PlayerDBManager loaded for active slot")
 	end
 
+	property boolean _IsSaving = false
+
 	@ExecSpace("ServerOnly")
 	method void SaveToDB(boolean isLeaving)
 		-- 업적/퀘스트 유저 데이터를 배치로 저장한다 (300초 주기 + 퇴장 시 동기 저장).
@@ -92,12 +94,21 @@ script PlayerDBManager extends Component
 			return
 		end
 
+		if not isLeaving and self._IsSaving then
+			-- 이미 비동기 저장이 진행 중이면 중복 요청 방지 (MSW 동시성 충돌 / PartialFailure 1000006 방어)
+			return
+		end
+
 		local saveData = {}
 		local savedGenerations = {}
 		-------------------------------------------------------------------
 		local playerEntity = self.Entity
-		playerEntity.PlayerAchievement:SaveToDB(saveData, savedGenerations)
-		playerEntity.PlayerQuest:SaveToDB(saveData, savedGenerations)
+		if isvalid(playerEntity) and isvalid(playerEntity.PlayerAchievement) then
+			playerEntity.PlayerAchievement:SaveToDB(saveData, savedGenerations)
+		end
+		if isvalid(playerEntity) and isvalid(playerEntity.PlayerQuest) then
+			playerEntity.PlayerQuest:SaveToDB(saveData, savedGenerations)
+		end
 		-------------------------------------------------------------------
 		if _Util:TableLen(saveData) == 0 then
 			return
@@ -109,10 +120,12 @@ script PlayerDBManager extends Component
 			slot = _PersistenceManager:GetActiveSlot(userID)
 			if slot < 1 then slot = 1 end
 		end
-		-- 패키지 키(Quest/Achievement) → 슬롯 접미사 키로 재매핑
+		-- 패키지 키(Quest/Achievement) → 슬롯 접미사 키로 재매핑 (빈 문자열은 "{}" 로 안전 정합)
 		local remapped = {}
 		for k, v in pairs(saveData) do
-			remapped[tostring(k) .. "_s" .. tostring(slot)] = v
+			local valStr = tostring(v or "")
+			if valStr == "" then valStr = "{}" end
+			remapped[tostring(k) .. "_s" .. tostring(slot)] = valStr
 		end
 
 		local ds = _DataStorageService:GetUserDataStorage(userID)
@@ -121,7 +134,10 @@ script PlayerDBManager extends Component
 			return
 		end
 
+		self._IsSaving = true
+
 		local onSaved = function(errorCode, successKeys)
+			self._IsSaving = false
 			if not isvalid(playerEntity) then
 				return
 			end
@@ -131,6 +147,7 @@ script PlayerDBManager extends Component
 			if keysTable ~= nil and type(keysTable.ToTable) == "function" then
 				keysTable = keysTable:ToTable()
 			end
+			local succCount = 0
 			if type(keysTable) == "table" then
 				for _, storedKey in pairs(keysTable) do
 					local key = tostring(storedKey)
@@ -138,6 +155,7 @@ script PlayerDBManager extends Component
 						key = string.sub(key, 1, string.len(key) - string.len(suffix))
 					end
 					logicalSuccess[key] = true
+					succCount = succCount + 1
 				end
 			end
 			if isvalid(playerEntity) and isvalid(playerEntity.PlayerAchievement) then
@@ -146,10 +164,13 @@ script PlayerDBManager extends Component
 			if isvalid(playerEntity) and isvalid(playerEntity.PlayerQuest) then
 				playerEntity.PlayerQuest:OnSavedToDB(logicalSuccess, savedGenerations)
 			end
-			if errorCode ~= 0 then
-				log_error("PlayerDBManager: batch save failed. errorCode=" .. tostring(errorCode))
-			else
+			if errorCode == 0 then
 				log("[SLOT] PlayerDBManager batch save success slot=" .. tostring(slot))
+			elseif errorCode == 1000006 then
+				-- PartialFailure: 배치 중 일부 키 저장 성공. 성공 키는 dirty 정상 해제, 실패 키는 자동 재시도
+				log_warning("[SLOT] PlayerDBManager batch save partial success (1000006). slot=" .. tostring(slot) .. " successCount=" .. tostring(succCount))
+			else
+				log_error("PlayerDBManager: batch save failed. errorCode=" .. tostring(errorCode))
 			end
 		end
 
@@ -223,8 +244,8 @@ script PlayerDBManager extends Component
 				-- 2순위 (슬롯1 한정): 레거시 비슬롯 데이터
 				-- loadedData[logical] 그대로 유지
 			else
-				-- 3순위 (신규 슬롯 또는 빈 데이터): 빈 스텁 (PlayerQuest가 nil.Value로 죽지 않게)
-				loadedData[logical] = { Value = "" }
+				-- 3순위 (신규 슬롯 또는 빈 데이터): 빈 JSON 스텁 (PlayerQuest/Achievement가 nil.Value로 죽지 않게)
+				loadedData[logical] = { Value = "{}" }
 			end
 		end
 

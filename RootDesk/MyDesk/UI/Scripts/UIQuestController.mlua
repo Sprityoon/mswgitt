@@ -18,6 +18,9 @@ script UIQuestController extends Component
 
 	property any trackerClickHandler = nil
 
+	-- 유저가 퀘스트 로그에서 직접 고른 추적 대상. 0이면 우선순위 최소 퀘스트를 자동 추적한다.
+	property integer TrackedQuestId = 0
+
 	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
 
 	property number uiSfxVolume = 1.0
@@ -71,6 +74,21 @@ script UIQuestController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method void SetTrackedQuest(integer questId)
+		-- 퀘스트 로그가 고른 추적 대상을 기록한다. 0 = 자동(우선순위 최소) 선택으로 복귀.
+		self.TrackedQuestId = questId
+		self.RefreshAccum = 0.0
+		self:Refresh()
+		log("[QUEST] tracked quest set to " .. tostring(questId))
+	end
+
+	@ExecSpace("ClientOnly")
+	method integer GetTrackedQuestId()
+		-- 현재 수동 추적 중인 퀘스트 id. 0이면 자동 선택 상태.
+		return self.TrackedQuestId
+	end
+
+	@ExecSpace("ClientOnly")
 	method void ShowIdleTracker()
 		self:SetChromeVisible(true)
 		self:SetText("QuestName", "진행 중인 퀘스트 없음")
@@ -120,18 +138,36 @@ script UIQuestController extends Component
 		end
 		self.Primed = true
 
-		-- 2) 진행 중 퀘스트 중 우선순위 최소를 활성 퀘스트로 렌더
+		-- 2) 유저가 고른 추적 퀘스트를 우선 렌더한다. 지정이 없거나 더 이상 진행 중이 아니면
+		--    (완료·포기 등) 추적을 풀고 우선순위 최소 퀘스트를 자동 선택한다.
 		local activeId = nil
 		local activePriority = nil
 		local activeData = nil
-		for id, userData in pairs(userDataTable) do
-			if userData.State == _QuestStateEnum.InProgress then
-				local data = _QuestDataSetLogic:GetData(id)
-				if data ~= nil then
-					if activePriority == nil or data.Priority < activePriority then
-						activePriority = data.Priority
-						activeId = id
-						activeData = data
+
+		if self.TrackedQuestId ~= 0 then
+			local trackedUserData = userDataTable[self.TrackedQuestId]
+			if trackedUserData ~= nil and trackedUserData.State == _QuestStateEnum.InProgress then
+				local trackedData = _QuestDataSetLogic:GetData(self.TrackedQuestId)
+				if trackedData ~= nil then
+					activeId = self.TrackedQuestId
+					activeData = trackedData
+				end
+			end
+			if activeId == nil then
+				self.TrackedQuestId = 0
+			end
+		end
+
+		if activeId == nil then
+			for id, userData in pairs(userDataTable) do
+				if userData.State == _QuestStateEnum.InProgress then
+					local data = _QuestDataSetLogic:GetData(id)
+					if data ~= nil then
+						if activePriority == nil or data.Priority < activePriority then
+							activePriority = data.Priority
+							activeId = id
+							activeData = data
+						end
 					end
 				end
 			end

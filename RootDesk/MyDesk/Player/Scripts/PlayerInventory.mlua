@@ -2127,6 +2127,13 @@ script PlayerInventory extends Component
 
 		local l1Ent = currentMap:GetChildByName("RectTileMap")
 		local tilemap1 = (isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent)) and l1Ent.RectTileMapComponent or nil
+		local l2Ent = currentMap:GetChildByName("RectTileMap2")
+		local tilemap2 = (isvalid(l2Ent) and isvalid(l2Ent.RectTileMapComponent)) and l2Ent.RectTileMapComponent or nil
+		local l0Ent = currentMap:GetChildByName("RectTileMap0")
+		local tilemap0 = (isvalid(l0Ent) and isvalid(l0Ent.RectTileMapComponent)) and l0Ent.RectTileMapComponent or nil
+		local l3Ent = currentMap:GetChildByName("RectTileMap3")
+		local tilemap3 = (isvalid(l3Ent) and isvalid(l3Ent.RectTileMapComponent)) and l3Ent.RectTileMapComponent or nil
+
 		local playerCell = nil
 		if tilemap1 ~= nil then
 			playerCell = tilemap1:ToCellPosition(playerPos)
@@ -2156,8 +2163,10 @@ script PlayerInventory extends Component
 		if resourceSpawner == nil then return end
 
 		-- digPath axis/side 결정 (저장 시 side 확정 — 재생 시 플레이어 위치 재계산 금지).
-		-- 🔴 판정은 _ResourceSpawner:DeriveDigPathAxisSide 단일 소스를 쓴다 — 클라 미리보기
-		--    (PlayerController:UpdateTerrainAffectPreview)와 같은 결과여야 한다(규칙 18).
+		-- ⚠️ 현재 axis/side는 **영속 델타에 기록만 되고 실제 적용에는 쓰이지 않는다**:
+		--    ApplyTerrainEdit의 digPath 분기는 2×2 안쪽 모서리 4비트만 찍고 axis/side를 보지 않으며,
+		--    유일한 소비처였던 클라 영향셀 미리보기는 제거됐다(2026-09-04). 구 세이브 호환을 위해
+		--    기록 자체는 남겨둔다 — 제거하려면 ApplyTerrainEdit 시그니처와 델타 기록을 함께 정리할 것.
 		local axis = ""
 		local side = ""
 		if action == "digPath" then
@@ -2166,166 +2175,236 @@ script PlayerInventory extends Component
 			side = ax.side
 		end
 
-		-- 물 파기 (Water Spade = dig_water만). 되메움(fill_water)은 별도 도구 — 토글 금지(2026-08-07).
-		-- 🔴 물은 **n×n 블록 단위**로 판다(ResourceSpawner.WaterDigSize, 현재 2). 1×1은 오버행 문법상
-		--    degenerate라 프린지가 아예 안 붙는다 — 자세한 이유는 그 프로퍼티 주석 참조.
-		--    ApplyTerrainEdit에 넘기는 cellX/cellY는 조준 셀이 아니라 **블록 원점**이며,
-		--    영속 델타에도 원점이 저장되어 재생 시 dir 없이 재현된다.
-		-- 🔴 이 조건에 `digPath`를 넣지 말 것 (2026-08-06 회귀 수정): T92가 물 파기를 삽에 얹으면서
-		--    digPath를 조건에 포함시켜 realAction이 항상 물로 치환됐고, 그 결과 ApplyTerrainEdit의
-		--    digPath 분기가 도달 불가능해져 **길 파기가 통째로 사라졌다**(Phase 14-A 회귀).
 		local realAction = action
 		local editX = cellX
 		local editY = cellY
+		local editSize = 1
+
+		-- 2×2 지형 편집(물삽·호미·삽·씨앗) 공통 블록 원점 — 조준 셀 포함 + 시선 방향으로 뻗음.
+		-- 🔴 조준점(PlayerController:UpdateMineReticle)도 같은 함수를 쓴다(규칙 18).
+		local block2 = resourceSpawner:GetAimBlockOrigin(cellX, cellY, dirX, dirY, 2)
+
 		if action == "dig_water" then
-			-- 조준 셀 → 블록 원점 (클라 미리보기와 동일 함수를 쓴다 — 규칙 18).
-			local origin = resourceSpawner:GetWaterDigOrigin(cellX, cellY, dirX, dirY)
+			local origin = resourceSpawner:GetAimBlockOrigin(cellX, cellY, dirX, dirY, resourceSpawner.WaterDigSize)
 			editX = origin.x
 			editY = origin.y
+			editSize = origin.size
 
-			-- 블록 전체가 이미 전부 물인지 검사 (하나라도 땅이면 물길 확장 허용).
-			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
-				local allWater = true
+			-- 3단계 물 순환 검사 — 모든 단계가 조준 레티클을 중심으로 **동심** 확장한다.
+			--   1타: 2×2 [aim .. aim+1]   — 레티클(셀 모서리점)이 정확히 이 블록의 중심
+			--   2타: 4×4 [aim-1 .. aim+2] — 1타 블록을 사방 1칸씩 감싼 동심 확장
+			--   3타: 같은 4×4를 되메우기
+			-- 🔴 2타를 3×3으로 잡으면 중심이 반 칸 어긋나 한쪽으로 치우쳐 파이고,
+			--    아래 바깥 검사(4×4)를 영원히 채우지 못해 3타(되메우기)에 도달하지 못한다.
+			if isvalid(tilemap1) then
+				local allWaterInner = true
 				for by = editY, editY + origin.size - 1 do
 					for bx = editX, editX + origin.size - 1 do
-						if not resourceSpawner:IsWaterCell(l1Ent.RectTileMapComponent, bx, by) then
-							allWater = false
+						if not resourceSpawner:IsWaterCell(tilemap1, bx, by) then
+							allWaterInner = false
 							break
 						end
 					end
-					if not allWater then break end
+					if not allWaterInner then break end
 				end
-				if allWater then
-					if isvalid(pc) then
-						pc:ShowMineFeedback("이미 물입니다. 복구는 다른 도구를 사용하세요.")
+
+				if allWaterInner then
+					local allWaterOuter = true
+					for by = editY - 1, editY + origin.size do
+						for bx = editX - 1, editX + origin.size do
+							if not resourceSpawner:IsWaterCell(tilemap1, bx, by) then
+								allWaterOuter = false
+								break
+							end
+						end
+						if not allWaterOuter then break end
 					end
+
+					-- 2타·3타 공통: 1타 블록을 사방 1칸씩 감싼 동심 블록으로 전환
+					editX = editX - 1
+					editY = editY - 1
+					editSize = origin.size + 2
+					if allWaterOuter then
+						realAction = "fill_water_large"
+					else
+						realAction = "dig_water_large"
+					end
+				end
+			end
+
+			-- 발 밑 차단 (물 파기일 때만)
+			if string.find(realAction, "dig_water") ~= nil and playerCell ~= nil then
+				if playerCell.x >= editX and playerCell.x <= editX + editSize - 1
+					and playerCell.y >= editY and playerCell.y <= editY + editSize - 1 then
+					if isvalid(pc) then pc:ShowMineFeedback("발 밑 셀에는 물을 갤 수 없습니다.") end
 					return
 				end
 			end
 
-			-- 플레이어가 블록 안에 있으면 물에 갇힌다 → 차단.
-			if playerCell ~= nil and playerCell.x >= editX and playerCell.x <= editX + origin.size - 1
-				and playerCell.y >= editY and playerCell.y <= editY + origin.size - 1 then
-				if isvalid(pc) then pc:ShowMineFeedback("발 밑 셀에는 물을 갤 수 없습니다.") end
-				return
-			end
 		elseif action == "fill_water" then
-			-- 향후 복구 전용 도구용. Water Spade CSV는 dig_water만 쓴다.
-			local origin = resourceSpawner:GetWaterDigOrigin(cellX, cellY, dirX, dirY)
+			local origin = resourceSpawner:GetAimBlockOrigin(cellX, cellY, dirX, dirY, resourceSpawner.WaterDigSize)
 			editX = origin.x
 			editY = origin.y
+			editSize = origin.size
+
+			-- 폭 1칸 자투리가 남지 않는 위치로 블록을 보정한다 (조준 칸은 반드시 포함).
+			local fillOrigin = resourceSpawner:ResolveFillBlockOrigin(currentMap, tilemap1, "water", editX, editY, editSize)
+			editX = fillOrigin.x
+			editY = fillOrigin.y
+
 		elseif action == "digPath" then
-			-- 2×2 영역 점유 검사
-			local occupied = false
-			for nx = cellX, cellX + 1 do
-				for ny = cellY, cellY + 1 do
-					if resourceSpawner:IsGridOccupied(mapName, nx, ny) then
-						occupied = true
+			-- 삽 2단계 통합:
+			-- 1타: 잔디 -> 길/작은 구멍 (digPath)
+			-- 2타: 이미 파인 곳 -> 2×2 넓은 흙 (digHole)
+			-- 3타: 이미 2×2 전체가 넓은 흙 -> "이미 넓은 흙밭입니다."
+			editSize = 2
+			editX = block2.x
+			editY = block2.y
+			local curMask = resourceSpawner:GetCellMask(tilemap2, tilemap1, editX, editY)
+
+			local allSoil = true
+			for ny = editY, editY + 1 do
+				for nx = editX, editX + 1 do
+					local m = resourceSpawner:GetCellMask(tilemap2, tilemap1, nx, ny)
+					if m ~= 15 then
+						allSoil = false
 						break
 					end
 				end
-				if occupied then break end
+				if not allSoil then break end
 			end
-			if occupied then
-				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
+
+			if allSoil then
+				if isvalid(pc) then pc:ShowMineFeedback("이미 넓은 흙밭입니다.") end
 				return
 			end
-			-- 삽(길) 대상 2×2 영역 내에 물이 직접 포함되어 있는지 검사 (물가 바로 옆 산책로는 허용)
-			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
-				local isWaterOnPath = false
-				for nx = cellX, cellX + 1 do
-					for ny = cellY, cellY + 1 do
-						if resourceSpawner:IsWaterCell(l1Ent.RectTileMapComponent, nx, ny) then
-							isWaterOnPath = true
+
+			-- 이미 파여 있는 곳(curMask ~= 0)이면 digHole(2×2 넓은 흙)로 승격!
+			if curMask ~= 0 then
+				realAction = "digHole"
+			end
+
+		elseif action == "digHole" or action == "till_field" then
+			-- 호미 기능: 물삽과 동일한 2×2 조준점 전체 밭 일구기 및 복구 토글!
+			editSize = 2
+			editX = block2.x
+			editY = block2.y
+
+			local farmCount = 0
+			local hasWater = false
+			local hasGrass = false
+
+			for by = editY, editY + editSize - 1 do
+				for bx = editX, editX + editSize - 1 do
+					local isFarm = resourceSpawner:IsFarmCell(currentMap, bx, by)
+					if isFarm then
+						farmCount = farmCount + 1
+					else
+						local curMask = resourceSpawner:GetCellMask(tilemap2, tilemap1, bx, by)
+						-- 🔴 넓게 드러난 순수 흙(L2 홀, 마스크 15)에만 밭 일구기 허용 (FullGrass 0 및 잔디 프린지 1~14 전면 차단)
+						if curMask ~= 15 then
+							hasGrass = true
+						end
+					end
+					if isvalid(tilemap1) and resourceSpawner:IsWaterCell(tilemap1, bx, by) then
+						hasWater = true
+					end
+				end
+			end
+
+			-- 🔴 외부 12칸(이웃 테두리: x-1~x+2, y-1~y+2 중 2×2 내부 제외)에 밭이 연결되어 있는지 검사
+			local hasNeighborFarm = false
+			for ny = editY - 1, editY + editSize do
+				for nx = editX - 1, editX + editSize do
+					if not (nx >= editX and nx < editX + editSize and ny >= editY and ny < editY + editSize) then
+						if resourceSpawner:IsFarmCell(currentMap, nx, ny) then
+							hasNeighborFarm = true
 							break
 						end
 					end
-					if isWaterOnPath then break end
 				end
-				if isWaterOnPath then
-					if isvalid(pc) then
-						pc:ShowMineFeedback("물 위에는 길을 낼 수 없습니다.")
-					end
+				if hasNeighborFarm then break end
+			end
+
+			-- 🔴 밭 일구기/확장 vs 되메우기 스마트 분기 규칙:
+			-- 1) 4칸 전체가 밭(farmCount == 4): 100% 되메우기 (untill_field)
+			-- 2) 밭과 흙이 공존(farmCount 1~3):
+			--    - 외부 12칸에 밭이 없음(not hasNeighborFarm): 고립된 잔여 밭 철거 -> untill_field
+			--    - 외부 12칸에 밭이 연결되어 있음(hasNeighborFarm): 기존 밭 확장 -> till_field
+			-- 3) 4칸 전체가 흙(farmCount == 0): 신규 밭 일구기 -> till_field
+			if farmCount == 4 then
+				realAction = "untill_field"
+			elseif farmCount > 0 and not hasNeighborFarm then
+				realAction = "untill_field"
+			else
+				if hasWater then
+					if isvalid(pc) then pc:ShowMineFeedback("물 위에는 밭을 일굴 수 없습니다.") end
 					return
 				end
-			end
-			for nx = cellX, cellX + 1 do
-				for ny = cellY, cellY + 1 do
-					if not resourceSpawner:IsTerrainCellEditable(currentMap, nx, ny) then
-						if isvalid(pc) then pc:ShowMineFeedback("여기는 팔 수 없습니다.") end
-						return
-					end
-				end
-			end
-		elseif action == "digHole" then
-			-- 2×2 영역 점유 검사
-			local occupied = false
-			for nx = cellX, cellX + 1 do
-				for ny = cellY, cellY + 1 do
-					if resourceSpawner:IsGridOccupied(mapName, nx, ny) then
-						occupied = true
-						break
-					end
-				end
-				if occupied then break end
-			end
-			if occupied then
-				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
-				return
-			end
-			-- 호미(밭/구덩이): 대상 영역 내에 물이 직접 포함되어 있는지 검사
-			if isvalid(l1Ent) and isvalid(l1Ent.RectTileMapComponent) then
-				local isWaterOnHole = false
-				for nx = cellX, cellX + 1 do
-					for ny = cellY, cellY + 1 do
-						if resourceSpawner:IsWaterCell(l1Ent.RectTileMapComponent, nx, ny) then
-							isWaterOnHole = true
-							break
-						end
-					end
-					if isWaterOnHole then break end
-				end
-				if isWaterOnHole then
-					if isvalid(pc) then
-						pc:ShowMineFeedback("물 위에는 땅을 팔 수 없습니다.")
-					end
+
+				if hasGrass then
+					if isvalid(pc) then pc:ShowMineFeedback("먼저 삽으로 흙을 넓게 드러내야 합니다.") end
 					return
 				end
+
+				realAction = "till_field"
 			end
-			for nx = cellX, cellX + 1 do
-				for ny = cellY, cellY + 1 do
-					if not resourceSpawner:IsTerrainCellEditable(currentMap, nx, ny) then
-						if isvalid(pc) then pc:ShowMineFeedback("여기는 팔 수 없습니다.") end
-						return
-					end
+
+			-- 되메우기로 확정된 경우에만 블록 위치를 보정한다 (조준 칸은 반드시 포함).
+			-- 밭 일구기(till_field)는 조준한 자리에 그대로 만들어야 하므로 보정하지 않는다.
+			if realAction == "untill_field" then
+				local fillOrigin = resourceSpawner:ResolveFillBlockOrigin(currentMap, tilemap1, "farm", editX, editY, editSize)
+				editX = fillOrigin.x
+				editY = fillOrigin.y
+			end
+
+		elseif action == "plantGrass" then
+			-- 🔴 씨앗(잔디 심기)도 ApplyTerrainEdit에서는 2×2로 적용된다. editSize가 1로
+			--    남아 있으면 점유·편집가능 검사가 1칸만 보고 나머지 3칸을 검사 없이 덮어쓴다.
+			editSize = 2
+			editX = block2.x
+			editY = block2.y
+		end
+
+		-- 점유 검사 (editSize × editSize 영역)
+		local occupied = false
+		for nx = editX, editX + editSize - 1 do
+			for ny = editY, editY + editSize - 1 do
+				if resourceSpawner:IsGridOccupied(mapName, nx, ny) then
+					occupied = true
+					break
 				end
 			end
-		else
-			local occupied = false
-			for nx = cellX, cellX + 1 do
-				for ny = cellY, cellY + 1 do
-					if resourceSpawner:IsGridOccupied(mapName, nx, ny) then
-						occupied = true
-						break
-					end
+			if occupied then break end
+		end
+		if occupied then
+			if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
+			return
+		end
+
+		-- 편집 가능 셀 검사
+		for nx = editX, editX + editSize - 1 do
+			for ny = editY, editY + editSize - 1 do
+				if not resourceSpawner:IsTerrainCellEditable(currentMap, nx, ny) then
+					if isvalid(pc) then pc:ShowMineFeedback("여기는 편집할 수 없습니다.") end
+					return
 				end
-				if occupied then break end
-			end
-			if occupied then
-				if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
-				return
 			end
 		end
 
-		-- 지형 편집 적용 (서브셀 마스크 + 영속 델타). 물은 editX/editY = 블록 원점.
+		-- 지형 편집 적용 (서브셀 마스크 + 영속 델타)
 		local success = resourceSpawner:ApplyTerrainEdit(mapName, currentMap, realAction, editX, editY, axis, side, true)
 		if not success then
 			if isvalid(pc) then
-				if realAction == "dig_water" then
+				if string.find(realAction, "dig_water") ~= nil then
 					pc:ShowMineFeedback("여기에 물을 갤 수 없습니다.")
-				elseif realAction == "fill_water" then
+				elseif string.find(realAction, "fill_water") ~= nil then
 					pc:ShowMineFeedback("여기에 되메울 수 없습니다.")
-				elseif action == "digHole" then
+				elseif realAction == "till_field" then
+					pc:ShowMineFeedback("여기에 밭을 일굴 수 없습니다.")
+				elseif realAction == "untill_field" then
+					pc:ShowMineFeedback("여기의 밭을 되메울 수 없습니다.")
+				elseif action == "digHole" or realAction == "digHole" then
 					pc:ShowMineFeedback("이미 파여 있습니다.")
 				elseif action == "digPath" then
 					pc:ShowMineFeedback("이미 길이 나 있습니다.")
@@ -2336,6 +2415,21 @@ script PlayerInventory extends Component
 				end
 			end
 			return
+		end
+
+		-- 성공 피드백 안내
+		if isvalid(pc) then
+			if realAction == "till_field" then
+				pc:ShowMineFeedback("밭을 일구었습니다.")
+			elseif realAction == "untill_field" then
+				pc:ShowMineFeedback("밭을 흙으로 되메웠습니다.")
+			elseif realAction == "dig_water_large" then
+				pc:ShowMineFeedback("넓은 물웅덩이로 확장했습니다.")
+			elseif string.find(realAction, "fill_water") ~= nil then
+				pc:ShowMineFeedback("물을 퍼내어 흙으로 메웠습니다.")
+			elseif realAction == "digHole" and action == "digPath" then
+				pc:ShowMineFeedback("넓은 흙밭을 일구었습니다.")
+			end
 		end
 
 		-- plantGrass는 씨앗 1개 소비 (도구는 재사용).

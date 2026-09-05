@@ -79,12 +79,12 @@ script UIMinimapController extends Component
 			local transform = mapNameEnt.UITransformComponent
 			if isvalid(transform) then
 				transform.AlignmentOption = AlignmentType.CastFrom("TopCenter")
-				transform.anchoredPosition = Vector2(0, 18)
+				transform.anchoredPosition = Vector2(0, 16)
 				transform.RectSize = Vector2(166, 26)
 			end
 			self.mapNameText = mapNameEnt.TextComponent
 			if isvalid(self.mapNameText) then
-				self.mapNameText.FontSize = 17
+				self.mapNameText.FontSize = 18
 				self.mapNameText.FontColor = Color(1.0, 0.92, 0.70, 1.0)
 				self.mapNameText.UseOutLine = true
 				self.mapNameText.OutlineColor = Color(0.0, 0.0, 0.0, 1.0)

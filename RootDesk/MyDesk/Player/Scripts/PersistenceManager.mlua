@@ -245,46 +245,22 @@ script PersistenceManager extends Logic
 		if err == 0 and raw ~= nil and raw ~= "" and raw ~= "{}" then
 			local ok, decoded = pcall(function() return _HttpService:JSONDecode(raw) end)
 			if ok and type(decoded) == "table" then
-				meta = decoded
-			end
-		end
-
-		-- 모든 슬롯(1~5) 및 레거시 세이브 데이터를 일괄 조회하여 실제 레벨/이름/외형을 SlotMeta에 실시간 동기화
-		local keys = {}
-		for i = 1, self.MaxSaveSlots do
-			keys[#keys + 1] = self:SaveKeyForSlot(i)
-		end
-		keys[#keys + 1] = "SaveData"
-
-		local retCode, itemPages = storage:BatchGetAndWait(keys)
-		local saveRawBySlot = {}
-		if retCode == 0 and itemPages ~= nil then
-			while true do
-				local datas = itemPages:GetCurrentPageDatas()
-				if datas == nil then break end
-				for i = 1, #datas do
-					local item = datas[i]
-					if item ~= nil and item.KeyInfo ~= nil then
-						local k = item.KeyInfo.Key
-						if item.Value ~= nil and item.Value ~= "" and item.Value ~= "{}" then
-							saveRawBySlot[k] = item.Value
-						end
-					end
+				for k, v in pairs(decoded) do
+					meta[tostring(k)] = v
 				end
-				if itemPages.IsLastPage == true then break end
-				itemPages:MoveToNextPageAndWait()
 			end
 		end
 
+		-- 모든 슬롯(1~5) 세이브 데이터를 직접 확인하여 SlotMeta 실시간 동기화 및 누락 슬롯 100% 자동 복구
 		local dirty = false
 		for slot = 1, self.MaxSaveSlots do
 			local sKey = tostring(slot)
-			local saveRaw = saveRawBySlot[self:SaveKeyForSlot(slot)]
-			if (saveRaw == nil or saveRaw == "") and slot == 1 then
-				saveRaw = saveRawBySlot["SaveData"]
+			local sErr, saveRaw = storage:GetAndWait(self:SaveKeyForSlot(slot))
+			if (sErr ~= 0 or saveRaw == nil or saveRaw == "" or saveRaw == "{}") and slot == 1 then
+				sErr, saveRaw = storage:GetAndWait("SaveData")
 			end
 
-			if saveRaw ~= nil and saveRaw ~= "" and saveRaw ~= "{}" then
+			if sErr == 0 and saveRaw ~= nil and saveRaw ~= "" and saveRaw ~= "{}" then
 				local ok, data = pcall(function() return _HttpService:JSONDecode(saveRaw) end)
 				if ok and type(data) == "table" then
 					local slotLevel = math.floor(tonumber(data.level) or 1)
@@ -321,6 +297,7 @@ script PersistenceManager extends Logic
 							costume = slotCostume
 						}
 						dirty = true
+						log("[SLOT] restored/synced SlotMeta[" .. sKey .. "] name=" .. slotName .. " lv=" .. tostring(slotLevel))
 					end
 				end
 			end
@@ -358,27 +335,51 @@ script PersistenceManager extends Logic
 		if metaErr == 0 and metaRaw ~= nil and metaRaw ~= "" and metaRaw ~= "{}" then
 			return
 		end
-		local err, raw = storage:GetAndWait("SaveData")
-		if err ~= 0 or raw == nil or raw == "" or raw == "{}" then
+
+		-- ⚠️ 핵심 방어: SaveData_s1에 이미 최신 데이터가 존재한다면 절대로 레거시 SaveData로 덮어쓰면 안 된다!
+		local s1Err, s1Raw = storage:GetAndWait(self:SaveKeyForSlot(1))
+		local targetRaw = nil
+		local isFromLegacy = false
+
+		if s1Err == 0 and s1Raw ~= nil and s1Raw ~= "" and s1Raw ~= "{}" then
+			targetRaw = s1Raw
+			log("[SLOT] existing SaveData_s1 found — preserving data and reconstructing SlotMeta for " .. userId)
+		else
+			local err, raw = storage:GetAndWait("SaveData")
+			if err == 0 and raw ~= nil and raw ~= "" and raw ~= "{}" then
+				targetRaw = raw
+				isFromLegacy = true
+			end
+		end
+
+		if targetRaw == nil or targetRaw == "" or targetRaw == "{}" then
 			return
 		end
-		storage:SetAndWait(self:SaveKeyForSlot(1), raw)
+
+		if isFromLegacy then
+			storage:SetAndWait(self:SaveKeyForSlot(1), targetRaw)
+			log("[SLOT] migrated legacy SaveData → s1 for " .. userId)
+		end
+
 		local level = 1
 		local fishLv = 1
 		local name = "슬롯1"
-		local ok, data = pcall(function() return _HttpService:JSONDecode(raw) end)
+		local costume = { useAccount = true }
+		local ok, data = pcall(function() return _HttpService:JSONDecode(targetRaw) end)
 		if ok and type(data) == "table" then
 			level = math.floor(tonumber(data.level) or 1)
-			fishLv = math.floor(tonumber(data.fishingLevel) or 1)
+			fishLv = math.floor(tonumber(data.fishingLevel or data.fishLv) or 1)
 			if data.characterName ~= nil and tostring(data.characterName) ~= "" then
 				name = tostring(data.characterName)
 			end
+			if type(data.costumeLook) == "table" then
+				costume = self:NormalizeCostume(data.costumeLook)
+			end
 		end
 		local meta = {
-			["1"] = { name = name, level = level, fishLv = fishLv, playSec = 0, lastSaveTicks = "0" }
+			["1"] = { name = name, level = level, fishLv = fishLv, playSec = 0, lastSaveTicks = "0", costume = costume }
 		}
 		self:WriteSlotMetaTable(userId, meta)
-		log("[SLOT] migrated legacy SaveData → s1 for " .. userId)
 	end
 
 	@ExecSpace("ServerOnly")
@@ -654,8 +655,8 @@ script PersistenceManager extends Logic
 		local storage = _DataStorageService:GetUserDataStorage(userId)
 		if storage then
 			storage:SetAndWait(self:SaveKeyForSlot(slot), "{}")
-			storage:SetAndWait("Quest_s" .. tostring(slot), "")
-			storage:SetAndWait("Achievement_s" .. tostring(slot), "")
+			storage:SetAndWait("Quest_s" .. tostring(slot), "{}")
+			storage:SetAndWait("Achievement_s" .. tostring(slot), "{}")
 		end
 		local pc = player:GetComponent("script.PlayerController")
 		if isvalid(pc) then

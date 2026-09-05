@@ -29,6 +29,7 @@ script UIQuestLogController extends Component
 	property any tabReadyHandler = nil
 	property any tabDoneHandler = nil
 	property any abandonHandler = nil
+	property any trackHandler = nil
 	property number CurrentScale = 1.0
 	property number TargetScale = 1.0
 	property any ScaleTimer = nil
@@ -66,6 +67,7 @@ script UIQuestLogController extends Component
 		self._T.tabReadyE = self.Entity:GetChildByName("TabReady", true)
 		self._T.tabDoneE = self.Entity:GetChildByName("TabDone", true)
 		self._T.abandonE = self.Entity:GetChildByName("BtnAbandon", true)
+		self._T.trackE = self.Entity:GetChildByName("BtnTrack", true)
 		self._T.detailName = self.Entity:GetChildByName("DetailName", true)
 		self._T.detailDesc = self.Entity:GetChildByName("DetailDesc", true)
 		self._T.detailGoal = self.Entity:GetChildByName("DetailGoal", true)
@@ -113,6 +115,13 @@ script UIQuestLogController extends Component
 			end)
 			self:BindHover(self._T.abandonE)
 		end
+		if isvalid(self._T.trackE) then
+			self.trackHandler = self._T.trackE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:OnToggleTrack()
+			end)
+			self:BindHover(self._T.trackE)
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -131,6 +140,9 @@ script UIQuestLogController extends Component
 		end
 		if isvalid(self._T.abandonE) and self.abandonHandler then
 			self._T.abandonE:DisconnectEvent(ButtonClickEvent, self.abandonHandler)
+		end
+		if isvalid(self._T.trackE) and self.trackHandler then
+			self._T.trackE:DisconnectEvent(ButtonClickEvent, self.trackHandler)
 		end
 	end
 
@@ -448,6 +460,7 @@ script UIQuestLogController extends Component
 		if isvalid(self._T.abandonE) then
 			self._T.abandonE.Enable = abandonable
 		end
+		self:RefreshTrackButton()
 		log("[QUEST-LOG] Select id=" .. tostring(questId) .. " ready=" .. tostring(ready)
 			.. " abandon=" .. tostring(abandonable))
 	end
@@ -544,6 +557,7 @@ script UIQuestLogController extends Component
 			if isvalid(slots[i]) then slots[i].Enable = false end
 		end
 		if isvalid(self._T.abandonE) then self._T.abandonE.Enable = false end
+		if isvalid(self._T.trackE) then self._T.trackE.Enable = false end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -563,6 +577,77 @@ script UIQuestLogController extends Component
 				end
 				self:SetLabelColor(row:GetChildByName("Name"), selected and selText or idleName)
 				self:SetLabelColor(row:GetChildByName("Progress"), selected and selText or idleProg)
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method any GetTrackerController()
+		-- HUD 퀘스트 트래커(UIQuestController)를 찾는다. 추적 대상 상태의 단일 보관처다.
+		local tracker = _EntityService:GetEntityByPath("/ui/HUDGroup/QuestTracker")
+		if not isvalid(tracker) then return nil end
+		local ctrl = tracker:GetComponent("script.UIQuestController")
+		if not isvalid(ctrl) then return nil end
+		return ctrl
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnToggleTrack()
+		-- [추적] 버튼: 선택한 퀘스트를 HUD 트래커에 고정하거나, 이미 고정돼 있으면 해제한다.
+		if self.selectedId == 0 then return end
+		local ctrl = self:GetTrackerController()
+		if ctrl == nil then
+			log_warning("[QUEST-LOG] QuestTracker controller missing — track toggle ignored")
+			return
+		end
+		---@type UIQuestController
+		local tracker = ctrl
+		local current = tracker:GetTrackedQuestId()
+		if current == self.selectedId then
+			tracker:SetTrackedQuest(0)
+		else
+			tracker:SetTrackedQuest(self.selectedId)
+		end
+		self:RefreshTrackButton()
+		log("[QUEST-LOG] Track toggle id=" .. tostring(self.selectedId)
+			.. " -> " .. tostring(tracker:GetTrackedQuestId()))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshTrackButton()
+		-- 진행 중 퀘스트에서만 노출하고, 현재 추적 대상이면 라벨·색을 해제 상태로 바꾼다.
+		local btn = self._T.trackE
+		if not isvalid(btn) then return end
+
+		local trackable = false
+		if self.selectedId ~= 0 then
+			local pq = self:GetLocalQuest()
+			if pq ~= nil and pq.UserDataTable ~= nil then
+				local userData = pq.UserDataTable[self.selectedId]
+				if userData ~= nil and userData.State == _QuestStateEnum.InProgress then
+					trackable = true
+				end
+			end
+		end
+		btn.Enable = trackable
+		if not trackable then return end
+
+		local tracked = 0
+		local ctrl = self:GetTrackerController()
+		if ctrl ~= nil then
+			---@type UIQuestController
+			local tracker = ctrl
+			tracked = tracker:GetTrackedQuestId()
+		end
+
+		local isTracked = (tracked == self.selectedId)
+		self:SetLabel(btn, isTracked and "추적 해제" or "추적")
+		local spr = btn.SpriteGUIRendererComponent
+		if isvalid(spr) then
+			if isTracked then
+				spr.Color = Color(0.55, 0.42, 0.14, 0.95)
+			else
+				spr.Color = Color(0.20, 0.30, 0.18, 0.95)
 			end
 		end
 	end

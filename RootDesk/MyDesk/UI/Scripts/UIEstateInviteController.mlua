@@ -1,0 +1,137 @@
+@Component
+script UIEstateInviteController extends Component
+
+	-- Phase 23-B: 영지 초대 수신 팝업 (수락 / 거절).
+	-- 루트 엔티티는 항상 Enable — 서버 RPC(EstateInviteManager.ClientShowInvite)가 언제든
+	-- 이 컴포넌트를 찾을 수 있어야 한다. 실제 표시는 자식 Card의 Enable로 토글한다.
+
+	property any acceptHandler = nil
+	property any declineHandler = nil
+	property any closeHandler = nil
+	property integer expireTimerId = 0
+
+	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
+	property number uiSfxVolume = 1.0
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 참조 해석 + 버튼 배선. 팝업 본체(Card)는 숨긴 상태로 시작한다.
+		self:ResolveRefs()
+		self:Hide()
+
+		if isvalid(self._T.acceptE) then
+			self.acceptHandler = self._T.acceptE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:Respond(true)
+			end)
+		end
+		if isvalid(self._T.declineE) then
+			self.declineHandler = self._T.declineE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:Respond(false)
+			end)
+		end
+		if isvalid(self._T.closeE) then
+			self.closeHandler = self._T.closeE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:Respond(false)
+			end)
+		end
+		log("[ESTATE-INVITE-UI] ready card=" .. tostring(isvalid(self._T.card)))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 이벤트 · 타이머 해제.
+		if isvalid(self._T.acceptE) and self.acceptHandler then
+			self._T.acceptE:DisconnectEvent(ButtonClickEvent, self.acceptHandler)
+		end
+		if isvalid(self._T.declineE) and self.declineHandler then
+			self._T.declineE:DisconnectEvent(ButtonClickEvent, self.declineHandler)
+		end
+		if isvalid(self._T.closeE) and self.closeHandler then
+			self._T.closeE:DisconnectEvent(ButtonClickEvent, self.closeHandler)
+		end
+		if self.expireTimerId ~= 0 then
+			_TimerService:ClearTimer(self.expireTimerId)
+			self.expireTimerId = 0
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ResolveRefs()
+		-- 자식 엔티티 캐시.
+		self._T.card = self.Entity:GetChildByName("Card", true)
+		self._T.messageE = self.Entity:GetChildByName("Message", true)
+		self._T.acceptE = self.Entity:GetChildByName("BtnAccept", true)
+		self._T.declineE = self.Entity:GetChildByName("BtnDecline", true)
+		self._T.closeE = self.Entity:GetChildByName("BtnClose", true)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlayClick()
+		-- 공통 UI 클릭 SFX.
+		_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowInvite(string fromName, integer expireSeconds)
+		-- 서버가 전달한 초대를 표시한다. 만료 시각이 지나면 자동으로 닫힌다.
+		if not isvalid(self._T.card) then self:ResolveRefs() end
+		self:SetLabel(self._T.messageE, (fromName or "") .. "님이 개인 영지로 초대했습니다.\n수락하면 해당 영지로 이동합니다.")
+		if isvalid(self._T.card) then
+			self._T.card.Enable = true
+		end
+
+		if self.expireTimerId ~= 0 then
+			_TimerService:ClearTimer(self.expireTimerId)
+			self.expireTimerId = 0
+		end
+		local seconds = expireSeconds
+		if seconds == nil or seconds <= 0 then seconds = 60 end
+		self.expireTimerId = _TimerService:SetTimerOnce(function()
+			self.expireTimerId = 0
+			self:Hide()
+		end, seconds)
+		log("[ESTATE-INVITE-UI] show from=" .. tostring(fromName))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Hide()
+		-- 팝업 본체만 숨긴다 (루트는 계속 Enable).
+		if not isvalid(self._T.card) then self:ResolveRefs() end
+		if isvalid(self._T.card) then
+			self._T.card.Enable = false
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Respond(boolean accept)
+		-- 수락/거절을 서버로 보내고 팝업을 닫는다.
+		self:Hide()
+		if self.expireTimerId ~= 0 then
+			_TimerService:ClearTimer(self.expireTimerId)
+			self.expireTimerId = 0
+		end
+		if _EstateInviteManager == nil then
+			log_warning("[ESTATE-INVITE-UI] EstateInviteManager missing")
+			return
+		end
+		_EstateInviteManager:ServerRespondInvite(accept)
+		log("[ESTATE-INVITE-UI] respond accept=" .. tostring(accept))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetLabel(Entity ent, string text)
+		-- 프로젝트 UI 텍스트 2계열(TextGUIRenderer / 레거시 Text) 공통 세터.
+		if not isvalid(ent) then return end
+		if isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.Text = text
+			return
+		end
+		if isvalid(ent.TextComponent) then
+			ent.TextComponent.Text = text
+		end
+	end
+
+end

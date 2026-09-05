@@ -19,6 +19,13 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `docs/reference/announcement-template.md` · `docs/reference/README.md` | **[운영/문서] 공식 업데이트 공지사항 템플릿(톤앤매너, 디스코드 마크다운 최적화 서식, 한국어/영문 바이링구얼 템플릿) 수립** (2026-09-05 ⚖️ 확정) — 아래 참조 |
+| `RootDesk/MyDesk/item/DataSets/item_dataset.csv` | **[데이터/UX] 2×2 지형 편집 도구(호미, 삽, 물삽, 씨앗 등) 인게임 아이템 설명 갱신 (바라보는 방향 2×2 범위 가이드)** (2026-09-05 ⚖️ 확정) — 아래 참조 |
+| `ui/MainMenuGroup.ui` · `UIMainMenuController.mlua` · `UIHUDController.mlua` | **[핫픽스/UI] 메인메뉴 21:9 울트라와이드 모바일 화면비 대응(좌측 월드 노출 차단) & displayOrder 상향(15) 및 SpawnFade 강제 리셋을 통한 블랙 스크린 원천 방지** (2026-09-04 ⚖️ 확정) — 아래 참조 |
+| `PlayerDBManager.mlua` · `PlayerQuest.mlua` · `PlayerAchievement.mlua` | **[핫픽스/DB] PlayerDBManager 배치 저장 PartialFailure(1000006) 해소 (빈 데이터 "{}" JSON 직렬화 보장 & 비동기 저장 중복 호출 가드)** (2026-09-04 ⚖️ 확정) — 아래 참조 |
+| `PlayerController.mlua` | **[조작/비주얼] 채광/도구 조준점(Reticle) 1×1 표준 타일 원본 크기(Scale 1.0) 복원 & 지형 편집 도구 2×2 블록 원점(GetAimBlockOrigin) 오프셋 완벽 정합** (2026-09-04 ⚖️ 확정) — 아래 참조 |
+| `UIPlayerInteractController.mlua` · `PlayerController.mlua` · `UIQuestController.mlua` · `UIQuestLogController.mlua` | **[소셜/시스템] Phase 23-B 영지 초대/인터랙션 메뉴 클릭 판정 복원 & 닉네임 정합 및 퀘스트 추적 선택 연동 정상화** (2026-09-04 ⚖️ 확정) — 아래 참조 |
+| `ResourceSpawner.mlua` · `PlayerInventory.mlua` | **[핫픽스/지형] 밭 되메우기 잔여 코너(Farm*Corner) 찌꺼기 제거 & 밭 확장 vs 잔여 밭 철거 스마트 분기 로직 고도화** (2026-09-04 ⚖️ 확정) — 아래 참조 |
 | `ChatManager.mlua` · `UIChatController.mlua` · `HUDGroup.ui` | **[소셜/채팅] Phase 23-A 채팅 시스템(전체/귓속말/시스템 탭) & HUD 좌하단 반투명 UI & 터치/클릭 입력 및 Enter/T 단축키 포커스 연동 (⚠️ 말풍선 고도화는 추후 작업 예정)** (2026-09-02 ⚖️ 확정) — 아래 참조 |
 | `PersistenceManager.mlua` | **[핫픽스/퀘스트] 영지 중앙 포탈(`Portal`, x=-3, y=0) 생성 로직 복원 및 나룻배(`Boat`) 포탈 중복 판정 충돌 분리 & 퀘스트 106/107 막힘 해결 (Backfill 구제 포함)** (2026-09-02 ⚖️ 확정) — 아래 참조 |
 | `SlimeKing.model` · `Slime.model` · `MonsterAI.mlua` · `PlayerController.mlua` · `ObstacleQuery.mlua` | **[전투/보스] 슬라임킹 히트박스 실측 정합($3.4 \times 2.4$) & 몬스터 이동 벽 차단 제거 및 접촉 피격/넉백(0.4s i-frame, 2.4m 밀림) 정합 & 보스방 입장 직후 파고들기 버그 차단 & 슬라임킹 넉백 면역/저항(슈퍼아머 75%) 밸런스 패치** (2026-09-01 ⚖️ 확정) — 아래 참조 |
@@ -86,9 +93,107 @@
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` | **캐릭터 만들기 좌/우 페이지** (2026-08-14) — 아래 참조 |
-| `ui/*.ui` 5파일 · UI 컨트롤러 바인딩 | **UI 정합성 감사** (2026-08-13) — 아래 참조 |
-| `ui/PopupGroup.ui` | **팝업 정합성 감사 + 크롬 2계열 통일 적용** (2026-08-14 ⚖️ 확정) — 아래 참조 |
-| `ResourceSpawner` · `PersistenceManager` · `PlayerController` | **영지 밖 좌표 가드** (X/Y -27~27, 2026-08-13) — 아래 참조 |
+### 2026-09-04 [핫픽스/DB] PlayerDBManager 배치 저장 PartialFailure(1000006) 해소 (⚖️ 확정)
+
+- **배경**:
+  - 사용자 보고: 인게임 플레이 중 `[SERVER] PlayerDBManager: batch save failed. errorCode=1000006 (PlayerDBManager.SaveToDB:166)` 에러 발생. 슬롯 로딩 및 초기화 과정과의 연관성 원인 분석 및 해결 요청 (데이터 스토리지 초기화 후 재발 방지 대책 수립).
+- **원인 분석**:
+  1. **빈 문자열("") 저장 거부**: `PlayerQuest:SaveToDB` 및 `PlayerAchievement:SaveToDB`에서 신규 슬롯이거나 진행 데이터가 없을 때 `deserTable`이 비어있어 `sds = ""` (0바이트 빈 문자열)을 반환함. 또한 `PersistenceManager:DeleteSaveSlot`에서도 슬롯 삭제 시 `Quest_s*`, `Achievement_s*`에 `""`를 저장함. MSW `UserDataStorage:BatchSetAsync`에 빈 문자열 키를 전달하면 스토리지 서버가 키 저장을 거부하여 `PartialFailure` (`1000006`)를 반환함.
+  2. **비동기 저장 동시성 충돌**: `PlayerDBManager` 자체의 300초 주기 타이머와 `PersistenceManager:SaveDirtyData` (30초 주기)에서 동일 플레이어에 대해 `BatchSetAsync`를 중복으로 비동기 호출하여 이전 저장이 완료되기 전에 새 저장이 겹치는 경합이 발생할 수 있음.
+  3. **과도한 에러 로깅**: `BatchSet`의 일부 성공 키는 `OnSavedToDB`를 통해 dirty 플래그가 정상 해제되고 데이터가 안전하게 보존됨에도 불구하고 `errorCode != 0`에 대해 무조건 `log_error`를 남겨 전체 실패로 오인하게 만듦.
+- **수정 내용**:
+  1. **`PlayerQuest.mlua` & `PlayerAchievement.mlua`**: `SaveToDB` 직렬화 시 빈 데이터일 때도 빈 문자열 대신 유효한 JSON 문자열인 `"{}"`를 반환하도록 안전화.
+  2. **`PersistenceManager.mlua`**: `DeleteSaveSlot`에서 슬롯 삭제 시 빈 문자열 대신 `"{}"`를 저장하도록 정합.
+  3. **`PlayerDBManager.mlua`**:
+     - `SaveToDB`: `saveData` 값 재매핑 시 빈 문자열은 `"{}"`로 자동 승격 보정.
+     - `_IsSaving` 플래그를 신설하여 이전 비동기 배치가 진행 중일 때 중복 호출 방어.
+     - `LoadFromDB`: 신규 슬롯 스텁 데이터를 `{ Value = "{}" }`로 지정하여 서브 컴포넌트 역직렬화 안전성 보장.
+     - `onSaved`: `1000006` (`PartialFailure`) 발생 시 성공한 키 개수 및 안전한 자동 재시도 안내 warning 로그로 정제하여 불필요한 서버 크래시 에러 오인 방지.
+- **검증**: `maker_refresh_workspace` status ok, `maker_logs(kind="build")` `dateTime: 2026-09-04T19:32:36` **Error 0 / Warning 0** (baseline 0 유지).
+
+### 2026-09-04 [조작/비주얼] 채광/도구 조준점(Reticle) 1×1 표준 타일 원본 크기(Scale 1.0) 복원 & 지형 편집 도구 2×2 블록 원점(GetAimBlockOrigin) 오프셋 완벽 정합 (⚖️ 확정)
+
+- **배경**:
+  - 사용자 요청: 지형 편집 도구 2×2 대응 시 확장되었던 조준점을 원래의 깔끔한 1×1 타일 크기(Scale 1.0)로 복원 및 조준점 오프셋 불일치로 인한 "조준점의 왼쪽 위가 타격되는 문제" 해결 요청.
+- **원인 분석**:
+  - 지형 편집 도구(호미/삽/물삽/풀씨 등)는 2×2 타일 블록 단위로 동작하며, 서버(`PlayerInventory:ServerRequestTerrainEdit`)에서는 `ResourceSpawner:GetAimBlockOrigin`을 통해 바라보는 방향에 따른 2×2 블록 원점 `(ox, oy)`을 산출함.
+  - 조준점 스케일만 줄이고 오프셋을 단순 `targetCell + 0.5`로 둘 경우, 조준점이 2×2 영역의 한쪽 모서리에 치우쳐 실제 타격/파기되는 영역이 "조준점의 왼쪽 위"로 어긋나게 됨.
+- **수정 내용 ([PlayerController.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/Player/Scripts/PlayerController.mlua))**:
+  - `ReticleOffsetX = 0.0`, `ReticleOffsetY = 0.0` 프로퍼티 신설.
+  - `UpdateMineReticle`:
+    - `IsTerrainEditItemActive()` 여부에 따라 분기:
+      - **지형 편집 도구**: `_ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, dirX, dirY, 2)`을 사용하여 실제로 편집되는 2×2 블록의 정중앙 `(origin.x + 1.0 + ReticleOffsetX, origin.y + 1.0 + ReticleOffsetY)`에 조준점을 위치시킴으로써, 1×1 스케일(1.0)에서도 2×2 편집 영역의 정중앙에 대칭 정렬되어 편향 타격 문제 완벽 해소.
+      - **일반 채광/벌목/무기/맨손**: 단일 타일 셀의 정중앙 `(targetCell.x + 0.5 + ReticleOffsetX, targetCell.y + 0.5 + ReticleOffsetY)`에 조준점을 배치.
+- **검증**: `maker_refresh_workspace` status ok, `maker_logs(kind="build")` `dateTime: 2026-09-04T19:19:21` **Error 0 / Warning 0** (baseline 0 유지).
+
+### 2026-09-04 [소셜/시스템] Phase 23-B 영지 초대/인터랙션 메뉴 클릭 판정 복원 & 닉네임 정합 및 퀘스트 추적 선택 연동 정상화 (⚖️ 확정)
+
+- **배경**:
+  - 사용자 보고: 영지 초대(UI 미연동/초대 흐름 부재 의심) 및 퀘스트 추적 선택(항상 Priority 최소 퀘스트만 고정되는 현상 의심) 미구현 여부 조사 및 정합 요청.
+- **전수 감사 결과 및 원인**:
+  1. **영지 초대 & 방문 (Phase 23-B)**:
+     - 백엔드(`EstateInviteManager.mlua`), 초대 수신 팝업(`UIEstateInviteController.mlua` + `EstateInvitePopup`), 타 유저 인터랙션 메뉴(`UIPlayerInteractController.mlua` + `PlayerInteractPopup`) 및 권한 설정(`UIPermissionController.mlua`) 자산은 이미 구조적으로 완성되어 있었음.
+     - **원인 1 (클릭 판정 마비)**: `UIPlayerInteractController.mlua:130`에서 `ipairs(_UserService.UserEntities.Values)`를 호출하여 `ipairs`가 MSW `ReadOnlyDictionary`를 순회하지 못함 ➔ 같은 맵에 타 플레이어가 있어도 클릭 시 인터랙션 팝업이 전혀 열리지 않던 상태.
+     - **원인 2 (직접 방문 닉네임 검색 실패)**: `PlayerController.mlua:ServerRequestVisitHome`에서 `user.Name`("Player")을 닉네임과 대조하여 대상 검색이 항상 실패하던 버그.
+  2. **퀘스트 추적 선택**:
+     - `UIQuestController.mlua`에 `TrackedQuestId` 프로퍼티 및 `SetTrackedQuest` / `GetTrackedQuestId` 로직이 이미 구축되어 있으며, `Refresh()`에서 수동 추적 중인 퀘스트가 유효하면 우선 표시하고 없을 때만 `Priority` 최솟값을 자동 선택하는 구조가 완성되어 있었음.
+     - `UIQuestLogController.mlua`와 `QuestPopup` 우하단 `BtnTrack` ("추적" ↔ "추적 해제") 토글도 정상 배선 확인.
+- **수정 내용**:
+  1. **`UIPlayerInteractController.mlua`**: `_UserService.UserEntities` 순회를 `pairs`로 교정하여 타 플레이어 터치/클릭 시 `PlayerInteractPopup`이 즉각 오픈되도록 복원, `_PersistenceManager:GetCharacterName` 및 `PlayerComponent.Nickname` 기반 닉네임 표시 정합.
+  2. **`PlayerController.mlua`**: `ServerRequestVisitHome`에서 `PersistenceManager:GetCharacterName` 및 `user.PlayerComponent.Nickname` 대조로 대상 유저 검색 및 영지 워프 피드백 정상화.
+  3. **검증**: `maker_refresh_workspace` status ok, `maker_logs(kind="build")` `dateTime: 2026-09-04T18:50:47` **Error 0 / Warning 0** (baseline 0 유지).
+- **런타임 검증 항목 (제작자 Play)**:
+  - 타 유저 클릭 시 `PlayerInteractPopup` 오픈 확인 ➔ "내 영지로 초대" 클릭 시 상대에게 `EstateInvitePopup` 팝업 표시 및 수락 시 영지 워프 이동 확인.
+  - `QuestPopup`에서 퀘스트 선택 후 "추적" 토글 시 HUD 트래커 고정 및 "추적 해제" 시 우선순위 자동 선택 복귀 확인.
+
+### 2026-09-04 [지형] 되메우기 폭 1칸 자투리 방지 — 블록 위치 보정 + 자투리 동반 정리 (⚖️ 확정)
+
+- **배경**: 제작자 신고 — 파기·되메우기 최소 단위가 2×2라, 2×3 물/밭에서 2×2를 되메우면 항상 2×1이 남는다. 이 칸은 ① 2×2 도구로 다시 다룰 수 없고 ② ½셀 마진 문법으로 표현되지 않아(tile-scheme §4) 어색하게 남는다.
+- **⚖️ 결정 (제작자 선택)**: 되메우기를 실행하기 **전에** 주변을 보고, **남는 모양이 온전해지는 위치**로 블록을 고른다. 보정 범위는 **조준한 칸을 반드시 포함하는 후보**로 한정(2×2 기준 최대 1칸 이동). 어떤 위치로도 자투리를 피할 수 없는 모양(2×3 등)은 **자투리까지 함께 메운다**.
+- **구현 ([ResourceSpawner.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/MapObjects/Scripts/ResourceSpawner.mlua))**:
+  - `IsFillTerrainCell` / `BuildFillTerrainCache` / `IsFillCacheBlockFull` / `IsFillCacheOrphan` — "자투리" 정의를 **그 칸을 품는 2×2가 하나도 없는 칸**으로 단일화(물·밭 공용, `kind` 인자). 판정은 타일 상태만 보므로 **영속 델타 재생에서도 같은 결과**가 나온다.
+  - `ResolveFillBlockOrigin` — 조준 칸을 포함하는 후보를 **가까운 순**으로 보며 자투리 0인 위치를 즉시 채택. 전부 자투리가 남으면 **가장 적게 남는 위치**를 고른다. 대상이 한 칸도 없는 위치로는 옮기지 않는다.
+  - `CollectFillOrphanCells` — 메운 뒤 남는 자투리를 연쇄 수집(패스마다 탐색 반경 확대, 최대 5패스/반경 8). 넓은 수역·밭은 1패스 0건으로 즉시 종료돼 비용이 사실상 없다. 반복 조회 비용은 지형 여부 캐시로 흡수.
+  - `ApplyTerrainEdit`: `fill_water`/`fill_water_large`/`untill_field`가 블록을 메운 뒤 자투리까지 함께 처리하고, 오토타일 갱신 사각형(`RefreshWaterAreaRect`/`RefreshFarmAreaRect`)을 **블록+자투리 합집합**으로 확장.
+- **구현 ([PlayerInventory.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/Player/Scripts/PlayerInventory.mlua))**: `fill_water`와 (스마트 분기로 확정된) `untill_field`에서 `ResolveFillBlockOrigin`으로 원점을 보정한 뒤 점유·편집가능 검사와 영속 델타에 태운다 — 보정된 원점이 저장되므로 재생도 일치. `till_field`(밭 일구기)는 조준 자리에 그대로 만들어야 하므로 보정하지 않는다. 물 3타(`fill_water_large`)는 파기 순환과 **동심**을 유지해야 하므로 위치 보정 없이 자투리 정리만 적용.
+- **검증**: `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime: 2026-09-04T17:28:05`(refresh 시각 일치) **Error 0 / Warning 0**. 런타임 검증 보류(제작자 수행).
+- **⚠️ 남은 작업 — 조준점 미리보기 미반영**: 현재 레티클(`PlayerController:UpdateMineReticle`)은 조준 칸 기준 2×2 자리만 그린다. 따라서 ① 되메우기 위치 보정(최대 1칸) ② 물 2·3타의 4×4 블록이 **표시에 반영되지 않는다**(②는 이번 변경 이전부터의 상태). 규칙 18(미리보기·적용 단일 소스) 관점에서 정합을 맞추려면 액션·단계 판정을 `ResourceSpawner` 공용 메서드로 추출해 서버(PlayerInventory)와 클라(레티클)가 함께 쓰도록 해야 한다. 별도 작업으로 분리.
+
+### 2026-09-04 [핫픽스/지형] 물삽 3단 순환 동심 정합 & 밭 되메우기 잔여 타일·물가 침범 수정
+
+- **배경**: 제작자 Play 신고 — ① 물삽 2타가 조준점 중심이 아니라 한쪽으로 치우쳐 파임 ② 3타(되메우기)가 아예 발동하지 않음 ③ 밭을 흙으로 되메울 때 결과가 이상함.
+- **원인 및 수정**:
+  1. **물삽 2타 중심 어긋남 ([PlayerInventory.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/Player/Scripts/PlayerInventory.mlua))**: 조준 레티클은 `UpdateMineReticle`이 `(cell.x+1, cell.y+1)` = **셀 모서리점**에 그린다. 즉 레티클 중심 = 1타 2×2 블록 `[aim..aim+1]`의 중심이다. 그런데 2타는 `[aim-1..aim+1]`의 **3×3**이라 중심이 반 칸 어긋나 좌하단으로만 확장됐다. 2타·3타를 `origin.size + 2` = **4×4 `[aim-1..aim+2]`**(1타 블록을 사방 1칸씩 감싼 동심 확장)로 교정.
+  2. **3타 되메우기 미발동 (같은 파일)**: 3타 판정 루프가 `editX-1 .. editX+origin.size`, 즉 실제로는 **4×4**(16칸)를 검사하는데 2타는 3×3(9칸)만 팠다 — 검사 영역이 영원히 채워지지 않아 `fill_water_large`에 도달 불가, 2타만 무한 반복됐다. 2타가 검사 영역과 **같은 4×4**를 파도록 맞춰 순환 성립.
+  3. **적용부 정합 ([ResourceSpawner.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/MapObjects/Scripts/ResourceSpawner.mlua))**: `ApplyTerrainEdit`의 `n = 3` → `n = n + 2`. 영향 셀 단일 소스(`GetTerrainEditAffectedCells`, 규칙 18)가 `*_large` 액션을 아예 몰라 1칸으로 계산하던 것도 `n+2`로 커버.
+  4. **되메우기가 밭 아닌 칸까지 침범 (ResourceSpawner)**: `untill_field`는 2×2 블록 전 칸에 `tilemap1:SetTile("Soil")`을 찍었다. `till_field`에는 있는 물 가드(`IsWaterCell`)가 되메우기 경로엔 없어, 밭 가장자리를 조준하면 걸쳐진 **물·물가 L1 프린지가 통짜 흙으로 덮여** 지형이 뭉개졌다. `IsFarmCell`인 칸만 처리하도록 한정.
+  5. **`ComputeFarmTileName` 대각 오목 코너 좌우 반전 (ResourceSpawner)**: `not isNW → "FarmLD"` 식으로 4종 전부 뒤바뀌어 있었다. 검증된 물 프린지 경로(`RefreshWaterAreaRect`)는 NW 결손 시 TL 비트(4)를 지워 마스크 11 → `WaterRD`를 쓴다. Water·Farm은 접미사↔마스크 표가 동일하므로 `NW→RD / NE→LD / SW→RT / SE→LT`로 교정.
+  6. **폭 1칸 잔여 밭이 찌꺼기로 남던 문제 (ResourceSpawner)**: 1방향만 밭인 끝 칸을 `*Corner`(1서브셀 = 25%)로 칠해, 폭 1칸 띠가 "가운데는 FullFarm, 양 끝은 손톱만 한 조각"이 됐다. 폭 1칸은 ½셀 마진 문법으로 표현 불가(tile-scheme §4)이므로 1칸 통로(4번)·고립 1칸(6번)과 같은 **축퇴 가드(FullFarm)**로 통일.
+- **검증**: `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime: 2026-09-04T17:01:43`(refresh 시각과 일치) **Error 0 / Warning 0**. 런타임 검증 보류(제작자 Play 수행).
+- **⚠️ 직전 항목과의 관계**: 아래 2026-09-04 항목이 ⚖️ 확정한 "1방향 밭 → `*Corner`" 매핑을 6번에서 뒤집었다. 해당 항목은 런타임 검증 보류 상태였고, 그 항목이 스스로 밝힌 목표("모서리 찌꺼기 2개만 남는 결함 제거")와 구현이 어긋나 있었다. 제작자 Play 확인 후 확정 필요.
+
+### 2026-09-04 [핫픽스/지형] 밭 되메우기(2×3 ➔ 2×2 메움) 잔여 밭 오토타일링 정상화 & ComputeFarmTileName 결정론적 엔진 개편 (⚖️ 확정)
+
+- **배경**:
+  - 2×3 밭에서 오른쪽 2×2를 메웠을 때, 남은 왼쪽 2칸이 물(Water) 프린지처럼 온전하게 밭의 외곽 형태로 둘러싸이지 못하고 타일이 지워지거나 모서리 찌꺼기 2개만 남아버리는 결함 발생.
+  - 원인: 기존 비트마스크 감산식에서 1×N / N×1 좁은 잔여 밭 셀이 `fm = 0`으로 계산되어, 5%짜리 오목 구석 찌꺼기 타일(`*Corner`)로 잘못 칠해지거나 `RemoveTile`로 소거됨.
+- **수정 내용**:
+  1. **`ComputeFarmTileName` 결정론적 밭 오토타일링 엔진 신설 ([ResourceSpawner.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/MapObjects/Scripts/ResourceSpawner.mlua))**:
+     - 8방향 이웃 상태를 직접 대조하여 타일을 1:1 결정:
+       - 4방향 밭 (내부): `FullFarm` (대각 흙 시 `FarmLD/RD/LT/RT` 오목 코너)
+       - 3방향 밭 (에지): `FarmD` (상단), `FarmT` (하단), `FarmR` (좌측), `FarmL` (우측)
+       - 2방향 인접 밭 (볼록 코너): `FarmRDCorner` (좌상단), `FarmLDCorner` (우상단), `FarmRTCorner` (좌하단), `FarmLTCorner` (우하단)
+       - 1방향 밭 (2×3에서 2×2를 메우고 남은 1×2/2×1 잔여 밭): 가로 밭 좌/우(`FarmRDCorner`/`FarmLDCorner`), 세로 밭 상/하(`FarmRDCorner`/`FarmRTCorner`)로 자연스럽게 둘러싸인 밭 형태 완성.
+       - 고립 1칸 밭: `FullFarm`.
+  2. **`RefreshFarmAreaRect` 전면 개편 ([ResourceSpawner.mlua](file:///c:/minho/메이플월드/RootDesk/MyDesk/MapObjects/Scripts/ResourceSpawner.mlua))**:
+     - 비트마스크 클리어 루프 대신 `ComputeFarmTileName`을 직접 호출하여, 물 프린지처럼 남은 밭 셀들이 즉시 자신의 새로운 둘레 형태(프린지)를 갖추고 렌더링되도록 보장.
+     - 밭이 아닌 셀은 100% `RemoveTile` & `Soil`로 깨끗이 메움.
+  3. **`PlayerInventory.mlua` 호미 확장 vs 철거 스마트 분기**:
+     - 외부 12칸 이웃 검사로 기존 밭 확장(`till_field`)과 고립 잔여 밭 철거(`untill_field`)를 완벽 분기.
+- **검증 결과**:
+  - Maker `maker_refresh_workspace`: `status ok`.
+  - Maker `maker_logs(kind="build")`: `dateTime: 2026-09-04T16:48:49`, **Errors: 0, Warnings: 0**.
+  - 런타임 검증 보류(제작자 수행).
 
 ### 2026-09-02 [핫픽스/소셜] Phase 23-A 채팅 시스템 미작동 근본 원인 규명 및 수정 (⚖️ 확정)
 

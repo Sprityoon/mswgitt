@@ -203,16 +203,6 @@ script ResourceSpawner extends Logic
 		return ""
 	end
 
-	method string MaskToWaterSandTileName(integer mask)
-		-- 호환용 래퍼
-		return self:MaskToSoilTileName(mask)
-	end
-
-	method string MaskToSoilSandTileName(integer mask)
-		-- 호환용 래퍼
-		return self:MaskToSoilTileName(mask)
-	end
-
 	method string MaskToWetRimTileName(integer mask)
 		-- 수변 림/윤슬 프린지(WetRim* 12종) → L6 타일명 (2026-08-28 도입).
 		if mask == nil or mask == 0 or mask == 15 then return "" end
@@ -252,6 +242,89 @@ script ResourceSpawner extends Logic
 		return "Water"
 	end
 
+	method string ComputeFarmTileName(any map, integer x, integer y)
+		-- 밭(Farmland) 셀(x, y)의 이웃 8방향 연결성에 따른 정확한 타일 결정
+		if not self:IsFarmCell(map, x, y) then return "" end
+
+		local isN = self:IsFarmCell(map, x, y + 1)
+		local isS = self:IsFarmCell(map, x, y - 1)
+		local isE = self:IsFarmCell(map, x + 1, y)
+		local isW = self:IsFarmCell(map, x - 1, y)
+		local isNE = self:IsFarmCell(map, x + 1, y + 1)
+		local isNW = self:IsFarmCell(map, x - 1, y + 1)
+		local isSE = self:IsFarmCell(map, x + 1, y - 1)
+		local isSW = self:IsFarmCell(map, x - 1, y - 1)
+
+		-- 1. 4방향 모두 밭인 내부 셀 — 대각이 비면 그 모서리 1서브셀만 파인 오목 코너.
+		-- 🔴 타일명 규약(MaskToWaterTileName / tile-scheme.md L2 잔디 패밀리와 동일):
+		--    FarmRD=마스크11(TL 결손) · FarmLD=7(TR 결손) · FarmRT=14(BL 결손) · FarmLT=13(BR 결손).
+		--    즉 이름은 "비어 있는 모서리"가 아니라 그 **반대편**을 가리킨다. 좌우를 바꿔 쓰면
+		--    L자 밭 안쪽 모서리가 반대 방향으로 파여 보인다.
+		if isN and isS and isE and isW then
+			if not isNW then return "FarmRD" end -- TL(좌상) 결손
+			if not isNE then return "FarmLD" end -- TR(우상) 결손
+			if not isSW then return "FarmRT" end -- BL(좌하) 결손
+			if not isSE then return "FarmLT" end -- BR(우하) 결손
+			return "FullFarm"
+		end
+
+		-- 2. 3방향 밭 (직선 에지 변)
+		if isS and isE and isW and not isN then return "FarmD" end
+		if isN and isE and isW and not isS then return "FarmT" end
+		if isN and isS and isE and not isW then return "FarmR" end
+		if isN and isS and isW and not isE then return "FarmL" end
+
+		-- 3. 2방향 인접 밭 (2×2 볼록 모서리)
+		if not isN and not isW and isS and isE then return "FarmRDCorner" end -- Top-Left (좌상단)
+		if not isN and not isE and isS and isW then return "FarmLDCorner" end -- Top-Right (우상단)
+		if not isS and not isW and isN and isE then return "FarmRTCorner" end -- Bottom-Left (좌하단)
+		if not isS and not isE and isN and isW then return "FarmLTCorner" end -- Bottom-Right (우하단)
+
+		-- 4. 2방향 대향 밭 (1칸 폭 통로)
+		if isN and isS and not isE and not isW then return "FullFarm" end
+		if isE and isW and not isN and not isS then return "FullFarm" end
+
+		-- 5. 1방향만 밭 = 폭 1칸 띠의 끝 칸 (2×3에서 2×2를 되메우고 남은 1×2 / 2×1 잔여 밭).
+		-- 🔴 폭 1칸은 ½셀 마진 문법으로 표현할 수 없다(양쪽 마진이 서로 잡아먹는다 —
+		--    tile-scheme.md §4 "잔디 스트립 최소 2칸"). *Corner(1서브셀=25%)를 쓰면 띠 가운데는
+		--    FullFarm인데 양 끝만 손톱만 한 찌꺼기로 남는다. 폭 1칸 통로(4번)·고립 1칸(6번)과
+		--    같은 축퇴 가드로 통일해 온전한 밭으로 칠한다.
+		if isE and not isW and not isN and not isS then return "FullFarm" end -- 가로 띠 좌측 끝
+		if isW and not isE and not isN and not isS then return "FullFarm" end -- 가로 띠 우측 끝
+		if isS and not isN and not isE and not isW then return "FullFarm" end -- 세로 띠 상단 끝
+		if isN and not isS and not isE and not isW then return "FullFarm" end -- 세로 띠 하단 끝
+
+		-- 6. 고립 1칸 밭
+		return "FullFarm"
+	end
+
+	method boolean IsFarmTileName(string name)
+		if name == nil or name == "" then return false end
+		return name == "FullFarm" or string.find(name, "Farm") ~= nil
+	end
+
+	method boolean IsFarmCell(any mapOrTilemap, integer x, integer y)
+		if not isvalid(mapOrTilemap) then return false end
+		local map = nil
+		if mapOrTilemap.Entity ~= nil then
+			map = mapOrTilemap.Entity.CurrentMap or mapOrTilemap.Entity.Parent
+		else
+			map = mapOrTilemap
+		end
+		if not isvalid(map) then return false end
+		local l3Ent = map:GetChildByName("RectTileMap3")
+		if isvalid(l3Ent) and isvalid(l3Ent.RectTileMapComponent) then
+			local info = l3Ent.RectTileMapComponent:GetTile(x, y)
+			if info ~= nil and self:IsFarmTileName(info.Name) then return true end
+		end
+		local l2Ent = map:GetChildByName("RectTileMap2")
+		if isvalid(l2Ent) and isvalid(l2Ent.RectTileMapComponent) then
+			local info = l2Ent.RectTileMapComponent:GetTile(x, y)
+			if info ~= nil and self:IsFarmTileName(info.Name) then return true end
+		end
+		return false
+	end
+
 	method table DeriveDigPathAxisSide(integer dirX, integer dirY, number playerWorldX, number playerWorldY)
 		-- digPath의 axis/side 결정 **단일 소스**. 적용 경로(PlayerInventory, 서버)와
 		-- 미리보기 경로(PlayerController, 클라)가 반드시 이걸 같이 쓴다.
@@ -268,87 +341,6 @@ script ResourceSpawner extends Logic
 			if relX >= 0.5 then side = 1 else side = 0 end
 		end
 		return { axis = axis, side = side }
-	end
-
-	method integer TileIndexFromLayer(any entity, integer x, integer y)
-		-- 맵 레이어 엔티티의 특정 좌표 타일 인덱스. 엔티티/컴포넌트/타일 부재 시 nil.
-		if not isvalid(entity) then return nil end
-		local tc = entity.RectTileMapComponent
-		if not isvalid(tc) then return nil end
-		local tile = tc:GetTile(x, y)
-		if tile == nil then return nil end
-		return tile.TileIndex
-	end
-
-	method table GetTerrainEditAffectedCells(string action, integer x, integer y, string axis, string side)
-		-- 지형 편집이 실제로 건드리는 셀 목록 — 시각 피드백과 적용이 같은 규칙을 쓰도록 하는 단일 소스.
-		-- 반환: { {x=, y=, tier=}, ... }   tier 1 = 직접 파이는 셀 / tier 2 = 프린지(½셀 마진) 영향 셀.
-		-- ⚠️ ApplyTerrainEdit의 각 분기와 동일한 셀 집합이어야 한다. 한쪽만 고치지 말 것(규칙 18).
-		local out = {}
-		if action == "digPath" then
-			local x1 = x
-			local y1 = y
-			local x2 = x
-			local y2 = y
-			if axis == "v" then
-				if side == "right" then x2 = x + 1 else x1 = x - 1 end
-			else
-				if side == "up" then y2 = y + 1 else y1 = y - 1 end
-			end
-			table.insert(out, { x = x1, y = y1, tier = 1 })
-			table.insert(out, { x = x2, y = y2, tier = 1 })
-			local caps = {}
-			if axis == "v" then
-				caps = { { x1, y1 + 1 }, { x2, y2 + 1 }, { x1, y1 - 1 }, { x2, y2 - 1 } }
-			else
-				caps = { { x1 + 1, y1 }, { x2 + 1, y2 }, { x1 - 1, y1 }, { x2 - 1, y2 } }
-			end
-			for _, c in ipairs(caps) do
-				table.insert(out, { x = c[1], y = c[2], tier = 2 })
-			end
-		elseif action == "digHole" or action == "plantGrass" then
-			-- 대상 1셀 + 8이웃 ½셀 프린지.
-			table.insert(out, { x = x, y = y, tier = 1 })
-			for _, f in ipairs(self:GetTerrainFringeTable()) do
-				table.insert(out, { x = x + f[1], y = y + f[2], tier = 2 })
-			end
-		elseif action == "dig_water" or action == "fill_water" then
-			-- (x, y) = 블록 원점. n×n 직접 + 둘레 1칸(오버행 재계산 범위) = (n+2)².
-			local n = self.WaterDigSize
-			if n < 1 then n = 1 end
-			for by = y - 1, y + n do
-				for bx = x - 1, x + n do
-					local inside = (bx >= x and bx <= x + n - 1 and by >= y and by <= y + n - 1)
-					local t = 2
-					if inside then t = 1 end
-					table.insert(out, { x = bx, y = by, tier = t })
-				end
-			end
-		elseif action == "forceGrass" then
-			-- 구 세이브에 남은 복구 델타 호환: 중심 기준 3×3.
-			for by = y - 1, y + 1 do
-				for bx = x - 1, x + 1 do
-					table.insert(out, { x = bx, y = by, tier = 1 })
-				end
-			end
-		else
-			table.insert(out, { x = x, y = y, tier = 1 })
-		end
-		return out
-	end
-
-	method integer MirrorFringeBits(integer bits)
-		-- GetTerrainFringeTable의 "이웃 셀에서 켜지는 비트" → **물 셀 자신**의 그 방향 절반 비트
-		-- (상하/좌우 반전). 물 셀에서 이 비트를 지우면 그 방향 ½셀이 잔디로 덮인다.
-		if bits == 3 then return 12 end   -- N 이웃 → 자기 위쪽 TL|TR
-		if bits == 12 then return 3 end   -- S 이웃 → 아래쪽 BL|BR
-		if bits == 5 then return 10 end   -- E 이웃 → 오른쪽 BR|TR
-		if bits == 10 then return 5 end   -- W 이웃 → 왼쪽 BL|TL
-		if bits == 1 then return 8 end    -- NE → TR
-		if bits == 2 then return 4 end    -- NW → TL
-		if bits == 4 then return 2 end    -- SE → BR
-		if bits == 8 then return 1 end    -- SW → BL
-		return 0
 	end
 
 	method integer ClearBits(integer mask, integer bits)
@@ -373,17 +365,157 @@ script ResourceSpawner extends Logic
 		return info ~= nil and self:IsWaterTileName(info.Name)
 	end
 
-	method table GetWaterDigOrigin(integer tx, integer ty, integer dirX, integer dirY)
-		-- 물삽 1회가 파는 2×2 정사각 블록의 원점. 조준점(Reticle, tx, ty)과 100% 일치하도록 기준 원점 반환.
-		-- 🔴 서버(적용)·클라(조준점) 공용 단일 소스 — 호미(digHole)/삽(digPath)과 동일한 2×2 원점 체계.
-		local n = self.WaterDigSize
+	method table GetAimBlockOrigin(integer aimX, integer aimY, integer dirX, integer dirY, integer size)
+		-- n×n 지형 편집 블록의 원점. **조준 셀을 항상 포함하고 바라보는 쪽으로 뻗는다**
+		-- (tile-scheme.md §4-bis). 🔴 서버 적용·클라 조준점 공용 단일 소스 —
+		-- 물삽·호미·삽·씨앗의 2×2가 전부 이 규칙을 쓴다.
+		-- 🔴 항상 +X/+Y로만 뻗으면 왼쪽·아래를 볼 때 블록이 플레이어 쪽으로 되돌아와
+		--    발밑 셀을 물고("발 밑 셀에는 물을 갤 수 없습니다") 편집이 아예 막힌다.
+		local n = size
 		if n < 1 then n = 1 end
-		return { x = tx, y = ty, size = n }
+		local ox = aimX
+		local oy = aimY
+		if dirX < 0 then ox = aimX - (n - 1) end
+		if dirY < 0 then oy = aimY - (n - 1) end
+		return { x = ox, y = oy, size = n }
 	end
 
-	method void RefreshWaterArea(any tilemap1, any tilemap2, integer cx, integer cy)
-		-- 단일 셀 편의 래퍼 (1×1 블록).
-		self:RefreshWaterAreaRect(tilemap1, tilemap2, cx, cy, 1, 1)
+	-- ── 되메우기 자투리 방지 (⚖️ 2026-09-04) ────────────────────────────────────
+	-- 파기·되메우기의 최소 단위는 2×2다. 그래서 2×3처럼 한 변이 홀수인 영역에서 2×2를
+	-- 되메우면 폭 1칸(2×1)이 남는데, 이 칸은 ① 2×2 도구로 다시 다룰 수 없고
+	-- ② ½셀 마진 문법으로 표현되지 않아(tile-scheme §4 "스트립 최소 2칸") 어색하게 남는다.
+	-- 규칙: 되메우기 블록은 **조준 칸을 반드시 포함**하는 후보들 중 자투리가 남지 않는
+	--       위치로 스스로 보정하고, 어떤 위치로도 피할 수 없으면 자투리까지 함께 메운다.
+	-- 🔴 서버 적용·영속 델타 재생이 같은 상태에서 같은 결과를 내야 하므로, 판정은 전부
+	--    "현재 타일 상태"만 보고 결정론적으로 계산한다(난수·플레이어 위치 참조 금지).
+
+	method boolean IsFillTerrainCell(Entity map, any tilemap1, string kind, integer x, integer y)
+		-- 되메우기 대상 지형 판정 단일 소스. kind = "farm" | "water".
+		if kind == "farm" then return self:IsFarmCell(map, x, y) end
+		return self:IsWaterCell(tilemap1, x, y)
+	end
+
+	method table BuildFillTerrainCache(Entity map, any tilemap1, string kind, integer x0, integer y0, integer x1, integer y1)
+		-- 판정에 쓸 지형 여부를 한 번만 읽어 캐시한다(IsWaterCell은 매 호출마다 레이어
+		-- 엔티티를 찾으므로 수천 번 호출하면 느리다). 창 밖은 "지형 아님"으로 취급된다.
+		local cache = {}
+		for by = y0, y1 do
+			for bx = x0, x1 do
+				cache[bx .. "_" .. by] = self:IsFillTerrainCell(map, tilemap1, kind, bx, by)
+			end
+		end
+		return cache
+	end
+
+	method table CloneFillCacheWithoutBlock(table cache, integer x, integer y, integer n)
+		-- 후보 블록을 메웠다고 가정한 사본.
+		local out = {}
+		for k, v in pairs(cache) do out[k] = v end
+		for by = y, y + n - 1 do
+			for bx = x, x + n - 1 do
+				out[bx .. "_" .. by] = false
+			end
+		end
+		return out
+	end
+
+	method boolean IsFillCacheBlockFull(table cache, integer x, integer y, integer n)
+		-- n×n 블록이 전부 대상 지형인지 (캐시 조회만).
+		for by = y, y + n - 1 do
+			for bx = x, x + n - 1 do
+				if cache[bx .. "_" .. by] ~= true then return false end
+			end
+		end
+		return true
+	end
+
+	method boolean IsFillCacheOrphan(table cache, integer x, integer y)
+		-- 이 칸을 품는 2×2가 하나도 없으면 폭 1칸 자투리다.
+		if cache[x .. "_" .. y] ~= true then return false end
+		for oy = y - 1, y do
+			for ox = x - 1, x do
+				if self:IsFillCacheBlockFull(cache, ox, oy, 2) then return false end
+			end
+		end
+		return true
+	end
+
+	method integer CountFillOrphans(table cache, integer x, integer y, integer n, integer margin)
+		-- 블록을 메웠다고 가정했을 때 둘레에 남는 자투리 칸 수.
+		local cnt = 0
+		for by = y - margin, y + n - 1 + margin do
+			for bx = x - margin, x + n - 1 + margin do
+				if self:IsFillCacheOrphan(cache, bx, by) then cnt = cnt + 1 end
+			end
+		end
+		return cnt
+	end
+
+	method table ResolveFillBlockOrigin(Entity map, any tilemap1, string kind, integer aimX, integer aimY, integer n)
+		-- 되메우기 블록 위치 보정. 조준 칸 (aimX, aimY)를 포함하는 n×n 후보만 검토하고
+		-- (최대 n-1칸 이동), 자투리가 0인 위치를 찾으면 즉시 쓴다. 후보 순회는 조준
+		-- 원점(보정 없음)부터 가까운 순 — 같은 조건이면 덜 움직인다.
+		-- ⚠️ 자투리를 피할 수 없는 모양(2×3 등)은 자투리가 가장 적은 위치를 돌려주고,
+		--    남는 자투리는 ApplyTerrainEdit이 함께 메운다.
+		local pad = n + 4
+		local cache = self:BuildFillTerrainCache(map, tilemap1, kind, aimX - pad, aimY - pad, aimX + pad, aimY + pad)
+		local bestX = aimX
+		local bestY = aimY
+		local bestScore = -1
+		for dist = 0, (n - 1) * 2 do
+			for oy = aimY - n + 1, aimY do
+				for ox = aimX - n + 1, aimX do
+					if (aimX - ox) + (aimY - oy) == dist then
+						-- 되메울 대상이 한 칸도 없는 위치로는 옮기지 않는다.
+						local hasTarget = false
+						for by = oy, oy + n - 1 do
+							for bx = ox, ox + n - 1 do
+								if cache[bx .. "_" .. by] == true then hasTarget = true end
+							end
+						end
+						if hasTarget then
+							local after = self:CloneFillCacheWithoutBlock(cache, ox, oy, n)
+							local orphans = self:CountFillOrphans(after, ox, oy, n, 2)
+							if orphans == 0 then return { x = ox, y = oy } end
+							if bestScore < 0 or orphans < bestScore then
+								bestScore = orphans
+								bestX = ox
+								bestY = oy
+							end
+						end
+					end
+				end
+			end
+		end
+		return { x = bestX, y = bestY }
+	end
+
+	method table CollectFillOrphanCells(Entity map, any tilemap1, string kind, integer x, integer y, integer n)
+		-- 블록을 메운 뒤 폭 1칸으로 남는 칸들을 연쇄적으로 모은다.
+		-- 넓은 수역·밭은 1패스에서 0건이 나와 즉시 끝난다(비용 거의 없음).
+		local pad = n + 10
+		local cache = self:BuildFillTerrainCache(map, tilemap1, kind, x - pad, y - pad, x + n - 1 + pad, y + n - 1 + pad)
+		local work = self:CloneFillCacheWithoutBlock(cache, x, y, n)
+		local out = {}
+		local margin = 2
+		local pass = 1
+		while pass <= 5 do
+			local found = false
+			for by = y - margin, y + n - 1 + margin do
+				for bx = x - margin, x + n - 1 + margin do
+					if self:IsFillCacheOrphan(work, bx, by) then
+						work[bx .. "_" .. by] = false
+						table.insert(out, { bx, by })
+						found = true
+					end
+				end
+			end
+			if not found then break end
+			margin = margin + 2
+			if margin > 8 then break end
+			pass = pass + 1
+		end
+		return out
 	end
 
 	method void RefreshWaterAreaRect(any tilemap1, any tilemap2, integer x0, integer y0, integer w, integer h)
@@ -504,6 +636,68 @@ script ResourceSpawner extends Logic
 		log(string.format("[WATER-OVERLAY-REFRESH] refreshed cells=%d origin=(%d,%d) size=%dx%d", planN, x0, y0, w, h))
 	end
 
+	method void RefreshFarmAreaRect(any tilemapFarm, any tilemap1, integer x0, integer y0, integer w, integer h)
+		-- 밭(Farmland) 16타일 오토타일링 갱신 함수
+		--   L1 Soil: 지반 흙
+		--   L3/L2 Farm: FullFarm (중심) + Farm* 14종 (오버레이 둔턱 프린지)
+		if not isvalid(tilemapFarm) then return end
+		local map = tilemapFarm.Entity.CurrentMap or tilemapFarm.Entity.Parent
+		if not isvalid(map) then return end
+
+		local planX = {}
+		local planY = {}
+		local planIsFarm = {}
+		local planTileName = {}
+		local planN = 0
+
+		local y = y0 - 1
+		local yMax = y0 + h
+		local xMin = x0 - 1
+		local xMax = x0 + w
+		while y <= yMax do
+			local x = xMin
+			while x <= xMax do
+				planN = planN + 1
+				planX[planN] = x
+				planY[planN] = y
+				if self:IsFarmCell(map, x, y) then
+					planIsFarm[planN] = true
+					planTileName[planN] = self:ComputeFarmTileName(map, x, y)
+				else
+					planIsFarm[planN] = false
+					planTileName[planN] = ""
+				end
+				x = x + 1
+			end
+			y = y + 1
+		end
+
+		local i = 1
+		while i <= planN do
+			local x = planX[i]
+			local y = planY[i]
+			local tName = planTileName[i]
+
+			if planIsFarm[i] then
+				if isvalid(tilemap1) then
+					pcall(function() tilemap1:SetTile("Soil", x, y) end)
+				end
+				if tName ~= nil and tName ~= "" then
+					pcall(function() tilemapFarm:SetTile(tName, x, y) end)
+				else
+					pcall(function() tilemapFarm:SetTile("FullFarm", x, y) end)
+				end
+			else
+				pcall(function() tilemapFarm:RemoveTile(x, y) end)
+				if isvalid(tilemap1) then
+					pcall(function() tilemap1:SetTile("Soil", x, y) end)
+				end
+			end
+			i = i + 1
+		end
+		log(string.format("[FARM-OVERLAY-REFRESH] refreshed cells=%d origin=(%d,%d) size=%dx%d", planN, x0, y0, w, h))
+	end
+
 	method boolean HasWaterNear(any tilemap1, integer x0, integer y0, integer w, integer h)
 		-- 범위 + 2칸 패딩 안에 물 셀이 하나라도 있는지.
 		for y = y0 - 2, y0 + h + 1 do
@@ -598,12 +792,6 @@ script ResourceSpawner extends Logic
 		return removed
 	end
 
-	method boolean IsTerrainCellEditableRaw(any tilemap1, integer x, integer y)
-		-- L1 타일 존재 여부만 (맵 엔티티 조회 없이 — RefreshWaterArea 내부 루프용).
-		if not isvalid(tilemap1) then return false end
-		return tilemap1:GetTile(x, y) ~= nil
-	end
-
 	method boolean IsInWallBand(integer x, integer y)
 		-- Big Wall 밴드: max(|x|,|y|) >= MapRadius-WallThickness+1 이면 편집 불가.
 		local wallStart = self.MapRadius - self.WallThickness + 1
@@ -681,8 +869,6 @@ script ResourceSpawner extends Logic
 			for _, c in ipairs(cells) do
 				if not self:IsTerrainCellEditable(map, c[1], c[2]) then return false end
 				if self:IsGridOccupied(mapName, c[1], c[2]) then return false end
-				-- 삽(길): 대상 셀 자체가 물인 경우만 차단 (물가 바로 옆 산책로는 허용)
-				if isvalid(tilemap1) and self:IsWaterCell(tilemap1, c[1], c[2]) then return false end
 			end
 
 			local anyChange = false
@@ -695,7 +881,10 @@ script ResourceSpawner extends Logic
 				if cn ~= cm then anyChange = true end
 				table.insert(newMasks, { cx, cy, cn })
 			end
-			if not anyChange then return false end  -- 이미 4개 코너 이상으로 파여 있음
+			if not anyChange then
+				-- 이미 흙길로 파여 있다면 2단계로 자동 승격: 2×2 넓은 흙(digHole) 실행!
+				return self:ApplyTerrainEdit(mapName, map, "digHole", x, y, axis, side, persist)
+			end
 
 			for _, nm in ipairs(newMasks) do
 				self:SetCellMaskExact(tilemap2, nm[1], nm[2], nm[3])
@@ -804,26 +993,37 @@ script ResourceSpawner extends Logic
 				end
 			end
 
-		elseif action == "dig_water" or action == "fill_water" then
-			-- (x, y)는 조준 셀이 아니라 **블록 원점**이다 (GetWaterDigOrigin 결과 = 영속 델타 저장값).
+		elseif action == "dig_water" or action == "fill_water" or action == "dig_water_large" or action == "fill_water_large" then
+			-- (x, y)는 조준 셀이 아니라 **블록 원점**이다 (GetAimBlockOrigin 결과 = 영속 델타 저장값).
 			if not isvalid(tilemap1) then return false end
 			local n = self.WaterDigSize
 			if n < 1 then n = 1 end
+			if action == "dig_water_large" or action == "fill_water_large" then
+				-- 2타/3타 = 1타 블록을 사방 1칸씩 감싼 **동심** 확장 (2×2 → 4×4).
+				-- 🔴 PlayerInventory의 단계 판정(editSize = origin.size + 2)과 반드시 같은 식이어야 한다.
+				n = n + 2
+			end
 
 			-- 블록 전 셀이 편집 가능해야 한다(부분 적용 금지 — 재생 결정성 유지).
 			for by = y, y + n - 1 do
 				for bx = x, x + n - 1 do
 					if not self:IsTerrainCellEditable(map, bx, by) then return false end
-					if action == "dig_water" and self:IsGridOccupied(mapName, bx, by) then return false end
+					if (action == "dig_water" or action == "dig_water_large") and self:IsGridOccupied(mapName, bx, by) then return false end
 				end
 			end
 
 			local l0Ent = map:GetChildByName("RectTileMap0")
 			local tilemap0 = isvalid(l0Ent) and l0Ent.RectTileMapComponent or nil
 
+			-- 갱신 사각형(블록 + 함께 메운 자투리)
+			local rx0 = x
+			local ry0 = y
+			local rx1 = x + n - 1
+			local ry1 = y + n - 1
+
 			for by = y, y + n - 1 do
 				for bx = x, x + n - 1 do
-					if action == "dig_water" then
+					if action == "dig_water" or action == "dig_water_large" then
 						if isvalid(tilemap0) then pcall(function() tilemap0:SetTile("Water", bx, by) end) end
 					else
 						-- fill_water: 물 및 윤슬 제거 (L1 Soil은 유지)
@@ -831,12 +1031,30 @@ script ResourceSpawner extends Logic
 					end
 				end
 			end
+
+			-- 되메우기는 폭 1칸 자투리를 남기지 않는다 (⚖️ 2026-09-04) — 2×2로 다시 다룰 수
+			-- 없게 되는 칸까지 함께 메운다. 넓은 수역이면 0건이라 아무 일도 일어나지 않는다.
+			if action == "fill_water" or action == "fill_water_large" then
+				local orphans = self:CollectFillOrphanCells(map, tilemap1, "water", x, y, n)
+				for _, c in ipairs(orphans) do
+					local ox = c[1]
+					local oy = c[2]
+					if self:IsTerrainCellEditable(map, ox, oy) then
+						if isvalid(tilemap0) then tilemap0:RemoveTile(ox, oy) end
+						if ox < rx0 then rx0 = ox end
+						if oy < ry0 then ry0 = oy end
+						if ox > rx1 then rx1 = ox end
+						if oy > ry1 then ry1 = oy end
+					end
+				end
+			end
+
 			-- 물 오버레이 및 윤슬 갱신
-			self:RefreshWaterAreaRect(tilemap1, tilemap2, x, y, n, n)
+			self:RefreshWaterAreaRect(tilemap1, tilemap2, rx0, ry0, rx1 - rx0 + 1, ry1 - ry0 + 1)
 			-- 물 편집 중 L4에 잔디/프린지가 쌓이지 않게 주변 오적재를 쓸어낸다 (L2만 프린지).
 			local layer4Entity = map:GetChildByName("RectTileMap4")
 			if isvalid(layer4Entity) and isvalid(layer4Entity.RectTileMapComponent) then
-				self:ScrubLayer4NonWallsRect(layer4Entity.RectTileMapComponent, x - 1, y - 1, n + 2, n + 2)
+				self:ScrubLayer4NonWallsRect(layer4Entity.RectTileMapComponent, rx0 - 1, ry0 - 1, (rx1 - rx0 + 1) + 2, (ry1 - ry0 + 1) + 2)
 			end
 
 		elseif action == "forceGrass" then
@@ -849,6 +1067,93 @@ script ResourceSpawner extends Logic
 			if not isvalid(tilemap1) or not isvalid(tilemap2) then return false end
 			self:ForceGrassCoverCell(tilemap1, tilemap2, tm4, x, y)
 
+		elseif action == "till_field" or action == "untill_field" then
+			if not isvalid(tilemap1) then return false end
+			local l3Ent = map:GetChildByName("RectTileMap3")
+			local tilemapFarm = isvalid(l3Ent) and l3Ent.RectTileMapComponent or tilemap2
+			if not isvalid(tilemapFarm) then return false end
+
+			local n = 2
+			if action == "till_field" then
+				for by = y, y + n - 1 do
+					for bx = x, x + n - 1 do
+						if not self:IsTerrainCellEditable(map, bx, by) then return false end
+						if self:IsGridOccupied(mapName, bx, by) then return false end
+						if self:IsWaterCell(tilemap1, bx, by) then return false end
+						-- 🔴 넓게 드러난 순수 흙(L2 홀, 마스크 15)에만 밭 일구기/확장 허용 (이미 밭인 칸은 허용, 잔디/프린지는 차단)
+						if not self:IsFarmCell(map, bx, by) then
+							local curMask = self:GetCellMask(tilemap2, tilemap1, bx, by)
+							if curMask ~= 15 then return false end
+						end
+					end
+				end
+
+				for by = y, y + n - 1 do
+					for bx = x, x + n - 1 do
+						pcall(function() tilemapFarm:SetTile("FullFarm", bx, by) end)
+					end
+				end
+				self:RefreshFarmAreaRect(tilemapFarm, tilemap1, x, y, n, n)
+			else
+				-- 🔴 되메우기: 조준 영역 내에 최소 1칸 이상의 밭 셀이 있어야 함 (1×2, 2×1 잔여 밭 되메우기 허용)
+				local hasAnyFarm = false
+				for by = y, y + n - 1 do
+					for bx = x, x + n - 1 do
+						if self:IsFarmCell(map, bx, by) then
+							hasAnyFarm = true
+							break
+						end
+					end
+					if hasAnyFarm then break end
+				end
+				if not hasAnyFarm then return false end
+
+				local l2Ent = map:GetChildByName("RectTileMap2")
+				local tilemapL2 = isvalid(l2Ent) and l2Ent.RectTileMapComponent or nil
+
+				-- 갱신 사각형(블록 + 함께 메운 자투리)
+				local rx0 = x
+				local ry0 = y
+				local rx1 = x + n - 1
+				local ry1 = y + n - 1
+
+				local function UntillCell(bx, by)
+					-- 🔴 밭인 칸만 되메운다. 블록은 2×2 고정이라 밭 가장자리를 조준하면
+					--    잔디·물·물가 L1 프린지 칸까지 함께 걸리는데, 거기에 "Soil"을 찍으면
+					--    물이 지워지거나 물가 프린지가 통짜 흙으로 뭉개진다(till_field는 물을 막지만
+					--    되메우기 경로에는 그 가드가 없었다).
+					if not self:IsFarmCell(map, bx, by) then return end
+					pcall(function() tilemapFarm:RemoveTile(bx, by) end)
+					if isvalid(tilemapL2) then
+						local info = tilemapL2:GetTile(bx, by)
+						if info ~= nil and self:IsFarmTileName(info.Name) then
+							pcall(function() tilemapL2:RemoveTile(bx, by) end)
+						end
+					end
+					if isvalid(tilemap1) then
+						pcall(function() tilemap1:SetTile("Soil", bx, by) end)
+					end
+				end
+
+				for by = y, y + n - 1 do
+					for bx = x, x + n - 1 do
+						UntillCell(bx, by)
+					end
+				end
+
+				-- 되메우기는 폭 1칸 자투리를 남기지 않는다 (⚖️ 2026-09-04).
+				local orphans = self:CollectFillOrphanCells(map, tilemap1, "farm", x, y, n)
+				for _, c in ipairs(orphans) do
+					UntillCell(c[1], c[2])
+					if c[1] < rx0 then rx0 = c[1] end
+					if c[2] < ry0 then ry0 = c[2] end
+					if c[1] > rx1 then rx1 = c[1] end
+					if c[2] > ry1 then ry1 = c[2] end
+				end
+
+				self:RefreshFarmAreaRect(tilemapFarm, tilemap1, rx0, ry0, rx1 - rx0 + 1, ry1 - ry0 + 1)
+			end
+
 		else
 			return false
 		end
@@ -856,7 +1161,7 @@ script ResourceSpawner extends Logic
 		-- 🔴 물가 사후 보정 (2026-08-06): digPath/digHole/plantGrass는 물을 모르고 8이웃에 흙 비트를
 		--    얹는다. 물 옆에서 그러면 물에 흙이 붙어 프린지가 꼬인다(전수 스윕에서 16조합 재현).
 		--    편집 근처에 물이 있을 때만 보정하므로 물 없는 지형은 기존 동작 그대로다.
-		if action ~= "dig_water" and action ~= "fill_water" and action ~= "forceGrass" and isvalid(tilemap1) then
+		if action ~= "dig_water" and action ~= "fill_water" and action ~= "dig_water_large" and action ~= "fill_water_large" and action ~= "forceGrass" and action ~= "till_field" and action ~= "untill_field" and isvalid(tilemap1) then
 			if self:HasWaterNear(tilemap1, x, y, 1, 1) then
 				-- (x-2 .. x+2, y-2 .. y+2) 커버 — digPath 밴드 2셀 + 캡 1셀까지 포함.
 				self:RefreshWaterAreaRect(tilemap1, tilemap2, x - 1, y - 1, 3, 3)

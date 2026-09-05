@@ -2,9 +2,215 @@
   "map": "map/map01.map",
   "water": 61,
   "affected": 101,
-  "changes": 0,
+  "changes": 32,
   "outsideDiff": 0,
   "warnings": [],
-  "byTo": {},
-  "changeSample": []
+  "byTo": {
+    "GrassSand_RTCorner": 4,
+    "GrassSand_RDCorner": 3,
+    "GrassSand_R": 2,
+    "GrassSand_RT": 3,
+    "GrassSand_RD": 2,
+    "GrassSand_T": 2,
+    "GrassSand_D": 3,
+    "GrassSand_LD": 2,
+    "GrassSand_LDCorner": 3,
+    "GrassSand_LTCorner": 3,
+    "GrassSand_LT": 2,
+    "GrassSand_L": 3
+  },
+  "changeSample": [
+    {
+      "key": "18,-21",
+      "from": "GrassRTCorner",
+      "to": "GrassSand_RTCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "18,-20",
+      "from": "GrassRDCorner",
+      "to": "GrassSand_RDCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "19,-23",
+      "from": "GrassRTCorner",
+      "to": "GrassSand_RTCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "19,-22",
+      "from": "GrassR",
+      "to": "GrassSand_R",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "19,-21",
+      "from": "GrassRT",
+      "to": "GrassSand_RT",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "19,-20",
+      "from": "GrassRD",
+      "to": "GrassSand_RD",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "19,-19",
+      "from": "GrassR",
+      "to": "GrassSand_R",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "19,-18",
+      "from": "GrassRDCorner",
+      "to": "GrassSand_RDCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "20,-24",
+      "from": "GrassRTCorner",
+      "to": "GrassSand_RTCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "20,-23",
+      "from": "GrassRT",
+      "to": "GrassSand_RT",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "20,-18",
+      "from": "GrassRD",
+      "to": "GrassSand_RD",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "20,-17",
+      "from": "GrassRDCorner",
+      "to": "GrassSand_RDCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "21,-24",
+      "from": "GrassT",
+      "to": "GrassSand_T",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "21,-17",
+      "from": "GrassD",
+      "to": "GrassSand_D",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "22,-24",
+      "from": "GrassT",
+      "to": "GrassSand_T",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "22,-17",
+      "from": "GrassD",
+      "to": "GrassSand_D",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "23,-25",
+      "from": "GrassRTCorner",
+      "to": "GrassSand_RTCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "23,-24",
+      "from": "GrassRT",
+      "to": "GrassSand_RT",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "23,-18",
+      "from": "GrassLD",
+      "to": "GrassSand_LD",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "23,-17",
+      "from": "GrassLDCorner",
+      "to": "GrassSand_LDCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "24,-25",
+      "from": "GrassLTCorner",
+      "to": "GrassSand_LTCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "24,-24",
+      "from": "GrassLT",
+      "to": "GrassSand_LT",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "24,-18",
+      "from": "GrassD",
+      "to": "GrassSand_D",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "25,-24",
+      "from": "GrassLTCorner",
+      "to": "GrassSand_LTCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "25,-23",
+      "from": "GrassLT",
+      "to": "GrassSand_LT",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "25,-19",
+      "from": "GrassLD",
+      "to": "GrassSand_LD",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "25,-18",
+      "from": "GrassLDCorner",
+      "to": "GrassSand_LDCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "26,-23",
+      "from": "GrassLTCorner",
+      "to": "GrassSand_LTCorner",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "26,-22",
+      "from": "GrassL",
+      "to": "GrassSand_L",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "26,-21",
+      "from": "GrassL",
+      "to": "GrassSand_L",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "26,-20",
+      "from": "GrassL",
+      "to": "GrassSand_L",
+      "reason": "water-overhang"
+    },
+    {
+      "key": "26,-19",
+      "from": "GrassLDCorner",
+      "to": "GrassSand_LDCorner",
+      "reason": "water-overhang"
+    }
+  ]
 }

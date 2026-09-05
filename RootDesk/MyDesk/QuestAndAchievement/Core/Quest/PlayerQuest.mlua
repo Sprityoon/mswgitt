@@ -55,9 +55,12 @@ script PlayerQuest extends Component
 			deserTable["Cycle"] = cycleResetTimeDeserTable
 		end
 		
-		local sds = ""
+		local sds = "{}"
 		if not _Util:IsNilorEmptyTable(deserTable) then
-			sds = _HttpService:JSONEncode(deserTable)
+			local ok, encoded = pcall(function() return _HttpService:JSONEncode(deserTable) end)
+			if ok and encoded ~= nil and encoded ~= "" then
+				sds = encoded
+			end
 		end
 		
 		saveData[_GMQuestToolLogic.StorageName] = sds

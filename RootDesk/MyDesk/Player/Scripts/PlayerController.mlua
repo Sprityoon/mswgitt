@@ -61,6 +61,8 @@ script PlayerController extends Component
 	property string ReticleSpriteRUID = "662fd2de11094cf08be40d8b3fab11bc"
 
 	property number ReticleScale = 1.0
+	property number ReticleOffsetX = 0.0
+	property number ReticleOffsetY = 0.0
 
 	@Sync
 	property number IFrameTimer = 0.0
@@ -1280,22 +1282,6 @@ script PlayerController extends Component
 				self:UpdateMineReticle()
 		end
 
-		-- 조준점과 **별개로**, 지형 편집 도구를 들고 있으면 실제로 영향받는 셀들을 함께 표시한다.
-		self:UpdateTerrainAffectPreview(isPlaceable, activeItem)
-	end
-
-	@ExecSpace("ClientOnly")
-	method void UpdateTerrainAffectPreview(boolean isPlaceable, string activeItem)
-		-- 삽, 호미, 물삽 등 지형 편집 도구의 보조 조준점(TerrainAffect) 표시를 비활성화하고 기존 활성화된 풀 엔티티를 숨긴다.
-		local pool = self._T.TerrainAffectPool
-		if pool ~= nil then
-			for i = 1, 16 do
-				local ent = pool[i]
-				if isvalid(ent) and ent.Enable then
-					ent.Enable = false
-				end
-			end
-		end
 	end
 
 	method boolean IsAimTarget(Entity target)
@@ -1384,6 +1370,26 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method boolean IsTerrainEditItemActive()
+		-- 지금 든 아이템이 지형 편집 도구(2×2 블록 편집)인지.
+		-- 🔴 서버(PlayerInventory:ServerRequestTerrainEdit)와 **같은 컬럼**(item_dataset.TerrainEditAction)을
+		--    본다 — 조준점이 실제 편집 대상과 어긋나지 않으려면 판정 기준이 하나여야 한다.
+		local inv = self.Entity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return false end
+		local slots = _HttpService:JSONDecode(inv.QuickSlotsJson) or {}
+		local activeItem = slots[inv.SelectedQuickSlotIndex] or ""
+		if activeItem == "" then return false end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return false end
+		local row = ds:FindRow("Name", inv:GetBaseItemName(activeItem))
+		if row == nil then return false end
+		-- pcall 가드: 데이터셋 미리프레시로 컬럼이 없어도 조용히 false.
+		local ok, v = pcall(function() return row:GetItem("TerrainEditAction") end)
+		if not ok or v == nil then return false end
+		return v ~= ""
+	end
+
+	@ExecSpace("ClientOnly")
 	method void UpdateMineReticle()
 		-- Highlights the cell the next Ctrl mine will hit (aim = LastDirection*), reusing the
 		-- PlacementPreview entity. Mutually exclusive with the furniture placement preview.
@@ -1397,8 +1403,21 @@ script PlayerController extends Component
 		local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.8
 		local targetCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
 		if targetCell == nil then return end
-		local cellWorldPos = Vector3(targetCell.x + 1.0, targetCell.y + 1.0, 0)
-		
+
+		local isTerrain = self:IsTerrainEditItemActive()
+		local cellWorldPos = nil
+		if isTerrain and _ResourceSpawner ~= nil then
+			-- 2×2 지형 편집 도구(물삽/호미/삽/풀씨 등):
+			-- 서버(PlayerInventory:ServerRequestTerrainEdit)와 동일하게 GetAimBlockOrigin을 호출하여
+			-- 실제로 편집되는 2×2 블록(origin.x .. origin.x+2, origin.y .. origin.y+2)의 정중앙에 조준점을 위치시킨다.
+			local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, 2)
+			cellWorldPos = Vector3(origin.x + 1.0 + self.ReticleOffsetX, origin.y + 1.0 + self.ReticleOffsetY, 0)
+		else
+			-- 일반 채광/벌목 도구 및 맨손 (1×1 단일 타일):
+			-- 대상 타일 셀(targetCell.x .. targetCell.x+1, targetCell.y .. targetCell.y+1)의 정중앙에 조준점을 위치시킨다.
+			cellWorldPos = Vector3(targetCell.x + 0.5 + self.ReticleOffsetX, targetCell.y + 0.5 + self.ReticleOffsetY, 0)
+		end
+
 		local preview = self._T.PlacementPreviewEntity
 		if not isvalid(preview) then
 			preview = currentMap:GetChildByName("PlacementPreview")
@@ -2187,10 +2206,23 @@ script PlayerController extends Component
 		
 		-- Look up target player (online only)
 		local targetUserId = nil
+		local targetResolvedName = targetPlayerName
+		local targetLower = string.lower(targetPlayerName)
 		for _, user in pairs(_UserService.UserEntities) do
-			if string.lower(user.Name) == string.lower(targetPlayerName) then
-				targetUserId = user.PlayerComponent.UserId
-				break
+			if isvalid(user) and isvalid(user.PlayerComponent) then
+				local uId = user.PlayerComponent.UserId
+				local nick = ""
+				if _PersistenceManager ~= nil then
+					nick = _PersistenceManager:GetCharacterName(uId)
+				end
+				if (nick == nil or nick == "") and user.PlayerComponent.Nickname ~= nil then
+					nick = user.PlayerComponent.Nickname
+				end
+				if string.lower(nick or "") == targetLower or string.lower(user.Name or "") == targetLower then
+					targetUserId = uId
+					if nick ~= nil and nick ~= "" then targetResolvedName = nick end
+					break
+				end
 			end
 		end
 		
@@ -2204,7 +2236,7 @@ script PlayerController extends Component
 		if isvalid(map) then
 			local safe = self:ResolveHomeWarpPosition(mapName, -3, 0)
 			playerComp:MoveToMapPosition(mapName, safe)
-			self:ClientShowWarpFeedback(targetPlayerName .. "님의 영지에 입장했습니다.")
+			self:ClientShowWarpFeedback(targetResolvedName .. "님의 영지에 입장했습니다.")
 		else
 			self:ClientShowWarpFeedback("해당 유저가 오프라인이거나 영지가 열려있지 않습니다.")
 		end

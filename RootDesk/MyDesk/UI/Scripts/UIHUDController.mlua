@@ -67,6 +67,11 @@ script UIHUDController extends Component
 		end
 		if isvalid(self.spawnFade) and isvalid(self.spawnFade.Entity) then
 			self.spawnFade.Entity.Enable = false
+			self.spawnFade.RaycastTarget = false
+			local col = self.spawnFade.Color
+			if col ~= nil then
+				self.spawnFade.Color = Color(col.r, col.g, col.b, 0)
+			end
 		end
 		local clock = self._T.TimeClockEntity
 		if isvalid(clock) then
@@ -667,40 +672,29 @@ script UIHUDController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void InitTimeUI()
-		-- 동적 오버레이 패널 생성 (uisprite 모델을 활용하여 화면을 덮는 밤낮 색상 오버레이로 사용)
-		local overlay = self.Entity:GetChildByName("NightOverlay")
-		if isvalid(overlay) and not isvalid(overlay.SpriteGUIRendererComponent) then
-			overlay:Destroy()
-			overlay = nil
+		-- 기존 HUDGroup 직속에 남아있을 수 있는 오버레이 정리 (HUD 침범 방지)
+		local oldNight = self.Entity:GetChildByName("NightOverlay")
+		if isvalid(oldNight) then
+			oldNight:Destroy()
 		end
-		if not isvalid(overlay) then
-			overlay = _SpawnService:SpawnByModelId("uisprite", "NightOverlay", Vector3.zero, self.Entity)
+		local oldWeather = self.Entity:GetChildByName("WeatherOverlay")
+		if isvalid(oldWeather) then
+			oldWeather:Destroy()
 		end
-		
+
+		-- 최하단 환경 레이어(EnvironmentOverlayGroup, GroupOrder 0)의 오버레이 참조 바인딩
+		local overlay = _EntityService:GetEntityByPath("/ui/EnvironmentOverlayGroup/NightOverlay")
 		if isvalid(overlay) then
 			self._T.NightOverlayEntity = overlay
 			local sprite = overlay.SpriteGUIRendererComponent
 			if isvalid(sprite) then
-				sprite.Color = Color(0.04, 0.04, 0.16, 0.0)
+				sprite.Color = Color(0.06, 0.08, 0.22, 0.0)
 				sprite.RaycastTarget = false
-			end
-			local transform = overlay.UITransformComponent
-			if isvalid(transform) then
-				transform.AlignmentOption = AlignmentType.CastFrom("StretchAll")
-				transform.OffsetMin = Vector2(0, 0)
-				transform.OffsetMax = Vector2(0, 0)
 			end
 		end
 
-		-- T21: 날씨 틴트 레이어 (밤 오버레이와 별도 스택)
-		local weatherOverlay = self.Entity:GetChildByName("WeatherOverlay")
-		if isvalid(weatherOverlay) and not isvalid(weatherOverlay.SpriteGUIRendererComponent) then
-			weatherOverlay:Destroy()
-			weatherOverlay = nil
-		end
-		if not isvalid(weatherOverlay) then
-			weatherOverlay = _SpawnService:SpawnByModelId("uisprite", "WeatherOverlay", Vector3.zero, self.Entity)
-		end
+		-- 날씨 틴트 레이어 바인딩
+		local weatherOverlay = _EntityService:GetEntityByPath("/ui/EnvironmentOverlayGroup/WeatherOverlay")
 		if isvalid(weatherOverlay) then
 			self._T.WeatherOverlayEntity = weatherOverlay
 			local wSprite = weatherOverlay.SpriteGUIRendererComponent
@@ -708,15 +702,9 @@ script UIHUDController extends Component
 				wSprite.Color = Color(0, 0, 0, 0)
 				wSprite.RaycastTarget = false
 			end
-			local wTransform = weatherOverlay.UITransformComponent
-			if isvalid(wTransform) then
-				wTransform.AlignmentOption = AlignmentType.CastFrom("StretchAll")
-				wTransform.OffsetMin = Vector2(0, 0)
-				wTransform.OffsetMax = Vector2(0, 0)
-			end
 		end
 
-		-- 동적 시계 텍스트 생성
+		-- 동적 시계 텍스트 생성 (HUD 상단 중앙)
 		local clock = self.Entity:GetChildByName("TimeClock")
 		if not isvalid(clock) then
 			clock = _SpawnService:SpawnByModelId("uitext", "TimeClock", Vector3.zero, self.Entity)
@@ -732,16 +720,16 @@ script UIHUDController extends Component
 			local transform = clock.UITransformComponent
 			if isvalid(transform) then
 				transform.AlignmentOption = AlignmentType.CastFrom("TopCenter")
-				transform.anchoredPosition = Vector2(0, -55) -- 상단 중앙 배치
-				transform.RectSize = Vector2(280, 35)
+				transform.anchoredPosition = Vector2(0, -48) -- 상단 중앙 배치
+				transform.RectSize = Vector2(380, 48) -- 글자 크기 확대에 맞춘 여유 있는 크기
 			end
 			local textComp = clock.TextComponent
 			if isvalid(textComp) then
-				textComp.FontSize = 20
+				textComp.FontSize = 28 -- 기존 20에서 28로 시원하게 확대
 				textComp.FontColor = Color(1.0, 1.0, 1.0, 1.0)
 				textComp.UseOutLine = true
 				textComp.OutlineColor = Color(0.0, 0.0, 0.0, 1.0)
-				textComp.OutlineWidth = 1.0
+				textComp.OutlineWidth = 1.5
 				textComp.Alignment = TextAlignmentType.MiddleCenter
 			end
 		end
@@ -795,33 +783,45 @@ script UIHUDController extends Component
 			end
 		end
 
-		-- 2. 화면 밤낮 톤 오버레이 알파 보간
+		-- 2. 화면 밤낮 톤 오버레이 (옵션 1: 시야 100% 확보형 은은한 달빛 무드, 최대 알파 0.07)
 		local overlay = self._T.NightOverlayEntity
+		if not isvalid(overlay) then
+			overlay = _EntityService:GetEntityByPath("/ui/EnvironmentOverlayGroup/NightOverlay")
+			self._T.NightOverlayEntity = overlay
+		end
+
 		if isvalid(overlay) and isvalid(overlay.SpriteGUIRendererComponent) then
 			local alpha = 0.0
-			-- 275초 ~ 325초: 일몰 (0.0 -> 0.35)
-			-- 575초 ~ 25초: 일출 (0.35 -> 0.0)
+			-- 그룹 정식 비네트 마스크(중앙 투명 0.0 / 외곽 1.0) 기반: 외곽 모서리는 50% 밤하늘 어둠, 중앙은 100% 시야 확보
+			local maxNightAlpha = 0.50
+			-- 275초 ~ 325초: 일몰 (0.0 -> maxNightAlpha)
+			-- 575초 ~ 25초: 일출 (maxNightAlpha -> 0.0)
 			if curTime >= 275 and curTime <= 325 then
 				local t = (curTime - 275) / 50
-				alpha = t * 0.35
+				alpha = t * maxNightAlpha
 			elseif curTime >= 575 then
 				local t = (curTime - 575) / 50
-				alpha = 0.35 - (t * 0.35)
+				alpha = maxNightAlpha - (t * maxNightAlpha)
 			elseif curTime <= 25 then
 				local t = (curTime + 25) / 50
-				alpha = 0.35 - (t * 0.35)
+				alpha = maxNightAlpha - (t * maxNightAlpha)
 			elseif curTime > 325 and curTime < 575 then
-				alpha = 0.35
+				alpha = maxNightAlpha
 			else
 				alpha = 0.0
 			end
 			
-			-- 자연스럽게 군청색 어두운 톤 적용
-			overlay.SpriteGUIRendererComponent.Color = Color(0.04, 0.04, 0.16, alpha)
+			-- 깊고 아늑한 밤하늘 남청색 비네트 틴트
+			overlay.SpriteGUIRendererComponent.Color = Color(0.04, 0.06, 0.18, alpha)
 		end
 
 		-- 3. T21 날씨 오버레이 틴트 (OverlayColor @Sync — EffectRUID 파티클은 미바인딩 시 틴트만)
 		local wOverlay = self._T.WeatherOverlayEntity
+		if not isvalid(wOverlay) then
+			wOverlay = _EntityService:GetEntityByPath("/ui/EnvironmentOverlayGroup/WeatherOverlay")
+			self._T.WeatherOverlayEntity = wOverlay
+		end
+
 		if isvalid(wOverlay) and isvalid(wOverlay.SpriteGUIRendererComponent) then
 			local oc = "0|0|0|0"
 			if _WeatherManager ~= nil then

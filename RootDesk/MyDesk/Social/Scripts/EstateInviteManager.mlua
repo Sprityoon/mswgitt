@@ -1,0 +1,168 @@
+@Logic
+script EstateInviteManager extends Logic
+
+	-- Phase 23-B: 개인 영지 초대 라우터.
+	-- 초대자는 자기 영지(Home_<userId>) 안에서만 초대를 보낼 수 있다 — 영지 맵은 동적 맵이라
+	-- 소유자가 영지를 비우면 파괴되고(PersistenceManager.OnPlayerMapChanged), 그 뒤에는 워프 대상이
+	-- 존재하지 않기 때문이다. 수락 시점에도 맵 존재를 다시 확인한다.
+	-- 방문객 권한은 부여하지 않는다 — 채굴/설치/상호작용은 영지 권한 설정(UIPermissionController)이 전담한다.
+
+	property number InviteExpireSeconds = 60.0
+	property number InviteCooldownSeconds = 3.0
+
+	-- 초대받은 userId -> { fromUserId, fromName, expireAt }
+	property table PendingInvites = {}
+	-- 초대를 보낸 userId -> 마지막 전송 시각(ServerElapsedSeconds)
+	property table LastInviteTimes = {}
+
+	@ExecSpace("ServerOnly")
+	method void OnBeginPlay()
+		-- 서버 측 초대 상태 초기화.
+		self.PendingInvites = {}
+		self.LastInviteTimes = {}
+		log("EstateInviteManager: estate invite router initialized.")
+	end
+
+	@ExecSpace("ServerOnly")
+	method string ResolveDisplayName(string userId)
+		-- 저장된 캐릭터 닉네임 우선, 없으면 PlayerComponent.Nickname, 둘 다 없으면 기본값.
+		local name = ""
+		if _PersistenceManager ~= nil then
+			name = _PersistenceManager:GetCharacterName(userId)
+		end
+		if name == nil or name == "" then
+			local ent = _UserService:GetUserEntityByUserId(userId)
+			if isvalid(ent) and isvalid(ent.PlayerComponent) then
+				name = ent.PlayerComponent.Nickname
+			end
+		end
+		if name == nil or name == "" then name = "모험가" end
+		return name
+	end
+
+	@ExecSpace("ServerOnly")
+	method void Notify(string userId, string message)
+		-- 시스템 채팅으로 결과를 알린다 (채팅 시스템과 단일 통보 경로 공유).
+		if userId == nil or userId == "" then return end
+		if _ChatManager ~= nil then
+			_ChatManager:SendSystemMessageToUser(userId, message)
+		end
+	end
+
+	@ExecSpace("Server")
+	method void ServerSendInvite(string targetPlayerId)
+		-- 클라이언트(플레이어 인터랙션 메뉴)가 요청하는 영지 초대 전송.
+		local fromUserId = senderUserId
+		if fromUserId == nil or fromUserId == "" then return end
+		if targetPlayerId == nil or targetPlayerId == "" then return end
+		if targetPlayerId == fromUserId then
+			self:Notify(fromUserId, "자신을 초대할 수 없습니다.")
+			return
+		end
+
+		local now = _UtilLogic.ServerElapsedSeconds or 0
+		local last = self.LastInviteTimes[fromUserId] or -999
+		if (now - last) < self.InviteCooldownSeconds then
+			self:Notify(fromUserId, "초대를 너무 빠르게 보낼 수 없습니다.")
+			return
+		end
+
+		local inviter = _UserService:GetUserEntityByUserId(fromUserId)
+		if not isvalid(inviter) then return end
+		local currentMap = inviter.CurrentMap
+		local homeMapName = "Home_" .. fromUserId
+		if not isvalid(currentMap) or currentMap.Name ~= homeMapName then
+			self:Notify(fromUserId, "내 영지 안에서만 초대할 수 있습니다.")
+			return
+		end
+
+		local target = _UserService:GetUserEntityByUserId(targetPlayerId)
+		if not isvalid(target) or not isvalid(target.PlayerComponent) then
+			self:Notify(fromUserId, "상대를 찾을 수 없습니다.")
+			return
+		end
+
+		self.LastInviteTimes[fromUserId] = now
+		local fromName = self:ResolveDisplayName(fromUserId)
+		self.PendingInvites[targetPlayerId] = {
+			fromUserId = fromUserId,
+			fromName = fromName,
+			expireAt = now + self.InviteExpireSeconds
+		}
+
+		local targetName = self:ResolveDisplayName(targetPlayerId)
+		self:Notify(fromUserId, targetName .. "님에게 영지 초대를 보냈습니다.")
+		self:ClientShowInvite(fromName, math.floor(self.InviteExpireSeconds), targetPlayerId)
+		log("[ESTATE-INVITE] " .. fromName .. "(" .. fromUserId .. ") -> " .. targetName .. "(" .. targetPlayerId .. ")")
+	end
+
+	@ExecSpace("Server")
+	method void ServerRespondInvite(boolean accept)
+		-- 초대받은 클라이언트의 수락/거절 응답.
+		local guestUserId = senderUserId
+		if guestUserId == nil or guestUserId == "" then return end
+
+		local record = self.PendingInvites[guestUserId]
+		self.PendingInvites[guestUserId] = nil
+		if record == nil then
+			self:Notify(guestUserId, "처리할 초대가 없습니다.")
+			return
+		end
+
+		local now = _UtilLogic.ServerElapsedSeconds or 0
+		if now > record.expireAt then
+			self:Notify(guestUserId, "초대가 만료되었습니다.")
+			return
+		end
+
+		local guestName = self:ResolveDisplayName(guestUserId)
+		if not accept then
+			self:Notify(record.fromUserId, guestName .. "님이 영지 초대를 거절했습니다.")
+			self:Notify(guestUserId, "영지 초대를 거절했습니다.")
+			return
+		end
+
+		local mapName = "Home_" .. record.fromUserId
+		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
+		if not isvalid(map) then
+			self:Notify(guestUserId, record.fromName .. "님의 영지가 더 이상 열려있지 않습니다.")
+			self:Notify(record.fromUserId, guestName .. "님이 수락했지만 영지가 닫혀 있어 이동하지 못했습니다.")
+			return
+		end
+
+		local guest = _UserService:GetUserEntityByUserId(guestUserId)
+		if not isvalid(guest) or not isvalid(guest.PlayerComponent) then return end
+
+		local arrive = Vector2(-3, 0)
+		local pc = guest:GetComponent("script.PlayerController")
+		if isvalid(pc) then
+			---@type PlayerController
+			local controller = pc
+			arrive = controller:ResolveHomeWarpPosition(mapName, -3, 0)
+		end
+		guest.PlayerComponent:MoveToMapPosition(mapName, arrive)
+
+		self:Notify(guestUserId, record.fromName .. "님의 영지에 입장했습니다.")
+		self:Notify(record.fromUserId, guestName .. "님이 영지에 입장했습니다.")
+		log("[ESTATE-INVITE] accepted: " .. guestName .. " -> " .. mapName)
+	end
+
+	@ExecSpace("Client")
+	method void ClientShowInvite(string fromName, integer expireSeconds)
+		-- 초대받은 클라이언트에 수락/거절 팝업을 띄운다 (targetUserId는 호출부 마지막 인자).
+		local popup = _EntityService:GetEntityByPath("/ui/PopupGroup/EstateInvitePopup")
+		if not isvalid(popup) then
+			log_warning("[ESTATE-INVITE] EstateInvitePopup missing")
+			return
+		end
+		local ctrl = popup:GetComponent("script.UIEstateInviteController")
+		if not isvalid(ctrl) then
+			log_warning("[ESTATE-INVITE] UIEstateInviteController missing")
+			return
+		end
+		---@type UIEstateInviteController
+		local controller = ctrl
+		controller:ShowInvite(fromName, expireSeconds)
+	end
+
+end

@@ -205,6 +205,21 @@ script UIChatController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method void PrepareWhisperTo(string nickname)
+		-- 외부(플레이어 인터랙션 메뉴 등)에서 귓속말을 시작할 때: 귓속말 탭으로 전환하고
+		-- 입력창에 "/w <닉네임> " 을 채운 뒤 포커스만 준다. 전송은 유저가 직접 한다.
+		if nickname == nil or nickname == "" then return end
+		self:SetChannel("whisper")
+		if not isvalid(self.inputEntity) then self:InitEntities() end
+		if not isvalid(self.inputEntity) then return end
+		local input = self.inputEntity:GetComponent("TextGUIRendererInputComponent")
+		if isvalid(input) then
+			input.Text = "/w " .. nickname .. " "
+		end
+		self:FocusInput()
+	end
+
+	@ExecSpace("ClientOnly")
 	method void UnfocusInput()
 		self.IsFocused = false
 		self:NotifyActivity() -- 방금 막 입력을 끝냈으니 바로 페이드하지 않고 유예를 준다

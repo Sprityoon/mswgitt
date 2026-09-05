@@ -1,0 +1,246 @@
+@Component
+script UIPlayerInteractController extends Component
+
+	-- Phase 23-B: 타 유저 클릭 인터랙션 메뉴 (귓속말 / 내 영지로 초대).
+	-- 루트 엔티티는 항상 Enable — 화면 터치 리스너가 살아 있어야 하므로, 표시는 자식 Card를 토글한다.
+	--
+	-- ⚠️ design-policy "월드 클릭/터치 상호작용 금지"(2026-07-15)의 예외다. 대상은 **다른 플레이어
+	-- 캐릭터뿐**이며 자원·NPC·포탈 등 F키 상호작용 대상은 건드리지 않는다. UI 위 클릭
+	-- (IsPointerOverUI)과 전경 조망(드래그 패닝) 중에는 판정하지 않아 기존 조작과 겹치지 않는다.
+
+	-- 클릭 판정 박스 (대상 플레이어 WorldPosition = 발밑 기준, 월드 단위)
+	property number HitHalfWidth = 0.7
+	property number HitBelow = 0.3
+	property number HitAbove = 1.6
+
+	property string targetUserIdCache = ""
+	property string targetNameCache = ""
+
+	property any closeHandler = nil
+	property any whisperHandler = nil
+	property any inviteHandler = nil
+
+	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
+	property number uiSfxVolume = 1.0
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 참조 해석 + 버튼 배선. 메뉴 본체(Card)는 숨긴 상태로 시작한다.
+		self:ResolveRefs()
+		self:Close()
+
+		if isvalid(self._T.closeE) then
+			self.closeHandler = self._T.closeE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:Close()
+			end)
+		end
+		if isvalid(self._T.whisperE) then
+			self.whisperHandler = self._T.whisperE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:OnWhisper()
+			end)
+		end
+		if isvalid(self._T.inviteE) then
+			self.inviteHandler = self._T.inviteE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:OnInvite()
+			end)
+		end
+		log("[PLAYER-INTERACT] ready card=" .. tostring(isvalid(self._T.card)))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 버튼 이벤트 해제.
+		if isvalid(self._T.closeE) and self.closeHandler then
+			self._T.closeE:DisconnectEvent(ButtonClickEvent, self.closeHandler)
+		end
+		if isvalid(self._T.whisperE) and self.whisperHandler then
+			self._T.whisperE:DisconnectEvent(ButtonClickEvent, self.whisperHandler)
+		end
+		if isvalid(self._T.inviteE) and self.inviteHandler then
+			self._T.inviteE:DisconnectEvent(ButtonClickEvent, self.inviteHandler)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ResolveRefs()
+		-- 자식 엔티티 캐시.
+		self._T.card = self.Entity:GetChildByName("Card", true)
+		self._T.nameE = self.Entity:GetChildByName("TargetName", true)
+		self._T.hintE = self.Entity:GetChildByName("Hint", true)
+		self._T.closeE = self.Entity:GetChildByName("BtnClose", true)
+		self._T.whisperE = self.Entity:GetChildByName("BtnWhisper", true)
+		self._T.inviteE = self.Entity:GetChildByName("BtnInvite", true)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlayClick()
+		-- 공통 UI 클릭 SFX.
+		_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume)
+	end
+
+	@ExecSpace("ClientOnly")
+	@EventSender("Service", "InputService")
+	handler HandleScreenTouchEvent(ScreenTouchEvent event)
+		-- 화면 클릭/터치 → 다른 플레이어 캐릭터를 맞췄으면 인터랙션 메뉴를 연다.
+		if event == nil then return end
+		if event.TouchId ~= 1 then return end
+		if _InputService:IsPointerOverUI() then return end
+		if self:IsFullViewActive() then return end
+
+		local worldPos = _UILogic:ScreenToWorldPosition(event.TouchPoint)
+		if worldPos == nil then return end
+
+		local hitEntity = self:FindPlayerAt(worldPos)
+		if not isvalid(hitEntity) then
+			self:Close()
+			return
+		end
+		self:OpenFor(hitEntity)
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsFullViewActive()
+		-- 전경 조망(Eagle-Eye) 모드는 드래그 패닝을 쓰므로 클릭 판정을 넘긴다.
+		local minimap = _EntityService:GetEntityByPath("/ui/HUDGroup/Minimap")
+		if not isvalid(minimap) then return false end
+		local ctrl = minimap:GetComponent("script.UIMinimapController")
+		if not isvalid(ctrl) then return false end
+		---@type UIMinimapController
+		local c = ctrl
+		return c.IsFullViewMode
+	end
+
+	@ExecSpace("ClientOnly")
+	method any FindPlayerAt(Vector2 worldPos)
+		-- 같은 맵에 있는 다른 플레이어 중 클릭 지점을 품는 가장 가까운 캐릭터를 고른다.
+		local localPlayer = _UserService.LocalPlayer
+		if not isvalid(localPlayer) then return nil end
+		local localMap = localPlayer.CurrentMap
+		if not isvalid(localMap) then return nil end
+		local localUserId = ""
+		if isvalid(localPlayer.PlayerComponent) then
+			localUserId = localPlayer.PlayerComponent.UserId
+		end
+
+		local best = nil
+		local bestDist = 0
+		for _, user in pairs(_UserService.UserEntities) do
+			if isvalid(user) and isvalid(user.PlayerComponent) and user.PlayerComponent.UserId ~= localUserId then
+				if isvalid(user.CurrentMap) and user.CurrentMap == localMap then
+					local tr = user.TransformComponent
+					if isvalid(tr) then
+						local p = tr.WorldPosition
+						local dx = worldPos.x - p.x
+						local dy = worldPos.y - p.y
+						if math.abs(dx) <= self.HitHalfWidth and dy >= -self.HitBelow and dy <= self.HitAbove then
+							local dist = dx * dx + dy * dy
+							if best == nil or dist < bestDist then
+								best = user
+								bestDist = dist
+							end
+						end
+					end
+				end
+			end
+		end
+		return best
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenFor(Entity targetPlayer)
+		-- 클릭한 플레이어를 대상으로 메뉴를 연다.
+		if not isvalid(targetPlayer) or not isvalid(targetPlayer.PlayerComponent) then return end
+		if not isvalid(self._T.card) then self:ResolveRefs() end
+
+		local pc = targetPlayer.PlayerComponent
+		local name = ""
+		if _PersistenceManager ~= nil then
+			name = _PersistenceManager:GetCharacterName(pc.UserId)
+		end
+		if name == nil or name == "" then
+			name = pc.Nickname
+		end
+		if name == nil or name == "" then name = "모험가" end
+		self.targetUserIdCache = pc.UserId
+		self.targetNameCache = name
+
+		self:SetLabel(self._T.nameE, name)
+		self:SetLabel(self._T.hintE, self:BuildHint())
+		if isvalid(self._T.card) then
+			self._T.card.Enable = true
+		end
+		log("[PLAYER-INTERACT] open target=" .. name)
+	end
+
+	@ExecSpace("ClientOnly")
+	method string BuildHint()
+		-- 초대 가능 조건(내 영지 안)을 미리 알려 헛클릭을 줄인다.
+		if self:IsInOwnEstate() then
+			return "초대하면 상대가 수락 후 이동합니다."
+		end
+		return "초대는 내 영지 안에서만 보낼 수 있습니다."
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsInOwnEstate()
+		-- 로컬 플레이어가 자기 영지(Home_<본인 UserId>)에 있는지.
+		local localPlayer = _UserService.LocalPlayer
+		if not isvalid(localPlayer) or not isvalid(localPlayer.PlayerComponent) then return false end
+		local map = localPlayer.CurrentMap
+		if not isvalid(map) then return false end
+		return map.Name == "Home_" .. localPlayer.PlayerComponent.UserId
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		-- 메뉴 본체만 숨긴다 (루트는 계속 Enable — 터치 리스너 유지).
+		if not isvalid(self._T.card) then self:ResolveRefs() end
+		if isvalid(self._T.card) then
+			self._T.card.Enable = false
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnWhisper()
+		-- 채팅 입력창에 "/w <닉네임> " 을 채우고 포커스만 준다.
+		self:Close()
+		if self.targetNameCache == "" then return end
+		local chatUi = _EntityService:GetEntityByPath("/ui/HUDGroup/ChatPanel")
+		if not isvalid(chatUi) then return end
+		local ctrl = chatUi:GetComponent("script.UIChatController")
+		if not isvalid(ctrl) then return end
+		---@type UIChatController
+		local c = ctrl
+		c:PrepareWhisperTo(self.targetNameCache)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnInvite()
+		-- 서버에 영지 초대 전송을 요청한다 (조건 검증은 전부 서버가 한다).
+		self:Close()
+		if self.targetUserIdCache == "" then return end
+		if _EstateInviteManager == nil then
+			log_warning("[PLAYER-INTERACT] EstateInviteManager missing")
+			return
+		end
+		_EstateInviteManager:ServerSendInvite(self.targetUserIdCache)
+		log("[PLAYER-INTERACT] invite requested for " .. self.targetNameCache)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetLabel(Entity ent, string text)
+		-- 프로젝트 UI 텍스트 2계열(TextGUIRenderer / 레거시 Text) 공통 세터.
+		if not isvalid(ent) then return end
+		if isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.Text = text
+			return
+		end
+		if isvalid(ent.TextComponent) then
+			ent.TextComponent.Text = text
+		end
+	end
+
+end

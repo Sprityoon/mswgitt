@@ -300,12 +300,27 @@ script UIMainMenuController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method table GetSlotMeta(integer slot)
+		if self.slotMeta == nil then return nil end
+		local sKey = tostring(slot)
+		local nKey = tonumber(slot) or 0
+		return self.slotMeta[sKey] or self.slotMeta[nKey]
+	end
+
+	@ExecSpace("ClientOnly")
 	method void OpenWithMetaJson(string metaJson)
 		self.slotMeta = {}
 		if metaJson ~= nil and metaJson ~= "" and metaJson ~= "{}" then
 			local ok, decoded = pcall(function() return _HttpService:JSONDecode(metaJson) end)
 			if ok and type(decoded) == "table" then
-				self.slotMeta = decoded
+				for k, v in pairs(decoded) do
+					local sKey = tostring(k)
+					local nKey = tonumber(k)
+					self.slotMeta[sKey] = v
+					if nKey ~= nil then
+						self.slotMeta[nKey] = v
+					end
+				end
 			end
 		end
 		self.isOpen = true
@@ -363,6 +378,14 @@ script UIMainMenuController extends Component
 		if isvalid(c) then
 			c:SetPlayHudVisible(on)
 		end
+		if not on then
+			local fadeEnt = _EntityService:GetEntityByPath("/ui/HUDGroup/SpawnFade")
+			if isvalid(fadeEnt) then
+				fadeEnt.Enable = false
+				local spr = fadeEnt.SpriteGUIRendererComponent
+				if isvalid(spr) then spr.RaycastTarget = false end
+			end
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -405,7 +428,10 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnTitleContinue()
-		if not self.isOpen then return end
+		if not self.isOpen then
+			self:SetTitleHint("데이터를 불러오는 중입니다. 잠시만 기다려주세요...")
+			return
+		end
 		local any = false
 		for i = 1, 5 do
 			if self:IsOccupied(i) then any = true break end
@@ -433,7 +459,7 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method boolean IsOccupied(integer slot)
-		local meta = self.slotMeta[tostring(slot)]
+		local meta = self:GetSlotMeta(slot)
 		return meta ~= nil and type(meta) == "table" and meta.name ~= nil and tostring(meta.name) ~= ""
 	end
 
@@ -442,7 +468,7 @@ script UIMainMenuController extends Component
 		local isNew = (self.pendingAction == "new")
 		for i = 1, 5 do
 			local occupied = self:IsOccupied(i)
-			local meta = self.slotMeta[tostring(i)]
+			local meta = self:GetSlotMeta(i)
 			local title = self["slot" .. i .. "Title"]
 			local info = self["slot" .. i .. "Info"]
 			local btnS = self["slot" .. i .. "BtnSelect"]
@@ -755,13 +781,13 @@ script UIMainMenuController extends Component
 	method void OnDelete(integer slot)
 		if not self.isOpen then return end
 		if not self:IsOccupied(slot) then return end
-		local meta = self.slotMeta[tostring(slot)]
+		local meta = self:GetSlotMeta(slot)
 		self.pendingSlot = slot
 		self.pendingAction = "delete"
 		if isvalid(self.namePrompt) then self.namePrompt.Enable = true end
 		if isvalid(self.nameInput) then self.nameInput.Text = "" end
 		if isvalid(self.nameError) then
-			self.nameError.Text = "삭제하려면 닉네임 '" .. tostring(meta.name) .. "' 을 입력"
+			self.nameError.Text = "삭제하려면 닉네임 '" .. tostring(meta and meta.name or "") .. "' 을 입력"
 		end
 	end
 
@@ -777,7 +803,7 @@ script UIMainMenuController extends Component
 		end
 		raw = string.match(raw, "^%s*(.-)%s*$") or ""
 		if self.pendingAction ~= "delete" then return end
-		local meta = self.slotMeta[tostring(self.pendingSlot)]
+		local meta = self:GetSlotMeta(self.pendingSlot)
 		local expect = meta and tostring(meta.name) or ""
 		if raw ~= expect then
 			if isvalid(self.nameError) then self.nameError.Text = "닉네임이 일치하지 않습니다" end
@@ -815,10 +841,17 @@ script UIMainMenuController extends Component
 	@ExecSpace("ClientOnly")
 	method void ApplyMetaJson(string metaJson)
 		self.slotMeta = {}
-		if metaJson ~= nil and metaJson ~= "" then
+		if metaJson ~= nil and metaJson ~= "" and metaJson ~= "{}" then
 			local ok, decoded = pcall(function() return _HttpService:JSONDecode(metaJson) end)
 			if ok and type(decoded) == "table" then
-				self.slotMeta = decoded
+				for k, v in pairs(decoded) do
+					local sKey = tostring(k)
+					local nKey = tonumber(k)
+					self.slotMeta[sKey] = v
+					if nKey ~= nil then
+						self.slotMeta[nKey] = v
+					end
+				end
 			end
 		end
 		if self.menuMode == "slot" then
