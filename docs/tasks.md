@@ -19,6 +19,7 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `ui/PopupGroup.ui` | **[UI/Phase 24-A] 팝업 12종 제목(Title) 텍스트 `MOD.Core.TextComponent`(legacy) → `TextGUIRendererComponent` 마이그레이션 (윈도우 크롬 통일 1단계, 시각값 동일 유지)** (2026-09-05, 진행 중) — 아래 참조 |
 | `docs/reference/announcement-template.md` · `docs/reference/README.md` | **[운영/문서] 공식 업데이트 공지사항 템플릿(톤앤매너, 디스코드 마크다운 최적화 서식, 한국어/영문 바이링구얼 템플릿) 수립** (2026-09-05 ⚖️ 확정) — 아래 참조 |
 | `RootDesk/MyDesk/item/DataSets/item_dataset.csv` | **[데이터/UX] 2×2 지형 편집 도구(호미, 삽, 물삽, 씨앗 등) 인게임 아이템 설명 갱신 (바라보는 방향 2×2 범위 가이드)** (2026-09-05 ⚖️ 확정) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `UIMainMenuController.mlua` · `UIHUDController.mlua` | **[핫픽스/UI] 메인메뉴 21:9 울트라와이드 모바일 화면비 대응(좌측 월드 노출 차단) & displayOrder 상향(15) 및 SpawnFade 강제 리셋을 통한 블랙 스크린 원천 방지** (2026-09-04 ⚖️ 확정) — 아래 참조 |
@@ -93,6 +94,15 @@
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` | **캐릭터 만들기 좌/우 페이지** (2026-08-14) — 아래 참조 |
+### 2026-09-05 [UI/Phase 24-A] 팝업 제목 텍스트 컴포넌트 마이그레이션 (진행 중 — PHASE 24 점검 1회차)
+
+- **배경**: PHASE 24(메이플 스타일 UI 고도화) 착수를 위해 `PopupGroup.ui` 15개 팝업을 `UIBuilder`로 실측 점검. `docs/design-policy.md` §5의 크롬 2계열(종이 큰창/나무 카드) 규격·닫기 버튼·제목 텍스트 스타일(폰트 크기/색상)은 15개 전부 일치했으나, **제목 텍스트 컴포넌트가 이원화**되어 있었음: Phase 23 신설 3종(QuestPopup/EstateInvitePopup/PlayerInteractPopup)만 `TextGUIRendererComponent`, 나머지 12종(Character/Inventory/Crafting/Collection/Chest/Furnace/Shop/Research/Request/Warp/Permission/SkillTree)은 구형 `MOD.Core.TextComponent`.
+- **결정 (사용자 확정)**: 12종을 지금 마이그레이션. 탭 칩 배경 스프라이트가 InventoryPopup만 다른 점은 의도된 차이로 보고 유지. 수량 스테퍼(-/+)는 현재 `InventoryPopup/DiscardPopup` 1곳만 존재하며 이번 범위에서는 확장하지 않음.
+- **수정 내용**: `UIBuilder.text(path, text, {size, color, bold, alignment, outline...})` 재호출로 12개 팝업 Title 엔티티를 `TextGUIRendererComponent`로 교체. `FontSize`/`FontColor`/`Bold`/(CollectionPopup만) `Outline` 값은 기존 값 그대로 보존, 트랜스폼(anchoredPosition/RectSize)은 옵션 생략으로 빌더가 자동 보존.
+- **검증**: `UIBuilder.write()` 자동 린트 통과(경고 99건 — 기존 L007/L011/L014 계열 베이스라인, 이번 변경으로 인한 신규 ERROR 없음). 위치/텍스트/폰트 값 재조회로 12개 전부 일치 확인.
+- **⚠️ MCP 미연결 — refresh 검증 보류**: 이 세션에서 `msw-maker-mcp`가 연결되어 있지 않아 `maker_refresh_workspace` / `maker_logs(kind="build")` 호출 불가. **build 로그 Error/Warning 카운트 확인 및 Maker 반영은 제작자가 MCP 연결 후 refresh로 재확인 필요.**
+- **진행 상태**: PHASE 24는 24-A(윈도우 크롬)→24-B(HUD)→24-C(툴팁/장비비교)→24-D(반응형) 순으로 그룹별 점검 중. 24-A 나머지 항목(탭 칩/스테퍼) 확인 완료, 다음은 24-B.
+
 ### 2026-09-04 [핫픽스/DB] PlayerDBManager 배치 저장 PartialFailure(1000006) 해소 (⚖️ 확정)
 
 - **배경**:
