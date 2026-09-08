@@ -104,6 +104,14 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
+		-- 테스트 모드가 켜져 있으면 메인메뉴(타이틀 화면)를 스킵하고 HUD를 즉시 활성화합니다.
+		if _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true then
+			self:SetRootEnable(false)
+			self:SetPlayHudVisible(true)
+			log("[TESTMODE] MainMenu UI skipped by TestModeConfig")
+			return
+		end
+
 		-- 타이틀은 첫 프레임부터 켠다. 끄면 HUD·PreviewTool이 슬롯 RPC보다 먼저 보인다.
 		self:SetRootEnable(true)
 		self:ShowPanel("title")
@@ -309,6 +317,10 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OpenWithMetaJson(string metaJson)
+		if _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true then
+			log("[TESTMODE] UIMainMenuController.OpenWithMetaJson ignored (TestMode active)")
+			return
+		end
 		self.slotMeta = {}
 		if metaJson ~= nil and metaJson ~= "" and metaJson ~= "{}" then
 			local ok, decoded = pcall(function() return _HttpService:JSONDecode(metaJson) end)

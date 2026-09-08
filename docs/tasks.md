@@ -19,6 +19,11 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `StoryDialogDataSet.csv` · `QuestDataSet.csv` | **[스토리/퀘스트] 마을 주민 대화 전수 자연화 & 대장장이(로체) 노인체·사극체 교정 & 201번 퀘스트명 정합(어디선가 느껴지는 기운) & 따옴표 파싱 버그 해소** (2026-09-08 ⚖️ 확정) — 아래 참조 |
+| `SlimeKing.model` | **[전투/보스] 슬라임킹 히트박스(콜라이더) 좌우 폭 정밀 조정 (HitComponent BoxSize.x 3.4 ➔ 2.8 축소 — 허공 피격/접촉 판정 완화)** (2026-09-08 ⚖️ 확정) — 아래 참조 |
+| `ResourceSpawner.mlua` | **[핫픽스/지형] 보스 사냥터(hunt04) 지형 테두리 바깥 바다 위에 자원이 생성되던 버그 해소 (자원 배치 판정에 L0 수역 레이어 누락 — 섬 컨셉 전환 이후 미반영분)** (2026-09-08 ⚖️ 확정) — 아래 참조 |
+| `TestModeConfig.mlua` · `UIMainMenuController.mlua` · `PlayerController.mlua` · `PersistenceManager.mlua` | **[개발도구/시스템] 테스트 모드(TestMode) 신설 — 메인화면(타이틀/슬롯) 자동 스킵 & 원하는 맵(town, home, hunt01/template_field, hunt04/template_boss 등) 즉시 스폰 및 한 줄 스위치(EnableTestMode) On/Off 제공** (2026-09-08 ⚖️ 확정) — 아래 참조 |
+| `MonsterAI.mlua` · `MonsterMeleeAttack.mlua` · `MonsterTelegraphMarker.mlua` · `AttackTelegraph.model` · `SlimeKing.model` | **[전투/보스] 슬라임킹 내려찍기(LEAP) 패턴 코어키퍼식 리워크 — 착지 예고 장판(범위·잔여시간 시각화) 신설 & 광역 판정을 원형(CircleShape)으로 교체해 보이는 원=맞는 원 정합 & 공중 접촉 틱 중단으로 i-frame 잠식 해소 & 프레임 단위 좌표 스냅을 실제 이동으로 교체해 순간이동감 제거** (2026-09-08 ⚖️ 확정) — 아래 참조 |
 | `ui/PopupGroup.ui` | **[UI/Phase 24-A] 팝업 12종 제목(Title) 텍스트 `MOD.Core.TextComponent`(legacy) → `TextGUIRendererComponent` 마이그레이션 (윈도우 크롬 통일 1단계, 시각값 동일 유지)** (2026-09-05, 진행 중) — 아래 참조 |
 | `docs/reference/announcement-template.md` · `docs/reference/README.md` | **[운영/문서] 공식 업데이트 공지사항 템플릿(톤앤매너, 디스코드 마크다운 최적화 서식, 한국어/영문 바이링구얼 템플릿) 수립** (2026-09-05 ⚖️ 확정) — 아래 참조 |
 | `RootDesk/MyDesk/item/DataSets/item_dataset.csv` | **[데이터/UX] 2×2 지형 편집 도구(호미, 삽, 물삽, 씨앗 등) 인게임 아이템 설명 갱신 (바라보는 방향 2×2 범위 가이드)** (2026-09-05 ⚖️ 확정) — 아래 참조 |
@@ -94,6 +99,119 @@
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` | **캐릭터 만들기 좌/우 페이지** (2026-08-14) — 아래 참조 |
+
+### 2026-09-08 [스토리/퀘스트] 마을 주민 대화 전수 자연화 & 대장장이(로체) 노인체·사극체 교정 & 201번 퀘스트명 정합 (⚖️ 확정)
+
+- **배경**: 사용자 피드백 — 마을 주민들의 퀘스트 대화 중 어색한 표현(따옴표 중첩, 비문, 말투 혼용 등) 전수 점검 및 정비 요청.
+  - 108번 주먹도끼 퀘스트명(`왠지 던질 수 있을것 같습니다..`)은 사용자 의도 존중 유지, 진행 설명만 K키 스킬 습득 안내로 정합.
+  - 201번 퀘스트명을 풀 채집 성격에 맞게 `어디선가 느껴지는 기운`으로 개정.
+- **수정 내용**:
+  1. **`StoryDialogDataSet.csv` 전수 교정**:
+     - 촌장(`elder` 201, 205, 211, 216): CSV 3중 따옴표(`"""`) 파싱 오류 제거, 온화하고 신중한 하게체 어투로 대화 연결성 개선.
+     - 낚시꾼(`fisher` 202): 첫 대사 비문(`마음이 들뜰수록 낚싯대부터 챙겼나.`) 및 복붙 어미(`맡아 주겠나?`)를 느긋한 낚시 스승 톤으로 교정.
+     - 대장장이(`blacksmith` 203, 213, 214, 215): 촌장 노인체(`~캐 오게 / ~보게`) 및 뜬금없는 대사("화로 땔감에 두드려 볼까?", "장작 보고 단단하군!")를 호탕하고 씩씩한 장인 어투(반말/해체)로 전면 교정.
+     - 연구원(`researcher` 204, 212): "돌에 풀향이 스며있다" 등의 부자연스러운 문맥을 불씨 받침석 및 잠식 표본 연구 맥락으로 매끄럽게 정비.
+  2. **`QuestDataSet.csv` 정합**:
+     - 108번: `ProgressingDesc`를 "스킬창(K)에서 주먹도끼 던지기를 습득하세요."로 사극체 교정.
+     - 201번: 퀘스트명을 `촌장의 걱정` ➔ `어디선가 느껴지는 기운`으로 개정 및 설명문 정합.
+     - 203번/213번: 대장장이 대화 및 퀘스트 설명문 톤앤매너 일치.
+- **검증**:
+  - `maker_refresh_workspace` status ok.
+  - `maker_logs(kind="build")` Error 0, Warning 0 (baseline 0 유지).
+  - 런타임 검증 보류(제작자 수행).
+
+### 2026-09-08 [전투/보스] 슬라임킹 히트박스(콜라이더) 좌우 폭 정밀 조정 (⚖️ 확정)
+
+- **배경**: 사용자 요청 — "슬라임킹의 콜라이더가 좌우로 조금 넓은거같아. 살짝 깎자."
+- **원인 분석 및 실측**:
+  - `SlimeKing.model`의 `MOD.Core.HitComponent.BoxSize`가 기존 `(3.4, 2.4)`, `TransformComponent.Scale`이 `2.8`로 설정되어 있었음.
+  - 월드 실측 가로폭 = $3.4 \times 2.8 = 9.52$ (반폭 4.76), 세로폭 = $2.4 \times 2.8 = 6.72$ (반폭 3.36).
+  - 스프라이트 외곽에 비해 가로 판정이 다소 넓어, 보스 몸체 바깥 빈 공간(허공)을 쳐도 피격되거나 스쳐도 접촉 피해를 입는 현상 발생.
+- **수정 내용 ([SlimeKing.model](file:///c:/메이플월드/RootDesk/MyDesk/Monster/Models/SlimeKing.model))**:
+  - `ModelBuilder`를 통해 `HitComponent.BoxSize`의 `x` 값을 `3.4` ➔ **`2.8`**로 약 18% 축소 정합 (`y`는 2.4 유지).
+  - 월드 실측 가로폭 = $2.8 \times 2.8 = 7.84$ (반폭 3.92, 좌우 각 0.84씩 총 1.68 축소).
+  - 가로:세로 비율 약 1.17:1로 슬라임 킹의 둥근 체형에 맞춰 허공 판정 완화.
+- **검증**:
+  - `ModelBuilder.write` 스냅샷 및 `git diff` 검증 완료.
+  - `maker_refresh_workspace` status ok.
+  - `maker_logs(kind="build")` Error 0, Warning 0 (baseline 0 유지).
+  - 런타임 검증 보류(제작자 수행).
+
+### 2026-09-08 [핫픽스/지형] 보스 사냥터 지형 밖 바다에 자원이 생성되던 버그 해소 (⚖️ 확정)
+
+- **배경**: 사용자 보고 — "보스필드에서 맵 지형 테두리 외곽에도 자원이 생성된다".
+- **원인 분석** (`template_boss.map` 레이어별 실측):
+
+  | 레이어 | 타일 수 | 범위 | 내용 |
+  |---|--:|---|---|
+  | L1 `RectTileMap` | 5041 | **-35..35 전면** | 지반(Soil) — 섬 바깥까지 전부 깔려 있음 |
+  | L2 `RectTileMap2` | 385 | -12..12 | 섬 잔디 |
+  | L0 `RectTileMap0` | 4416 | 외곽 전역 | **바다(Water)** |
+
+  1. `LoadChunk` 의 지반 분류는 **L2 → L1 순서로만** 읽고 **L0 를 아예 보지 않는다.** L1 이 -35..35 전면이라 섬 바깥 셀이 전부 `choice = "Soil"` 로 분류됐다.
+  2. `BiomeResourceDataSet` 에서 `green_island` 의 **`Stone` 은 `RequiredTile` 이 비어 있다.** 스폰 조건이 `requiredTile == "" or requiredTile == choice` 라 빈 값은 **와일드카드**로 모든 분류에 매칭된다.
+  3. 결과: 스폰 상한(`wallInner - ResourceBoundaryMargin` = |x|,|y| ≤ 25)까지, 즉 섬 경계(13) 바깥 13~25 링 전체에 Stone 이 바다 위로 흩뿌려졌다.
+  4. 근본 배경은 **Phase 22 섬 컨셉 전환이 바다를 L0 에 추가했는데 `ResourceSpawner` 의 자원 배치 판정만 그 변경을 따라가지 못한 것**이다(같은 파일의 `IsWaterAt` 은 이미 L0 를 먼저 본다).
+- **수정 내용** (`ResourceSpawner.mlua` `LoadChunk`):
+  1. `RectTileMap0` 레이어를 함께 조회한다(없는 맵도 있으므로 필수 레이어 검사에는 넣지 않음).
+  2. 지반 분류에서 **L0 수역을 가장 먼저 판정** — `IsWaterTileName` 이면 `choice = "Water"` (기존 게이트가 이미 제외). `IsWaterAt` 과 동일한 3단 지형 판정 순서로 통일했다.
+  3. 방어선 추가: `choice == ""`(어느 레이어에서도 지반을 못 찾음)도 스폰 금지. 와일드카드 `RequiredTile` 이 분류 실패 셀에 매칭되는 경로를 원천 차단한다.
+- **검증** (직접 Play, hunt04 재생성):
+
+  | 항목 | 수정 전 | 수정 후 |
+  |---|---|---|
+  | 섬 바깥 청크 자원 | `-3_0`(2) `-3_2`(2) `1_-3`(2) `2_2`(2) 등 | **0건** |
+  | hunt04 총 자원 | — | 9건 (전부 섬 안쪽 청크) |
+
+  Play 중 Error 0. 이 수정은 town·hunt01~03·개인 영지 등 **L0 바다를 쓰는 모든 맵에 동일하게 적용**된다(물 위 스폰이 함께 차단됨).
+### 2026-09-08 [전투/보스] 슬라임킹 내려찍기(LEAP) 패턴 코어키퍼식 리워크 (⚖️ 확정)
+
+- **배경**:
+  - 사용자 보고 3건: ① 어디에 착지하고 어느 범위에 피해를 주는지 시각적 단서가 전혀 없다 ② 어떤 경우엔 타격이 아예 안 된다 ③ 쫓아와 내려찍을 때 플레이어가 움직이면 "한 번 더 순간이동해서 때리는" 것처럼 어색하다.
+  - 코어키퍼 슬라임킹(Glurch)의 도약 패턴 — 예고 → 그림자/장판으로 착지점 노출 → 착지 충격파 — 을 기준으로 리워크 요청.
+- **원인 분석** (실측 기반):
+  1. **시각 단서 부재**: 예고 연출이 보스 스프라이트 주황 틴트(`TelegraphOn` @Sync) 하나뿐이었다. 착지 지점도, 피해 범위도 화면에 없었다.
+  2. **판정이 시각과 불일치**: 착지 타격이 `BoxShape(보스 위치, AttackBoxSize 4.5)` 정사각형이었다. 반경으로 치면 2.25인데 보스 실물은 `HitComponent.BoxSize 3.4×2.4 × Transform.Scale 2.8` = 월드 9.5×6.7 이라, 몸통 가장자리에 선 플레이어는 그대로 빠졌다.
+  3. **착지가 구조적으로 20% 못 미침**: `LeapLandingFraction = 0.8` 이라 항상 플레이어까지 거리의 80% 지점에 떨어졌다. `AttackRange 9` 에서 도약하면 1.8칸 못 미치는데 판정 반경은 2.25 — 원거리 도약은 사실상 헛방이었다.
+  4. **i-frame 잠식 (②의 주범)**: 플레이어 `HandlePlayerHit`의 i-frame 은 0.4초인데, 보스 `TickTouchDamage` 는 0.25초마다 접촉 피해를 넣는다. 착지 직전 0.4초 안에 접촉 틱이 한 번이라도 들어가면 정작 내려찍기 광역타가 `IFrameTimer > 0` 에 막혀 조용히 사라졌다.
+  5. **피격 시 패턴 통째 소멸**: 도약 중 한 대만 맞아도 넉백 분기가 `CurrentAIState = "CHASE"` 로 강제 전환해 착지 타격 자체가 실행되지 않았다.
+  6. **순간이동감 (③의 원인)**: FLY 구간이 매 프레임 `KinematicbodyComponent:SetWorldPosition` 으로 좌표를 스냅했다(텔레포트 API를 연속 이동에 사용 — `msw-combat-system` §1-6 금지 패턴). 여기에 `EndLeap` 의 좌표 스냅이 한 번 더 겹쳐 "한 번 더 순간이동"으로 보였다. 또한 갇힘 판정(`TickObstacleStuck`)이 공중에서도 돌아 `EscapeObstacleStuck` 이 스폰 방향으로 튕겨낼 수 있었다.
+- **수정 내용**:
+  1. **착지 예고 장판 신설** — `MonsterTelegraphMarker.mlua` + `AttackTelegraph.model` (신규):
+     - 바깥 링 = 최종 피해 범위, 안쪽 채움 원 = 착지까지 남은 시간(0 → 1 로 차오름). 도약 개시 후에는 링이 점멸해 착지 임박을 알린다.
+     - 스프라이트는 **공식 리소스 2종**을 쓴다: 링 = 레티클 `0ac43ac8bf83461692fc56565d048df7`(196px, 링 외곽 반지름 **87px = 0.87 월드**), 채움 = 소프트 디스크 `2476c2c0239e45478deb8f914954997c`(104px, 가시 반지름 38px = 0.38). 엔티티 Scale = `SlamRadius / 0.87` 하나로 반지름이 결정된다.
+     - 원본이 노란 레티클이라 클라에서 `Color(1, 0.42, 0.14)` 곱연산 틴트로 위험색(주황빛 붉은색)을 입힌다.
+     - 🔴 1차 시도는 직접 그린 512px 링을 계정 리소스로 업로드했으나 Play 에서 `RUID is unavailable now` 로 렌더되지 않았다. 계정 업로드(UGC) 스프라이트는 이 월드에서 쓸 수 없다 → [규칙 45](./pitfalls.md#45-계정-업로드ugc-스프라이트는-play-에서-쓸-수-없다--공식-ruid만-쓴다) 신설.
+     - 서버는 위치·스케일·수명만, 연출(채움/점멸)은 전부 클라. `MaxLifeTime 6초` 자가 소멸이 2차 방어.
+  2. **착지점 확정 시점을 예고 "시작"으로 이동** (`ResolveLeapTarget`): 구형은 예고가 **끝난 뒤** 조준해 회피 시간이 0이었다. 이제 `AttackWindup` 전 구간이 회피 시간이고, 장판이 차오르는 시간과 정확히 같다.
+  3. **광역 판정을 원형으로 교체** (`MonsterMeleeAttack:DoSlamAttack`): `CircleShape(착지좌표, SlamRadius)` + `attackInfo="slam"`. 중심·반지름을 마커와 동일 인자로 넘겨 **보이는 원 = 맞는 원**을 구조적으로 보장. `SlamDamage` 프로퍼티 추가(0 이면 `ContactDamage` 폴백 — 이번 패치는 피해량 무변경).
+  4. **공중 접촉 틱 중단** (`IsAirborne` 가드): FLY/HANG/SLAM 동안 `TickTouchDamage` 를 멈춘다. 공중 구간 합계가 0.4초(i-frame)를 넘으므로 착지타가 항상 클린하게 들어간다. 지상 구간(WINDUP 포함)은 그대로 돌아 [규칙 42](./pitfalls.md#42-몬스터-이동-충돌obstacle과-전투-접촉-피격combat의-역할-분리--상시-접촉-틱-원칙)의 파고들기 방지와 충돌하지 않는다. 착지 직후에도 `TouchCooldownTimer` 를 한 틱 늦춘다.
+  5. **도약 슈퍼아머** (`ApplyKnockback`): LEAP 중에는 넉백으로 밀리지도, 패턴이 취소되지도 않는다(피해·어그로는 정상 적용). 회피는 넉백이 아니라 장판 밖으로 나가서 한다.
+  6. **비행을 실제 이동으로 교체** (`BeginLeapFlight` / `UpdateLeap`): 좌표 스냅을 버리고 `MoveTowardScaled → MovementComponent:MoveToDirection` 사용. 비행 시간은 `거리 ÷ (InputSpeed × LeapSpeedMultiplier ÷ 1.2)` 로 산출해 도착과 연출이 어긋나지 않게 했다(RectTile 속도 환산은 `platform-rect.md` §7). `MovementComponent:Jump()` 로 시각 점프 + 그림자를 띄워 "공중에 있다"를 읽히게 한다. 착지 스냅은 허용 오차 0.35 밖일 때만 1회(벽 막힘 대비).
+  7. **공중 갇힘 판정 차단** (`TickObstacleStuck`): 비행 중에는 갇힘 타이머를 누적하지 않는다 — 공중에서 스폰 방향으로 튕겨나가는 경로가 ③의 또 다른 원인이었다.
+  8. **장판 회수 전 경로 보장**: `EnterState` 에서 LEAP 이외 상태로 나가는 모든 전이 + 사망 + `OnEndPlay` 에서 마커를 정리한다.
+  9. **착지 충격 연출** (`MulticastImpactFX`): `BasicParticleType.DustExplosion` 원형 충격파 + `ShakeCamera`. `instigator` 에 보스 엔티티를 넘겨 [규칙 12](./pitfalls.md#규칙-12-effectservice--particleservice의-instigator에-nil-금지) 회피, `LocalPlayer.CurrentMap` 비교로 타 맵 플레이어 화면이 흔들리지 않게 가드.
+- **`SlimeKing.model` 튜닝값**:
+
+  | 값 | 이전 | 이후 | 이유 |
+  |---|---|---|---|
+  | `AttackWindup` | 0.55 | **0.9** | 장판을 보고 빠져나갈 시간 확보 |
+  | `LeapLandingFraction` | 0.8 | **1.0** | 장판이 가리킨 좌표에 그대로 착지 |
+  | `SlamRadius` | (없음) | **3.2** | 보스 실물 발밑을 덮는 광역 반경 |
+  | `TelegraphModelId` | (없음) | **AttackTelegraph** | 데이터 주도 — 마커 없는 몹은 빈 값으로 비활성 |
+  | `LeapSpeedMultiplier` | (없음) | **6.0** | 실속도 14 u/s → 9칸을 0.64초에 주파 |
+  | `ImpactShakeIntensity` / `Duration` | (없음) | **0.5 / 0.3** | 착지 무게감 |
+  | `LeapAirFrameIndex` / `MinionSummonCount` | Int64 | **Int32** | 2026-08-29 핫픽스가 의도했으나 모델에 남아 있던 타입 불일치 정리 |
+
+- **정적 검증**: `maker_refresh_workspace` status ok. LSP `mlua-diagnose` 4파일 errors=0. 신규 `MonsterTelegraphMarker.codeblock` 생성 확인.
+- **런타임 검증 (제작자 허가 하에 `TestModeConfig` 로 직접 Play, hunt04)** — ✅ PASS:
+  1. 로그 체인 전량 관측: `[BOSS][TELEGRAPH] marker at (...) r=3.2` → `[BOSS][LEAP] fly dist=2.4~2.99 dur=0.17~0.21` → `[BOSS][SLAM] aoe center=(마커와 동일 좌표) r=3.2` → `[BOSS][SLAM] impact fx serial=1..6` (**serial≠0 → 클라 파티클 실제 생성**, [규칙 12](./pitfalls.md#규칙-12-effectservice--particleservice의-instigator에-nil-금지) 통과).
+  2. 스크린샷 육안: 지면에 주황빛 조준 링이 뜨고 그 안에서 착지 → 원형 충격파. 마커는 보스·플레이어보다 **뒤**에 정상 정렬. `RUID is unavailable` 오류 소멸.
+  3. 예고 주기 실측: 쿨 5s + 예고 0.9s + 비행 ~0.2s + 체공 0.3s + 내려찍기 0.18s ≈ **6.6초 사이클**. 회피는 예고 0.9초 동안 반경 3.2 밖으로 나가면 되는데, 실측 플레이어 이동이 3초에 약 17칸(≈5.7 u/s)이라 여유가 있다.
+  4. Play 중 Error 0. 잔여 Warning 은 기존 `LWA-3019` Legacy Trigger 계열(경계벽·포탈)로 이번 작업과 무관.
+  - 육안 확인을 위해 `AttackWindup` 을 3.0 으로 임시 상향했다가 **0.9 로 복구 완료**(verify-checklist Step 2b).
+- ⚠️ **build 로그 Warning 2건 주의**: `LWA-4012`(`LeapAirFrameIndex` / `MinionSummonCount`)가 남아 있으나 **타임스탬프가 16:28:34 로, 두 값을 Int32 로 잘못 바꿨던 구간의 스냅샷**이다. mlua `property integer` 는 **Int64** 이므로 `long` 으로 되돌렸고 이후 빌드(17:06:55)에는 재발하지 않았다. build 버퍼는 `maker_clear_logs` 로 비울 수 없어([규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라)) 옛 항목이 그대로 남는다 — 다음 세션에서 타임스탬프로 재확인할 것.
+
 ### 2026-09-05 [UI/Phase 24-A] 팝업 제목 텍스트 컴포넌트 마이그레이션 (진행 중 — PHASE 24 점검 1회차)
 
 - **배경**: PHASE 24(메이플 스타일 UI 고도화) 착수를 위해 `PopupGroup.ui` 15개 팝업을 `UIBuilder`로 실측 점검. `docs/design-policy.md` §5의 크롬 2계열(종이 큰창/나무 카드) 규격·닫기 버튼·제목 텍스트 스타일(폰트 크기/색상)은 15개 전부 일치했으나, **제목 텍스트 컴포넌트가 이원화**되어 있었음: Phase 23 신설 3종(QuestPopup/EstateInvitePopup/PlayerInteractPopup)만 `TextGUIRendererComponent`, 나머지 12종(Character/Inventory/Crafting/Collection/Chest/Furnace/Shop/Research/Request/Warp/Permission/SkillTree)은 구형 `MOD.Core.TextComponent`.

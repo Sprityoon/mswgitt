@@ -1,0 +1,87 @@
+@Logic
+script TestModeConfig extends Logic
+
+	-- =========================================================================
+	-- [테스트 모드 설정 (TestModeConfig)]
+	-- =========================================================================
+	-- 테스트 모드를 켜거나 끄려면 아래 EnableTestMode 프로퍼티 값을 변경하세요.
+	--   true  : 메인화면(타이틀/슬롯) 스킵 및 TargetMap으로 즉시 스폰
+	--   false : 일반 플레이 모드 (타이틀/슬롯 선택 화면 정상 노출)
+	-- =========================================================================
+
+	-- [스위치] 테스트 모드 활성화 여부
+	property boolean EnableTestMode = false
+
+	-- [목표 맵] 진입할 맵 식별자 (대소문자 무관)
+	--   - "town"           : 마을 광장 (기본 좌표 10, -2)
+	--   - "home"           : 유저 개인 영지 (Home_<UserId>, 기본 좌표 -3, 0)
+	--   - "hunt01"         : 사냥터 1구역 (template_field 기반)
+	--   - "hunt02"         : 사냥터 2구역
+	--   - "hunt03"         : 사냥터 3구역
+	--   - "hunt04"         : 보스 사냥터 (King Slime 아레나, template_boss 기반)
+	--   - "template_field" : 사냥터 1구역 ("hunt01"로 자동 매핑)
+	--   - "template_boss"  : 보스 사냥터 ("hunt04"로 자동 매핑)
+	--   - 기타 맵 이름     : 명시한 맵 엔티티 이름 그대로 사용
+	property string TargetMap = "template_field"
+
+	-- [테스트 슬롯] 테스트에 사용할 세이브 슬롯 (1~5)
+	property integer TestSlot = 1
+
+	-- [테스트 닉네임] 선택한 슬롯에 캐릭터가 없을 때 자동 생성할 닉네임
+	property string TestNickname = "Tester"
+
+	-- [커스텀 좌표 사용 여부]
+	--   false: 각 맵별 안전/기본 스폰 위치 사용
+	--   true : 아래 CustomPosX, CustomPosY 좌표로 강제 스폰
+	property boolean UseCustomPos = false
+	property number CustomPosX = 0.0
+	property number CustomPosY = 0.0
+
+	@ExecSpace("ServerOnly")
+	method string GetResolvedTargetMap(string userId)
+		-- "home" 등 별칭을 실제 월드 내 맵 엔티티 이름으로 변환합니다.
+		local raw = string.lower(tostring(self.TargetMap or "town"))
+		raw = string.match(raw, "^%s*(.-)%s*$") or ""
+		if raw == "home" or raw == "map01" or raw == "estate" then
+			return "Home_" .. tostring(userId or "")
+		elseif raw == "town" or raw == "plaza" then
+			return "town"
+		elseif raw == "template_field" or raw == "field" or raw == "hunt" or raw == "hunt01" then
+			return "hunt01"
+		elseif raw == "hunt02" then
+			return "hunt02"
+		elseif raw == "hunt03" then
+			return "hunt03"
+		elseif raw == "template_boss" or raw == "boss" or raw == "hunt04" then
+			return "hunt04"
+		end
+		-- 그 외 직접 입력된 맵 이름
+		return self.TargetMap
+	end
+
+	@ExecSpace("ServerOnly")
+	method Vector2 GetResolvedSpawnPosition(string mapName)
+		-- 커스텀 좌표가 켜져 있으면 커스텀 좌표 반환
+		if self.UseCustomPos == true then
+			return Vector2(self.CustomPosX, self.CustomPosY)
+		end
+
+		-- 맵별 기본 안전 스폰 좌표
+		if string.sub(mapName, 1, 5) == "Home_" then
+			return Vector2(-3.0, 0.0)
+		elseif mapName == "town" then
+			return Vector2(10.0, -2.0)
+		elseif mapName == "hunt01" then
+			return Vector2(-3.0, 0.0)
+		elseif mapName == "hunt02" then
+			return Vector2(0.0, 0.0)
+		elseif mapName == "hunt03" then
+			return Vector2(0.0, 0.0)
+		elseif mapName == "hunt04" then
+			return Vector2(0.0, -5.0)
+		end
+
+		return Vector2(0.0, 0.0)
+	end
+
+end

@@ -1,0 +1,125 @@
+@Component
+script MonsterTelegraphMarker extends Component
+	-- 보스 광역 공격의 착지 예고 마커(코어키퍼식 장판 텔레그래프).
+	-- 바깥 링 = 최종 피해 범위(서버가 스폰 시 Scale로 확정), 안쪽 채움 원 = 착지까지 남은 시간.
+	-- 링 반지름과 실제 판정 반지름은 MonsterAI.SlamRadius 하나에서 나오므로 항상 일치한다.
+	--
+	-- ⚠ 스프라이트는 반드시 공식 RUID 여야 한다. 계정 업로드(UGC) 스프라이트는 Play 에서
+	--   "RUID is unavailable now" 로 조용히 렌더되지 않는다(docs/pitfalls.md 규칙 45).
+
+	-- 링 스프라이트가 Scale 1 에서 갖는 "바깥 링 반지름"(월드 단위).
+	-- 실측: 공식 레티클 0ac43ac8… 는 196px 캔버스에 링 외곽 반지름 87px → 0.87.
+	-- (십자선 끝은 96px 까지 뻗지만 범위를 나타내는 것은 링이므로 링 기준으로 잡는다.)
+	@HideFromInspector property number SpriteRadius = 0.87
+	-- 채움 디스크가 Scale 1 에서 갖는 가시 반지름(월드 단위). 실측: 104px 캔버스에 38px → 0.38.
+	@HideFromInspector property number FillSpriteRadius = 0.38
+
+	-- 채움 원이 0 -> 1 로 차오르는 시간(초). 이 시간이 끝나는 순간 보스가 도약한다.
+	@Sync property number FillSeconds = 0.5
+	-- 도약 개시 여부. true 가 되면 채움을 100%로 고정하고 링을 점멸시켜 착지 임박을 알린다.
+	@Sync property boolean Committed = false
+
+	-- 채움 원 자식 엔티티 이름.
+	@HideFromInspector property string FillChildName = "Fill"
+
+	-- 위험 색 틴트(0~1). 원본 레티클이 노랑이라 G/B 를 눌러 주황빛 붉은색으로 만든다.
+	@HideFromInspector property number RingTintR = 1.0
+	@HideFromInspector property number RingTintG = 0.42
+	@HideFromInspector property number RingTintB = 0.14
+	-- 채움 디스크 틴트 + 기본 알파(지면과 플레이어가 비쳐 보이도록 낮게 유지).
+	@HideFromInspector property number FillTintR = 1.0
+	@HideFromInspector property number FillTintG = 0.55
+	@HideFromInspector property number FillTintB = 0.40
+	@HideFromInspector property number FillAlpha = 0.42
+
+	-- 점멸 주기(라디안/초)와 알파 하한. 값이 클수록 다급하게 깜빡인다.
+	@HideFromInspector property number PulseSpeed = 14.0
+	@HideFromInspector property number PulseMinAlpha = 0.45
+
+	-- 안전장치: 보스가 예고 도중 죽거나 호출부가 정리를 놓쳐도 이 시간이 지나면 스스로 사라진다.
+	-- MonsterAI 의 ClearTelegraphMarker 가 1차 정리, 이것이 2차 방어다.
+	property number MaxLifeTime = 6.0
+
+	method void OnBeginPlay()
+		-- 서버는 수명만, 클라는 연출만 담당한다(ExecSpace 미지정 = 양쪽에서 각자 실행).
+		if self:IsServer() then
+			local t = self.MaxLifeTime
+			if t <= 0 then t = 6.0 end
+			self.Entity:Destroy(t)
+			return
+		end
+		self._T.elapsed = 0
+		self:ApplyTint()
+		self:ApplyFill(0)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyTint()
+		-- 원본 아트 색을 위험색으로 물들인다. Color 는 곱연산이라 노랑 -> 주황빛 붉은색이 된다.
+		local ring = self.Entity.SpriteRendererComponent
+		if isvalid(ring) then
+			ring.Color = Color(self.RingTintR, self.RingTintG, self.RingTintB, 1)
+		end
+		local fill = self.Entity:GetChildByName(self.FillChildName, false)
+		if not isvalid(fill) then return end
+		local fs = fill.SpriteRendererComponent
+		if isvalid(fs) then
+			fs.Color = Color(self.FillTintR, self.FillTintG, self.FillTintB, self.FillAlpha)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 예고 진행도를 채움 원 스케일로, 착지 임박을 링 알파 점멸로 표현한다.
+		local e = self._T.elapsed
+		if e == nil then e = 0 end
+		e = e + delta
+		self._T.elapsed = e
+
+		if self.Committed then
+			self:ApplyFill(1)
+			self:ApplyRingPulse(e)
+			return
+		end
+
+		local d = self.FillSeconds
+		if d < 0.05 then d = 0.05 end
+		local t = e / d
+		if t < 0 then t = 0 end
+		if t > 1 then t = 1 end
+		self:ApplyFill(t)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyFill(number progress)
+		-- 채움 디스크의 로컬 스케일. progress = 1 일 때 디스크 가시 반지름이 링 반지름과 같아지도록
+		-- SpriteRadius / FillSpriteRadius 배율을 곱한다(부모 Scale 은 양쪽에 동일하게 곱해지므로 상쇄).
+		local fill = self.Entity:GetChildByName(self.FillChildName, false)
+		if not isvalid(fill) then return end
+		local t = fill.TransformComponent
+		if not isvalid(t) then return end
+		local p = progress
+		if p < 0 then p = 0 end
+		if p > 1 then p = 1 end
+		local ratio = 1.0
+		if self.FillSpriteRadius > 0 then
+			ratio = self.SpriteRadius / self.FillSpriteRadius
+		end
+		local s = p * ratio
+		t.Scale = Vector3(s, s, 1)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyRingPulse(number elapsed)
+		-- 링 알파를 사인파로 흔들어 "곧 떨어진다"를 전달한다. 틴트 RGB 는 유지한다.
+		local sprite = self.Entity.SpriteRendererComponent
+		if not isvalid(sprite) then return end
+		local lo = self.PulseMinAlpha
+		if lo < 0 then lo = 0 end
+		if lo > 1 then lo = 1 end
+		local wave = (math.sin(elapsed * self.PulseSpeed) + 1) * 0.5
+		local a = lo + (1 - lo) * wave
+		sprite.Color = Color(self.RingTintR, self.RingTintG, self.RingTintB, a)
+	end
+
+end

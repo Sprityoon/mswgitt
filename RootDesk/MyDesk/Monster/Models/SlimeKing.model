@@ -77,8 +77,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 3.4,
-            "y": 2.4
+            "x": 2.19,
+            "y": 1.39
           }
         },
         {
@@ -90,8 +90,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 0.0,
-            "y": 1.0
+            "x": -0.007672991,
+            "y": 0.594308
           }
         },
         {
@@ -164,7 +164,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 4.5
+          "Value": 6.5
         },
         {
           "TargetType": "script.MonsterAI",
@@ -218,7 +218,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0.55
+          "Value": 0.9
         },
         {
           "TargetType": "script.MonsterAI",
@@ -272,7 +272,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0.8
+          "Value": 1.0
         },
         {
           "TargetType": "script.MonsterAI",
@@ -449,6 +449,793 @@
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 4.2
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "TelegraphModelId",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "AttackTelegraph"
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "SlamRadius",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 3.2
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapSpeedMultiplier",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 6.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ImpactShakeIntensity",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.5
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ImpactShakeDuration",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.3
+        },
+        {
+          "TargetType": "MOD.Core.TransformComponent",
+          "Name": "QuaternionRotation",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODQuaternion, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODQuaternion, MOD.Core",
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "w": 1.0
+          }
+        },
+        {
+          "TargetType": "MOD.Core.SpriteRendererComponent",
+          "Name": "ActionSheet",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Collections.Generic.Dictionary`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": {
+            "$type": "System.Collections.Generic.Dictionary`2[[System.String, mscorlib],[System.String, mscorlib]], mscorlib"
+          }
+        },
+        {
+          "TargetType": "MOD.Core.SpriteRendererComponent",
+          "Name": "RenderSetting",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.RenderSettingType, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": 0
+        },
+        {
+          "TargetType": "MOD.Core.SpriteRendererComponent",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "MOD.Core.KinematicbodyComponent",
+          "Name": "MoveVelocity",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        {
+          "TargetType": "MOD.Core.KinematicbodyComponent",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "MOD.Core.MovementComponent",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "MOD.Core.StateComponent",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "MOD.Core.HitComponent",
+          "Name": "CircleRadius",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.754184246
+        },
+        {
+          "TargetType": "MOD.Core.HitComponent",
+          "Name": "ColliderType",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.ColliderType, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": 2
+        },
+        {
+          "TargetType": "MOD.Core.HitComponent",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "MOD.Core.DamageSkinSpawnerComponent",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "script.Monster",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "script.Monster",
+          "Name": "Hp",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.Monster",
+          "Name": "IsDead",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.Monster",
+          "Name": "DestroyDelay",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.7
+        },
+        {
+          "TargetType": "script.Monster",
+          "Name": "DamageSkinRUID",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "02c22d93421b4038b3c413b3e40b57ec"
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "AttackApproachSpeedMultiplier",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.5
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ChargeOvershootMultiplier",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1.2
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapPeakScale",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapRiseFraction",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.65
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapMidpointFraction",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapAnimHoldProgress",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.7
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ImpactParticleScale",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.9
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "RectTileSpeedDivisor",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1.2
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapArriveTolerance",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.35
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "KnockbackSpeed",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 7.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "KnockbackDuration",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.18
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "AggroGraceDuration",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 4.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "TouchFallbackHalfExtent",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.55
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "WanderMin",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "WanderMax",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 2.5
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "StandMin",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "StandMax",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 2.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstacleRadius",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.6
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstacleQueryRadius",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 3.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstacleStuckSeconds",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1.5
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstacleStuckCooldown",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 4.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstacleEscapeStep",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.75
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstacleStuckTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstacleEscapeCooldownTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstacleLastX",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstacleLastY",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ObstaclePosInit",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "TelegraphOn",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "CurrentAIState",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "STAND"
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "StateTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "MoveDir",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 1.0,
+            "y": 0.0
+          }
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "SpawnPos",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "AttackCooldownTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "DeathPlayed",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "InsideAvoidZone",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ChargePhase",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "PAUSE"
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ChargeDir",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 1.0,
+            "y": 0.0
+          }
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ChargeDistanceRemaining",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ChargeLastPos",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "ChargeDecelTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "KnockTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "KnockVel",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "AggroGraceTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "TouchCooldownTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "AttackStrikePending",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapPhase",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "WINDUP"
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapStartPos",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapTargetPos",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector2, MOD.Core",
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapPhaseDuration",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapAnimHeld",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "LeapAnimResumed",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "MinionSummonTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "SpawnGraceTimer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.0
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "EngagementStarted",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.MonsterMeleeAttack",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "script.MonsterMeleeAttack",
+          "Name": "TouchTickInterval",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.5
+        },
+        {
+          "TargetType": "script.MonsterMeleeAttack",
+          "Name": "TouchRadius",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.55
+        },
+        {
+          "TargetType": "MOD.Core.DamageSkinComponent",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "MOD.Core.MODEntity",
+          "Name": "Enable",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
+        },
+        {
+          "TargetType": "MOD.Core.MODEntity",
+          "Name": "Visible",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": true
         }
       ],
       "EventLinks": [],

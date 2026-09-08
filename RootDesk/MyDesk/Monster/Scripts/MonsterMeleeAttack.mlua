@@ -12,6 +12,9 @@ script MonsterMeleeAttack extends AttackComponent
 	@HideFromInspector property number TouchRadius = 0.55
 	@HideFromInspector property number TouchBoxSize = 1.1
 
+	-- 착지 내려찍기(LEAP) 전용 피해량. 0 이하면 ContactDamage 를 그대로 쓴다.
+	property number SlamDamage = 0
+
 	@ExecSpace("ServerOnly")
 	method void DoAttack()
 		-- 윈드업 만료 시점 정식 공격 (attackInfo="attack")
@@ -19,9 +22,30 @@ script MonsterMeleeAttack extends AttackComponent
 	end
 
 	@ExecSpace("ServerOnly")
+	method void DoSlamAttack(Vector2 center, number radius)
+		-- LEAP 착지 광역 타격 (attackInfo="slam").
+		-- 판정 원의 중심/반지름은 텔레그래프 마커에 쓴 값과 동일하게 호출부에서 넘겨받는다
+		-- (보이는 원 = 맞는 원. 몬스터 위치 기준 사각 박스를 쓰던 구형 경로는 시각 불일치였다).
+		local r = radius
+		if r == nil or r <= 0 then r = self.AttackBoxSize * 0.5 end
+		local shape = CircleShape(center, r)
+		self:AttackFast(shape, "slam", CollisionGroups.HitBox)
+		log("[BOSS][SLAM] aoe center=(" .. tostring(center.x) .. "," .. tostring(center.y) .. ") r=" .. tostring(r))
+	end
+
+	@ExecSpace("ServerOnly")
 	method void DoTouchAttack()
-		-- 접촉 틱 공격 (attackInfo="touch")
+		-- (legacy) 트랜스폼 원점 기준 정사각 접촉 틱. 콜라이더를 못 읽는 폴백 경로 전용.
 		self:DoAttackWithInfo("touch", self.TouchBoxSize)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void DoTouchAttackBox(Vector2 center, Vector2 size)
+		-- 접촉 틱 공격 (attackInfo="touch"). 판정 박스를 호출부가 실제 콜라이더에서 산출해 넘긴다.
+		-- 구형은 몬스터 트랜스폼 원점 기준 고정 정사각이라, Scale 이 큰 몹(슬라임킹 2.8)이나
+		-- ColliderOffset 이 있는 발밑 피벗 몹에서 "몸에 붙어도 안 맞는" 상태가 됐다.
+		local shape = BoxShape(center, size, 0)
+		self:AttackFast(shape, "touch", CollisionGroups.HitBox)
 	end
 
 	@ExecSpace("ServerOnly")
@@ -37,6 +61,9 @@ script MonsterMeleeAttack extends AttackComponent
 		-- attackInfo 태깅으로 분기 (이름 분기 아님). ⚠ AttackComponent 훅에 @ExecSpace 금지.
 		if attackInfo == "touch" then
 			return math.floor(self.TouchDamage)
+		end
+		if attackInfo == "slam" and self.SlamDamage > 0 then
+			return math.floor(self.SlamDamage)
 		end
 		return math.floor(self.ContactDamage)
 	end

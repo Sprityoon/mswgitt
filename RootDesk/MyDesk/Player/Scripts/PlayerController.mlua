@@ -2083,6 +2083,9 @@ script PlayerController extends Component
 	@ExecSpace("Client")
 	method void ClientOpenMainMenu(string metaJson)
 		-- 슬롯 선택 화면 오픈 (spawnFade 유지).
+		if _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true then
+			return
+		end
 		local ent = _EntityService:GetEntityByPath("/ui/MainMenuGroup/Controller")
 		if not isvalid(ent) then
 			log_warning("[MAINMENU] Controller missing")

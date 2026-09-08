@@ -140,6 +140,24 @@ script PersistenceManager extends Logic
 		if isvalid(player) then
 			player:ConnectEvent(EntityMapChangedEvent, self.OnPlayerMapChanged)
 			self:EnsureLegacyMigrated(userId)
+
+			-- [TESTMODE] 테스트 모드 활성화 시: 메인메뉴 스킵 및 지정 슬롯 자동 로드
+			if _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true then
+				log("[TESTMODE] TestMode active — auto-selecting slot for " .. userId)
+				local slot = math.floor(tonumber(_TestModeConfig.TestSlot) or 1)
+				if slot < 1 or slot > self.MaxSaveSlots then slot = 1 end
+				local meta = self:ReadSlotMetaTable(userId)
+				local existing = meta[tostring(slot)]
+				if existing ~= nil and existing.name ~= nil and tostring(existing.name) ~= "" then
+					self:SelectSaveSlot(player, slot, false, "", "")
+				else
+					local nick = tostring(_TestModeConfig.TestNickname or "Tester")
+					if nick == "" then nick = "Tester" end
+					self:SelectSaveSlot(player, slot, true, nick, "")
+				end
+				return
+			end
+
 			local metaJson = self:ReadSlotMetaJson(userId)
 			local pc = player:GetComponent("script.PlayerController")
 			if isvalid(pc) then
@@ -1000,6 +1018,24 @@ script PersistenceManager extends Logic
 			end
 			-- 세션 캐시 초기화 (비홈 저장 시 GetAndWait 없이 사용)
 			self.LastHomePos[userId] = { x = spawnX, y = spawnY }
+
+			-- [TESTMODE] 테스트 모드 활성화 시 지정된 목표 맵으로 워프
+			if _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true then
+				local testMap = _TestModeConfig:GetResolvedTargetMap(userId)
+				local testPos = _TestModeConfig:GetResolvedSpawnPosition(testMap)
+				if _ResourceSpawner ~= nil and _TestModeConfig.UseCustomPos ~= true then
+					local sp = _ResourceSpawner:FindSafeSpawnPosition(testMap, testPos.x, testPos.y)
+					if sp ~= nil then testPos = sp end
+				end
+				player.PlayerComponent:MoveToMapPosition(testMap, testPos)
+				log("[TESTMODE] Player warped to test map: " .. testMap .. " at (" .. testPos.x .. ", " .. testPos.y .. ")")
+				self.PendingHomeWarp[userId] = nil
+				self.DirtyPlayers[userId] = false
+				local pc = player:GetComponent("script.PlayerController")
+				if isvalid(pc) then pc:ClientHideSpawnFade() end
+				return
+			end
+
 			-- 구세이브 폴백 or "home" = 현행 동작
 			local lastKind = data.lastMapKind or "home"
 			-- 새 캐릭터 부팅 중에는 무조건 영지에서 시작한다 (마을 복귀 분기 진입 금지).
@@ -1043,6 +1079,23 @@ script PersistenceManager extends Logic
 
 			_ResourceSpawner:LoadDestroyedResourcesFromJson(mapName, "[]")
 			_ResourceSpawner:ReconstructWorldPlacementsForMap(map)
+		end
+
+		-- [TESTMODE] 신규 플레이어 분기 폴백: 테스트 모드 활성화 시 지정된 목표 맵으로 워프
+		if _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true then
+			local testMap = _TestModeConfig:GetResolvedTargetMap(userId)
+			local testPos = _TestModeConfig:GetResolvedSpawnPosition(testMap)
+			if _ResourceSpawner ~= nil and _TestModeConfig.UseCustomPos ~= true then
+				local sp = _ResourceSpawner:FindSafeSpawnPosition(testMap, testPos.x, testPos.y)
+				if sp ~= nil then testPos = sp end
+			end
+			player.PlayerComponent:MoveToMapPosition(testMap, testPos)
+			log("[TESTMODE] Player warped to test map: " .. testMap .. " at (" .. testPos.x .. ", " .. testPos.y .. ")")
+			self.PendingHomeWarp[userId] = nil
+			self.DirtyPlayers[userId] = false
+			local pc = player:GetComponent("script.PlayerController")
+			if isvalid(pc) then pc:ClientHideSpawnFade() end
+			return
 		end
 
 		-- home (또는 구세이브): 영지 저장 좌표로 단일 워프

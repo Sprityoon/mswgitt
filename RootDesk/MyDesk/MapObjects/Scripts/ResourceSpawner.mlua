@@ -2143,7 +2143,10 @@ script ResourceSpawner extends Logic
 		local layer2Entity = map:GetChildByName("RectTileMap2")
 		local layer3Entity = map:GetChildByName("RectTileMap3")
 		local layer4Entity = map:GetChildByName("RectTileMap4")
-		
+		-- L0(RectTileMap0) = 외곽 수역. 섬 컨셉 전환(Phase 22) 이후 모든 맵의 바다가 여기 깔린다.
+		-- 없는 맵도 있을 수 있으므로 필수 레이어 검사에는 넣지 않는다(있으면 쓰고 없으면 무시).
+		local layer0Entity = map:GetChildByName("RectTileMap0")
+
 		if not isvalid(layer1Entity) or not isvalid(layer2Entity) or not isvalid(layer3Entity) or not isvalid(layer4Entity) then
 			log_warning("ResourceSpawner: Missing layer entities for chunk loading in map: " .. mapName)
 			return
@@ -2156,6 +2159,10 @@ script ResourceSpawner extends Logic
 		-- the map template so it is loaded at map creation. Impassable boundary walls are baked
 		-- statically into the .map file (not painted at runtime), avoiding LEA-3005.
 		local tilemap4 = layer4Entity.RectTileMapComponent
+		local tilemap0 = nil
+		if isvalid(layer0Entity) then
+			tilemap0 = layer0Entity.RectTileMapComponent
+		end
 
 		local seedVal = self:GetMapSeed(mapName)
 		local proceduralTerrain = self:GetMapProceduralTerrain(mapName)
@@ -2259,20 +2266,33 @@ script ResourceSpawner extends Logic
 					-- (2026-07-08 밀착 페어 스킴): Layer 2가 FullGrass/Grass*Corner면 "FullGrass"(잔디 — 스폰 가능),
 					-- 방향 에지 Grass{dir}면 "Soil"(밀착 길 — 잔디 요구 자원 스폰 억제),
 					-- Layer 2가 비고 Layer 1이 Soil이면 "Soil"(광장/밭 홀 바닥).
-					local info2 = tilemap2:GetTile(x, y)
-					if info2 ~= nil and self:IsGrassTileName(info2.Name) then
-						if self:IsGrassEdgeTileName(info2.Name) then
-							choice = "Soil"
-						else
-							choice = "FullGrass"
-						end
+					-- 🔴 L0(수역)를 가장 먼저 본다 (IsWaterAt 과 동일한 3단 지형 판정 순서).
+					--    Phase 22 섬 전환 이후 외곽 바다는 L0 에 깔리는데 L1 은 -35..35 전면이 Soil 이다
+					--    (template_boss 실측: L1 5041칸 전면 / L2 잔디는 -12..12 / L0 바다 4416칸).
+					--    L0 를 건너뛰면 섬 바깥이 전부 "Soil" 로 분류돼, RequiredTile 이 빈 자원
+					--    (green_island 의 Stone)이 와일드카드로 매칭되어 바다 위에 스폰된다.
+					local info0 = nil
+					if isvalid(tilemap0) then
+						info0 = tilemap0:GetTile(x, y)
+					end
+					if info0 ~= nil and self:IsWaterTileName(info0.Name) then
+						choice = "Water"
 					else
-						local info1 = tilemap1:GetTile(x, y)
-						if info1 ~= nil then
-							if self:IsSoilTileName(info1.Name) then
+						local info2 = tilemap2:GetTile(x, y)
+						if info2 ~= nil and self:IsGrassTileName(info2.Name) then
+							if self:IsGrassEdgeTileName(info2.Name) then
 								choice = "Soil"
-							elseif self:IsWaterTileName(info1.Name) then
-								choice = "Water"
+							else
+								choice = "FullGrass"
+							end
+						else
+							local info1 = tilemap1:GetTile(x, y)
+							if info1 ~= nil then
+								if self:IsSoilTileName(info1.Name) then
+									choice = "Soil"
+								elseif self:IsWaterTileName(info1.Name) then
+									choice = "Water"
+								end
 							end
 						end
 					end
@@ -2284,7 +2304,11 @@ script ResourceSpawner extends Logic
 				local maxResCoord = wallInner - self.ResourceBoundaryMargin
 				local nearBoundary = (math.abs(x) > maxResCoord or math.abs(y) > maxResCoord)
 				
-				if not inSpawnZone and not nearBoundary and choice ~= "Water" then
+				-- 스폰 조건: 스폰존 밖 + 경계 여백 안 + 지반이 분류된 셀 + 수역이 아님.
+				-- choice == "" 은 어느 레이어에서도 지반을 못 찾은 셀이다. RequiredTile 이 빈 자원은
+				-- (requiredTile == "" or requiredTile == choice) 와일드카드로 매칭되므로, 분류 실패를
+				-- 그대로 두면 지형 밖에도 스폰된다 — 분류 실패 자체를 스폰 금지로 삼는다.
+				if not inSpawnZone and not nearBoundary and choice ~= "" and choice ~= "Water" then
 					local gKey = x .. "_" .. y
 					local existing = gridToEntity[gKey]
 					
