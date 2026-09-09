@@ -10,7 +10,7 @@ script TestModeConfig extends Logic
 	-- =========================================================================
 
 	-- [스위치] 테스트 모드 활성화 여부
-	property boolean EnableTestMode = false
+	property boolean EnableTestMode = true
 
 	-- [목표 맵] 진입할 맵 식별자 (대소문자 무관)
 	--   - "town"           : 마을 광장 (기본 좌표 10, -2)
@@ -36,6 +36,183 @@ script TestModeConfig extends Logic
 	property boolean UseCustomPos = false
 	property number CustomPosX = 0.0
 	property number CustomPosY = 0.0
+
+	-- =========================================================================
+	-- [디버그 핫키]  ※ EnableTestMode 가 true 일 때만 동작한다.
+	-- =========================================================================
+	--   F6 : 좌하단 키 목록 HUD 표시/숨김 토글
+	--   F7 : 레벨업 — GrantLevelCount 만큼 (경험치를 채워 실제 레벨업 경로를 그대로 태운다)
+	--   F8 : 스킬 포인트(SP) 즉시 주입 — GrantSPAmount 만큼
+	--   F9 : 리소스 프리뷰 툴 토글      (UIPreviewToolController)
+	--   F2/F3/F4 : 랭킹 샘플 UI        (RankingBasic/Sample/RankingSampleUILogic)
+	-- ⚠ F9 와 F2~F4 는 원래 게이트가 없어 출시본에서도 열렸다. 각 스크립트에 EnableTestMode
+	--   가드를 넣어 막았으므로, 키를 추가/제거하면 아래 도움말 문구도 같이 고칠 것.
+	-- 프로덕션 스크립트를 건드리지 않도록 치트 코드는 전부 이 DevTools 파일 안에만 둔다.
+	property boolean EnableDebugHotkeys = true
+	-- 진입 후 이 시간(초)이 지나면 키 목록 HUD 를 켠다. HUD 엔티티 준비 전에 켜면 놓친다.
+	property number HelpDelaySeconds = 2.0
+	-- 1회 입력당 지급할 SP.
+	property integer GrantSPAmount = 10
+	-- 1회 입력당 상한(서버측 하드 캡). 클라가 보낸 값이 이보다 크면 잘라낸다.
+	property integer MaxGrantPerPress = 100
+	-- 1회 입력당 올릴 레벨 수.
+	property integer GrantLevelCount = 1
+	-- 레벨 지급 상한(서버측 하드 캡). 실수로 큰 값이 와도 한 번에 이 이상은 안 오른다.
+	property integer MaxLevelPerPress = 20
+
+	-- KeyDownEvent 핸들러. property any 로 잡아두지 않으면 GC 되어 조용히 안 먹는다.
+	property any debugKeyHandler = nil
+
+	-- [HUD 바인딩] ui/HUDGroup.ui 의 TestKeyHud 오버레이. UIBuilder 가 UUID 를 주입한다.
+	-- .ui 에서 enable=false 로 저장돼 있어(규칙 30) 테스트 모드일 때만 켜진다.
+	property Entity debugHudPanel = "9d794d51-4043-44da-9ed1-1191020dcca9"
+	property TextGUIRendererComponent debugHudText = "a3882d86-311a-4f3e-87f3-4b2f37a76770"
+
+	method void OnBeginPlay()
+		-- @Logic 은 서버/클라 양쪽에서 실행된다. 입력은 클라에서만 듣는다.
+		if not self:IsClient() then return end
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+		self.debugKeyHandler = _InputService:ConnectEvent(KeyDownEvent, self.HandleDebugKeyDown)
+		log("[TESTMODE] debug hotkeys armed — " .. self:BuildDebugKeyHelpLine())
+
+		-- 진입 직후엔 HUD 엔티티가 아직 준비 전일 수 있어 잠깐 뒤에 켠다.
+		-- 이후로는 상시 표시하고, F6 으로 접었다 펼 수 있다.
+		local delay = self.HelpDelaySeconds
+		if delay < 0 then delay = 0 end
+		_TimerService:SetTimerOnce(function()
+			self:SetDebugKeyHudVisible(true)
+		end, delay)
+	end
+
+	@ExecSpace("ClientOnly")
+	method string BuildDebugKeyHelp()
+		-- HUD 본문에 들어갈 키 목록. 수치는 프로퍼티에서 읽어 안내와 실제가 어긋나지 않게 한다.
+		return "F6            키 목록 표시/숨김\n"
+			.. "F7            레벨업 +" .. tostring(self.GrantLevelCount) .. "\n"
+			.. "F8            SP +" .. tostring(self.GrantSPAmount) .. "\n"
+			.. "F9            리소스 프리뷰\n"
+			.. "F2 / F3 / F4  랭킹 샘플"
+	end
+
+	@ExecSpace("ClientOnly")
+	method string BuildDebugKeyHelpLine()
+		-- 로그 한 줄용 요약(개행 없는 형태).
+		return "F6 목록 · F7 레벨업 +" .. tostring(self.GrantLevelCount)
+			.. " · F8 SP +" .. tostring(self.GrantSPAmount)
+			.. " · F9 리소스 프리뷰 · F2/F3/F4 랭킹 샘플"
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshDebugKeyHud()
+		-- HUD 오버레이 본문을 현재 프로퍼티 값으로 다시 채운다.
+		if not isvalid(self.debugHudText) then return end
+		self.debugHudText.Text = self:BuildDebugKeyHelp()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetDebugKeyHudVisible(boolean show)
+		-- 오버레이 표시/숨김. Visible 이 아니라 Enable 을 쓴다(ui-hierarchy §5).
+		if not isvalid(self.debugHudPanel) then return end
+		if show then
+			self:RefreshDebugKeyHud()
+		end
+		self.debugHudPanel.Enable = show
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowDebugKeyHelp()
+		-- F6 토글. 테스트 모드가 아니면 절대 켜지지 않는다.
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+		if not isvalid(self.debugHudPanel) then
+			log_warning("[TESTMODE] TestKeyHud 엔티티 바인딩이 비어 있다 — ui/HUDGroup.ui 확인 필요")
+			return
+		end
+		self:SetDebugKeyHudVisible(self.debugHudPanel.Enable ~= true)
+	end
+
+	method void OnEndPlay()
+		-- OnBeginPlay 에서 연결한 것은 반드시 여기서 해제한다(엔진이 자동 해제하지 않는다).
+		if self.debugKeyHandler ~= nil then
+			_InputService:DisconnectEvent(KeyDownEvent, self.debugKeyHandler)
+			self.debugKeyHandler = nil
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void HandleDebugKeyDown(KeyDownEvent event)
+		-- 디버그 핫키 라우팅. 실제 지급/검증은 전부 서버가 한다.
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+		if event.key == KeyboardKey.F6 then
+			self:ShowDebugKeyHelp()
+		elseif event.key == KeyboardKey.F7 then
+			self:RequestGrantLevel(self.GrantLevelCount)
+		elseif event.key == KeyboardKey.F8 then
+			self:RequestGrantSkillPoints(self.GrantSPAmount)
+		end
+	end
+
+	@ExecSpace("Server")
+	method void RequestGrantLevel(integer count)
+		-- 테스트 모드 전용 레벨업.
+		-- 레벨/스탯을 직접 대입하지 않고 PlayerController:AddXP 로 **실제 레벨업 경로**를 태운다
+		-- (MaxXP 증가, MaxStamina, GatheringSpeed, SP 지급, 저장 dirty 표시가 전부 그 안에 있다).
+		-- 직접 대입하면 테스트가 실제 동작과 달라져 검증 가치가 없어진다.
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+
+		local userEntity = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(userEntity) then return end
+		local pcComp = userEntity:GetComponent("script.PlayerController")
+		if not isvalid(pcComp) then return end
+		---@type PlayerController
+		local pc = pcComp
+
+		local n = count
+		if n == nil or n <= 0 then n = 1 end
+		local cap = self.MaxLevelPerPress
+		if cap > 0 and n > cap then n = cap end
+
+		local beforeLevel = pc.Level
+		for i = 1, n do
+			-- 다음 레벨까지 부족한 만큼만 채운다. MaxXP 는 레벨마다 커지므로 매 회 다시 읽는다.
+			local need = pc.MaxXP - pc.XP
+			if need < 1 then need = 1 end
+			pc:AddXP(need)
+		end
+		log("[TESTMODE] Level " .. beforeLevel .. " -> " .. pc.Level .. " (+" .. n .. ") user=" .. senderUserId)
+	end
+
+	@ExecSpace("Server")
+	method void RequestGrantSkillPoints(integer amount)
+		-- 테스트 모드 전용 SP 주입.
+		-- senderUserId 는 서버가 채우는 값이라 클라가 위조할 수 없다(msw-scripting §6).
+		-- 테스트 모드가 꺼져 있으면 요청 자체를 무시한다 — 출시본에서 치트가 되지 않도록.
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+
+		local userEntity = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(userEntity) then return end
+		local pcComp = userEntity:GetComponent("script.PlayerController")
+		if not isvalid(pcComp) then return end
+		---@type PlayerController
+		local pc = pcComp
+
+		local n = amount
+		if n == nil or n <= 0 then n = self.GrantSPAmount end
+		local cap = self.MaxGrantPerPress
+		if cap > 0 and n > cap then n = cap end
+
+		pc.SP = pc.SP + n
+		-- 레벨업 SP 지급과 동일하게 dirty 표시해 저장에 반영한다.
+		if _PersistenceManager ~= nil then
+			_PersistenceManager:MarkPlayerDirty(senderUserId)
+		end
+		pc:ShowMineFeedback("[TEST] SP +" .. n .. "  (총 " .. pc.SP .. ")", senderUserId)
+		log("[TESTMODE] SP +" .. n .. " -> " .. pc.SP .. " user=" .. senderUserId)
+	end
 
 	@ExecSpace("ServerOnly")
 	method string GetResolvedTargetMap(string userId)

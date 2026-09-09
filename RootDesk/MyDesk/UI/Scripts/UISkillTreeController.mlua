@@ -77,6 +77,7 @@ script UISkillTreeController extends Component
 		self._T.dTypeLv = self.Entity:GetChildByName("DTypeLv", true)
 		self._T.dDesc = self.Entity:GetChildByName("DDesc", true)
 		self._T.dParent = self.Entity:GetChildByName("DParent", true)
+		self._T.dUnlock = self.Entity:GetChildByName("DUnlock", true)
 		self._T.dGate = self.Entity:GetChildByName("DGate", true)
 		self._T.dCost = self.Entity:GetChildByName("DCost", true)
 	end
@@ -515,6 +516,21 @@ script UISkillTreeController extends Component
 			self:SetTextSafe(self._T.dParent, "", false)
 		end
 
+		-- 해금 목표 줄. 선행 줄과 같은 규칙 — 이미 배운 스킬은 지난 조건이라 숨긴다.
+		local unlockLine = self:UnlockGoalLine(row, pc)
+		if unlockLine ~= "" and level < 1 then
+			self:SetTextSafe(self._T.dUnlock, unlockLine, true)
+			if isvalid(self._T.dUnlock) and isvalid(self._T.dUnlock.TextComponent) then
+				if self:IsUnlockGateOpenClient(row, pc) then
+					self._T.dUnlock.TextComponent.FontColor = Color(0.94, 0.66, 0.19, 1.0)
+				else
+					self._T.dUnlock.TextComponent.FontColor = Color(0.85, 0.33, 0.31, 1.0)
+				end
+			end
+		else
+			self:SetTextSafe(self._T.dUnlock, "", false)
+		end
+
 		local gate = ""
 		local st = { can = false, reason = "" }
 		if pc ~= nil then
@@ -641,8 +657,13 @@ script UISkillTreeController extends Component
 		if row == nil then return "해금 목표를 먼저 달성해야 합니다." end
 		local achId = tonumber(row:GetItem("UnlockAchievementId"))
 		if achId ~= nil and achId > 0 then
+			-- 진행률만 보여주면 "무엇을" 해야 하는지 알 수 없다. 업적 이름을 같이 적는다.
+			local data = _AchievementDataSetLogic:GetData(achId)
 			local pct = math.floor(self:GetAchievementPctClient(achId) * 100)
-			return "목표 진행 중 " .. tostring(pct) .. "%"
+			if data ~= nil and tostring(data.Name or "") ~= "" then
+				return "'" .. tostring(data.Name) .. "' 달성 필요 (" .. tostring(pct) .. "%)"
+			end
+			return "해금 목표 미달성 (" .. tostring(pct) .. "%)"
 		end
 		local ok, raw = pcall(function() return row:GetItem("UnlockOwnedItem") end)
 		if ok and raw ~= nil and tostring(raw) ~= "" then
@@ -656,6 +677,62 @@ script UISkillTreeController extends Component
 			return disp .. " 제작 후 해금"
 		end
 		return "해금 목표를 먼저 달성해야 합니다."
+	end
+
+	@ExecSpace("ClientOnly")
+	method string AchievementGoalText(integer achId)
+		-- "제련 입문 (0/1)\n광석을 1회 제련해 수거하세요." 형태.
+		-- 업적 이름과 현재 스텝 설명을 같이 보여준다 — 이름만으로는 뭘 해야 할지 모른다.
+		local data = _AchievementDataSetLogic:GetData(achId)
+		if data == nil then return "" end
+
+		local step = 1
+		local cur = 0
+		local lp = _UserService.LocalPlayer
+		if isvalid(lp) and lp.PlayerAchievement ~= nil then
+			local userData = lp.PlayerAchievement.UserDataTable[achId]
+			if userData ~= nil then
+				if userData.Step > 0 then step = userData.Step end
+				cur = userData.Value or 0
+			end
+		end
+
+		local stepData = data.StepDatas[step]
+		if stepData == nil then stepData = data:GetStepData(1) end
+
+		local title = tostring(data.Name or "")
+		if stepData ~= nil and stepData.Value > 0 then
+			if cur > stepData.Value then cur = stepData.Value end
+			title = title .. " (" .. tostring(cur) .. "/" .. tostring(stepData.Value) .. ")"
+		end
+		if stepData ~= nil and stepData.Description ~= nil and tostring(stepData.Description) ~= "" then
+			return title .. "\n" .. tostring(stepData.Description)
+		end
+		return title
+	end
+
+	@ExecSpace("ClientOnly")
+	method string UnlockGoalLine(any row, any pc)
+		-- 상세 패널의 "해금" 줄. 게이트가 없으면 빈 문자열(줄 숨김).
+		if row == nil then return "" end
+		local achId = tonumber(row:GetItem("UnlockAchievementId"))
+		if achId ~= nil and achId > 0 then
+			local goal = self:AchievementGoalText(achId)
+			if goal ~= "" then return "해금: " .. goal end
+			return "해금: 업적 " .. tostring(achId) .. " 달성"
+		end
+		local ok, raw = pcall(function() return row:GetItem("UnlockOwnedItem") end)
+		if ok and raw ~= nil and tostring(raw) ~= "" then
+			local disp = tostring(raw)
+			if pc ~= nil then
+				local inv = pc.Entity:GetComponent("script.PlayerInventory")
+				if isvalid(inv) then
+					disp = inv:GetItemDisplayName(tostring(raw))
+				end
+			end
+			return "해금: " .. disp .. " 제작"
+		end
+		return ""
 	end
 
 	method string FormatConsumeLine(any row)

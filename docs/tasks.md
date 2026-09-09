@@ -19,6 +19,10 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `docs/design/skill-tree-plan.md` · `game_design.md` | **[스킬/직업] 스킬트리 세분화 고찰 및 4대 하이브리드 직업군(트래퍼/배틀스미스/알케미스트/와일드키퍼) & 주먹도끼 분기(기간틱 락/쇄석 흩뿌리기) 설계 확정** (2026-09-09 ⚖️ 확정) — 아래 참조 |
+| `TestModeConfig.mlua` · `UIPreviewToolController.mlua` · `RankingSampleUILogic.mlua` · `SkillDataSet.csv` | **[개발도구/전투] 테스트 모드 디버그 핫키 체계 정비 — F6 도움말 / F7 레벨업 / F8 SP 신설 & 기존 무방비 F키(F9 프리뷰, F2~F4 랭킹샘플)에 테스트 모드 게이트 적용 & 테스트 키 목록 HUD 상시 표시 & 주먹도끼 탄환을 빨간 벽돌로 정정** (2026-09-09 ⚖️ 확정) — 아래 참조 |
+| `PlayerController.mlua` · `PlayerCombat.mlua` · `Projectile.mlua` · `Monster.mlua` · `SkillDataSet.csv` · `Projectile_Fireball.model` | **[전투/연출] 플레이어 스킬 이펙트 전수 감사 & 결함 5건 수정 — 매직 클로 탄환 비가시(빈 SpriteRUID) 해소 & 디버그 텔레메트리(로컬 HTTP POST) 제거 & `HitEffectScale` 컬럼 신설로 히트 FX 4배 편차 정규화 & 주먹도끼 히트 이펙트 신규 & 슬래시 블러스트 이펙트를 8×8 판정에 맞춰 확대** (2026-09-09 ⚖️ 확정) — 아래 참조 |
+| `MonsterAI.mlua` · `SlimeKing.model` | **[전투/밸런스] 슬라임킹 내려찍기 난이도 조정 — 조준→타격 1.58s ➔ 1.15s 단축 & 착지 좌표를 예고 시작이 아닌 "착지 0.7초 전"에 확정하는 추적형 장판으로 전환(거리 무관 반응 시간 고정) & 패턴 주기 6.6s ➔ 4.7s** (2026-09-09 ⚖️ 확정) — 아래 참조 |
 | `StoryDialogDataSet.csv` · `QuestDataSet.csv` | **[스토리/퀘스트] 마을 주민 대화 전수 자연화 & 대장장이(로체) 노인체·사극체 교정 & 201번 퀘스트명 정합(어디선가 느껴지는 기운) & 따옴표 파싱 버그 해소** (2026-09-08 ⚖️ 확정) — 아래 참조 |
 | `SlimeKing.model` | **[전투/보스] 슬라임킹 히트박스(콜라이더) 좌우 폭 정밀 조정 (HitComponent BoxSize.x 3.4 ➔ 2.8 축소 — 허공 피격/접촉 판정 완화)** (2026-09-08 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner.mlua` | **[핫픽스/지형] 보스 사냥터(hunt04) 지형 테두리 바깥 바다 위에 자원이 생성되던 버그 해소 (자원 배치 판정에 L0 수역 레이어 누락 — 섬 컨셉 전환 이후 미반영분)** (2026-09-08 ⚖️ 확정) — 아래 참조 |
@@ -98,8 +102,156 @@
 | 데이터셋 + `ui/PopupGroup.ui`·`HUDGroup.ui` + UI 컨트롤러 | **한글화 1차** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
-| `ui/MainMenuGroup.ui` | **캐릭터 만들기 좌/우 페이지** (2026-08-14) — 아래 참조 |
+### 2026-09-09 [스킬/직업] 스킬트리 세분화 및 4대 하이브리드 직업군 & 주먹도끼 분기 설계 (⚖️ 확정)
 
+- **배경**: 사용자 지시 — 주먹도끼의 업그레이드 스킬 고찰 및 석기시대 뗀석기 본질 정립, 스토리 및 마을 주민과 어울리는 직업 체계 구축.
+- **주먹도끼 진화 트리 (공용 탭)**:
+  - 주먹도끼(`hand_axe_throw`, Row 2 Col 2) Lv 3 달성 시 **기간틱 락(Row 3 Col 2)**과 **쇄석 흩뿌리기(Row 3 Col 3)**의 **1:2 병렬 분기** 선택.
+  - 두 스킬 모두 **주먹도끼 1개 + 마나(MP) 소모로 통일**.
+- **4대 하이브리드 직업군 (Phase 16-C)**:
+  - **트래퍼 (Trapper - 노점상 마리)**: `알뜰한 손놀림` 패시브 — 스킬 투척뿐만 아니라 향후 투척 아이템의 기본 공격(Ctrl) 투척에도 100% 동일 연동, 최종 마스터 시 100% 소모 방지(무한 투척).
+  - **배틀스미스 (Battle Smith - 대장장이 로체)**: `갑주 파쇄타` — 타격당 5%씩 방어력 감소 디버프 누적 (최대 6스택 = 30% 방깎).
+  - **알케미스트 (Alchemist - 연구원 엘렌)**: 푸른 불씨 마나 비전 마법 및 슬라임 점액/포션 장판.
+  - **와일드키퍼 (Wild Keeper - 헛간지기 토리)**: 야생 동물 조련, 넝쿨/자연 방벽, 버프 및 생태 지원.
+  - 마을 주민 4인의 서브 퀘스트를 통해 전직 시험 수주 및 `RewardJobId` 부여 연동.
+- **문서 동기화**: `docs/design/skill-tree-plan.md` §7.3, §8.1 및 `game_design.md` Phase 16-C 반영 완료.
+
+### 2026-09-09 [개발도구/전투] 테스트 모드 디버그 핫키(SP 주입) 신설 & 주먹도끼 탄환 정정 (⚖️ 확정)
+
+- **배경**: 사용자 지시 — ① 주먹도끼는 빨간 벽돌이 맞다(석기시대 주먹도끼 대체재), 날아가는 것도 벽돌로 ② 테스트 모드를 켜고 특정 키로 스킬 포인트를 주입하게.
+- **주먹도끼 탄환 정정**:
+  - 직전 작업에서 `돌멩이`/`돌 조각` 스프라이트를 **플레이스홀더로 오판**하고 손도끼로 바꿨으나, 빨간 벽돌이 **의도된 대체재**였다. 아이콘은 원래 값(`57345d4aa6a640419af19e340c29940f` 돌 조각)으로 **복구**.
+  - `ProjectileRUID` = **`thumbnail://384de1d5a70747a4b356484cf2753b5f`** (아이템 `Hand Axe` 의 `WeaponRUID` 와 동일한 빨간 벽돌).
+  - 🔴 이 RUID 는 **`avataritem`** 이라 `thumbnail://` 접두사 없이 `SpriteRUID` 에 넣으면 **에러 없이 안 보인다**(`msw-sprite-ruid`). 접두사 필수.
+  - 직전 작업의 `HitEffectRUID`(`34cee7428d694e3a91e8a4aca8dd04ac`)는 별건(히트 이펙트 부재 수정)이라 그대로 유지.
+- **디버그 핫키 신설** (`TestModeConfig.mlua`):
+  - **F8 → SP +`GrantSPAmount`(기본 10)**. 기존 사용 키(F2/F3/F4/F9, 방향키, Ctrl/Alt/F, QWER, Tab, Enter/T)와 충돌 없음을 전수 확인 후 선정.
+  - 치트 코드는 **DevTools 파일 안에만** 둔다 — 프로덕션 스크립트(`PlayerController` 등) 무변경.
+  - 입력은 클라(`_InputService:ConnectEvent(KeyDownEvent, ...)`), 지급은 서버(`@ExecSpace("Server")`). `senderUserId` 로 요청자를 특정하므로 클라가 대상을 위조할 수 없다.
+  - **3중 안전장치**: `EnableTestMode` / `EnableDebugHotkeys` 를 클라·서버 양쪽에서 검사하고, 서버가 `MaxGrantPerPress`(기본 100)로 하드 캡. 테스트 모드가 꺼지면 요청 자체를 무시하므로 출시본에서 치트가 되지 않는다.
+  - 지급 후 레벨업 경로와 동일하게 `_PersistenceManager:MarkPlayerDirty(userId)` 로 저장에 반영하고, `ShowMineFeedback` 으로 화면에 결과를 띄운다.
+  - `OnBeginPlay` 에서 연결한 핸들러는 `OnEndPlay` 에서 해제(엔진 자동 해제 없음). 핸들러는 `property any` 로 보관(미보관 시 GC).
+- **테스트 모드 활성화**: `EnableTestMode` `false` → **`true`**. `TargetMap` 은 `template_field`(hunt01) 유지.
+- **검증**: `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-09T16:23:42` — 이번 refresh 시각과 일치([규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라) 대조 완료). **637건 전량 Info, Error 0 / Warning 0**. CSV 34컬럼 유지.
+- 🔴 **런타임 검증 보류(제작자 Play)**: ① F8 이 실제로 먹고 SP 가 오르는지(로그 `[TESTMODE] SP +10 -> N`) ② 벽돌 탄환이 보이는지(`thumbnail://` 렌더 확인) ③ 채팅 입력 중 F8 이 눌리면 어색하므로, 문제 되면 포커스 가드 추가.
+
+#### 후속 — 디버그 키 게이트 일괄 적용 & 테스트 키 목록 HUD
+
+- **점검 결과: 기존 F키는 전부 무방비였다.**
+
+  | 키 | 소유자 | 기존 | 조치 |
+  |---|---|---|---|
+  | F9 | `DevTools/UIPreviewToolController.mlua` | 게이트 없음 — 출시본에서도 리소스 프리뷰 창이 열림 | `EnableTestMode` 가드 추가 |
+  | F2 / F3 / F4 | `RankingBasic/Sample/RankingSampleUILogic.mlua` | 게이트 없음 — `@Logic` + `@EventSender` 선언형 핸들러라 **항상 활성** | `EnableTestMode` 가드 추가 |
+
+  ⚠ `RankingSampleUILogic` 은 **RankingBasic 패키지의 샘플 파일**이다. 패키지를 갱신하면 가드가 덮일 수 있으므로 해당 위치에 주석으로 명시해 두었다.
+- **키 목록 HUD** (`ui/HUDGroup.ui` / `TestKeyHud`): 처음에는 `_ScreenMessageLogic:PrivateMsg` 로 붙였으나 **사용자가 반려**했다 — 텍스트 벌룬이 아니라 **HUD 상시 표시**가 요구사항이었다. `PrivateMsg` 는 몇 초 뒤 사라지는 일시 알림이라 요구를 만족하지 못한다.
+  - 좌하단(`bottom-left`, 여백 20)에 300×196 패널. 기존 HUD 점유 구역(채팅 좌상단, 퀵슬롯·스킬바 하단 중앙, 미니맵·퀘스트 우측)과 겹치지 않는 유일하게 빈 구역이다.
+  - **의도적으로 게임 톤을 따르지 않았다.** [design-policy](./design-policy.md) 의 앤틱 우든/골드 톤을 쓰면 실제 UI 로 오인된다. 평평한 반투명 검정(`a=0.82`) + 앰버 `TEST MODE` 헤더로 개발 도구 티를 낸다.
+  - **F6 = 표시/숨김 토글**(기존엔 재표시 전용). 가릴 일이 생겨도 끌 수 있다.
+  - 문구는 `BuildDebugKeyHelp()` 가 프로퍼티 값(`GrantLevelCount` / `GrantSPAmount`)을 읽어 조립하므로 **수치를 바꿔도 안내와 실제가 어긋나지 않는다.**
+  - 패널은 `.ui` 에 **`enable=false`** 로 저장했다([규칙 30](./pitfalls.md)) — `OnBeginPlay` 에서 끄면 한 프레임 깜빡인다. 테스트 모드일 때 `HelpDelaySeconds` 뒤 켠다.
+  - UUID 는 `b.write(path, { bind })` 로 `debugHudPanel` / `debugHudText` 프로퍼티에 자동 주입. 드래그 바인딩 없음.
+  - 표시/숨김은 `Visible` 이 아니라 **`Enable`** 로 한다(`Visible=false` 는 클릭과 `OnUpdate` 가 살아 있다).
+- **최종 키 맵** (전부 `EnableTestMode` = true 일 때만 동작):
+
+  | 키 | 기능 | 조정 프로퍼티 |
+  |---|---|---|
+  | F6 | 키 목록 HUD 표시/숨김 토글 | — |
+  | F7 | 레벨업 (`AddXP` 로 실제 경로 통과) | `GrantLevelCount` (상한 `MaxLevelPerPress` 20) |
+  | F8 | SP 주입 | `GrantSPAmount` (상한 `MaxGrantPerPress` 100) |
+  | F9 | 리소스 프리뷰 툴 토글 | — |
+  | F2/F3/F4 | 랭킹 샘플 UI | — |
+
+- **레벨업(F7) 설계**: `Level` 을 직접 대입하지 않고 `PlayerController:AddXP(MaxXP - XP)` 로 **실제 레벨업 경로**를 태운다. `MaxXP` 증가, `MaxStamina` +10, `GatheringSpeed` +0.2, SP 지급, `MarkPlayerDirty` 가 전부 그 안에 있어 직접 대입하면 테스트가 실제와 달라진다. `Level`/`XP`/`MaxXP` 는 `@Sync` 라 HUD 도 즉시 갱신.
+- **검증**: `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-09T17:29:17` — 이번 refresh 시각과 일치([규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라) 대조 완료). **637건 전량 Info, Error 0 / Warning 0**.
+  - ⚠ 작업 도중 Play Test 가 실행 중이라 refresh 가 한 차례 거부됐다(`Workspace refresh is disabled during Play Test`). Play 제어는 제작자 전담이라 중단하지 않고 대기했다.
+- 🔴 **런타임 검증 보류(제작자 Play)**: ① 진입 2초 뒤 좌하단 HUD 가 뜨는지 ② F6 토글 ③ F7 레벨업 시 SP·스태미나·MaxXP 가 함께 오르는지 ④ 테스트 모드를 끄면 F9·F2~F4 가 실제로 막히는지 ⑤ 채팅 입력 중 F키가 먹으면 포커스 가드 추가 필요.
+### 2026-09-09 [전투/연출] 플레이어 스킬 이펙트 전수 감사 & 결함 5건 수정 (⚖️ 확정)
+
+- **배경**: 사용자 요청 — "플레이어 스킬들을 측정해서 점검, 특히 이펙트 위주". 감사 후 전건 수정 지시.
+- **측정 결과 (정상)**: 스킬 이펙트 RUID 19건 **전부 실존·타입 정확** (시전/피격=`animationclip`, 아이콘=`sprite`, 사운드=`effect`(오디오), 탄환=`sprite`). 계정 업로드(UGC) RUID 0건 → [규칙 45](./pitfalls.md#45-계정-업로드ugc-스프라이트는-play-에서-쓸-수-없다--공식-ruid만-쓴다) 위반 없음. `_EffectService` `instigator` 도 유효 엔티티([규칙 12](./pitfalls.md#규칙-12-effectservice--particleservice의-instigator에-nil-금지)).
+- **발견 및 수정**:
+
+  | # | 문제 | 원인 | 수정 |
+  |---|---|---|---|
+  | 1 | **매직 클로 탄환이 안 보임** | `ProjectileRUID` 공란인데 코드가 조건 없이 `sprite.SpriteRUID = projRuid` 대입 → 빈 RUID = 투명(8대 규칙 3). 모델 기본값도 공란이었음 | `ProjectileRUID` → `EffectRUID` 폴백, 둘 다 비면 모델 기본값 유지. 모델에도 기본 스프라이트 지정 |
+  | 2 | **디버그 텔레메트리 잔존** | `ExecuteProjectileSkill` / `Projectile.OnBeginPlay` 의 `[DBG985ecc]` 로그 + `http://127.0.0.1:7370/ingest/...` `PostAndWait`. 투사체 시전마다 실행 | 블록 전량 삭제(37줄 + 클라 타이머). 잔여 0건 |
+  | 3 | **히트 FX가 `EffectScale` 무시** | `Monster.mlua` 에서 배율 `1.0`·`flipX=false` 하드코딩. 원본 클립이 56×37 ~ 219×187 로 제각각이라 타격감 **4배 편차** | `HitEffectScale` 컬럼 신설 → `PendingHitEffectScale` 로 전달, flip 은 공격자 `LastDirectionX` |
+  | 4 | **주먹도끼만 히트 FX 없음** | `HitEffectRUID` 공란 | 물리 임팩트 클립 `34cee742…` 지정 |
+  | 5 | **슬래시 블러스트 판정 ≫ 이펙트** | 판정 8.0×8.0 유닛인데 이펙트는 3.58×3.14 (2.2배 차이) — 화면 밖 몬스터가 맞음 | 큰 원본(395×389) 지면 폭발로 교체 + `EffectScale` 2.0 → 약 **7.9×7.8 유닛**으로 판정과 정합 |
+
+- **컨셉 점검 (이펙트 종류)**: 리소스 이름 조회로 플레이스홀더 확정 —
+  주먹도끼 던지기의 탄환이 `돌멩이`, 아이콘이 `돌 조각` 스프라이트였다 → 손도끼로 교체했으나, **이 판단은 오판이었다**. 빨간 벽돌이 석기시대 주먹도끼의 의도된 대체재였고 같은 날 후속 작업에서 되돌렸다(위 [개발도구/전투] 항목 참조).
+  매직 클로는 탄환에 발톱 클립 `983a41e8…` 를 지정해 스킬명과 정합시켰다.
+  ⚠ **미변경(사용자 판단 대기)**: ① 매직 클로 *시전* 이펙트가 파란 조준 원(`cec1e8c2…`) — 컨셉과 어긋나지만 취향 영역 ② 파워 스트라이크와 주먹도끼가 시전 이펙트 공유 ③ 아이템 `Hand Axe` 자체의 아바타 무기가 **`빨간 벽돌`**(`384de1d5…`) — 스킬 밖 영역
+
+- **히트 이펙트 배율 산정** (원본 px ÷ 100 × 배율 = 월드 유닛, 목표 약 1.6~2.2):
+
+  | 스킬 | 원본 | 배율 | 결과 |
+  |---|---|--:|---|
+  | 파워 스트라이크 | 215×175 | 1.0 | 2.15×1.75 |
+  | 매직 클로 | 56×37 | **3.0** | 1.68×1.11 |
+  | 플래시 점프 | 91×75 | **2.0** | 1.82×1.50 |
+  | 슬래시 블러스트 | 219×187 | 1.0 | 2.19×1.87 |
+  | 주먹도끼 던지기 | 215×175 | 1.0 | 2.15×1.75 |
+
+  편차가 **4배 → 약 1.2배**로 축소.
+- **작업 중 사고**: `Projectile.Initialize` 인자를 5→6개로 늘렸다가 빌드 `LEA-1102`. 에러 메시지가 **옛 5개 시그니처**를 찍어 오진하기 쉬웠다. 인자 수를 되돌리고 프로퍼티 주입(`p.HitEffectScale = hs`)으로 전환해 해소 → [규칙 46](./pitfalls.md#46-크로스-스크립트-메서드의-인자-개수를-바꾸지-않는다--lea-1102) 신설.
+- **검증**: `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-09T16:04:55` — 이번 refresh 시각과 일치([규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라) 대조 완료). **637건 전량 Info, Error 0 / Warning 0**. CSV 8행 전부 34컬럼 일관, 따옴표 설명 필드 원형 왕복 확인. 배율 전달 체인 6지점 grep 확인.
+- 🔴 **런타임 검증 보류(제작자 Play)** — `maplestory-skill-maker` 의 Gate P(플레이어 시전 연출) / Gate M(몬스터 피격 연출) 은 런타임 하네스 증거가 필요해 **BLOCKED**. 진행 원장: `.maplestory-skill-maker-ledger.md`. 확인할 것:
+  1. 매직 클로 탄환이 실제로 보이는지(가장 중요).
+  2. 스킬별 히트 FX 크기가 비슷하게 느껴지는지 — 아니면 CSV `HitEffectScale` 만 조정.
+  3. 슬래시 블러스트 이펙트가 8칸 판정을 실제로 덮는지.
+  4. 주먹도끼가 도끼로 날아가는지, 히트 FX 가 뜨는지.
+  5. 로그 근거: `[T66][HITFX] monster ruid=... scale=...` (배율이 스킬별로 다르게 찍혀야 함).
+### 2026-09-09 [전투/밸런스] 슬라임킹 내려찍기 난이도 조정 — 추적형 장판 + 반응 시간 고정 (⚖️ 확정)
+
+- **배경**: 사용자 보고 — "조준 후 타격까지 너무 오래 걸린다. 피하기가 너무 쉽다."
+- **원인 분석** (실측):
+
+  | 구간 | 이전 값 | 비고 |
+  |---|--:|---|
+  | 예고 `AttackWindup` | 0.90s | **이 시점에 착지 좌표 확정** |
+  | 비행 `FLY` | ~0.21s | 배율 6 · 실속도 14 u/s |
+  | 체공 `HANG` | 0.30s | |
+  | 내려찍기 `SLAM` | 0.18s | |
+  | **조준→타격** | **1.58s** | |
+
+  1. 착지 좌표를 **예고 시작에 1회 확정**했기 때문에 **예고 전체(1.58초)가 그대로 회피 시간**이었다. 빠져나가는 데 필요한 이동은 `SlamRadius` 3.2칸뿐인데 플레이어 이동은 실측 약 5.7 u/s — 1.58초면 9칸을 간다. **걷기만 해도 3배 여유**로 빠지는 구조였다.
+  2. 이 구조는 [2026-09-08 리워크](#2026-09-08-전투보스-슬라임킹-내려찍기leap-패턴-코어키퍼식-리워크--확정)에서 *의도적으로* 도입한 것이다(그 전에는 예고 종료 후 조준이라 회피 시간이 0이었다). 즉 이번 건은 **회귀가 아니라 반대편으로 과보정된 상태의 재조정**이다.
+  3. 부수적으로 비행 시간이 거리 비례라, 멀리서 도약할수록 회피가 더 쉬워지는 비일관성도 있었다.
+- **수정 내용**:
+  1. **추적형 장판 + 지연 확정** (`MonsterAI.mlua`): 예고 앞부분에는 장판이 플레이어를 따라다니고(`MoveTelegraphMarker`), **착지까지 `LeapReactionWindow` 만 남는 순간에 좌표를 확정**한다(`LockLeapTarget`). 확정 순간 링이 점멸(`Committed`)해 "지금 피하라"를 알린다. 이제 **회피 시간 = 예고 전체가 아니라 확정 이후 구간**이다.
+  2. **반응 시간을 거리와 무관하게 고정**: 확정 시점을 `남은 예고 + 예상 비행 + 체공 + 내려찍기 <= LeapReactionWindow` 로 판정한다(`EstimateLeapImpactDelay`). 멀리서 뛰면 비행이 길어지는 만큼 **더 일찍** 확정되므로, 3칸에서 뛰든 9칸에서 뛰든 회피 여유가 같다. 산출식은 `BeginLeapFlight` 와 동일하게 유지해 예고와 실제가 어긋나지 않게 했다.
+  3. **접촉 틱 무접촉 창 확장** (`IsSlamCommitted`): [규칙 44](./pitfalls.md#44-접촉-틱-주기가-피격자-i-frame보다-짧으면-같은-몬스터의-단발-큰-기술이-조용히-씹힌다) 보호. 공중 구간만 막으면 이번 단축으로 그 합(0.40s)이 플레이어 i-frame(0.4s)에 붙어 다시 새므로, **확정 시점부터** 접촉 틱을 멈춰 0.7초 여유를 확보했다. 추적 구간과 그 외 지상에서는 그대로 돌아 [규칙 42](./pitfalls.md#42-몬스터-이동-충돌obstacle과-전투-접촉-피격combat의-역할-분리--상시-접촉-틱-원칙)와 충돌하지 않는다.
+- **`SlimeKing.model` 튜닝값**:
+
+  | 값 | 이전 | 이후 | 의도 |
+  |---|--:|--:|---|
+  | `AttackWindup` | 0.90 | **0.75** | 예고 자체를 짧게 |
+  | `LeapReactionWindow` | (없음) | **0.70** | ★ 난이도 단일 손잡이 — 확정→착지 여유 |
+  | `LeapHangDuration` | 0.30 | **0.15** | 체공 단축 |
+  | `LeapSlamDuration` | 0.18 | **0.14** | 내려찍기 단축 |
+  | `LeapSpeedMultiplier` | 6 | **12** | 실속도 14 ➔ 28 u/s (원거리 도약도 빠르게) |
+  | `AttackCooldown` | 5.0 | **3.5** | 패턴 빈도 상향 |
+
+  `SlamRadius`(3.2)와 피해량은 **의도적으로 무변경** — 이번 조정은 타이밍만 건드렸다.
+- **결과 (계산)**:
+
+  | 항목 | 이전 | 이후 |
+  |---|--:|--:|
+  | 조준→타격 (3칸 거리) | 1.58s | **1.15s** |
+  | **실제 회피 시간** | 1.58s | **0.70s (거리 무관 고정)** |
+  | 패턴 주기 | ~6.6s | **~4.7s** |
+
+  회피에 필요한 이동은 3.2칸, 0.7초 동안 플레이어가 갈 수 있는 거리는 약 3.99칸 — **즉시 반응하면 아슬아슬하게 피하고 0.2초만 지체하면 맞는다.** 더 어렵게/쉽게 하려면 `LeapReactionWindow` 하나만 조정하면 된다.
+- **검증**: `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-09T15:17:33` — 이번 refresh 시각과 일치([규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라) 대조 완료). **637건 전량 Info(LIA), Error 0 / Warning 0** (baseline 유지). LSP `mlua-diagnose` errors=0. 모델 값 129건과 스크립트 프로퍼티 교차 검증에서 고아 값 0건.
+- 🔴 **런타임 검증 보류(제작자 Play)** — 정적 검증이 못 잡는 항목:
+  1. 체감 난이도. `LeapReactionWindow` 0.7 이 적당한지, 너무 빡빡하면 0.85 정도로 올릴 것.
+  2. 추적 구간에서 장판이 매 프레임 서버에서 이동하므로, 클라에서 **끊겨 보이지 않는지**(Transform 동기 보간).
+  3. 마커 채움 원이 확정 시점과 대략 맞아떨어지는지(`FillSeconds` 는 스폰 시점 추정값이라 약간의 오차는 정상 — 확정 신호는 링 점멸이 담당).
+  4. 로그 근거: `[BOSS][TELEGRAPH] marker at ...` → `[BOSS][LEAP] target locked (...)` → `[BOSS][LEAP] fly ...` → `[BOSS][SLAM] aoe center=...`. **`target locked` 와 `fly` 사이 간격이 곧 확정 리드타임**이다.
 ### 2026-09-08 [스토리/퀘스트] 마을 주민 대화 전수 자연화 & 대장장이(로체) 노인체·사극체 교정 & 201번 퀘스트명 정합 (⚖️ 확정)
 
 - **배경**: 사용자 피드백 — 마을 주민들의 퀘스트 대화 중 어색한 표현(따옴표 중첩, 비문, 말투 혼용 등) 전수 점검 및 정비 요청.

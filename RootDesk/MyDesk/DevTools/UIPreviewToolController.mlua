@@ -119,6 +119,9 @@ script UIPreviewToolController extends Component
 	method void OnKeyDown(KeyDownEvent event)
 		-- F9 toggles the whole preview overlay (dimmer + window).
 		if event.key ~= KeyboardKey.F9 then return end
+		-- 🔴 테스트 모드에서만 열린다. 게이트가 없으면 출시본에서도 F9 로 개발용 프리뷰 창이 열린다.
+		if _TestModeConfig == nil then return end
+		if _TestModeConfig.EnableTestMode ~= true then return end
 		if isvalid(self.root) == false then return end
 		self.root.Enable = not self.root.Enable
 		log("[PreviewTool] toggled root -> " .. tostring(self.root.Enable))

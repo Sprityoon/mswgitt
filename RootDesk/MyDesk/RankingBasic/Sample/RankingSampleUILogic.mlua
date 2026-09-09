@@ -184,8 +184,14 @@ script RankingSampleUILogic extends Logic
 	@ExecSpace("ClientOnly")
 	@EventSender("Service", "InputService")
 	handler HandleKeyDownEvent(KeyDownEvent event)
+		-- 🔴 프로젝트 규약: 개발용 F키는 테스트 모드에서만 연다.
+		--    이 파일은 RankingBasic 패키지의 샘플이라 패키지를 갱신하면 덮일 수 있다 —
+		--    그때 이 가드를 다시 넣을 것.
+		if _TestModeConfig == nil then return end
+		if _TestModeConfig.EnableTestMode ~= true then return end
+
 		local key = event.key
-		
+
 		if key == KeyboardKey.F2 then
 			self:OpenHUDUI()
 		elseif key == KeyboardKey.F3 then

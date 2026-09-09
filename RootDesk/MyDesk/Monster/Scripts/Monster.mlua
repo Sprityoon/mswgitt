@@ -224,8 +224,13 @@ script Monster extends Component
 					local fx = combat.PendingHitEffectRUID
 					if fx ~= nil and fx ~= "" then
 						local mpos = self.Entity.TransformComponent.WorldPosition
-						pc:MulticastPlayEffectEx(fx, mpos, false, 1.0)
-						log("[T66][HITFX] monster ruid=" .. fx)
+						-- 배율은 스킬별 HitEffectScale(원본 클립 크기 편차 보정), 좌우 플립은 공격자 시선.
+						-- 구형은 둘 다 상수(1.0 / false)여서 매직 클로 히트 FX 가 0.56x0.37 유닛으로
+						-- 사실상 안 보였고, 스킬 간 타격감이 4배까지 벌어졌다.
+						local hs = combat.PendingHitEffectScale
+						if hs == nil or hs <= 0 then hs = 1.0 end
+						pc:MulticastPlayEffectEx(fx, mpos, pc.LastDirectionX > 0, hs)
+						log("[T66][HITFX] monster ruid=" .. fx .. " scale=" .. tostring(hs))
 					end
 				end
 			end

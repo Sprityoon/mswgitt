@@ -8,6 +8,10 @@ script PlayerCombat extends AttackComponent
 	@HideFromInspector property integer PendingDamage = 8
 	-- T66: 스킬 피격 이펙트 RUID — AttackFast 직전 설정, HandleHitEvent에서 소비
 	@HideFromInspector property string PendingHitEffectRUID = ""
+	-- 피격 이펙트 배율. SkillDataSet.HitEffectScale 을 실어 나른다.
+	-- ⚠ 원본 클립 크기가 스킬마다 4배 가까이 차이나므로(56x37 ~ 219x187) 배율 없이는
+	--   타격감이 스킬마다 들쭉날쭉해진다. 1.0 = 원본 픽셀 그대로(100px = 1 월드 유닛).
+	@HideFromInspector property number PendingHitEffectScale = 1.0
 
 	@ExecSpace("ServerOnly")
 	method void DoAttackAt(Vector2 worldPos)
@@ -33,6 +37,7 @@ script PlayerCombat extends AttackComponent
 		self.PendingDamage = dmg
 		-- 도구 평타는 스킬 HitEffect를 쓰지 않는다. 투사체 스킬이 Pending을 비행 중 남겨 두면 Ctrl 평타에 붙는다.
 		self.PendingHitEffectRUID = ""
+		self.PendingHitEffectScale = 1.0
 		local shape = BoxShape(worldPos, Vector2(self.AttackBoxSize, self.AttackBoxSize), 0)
 		self:AttackFast(shape, nil, CollisionGroups.HitBox)
 		log("[DMG] melee=" .. tostring(dmg))
@@ -60,7 +65,8 @@ script PlayerCombat extends AttackComponent
 		
 		self.PendingDamage = dmg
 		self.PendingHitEffectRUID = ""
-		
+		self.PendingHitEffectScale = 1.0
+
 		-- 바라보는 방향으로 전방 1.5 지점에 너비 3.4 x 2.8 영역 타격
 		local centerX = playerPos.x + dirX * 1.5
 		local centerY = playerPos.y + dirY * 1.5

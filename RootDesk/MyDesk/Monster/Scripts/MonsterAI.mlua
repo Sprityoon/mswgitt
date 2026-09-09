@@ -43,8 +43,10 @@ script MonsterAI extends Component
 	property number ChargeMaxDuration = 2.0
 
 	-- LEAP 전용 튜닝(AttackType == "LEAP"일 때만 사용). 크기는 고정, 위치 이동만 사용.
-	-- 착지 지점은 WINDUP "시작" 시점에 1회 확정되고 그 자리에 텔레그래프 마커가 뜬다.
-	-- 즉 플레이어는 예고 전 구간(AttackWindup)을 회피 시간으로 쓸 수 있다.
+	-- 예고 구간은 2단계다: 앞부분은 장판이 플레이어를 "추적"하고, 마지막 TelegraphLockLead 초에
+	-- 좌표가 "확정"되며 링이 점멸한다. 실제 회피 시간은 예고 전체가 아니라 이 확정 이후 구간이다.
+	-- (구형은 예고 시작에 좌표를 고정해서, 걷기만 해도 빠져나가는 무의미한 패턴이었다.)
+	-- 확정 시점부터 착지까지 남는 시간 = TelegraphLockLead + 비행 + 체공 + 내려찍기.
 	-- (legacy) 예전 스케일 연출용 — 더 이상 적용하지 않음.
 	@HideFromInspector property number LeapPeakScale = 1.0
 	@HideFromInspector property number LeapRiseFraction = 0.65
@@ -58,6 +60,11 @@ script MonsterAI extends Component
 	property number LeapLandingFraction = 1.0
 	-- 비행 이동 속도 배율(평시 InputSpeed 대비). 거리가 멀수록 비행 시간이 길어진다.
 	property number LeapSpeedMultiplier = 6.0
+	-- ★ 난이도의 핵심 손잡이: 좌표 "확정"부터 "착지"까지 플레이어에게 주는 시간(초).
+	-- 확정 시점을 (남은 예고 + 예상 비행 + 체공 + 내려찍기)가 이 값이 되는 순간으로 잡기 때문에,
+	-- 가까이서 뛰든 멀리서 뛰든 회피 여유가 항상 같다. 거리가 멀수록 그만큼 일찍 확정된다.
+	-- 필요한 이동 거리는 SlamRadius 이므로, 대략 SlamRadius / 플레이어속도 에 가까울수록 어려워진다.
+	property number LeapReactionWindow = 0.7
 	-- (legacy)
 	@HideFromInspector property number LeapMidpointFraction = 1.0
 	@HideFromInspector property number LeapAnimHoldProgress = 0.7
@@ -148,6 +155,8 @@ script MonsterAI extends Component
 	@HideFromInspector property boolean AttackStrikePending = false
 	-- LEAP 단계("WINDUP" | "FLY" 스캔 위치 점프 | "HANG" 공중 체공 | "SLAM" 수직 내려찍기)
 	@HideFromInspector property string LeapPhase = "WINDUP"
+	-- 착지 좌표가 확정됐는지(추적 종료). WINDUP 안에서 TelegraphLockLead 시점에 true 가 된다.
+	@HideFromInspector property boolean LeapLocked = false
 	@HideFromInspector property Vector2 LeapStartPos = Vector2(0, 0)
 	@HideFromInspector property Vector2 LeapTargetPos = Vector2(0, 0)
 	@HideFromInspector property number LeapPhaseDuration = 0
@@ -417,13 +426,24 @@ script MonsterAI extends Component
 	end
 
 	@ExecSpace("ServerOnly")
+	method boolean IsSlamCommitted()
+		-- 착지 좌표 확정(WINDUP 후반) ~ 착지까지의 구간. 접촉 틱을 멈춰야 하는 창이다.
+		-- 🔴 규칙 44: 플레이어 i-frame(0.4초)보다 짧은 주기의 접촉 틱이 착지 직전에 들어가면
+		--    정작 광역타가 i-frame 에 막혀 조용히 사라진다. 공중 구간만 막으면 그 합이 0.4초에
+		--    근접할 때 다시 새므로, "확정 이후" 전체를 무접촉 창으로 잡아 여유를 확보한다.
+		if self.CurrentAIState ~= "LEAP" then return false end
+		if self:IsAirborne() then return true end
+		return self.LeapPhase == "WINDUP" and self.LeapLocked
+	end
+
+	@ExecSpace("ServerOnly")
 	method void TickTouchDamage(number delta)
 		-- T38: TouchRadius 내 최근접 플레이어에 주기 접촉 데미지 (i-frame에 연타 억제 위임)
-		-- ⚠ 공중 구간에서는 접촉 틱을 멈춘다. 플레이어 i-frame 이 0.4초인데 접촉 틱이 0.25초마다
-		--   돌면, 착지 직전에 소모된 i-frame 때문에 정작 내려찍기 광역타가 조용히 씹힌다
-		--   ("가끔 타격이 안 된다"의 실제 원인). 공중에는 몸통이 없으니 규칙 42의 파고들기
-		--   방지(상시 접촉 틱)와도 충돌하지 않는다 — 지상 구간(WINDUP 포함)에서는 그대로 돈다.
-		if self:IsAirborne() then return end
+		-- ⚠ 착지 좌표 확정 시점부터 착지까지는 접촉 틱을 멈춘다(규칙 44). 플레이어 i-frame 이
+		--   0.4초인데 접촉 틱이 그보다 잦으면, 착지 직전에 소모된 i-frame 때문에 정작 광역타가
+		--   조용히 씹힌다. 예고 앞부분(추적 구간)과 그 외 지상 구간에서는 그대로 돌기 때문에
+		--   규칙 42의 파고들기 방지와도 충돌하지 않는다.
+		if self:IsSlamCommitted() then return end
 		local atk = self:GetAttack()
 		if not isvalid(atk) then return end
 		if self.TouchCooldownTimer > 0 then
@@ -584,12 +604,14 @@ script MonsterAI extends Component
 			self:SetSprite(self.AttackRUID)
 			self:StopMovement()
 		elseif newState == "LEAP" then
-			-- 코어키퍼식 도약: 지면 예고(착지점 확정 + 장판 표시) → FLY → HANG → SLAM. 쿨은 EndLeap.
-			-- 착지점을 예고 "시작"에 확정하는 것이 핵심이다. 구형은 예고가 끝난 뒤에 조준해서
-			-- 플레이어에게 회피할 시간이 0이었고, 그래서 "쫓아와서 한 번 더 순간이동해 때린다"로 보였다.
+			-- 코어키퍼식 도약: 지면 예고(장판 추적 → 좌표 확정) → FLY → HANG → SLAM. 쿨은 EndLeap.
+			-- 장판은 예고 앞부분 동안 플레이어를 따라다니다가, 착지까지 LeapReactionWindow 만 남는
+			-- 순간에 좌표가 확정된다. 그래야 "예고를 보고 반응"해야 피할 수 있다 —
+			-- 예고 시작에 고정하면 예고 전체가 회피 시간이라 걷기만 해도 빠져나간다.
 			self.LeapPhase = "WINDUP"
 			self.LeapPhaseDuration = self.AttackWindup
 			self.StateTimer = self.AttackWindup
+			self.LeapLocked = false
 			self.LeapStartPos = self:Pos2D()
 			self.LeapTargetPos = self:ResolveLeapTarget(self.LeapStartPos)
 			self.LeapAnimHeld = false
@@ -599,7 +621,13 @@ script MonsterAI extends Component
 			self:SetSpritePlayRate(1)
 			self:StopMovement()
 			self:Face(self.LeapTargetPos.x - self.LeapStartPos.x)
-			self:SpawnTelegraphMarker(self.LeapTargetPos, self.AttackWindup)
+			-- 채움 원이 "확정까지 남은 시간"을 나타내도록 추적 구간 예상 길이를 넘긴다.
+			local trackDur = self:LeapTrackSeconds()
+			self:SpawnTelegraphMarker(self.LeapTargetPos, trackDur)
+			if trackDur <= 0 then
+				-- 이미 사거리가 멀어 예고 전체가 반응 시간에 못 미치는 경우 즉시 확정한다.
+				self:LockLeapTarget()
+			end
 		end
 	end
 
@@ -616,6 +644,67 @@ script MonsterAI extends Component
 			startPos.x + (scan.x - startPos.x) * frac,
 			startPos.y + (scan.y - startPos.y) * frac
 		)
+	end
+
+	@ExecSpace("ServerOnly")
+	method number EstimateLeapFlySeconds(Vector2 from, Vector2 to)
+		-- 예상 비행 시간. BeginLeapFlight 의 산출식과 동일해야 확정 타이밍이 어긋나지 않는다.
+		local dist = math.sqrt(self:DistSq(from, to))
+		local mc = self.Entity.MovementComponent
+		local base = 1.0
+		if isvalid(mc) and mc.InputSpeed > 0 then base = mc.InputSpeed end
+		local div = self.RectTileSpeedDivisor
+		if div <= 0 then div = 1.2 end
+		local speed = base * self.LeapSpeedMultiplier / div
+		if speed < 0.1 then speed = 0.1 end
+		local flyDur = dist / speed
+		local maxDur = self.LeapRiseDuration * 2
+		if maxDur < 0.1 then maxDur = 0.1 end
+		if flyDur < 0.08 then flyDur = 0.08 end
+		if flyDur > maxDur then flyDur = maxDur end
+		return flyDur
+	end
+
+	@ExecSpace("ServerOnly")
+	method number EstimateLeapImpactDelay(Vector2 from, Vector2 to)
+		-- 지금 도약을 시작한다고 가정했을 때 착지까지 걸리는 시간 = 비행 + 체공 + 내려찍기.
+		local hang = self.LeapHangDuration
+		if hang < 0.05 then hang = 0.05 end
+		local slam = self.LeapSlamDuration
+		if slam < 0.05 then slam = 0.05 end
+		return self:EstimateLeapFlySeconds(from, to) + hang + slam
+	end
+
+	@ExecSpace("ServerOnly")
+	method number LeapTrackSeconds()
+		-- 장판이 플레이어를 추적하는 구간의 예상 길이(초). 마커 채움 연출용 초기값으로만 쓴다
+		-- (실제 확정 시점은 매 프레임 EstimateLeapImpactDelay 로 다시 판정한다).
+		local w = self.AttackWindup
+		if w < 0 then w = 0 end
+		local lead = self.LeapReactionWindow - self:EstimateLeapImpactDelay(self:Pos2D(), self.LeapTargetPos)
+		if lead < 0 then lead = 0 end
+		if lead > w then lead = w end
+		return w - lead
+	end
+
+	@ExecSpace("ServerOnly")
+	method void LockLeapTarget()
+		-- 착지 좌표 확정. 이후 장판은 움직이지 않고 링이 점멸해 "지금 피하라"를 알린다.
+		if self.LeapLocked then return end
+		self.LeapLocked = true
+		self:CommitTelegraphMarker()
+		log("[BOSS][LEAP] target locked (" .. tostring(self.LeapTargetPos.x) .. "," .. tostring(self.LeapTargetPos.y) .. ")")
+	end
+
+	@ExecSpace("ServerOnly")
+	method void MoveTelegraphMarker(Vector2 pos)
+		-- 추적 구간에서 장판을 옮긴다. Body 없는 데코 엔티티라 Transform 직접 대입이 허용된다.
+		local marker = self._T.telegraphMarker
+		if marker == nil then return end
+		if not isvalid(marker) then return end
+		local t = marker.TransformComponent
+		if not isvalid(t) then return end
+		t.WorldPosition = Vector3(pos.x, pos.y, t.WorldPosition.z)
 	end
 
 	@ExecSpace("ServerOnly")
@@ -867,7 +956,8 @@ script MonsterAI extends Component
 		-- 고정 시간으로 먼 거리를 덮으면 프레임당 이동량이 폭증해 순간이동처럼 보인다.
 		local start = self:Pos2D()
 		self.LeapStartPos = start
-		self:CommitTelegraphMarker()
+		-- 정상 흐름이라면 WINDUP 중 이미 확정됐다. 안전망으로 한 번 더 호출한다(멱등).
+		self:LockLeapTarget()
 		self:Face(self.LeapTargetPos.x - start.x)
 		self:SetSpriteAirHold()
 
@@ -906,6 +996,22 @@ script MonsterAI extends Component
 		if self.LeapPhase == "WINDUP" then
 			self.StateTimer = self.StateTimer - delta
 			self:StopMovement()
+			if not self.LeapLocked then
+				local myPos = self:Pos2D()
+				-- 지금 확정하면 착지까지 남는 총 시간 = 남은 예고 + 비행 + 체공 + 내려찍기.
+				-- 이 값이 LeapReactionWindow 이하로 떨어지는 순간이 확정 시점이다 → 거리와 무관하게
+				-- 회피 여유가 일정해진다(멀리서 뛰면 비행이 길어지므로 그만큼 일찍 확정된다).
+				local untilImpact = self.StateTimer + self:EstimateLeapImpactDelay(myPos, self.LeapTargetPos)
+				if untilImpact <= self.LeapReactionWindow then
+					self:LockLeapTarget()
+				else
+					-- 추적 구간: 장판과 시선이 플레이어를 따라간다.
+					local tracked = self:ResolveLeapTarget(myPos)
+					self.LeapTargetPos = tracked
+					self:MoveTelegraphMarker(tracked)
+					self:Face(tracked.x - myPos.x)
+				end
+			end
 			if self.StateTimer <= 0 then
 				self:BeginLeapFlight()
 			end
