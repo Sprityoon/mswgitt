@@ -39,6 +39,10 @@ script ResourceSpawner extends Logic
 	property number DefaultHomeSpawnX = -3.0
 	property number DefaultHomeSpawnY = 0.0
 	property integer SpawnZoneRadius = 5
+	-- 에디터에 배치된 PortalGate의 현재 위치를 따라가는 자원 금지 반경(월드 단위).
+	-- 제작자가 포탈을 드래그해 옮겨도 동적 맵 복제 시 이 좌표를 다시 읽으므로 코드 수정이 필요 없다.
+	property number PortalResourceClearRadius = 5.0
+	property table PortalClearZonesMap = {}
 	-- 맵 경계 벽으로부터 자원이 떨어져야 하는 안전 여백(타일).
 	-- MapRadius=30, WallThickness=3(wallInner=28) 기준 Margin=3이면 |x|,|y| <= 25 범위에서만 스폰.
 	-- 2×2, 4×4 대형 자원도 외곽 벽을 침범하지 않고 벽과 자원 사이에 자연스러운 통로 형성.
@@ -1636,6 +1640,62 @@ script ResourceSpawner extends Logic
 	end
 
 	@ExecSpace("ServerOnly")
+	method void RefreshPortalClearZones(Entity map)
+		-- 맵에 실제 배치된 모든 PortalGate 위치를 자원 금지 구역 캐시에 반영한다.
+		if not isvalid(map) then return end
+		local zones = {}
+		local portalComps = map:GetChildComponentsByTypeName("script.PortalGate", true)
+		if portalComps ~= nil then
+			for _, portalComp in ipairs(portalComps) do
+				if isvalid(portalComp) and isvalid(portalComp.Entity) and isvalid(portalComp.Entity.TransformComponent) then
+					local pos = portalComp.Entity.TransformComponent.WorldPosition
+					table.insert(zones, { x = pos.x, y = pos.y })
+				end
+			end
+		end
+		self.PortalClearZonesMap[map.Name] = zones
+	end
+
+	method boolean IsInPortalResourceClearZone(string mapName, number cellX, number cellY)
+		-- 셀 중심이 포탈 금지 반경 안인지 제곱 거리로 판정한다.
+		local zones = self.PortalClearZonesMap[mapName]
+		if zones == nil then return false end
+		local radiusSq = self.PortalResourceClearRadius * self.PortalResourceClearRadius
+		local centerX = cellX + 0.5
+		local centerY = cellY + 0.5
+		for _, zone in ipairs(zones) do
+			local dx = centerX - zone.x
+			local dy = centerY - zone.y
+			if dx * dx + dy * dy <= radiusSq then return true end
+		end
+		return false
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ClearResourcesNearPortals(Entity map)
+		-- 폴백 포탈이 자원 산포 뒤 생성된 경우에도 포탈 주변 통로를 즉시 비운다.
+		if not isvalid(map) then return end
+		local spawnedEntities = self:GetSpawnedEntities(map.Name)
+		local removals = {}
+		for pivotKey, resourceEntity in pairs(spawnedEntities) do
+			local portalGate = isvalid(resourceEntity) and resourceEntity:GetComponent("script.PortalGate") or nil
+			if not isvalid(portalGate) and isvalid(resourceEntity) and isvalid(resourceEntity.TransformComponent) then
+				local pos = resourceEntity.TransformComponent.WorldPosition
+				if self:IsInPortalResourceClearZone(map.Name, pos.x - 0.5, pos.y - 0.5) then
+					table.insert(removals, { key = pivotKey, entity = resourceEntity })
+				end
+			end
+		end
+		for _, removal in ipairs(removals) do
+			self:RemoveEntity(map.Name, removal.key)
+			if isvalid(removal.entity) then removal.entity:Destroy() end
+		end
+		if #removals > 0 then
+			log("ResourceSpawner: Cleared " .. #removals .. " resources near editor portals in " .. map.Name)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
 	method void SpawnInitialResourcesForMap(Entity map)
 		if not isvalid(map) then
 			log_warning("ResourceSpawner: Map is invalid in SpawnInitialResourcesForMap.")
@@ -1691,6 +1751,7 @@ script ResourceSpawner extends Logic
 		self.SpawnedEntitiesMap[mapName] = {}
 		self.GridToEntityMap[mapName] = {}
 		self.LoadedChunksMap[mapName] = {}
+		self:RefreshPortalClearZones(map)
 		
 		-- Reconstruct player-placed tiles and furniture
 		self:ReconstructWorldPlacementsForMap(map)
@@ -2051,6 +2112,8 @@ script ResourceSpawner extends Logic
 		local gKey = px .. "_" .. py
 		self:GetGridToEntity(map.Name)[gKey] = { entity = portal, pivotX = px, pivotY = py, isFurniture = true, itemName = "Portal" }
 		self:GetSpawnedEntities(map.Name)[gKey] = portal
+		self:RefreshPortalClearZones(map)
+		self:ClearResourcesNearPortals(map)
 		log("ResourceSpawner: Portal '" .. portalName .. "' -> " .. targetMap .. " configured in map " .. map.Name .. " at (" .. px .. ", " .. py .. ")")
 	end
 
@@ -2301,6 +2364,7 @@ script ResourceSpawner extends Logic
 				-- 3. Resource Spawning
 				local spawnZoneRadius = self.SpawnZoneRadius
 				local inSpawnZone = (x >= -spawnZoneRadius and x <= spawnZoneRadius and y >= -spawnZoneRadius and y <= spawnZoneRadius)
+				inSpawnZone = inSpawnZone or self:IsInPortalResourceClearZone(mapName, x, y)
 				local maxResCoord = wallInner - self.ResourceBoundaryMargin
 				local nearBoundary = (math.abs(x) > maxResCoord or math.abs(y) > maxResCoord)
 				
@@ -2886,6 +2950,7 @@ script ResourceSpawner extends Logic
 	@ExecSpace("ServerOnly")
 	method Entity SpawnResourceWithAnimation(Entity map, string name, string modelId, number x, number y)
 		local mapName = map.Name
+		if self:IsInPortalResourceClearZone(mapName, x, y) then return nil end
 		local spawnPos = Vector3(x + 0.5, y + 0.5, 0)
 		local resEntity = _SpawnService:SpawnByModelId(
 			modelId,

@@ -19,6 +19,12 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `.agents/skills/msw-ui-system/SKILL.md` · `game-ui-ux-theory.md` · `ui-ux-design-framework.md` · `docs/design-policy.md` | **[UI/UX/설계] 게임 UI/UX 핵심 이론(Fagerholt 4분면, Celia Hodent 인지부하 제어, 정보 역피라미드, Contextual HUD, XAG 접근성) 체계화 및 메이플월드 개발 프레임워크 문서 구축 & 스킬 영구 레퍼런스 연동** (2026-09-10 ⚖️ 확정) — 아래 참조 |
+| `ui/PopupGroup.ui` · `UISkillTreeController.mlua` | **[UI/UX] 스킬 트리 창 개편 — 상세 패널을 인벤 툴팁과 같은 디자인 언어로 재설계 & 레벨 진행 게이지 신설 & 죽은 좌하단에 SP 카드 배치 & QWER/레벨업 터치 88px 확보 & TextGUIRenderer 마이그레이션** (2026-09-10 ⚖️ 확정) — 아래 참조 |
+| `ui/PopupGroup.ui` · `UIInventoryController.mlua` | **[UI/UX] 인벤토리 아이템 설명창 전면 개편 — 겹침·배경 돌출·터치 규격 미달 등 결함 6건 해소 & 아이콘/등급 바/스킬·설명 분리/상태 칩 5블록 재설계 & TextGUIRenderer 마이그레이션 & PopupGroup.ui 전체 write 를 막던 L027 ERROR 해소** (2026-09-10 ⚖️ 확정) — 아래 참조 |
+| `Monster.mlua` · `TileDurabilityManager.mlua` · `Item_Coin` 모델 · `item_dataset.csv` · `ItemDropDataSet.csv` · `template_field.map` · `hunting-grounds-plan.md` | **[전투/드롭/기획] 일반 몬스터 ItemDropDataSet 미롤링 결함 해소(슬라임 젤리 영구 미드롭) & 코인 드롭 스프라이트·크기 직관화 & template_field 공용 랜드마크 9종 철거 & 사냥터 전면 재설계(전용 맵 4종 + 보스 5종) 기획 확정** (2026-09-10 ⚖️ 확정) — 아래 참조 |
+| `ResourceSpawner.mlua` · `BiomeResourceDataSet.csv` · `template_field.map` · `template_boss.map` | **[지형/UX] 사냥터·보스 템플릿 랜드마크 구체화 & 에디터 포탈 이동 좌표 자동 추적 & 포탈 반경 5칸 자원 생성 차단 & 바이옴 자원 밀도 하향** (2026-09-10) — 코드·MapBuilder 구조 검증 완료 / refresh 검증 보류 / 런타임 검증 보류(제작자 수행) |
+| `UISkillTreeController.mlua` · `PopupGroup.ui` | **[UI/스킬트리] 스킬 상세 패널에 해금 업적 조건 노출 — 어떤 업적을 달성해야 해금되는지 화면에 전혀 없어 조건 미충족 사유를 알 수 없던 문제 해소** (2026-09-10 ⚖️ 확정) — 아래 참조 |
 | `docs/design/skill-tree-plan.md` · `game_design.md` | **[스킬/직업] 스킬트리 세분화 고찰 및 4대 하이브리드 직업군(트래퍼/배틀스미스/알케미스트/와일드키퍼) & 주먹도끼 분기(기간틱 락/쇄석 흩뿌리기) 설계 확정** (2026-09-09 ⚖️ 확정) — 아래 참조 |
 | `TestModeConfig.mlua` · `UIPreviewToolController.mlua` · `RankingSampleUILogic.mlua` · `SkillDataSet.csv` | **[개발도구/전투] 테스트 모드 디버그 핫키 체계 정비 — F6 도움말 / F7 레벨업 / F8 SP 신설 & 기존 무방비 F키(F9 프리뷰, F2~F4 랭킹샘플)에 테스트 모드 게이트 적용 & 테스트 키 목록 HUD 상시 표시 & 주먹도끼 탄환을 빨간 벽돌로 정정** (2026-09-09 ⚖️ 확정) — 아래 참조 |
 | `PlayerController.mlua` · `PlayerCombat.mlua` · `Projectile.mlua` · `Monster.mlua` · `SkillDataSet.csv` · `Projectile_Fireball.model` | **[전투/연출] 플레이어 스킬 이펙트 전수 감사 & 결함 5건 수정 — 매직 클로 탄환 비가시(빈 SpriteRUID) 해소 & 디버그 텔레메트리(로컬 HTTP POST) 제거 & `HitEffectScale` 컬럼 신설로 히트 FX 4배 편차 정규화 & 주먹도끼 히트 이펙트 신규 & 슬래시 블러스트 이펙트를 8×8 판정에 맞춰 확대** (2026-09-09 ⚖️ 확정) — 아래 참조 |
@@ -102,6 +108,268 @@
 | 데이터셋 + `ui/PopupGroup.ui`·`HUDGroup.ui` + UI 컨트롤러 | **한글화 1차** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
+
+### 2026-09-10 [UI/UX/설계] 게임 UI/UX 핵심 이론 체계화 & 메이플월드 프레임워크 문서 구축 (⚖️ 확정)
+
+- **배경**: 사용자 지시 — Fagerholt & Lorentzon 4분면 UI 분류 모델, Celia Hodent 인지신경과학 게임 UX 프레임워크, 정보 역피라미드, 최신 Dynamic/Contextual HUD 트렌드, 엔진별 아키텍처 비교(Common UI 등), XAG 게임 접근성 표준을 정리하여 현재 메이플월드 게임 개발 방향성에 맞는 스킬 및 참고 문서로 제작.
+- **조치 1 — 스킬 영구 레퍼런스 신설**: [.agents/skills/msw-ui-system/references/game-ui-ux-theory.md](../../.agents/skills/msw-ui-system/references/game-ui-ux-theory.md)
+  - 4분면 공간 모델(Diegetic/Non-Diegetic/Spatial/Meta)의 MSW 2D 컴포넌트 실전 매핑.
+  - Celia Hodent 프레임워크 기반 3대 인지 부하 제어(외재적 인지 부하 0화: PC/모바일 단일 레이아웃, 터치 타겟 ≥88px, 월드 직접 클릭 금지) & 4대 Usability 지침.
+  - 정보 역피라미드(Critical/Tactical/Strategic/Meta) 계층화 및 상황 반응형(Contextual) HUD 상태 머신.
+  - 엔진별 UI 아키텍처 비교(Unreal Common UI의 백버튼 스택 ➔ MSW UIManager LIFO 스택 패턴으로 구현).
+  - XAG 101/102/112/113 접근성 표준(4.5:1 이상 대비, 단일 탈출 경로, 다중 채널 색약 배려) 및 MSW 실무 10대 자체 점검 체크리스트 수립.
+- **조치 2 — 프로젝트 개발 규약 신설**: [docs/reference/ui-ux-design-framework.md](./reference/ui-ux-design-framework.md)
+  - 우리 게임의 비주얼 톤(우든+골드+양피지) 및 아늑한 생활 톤에 최적화된 설계 원칙 정립.
+- **조치 3 — 라우팅 및 디자인 정책 연동**:
+  - `msw-ui-system/SKILL.md` §0 Routing 및 §3 Sub-documents에 `game-ui-ux-theory.md` 등록.
+  - `docs/design-policy.md` §1 입력·플랫폼 섹션 상단에 프레임워크 참조 링크 명시.
+- **검증**: 문서 간 상호 링크 검증 완료.
+
+### 2026-09-10 [전투/드롭/기획] 젤리 미드롭 결함 · 코인 시인성 · 사냥터 전면 재설계 (⚖️ 확정)
+
+- **배경**: 사용자 지시 4건 — ① template_field의 포탈 외 오브젝트 철거 ② 사냥터 전면 재설계(맵+몹+보스+퀘스트+스토리) ③ 슬라임/슬라임킹 젤리 미드롭 해소 ④ 코인 크기·스프라이트 직관화.
+
+- 🔴 **젤리 미드롭 — 원인은 확률이 아니라 호출 위치였다.**
+  `ItemDropDataSet` 에 `slime,,slime_jelly,1,2,0.6` 행이 멀쩡히 있었는데도 한 번도 나오지 않았다.
+  `Monster.DropFromItemDropDataSet` 의 **유일한 호출부가 `GrantBossRewards()` 안**이고, 그 함수는 `if self.IsBoss` 에서만 실행된다. 즉 **일반 몬스터는 이 데이터셋을 아예 조회하지 않았다.**
+  - 조치: 호출을 `Dead()` 본문으로 올려 **보스/일반 구분 없이 전 몬스터가 롤링**하게 했다. `GrantBossRewards` 쪽 호출은 제거해 중복 드롭을 막았다.
+  - 슬라임킹은 보스라 호출은 됐지만 **`slime_king` 의 젤리 행 자체가 없었다** — `slime_king,,slime_jelly,3,6,1.0` 신설.
+  - `MonsterId` 키 정합 확인: `MonsterSpawner` 가 `mComp.MonsterId = chosenOpt.modelId` 로 주입하고 스폰 데이터셋 값이 `slime` 이라 `ItemDropDataSet.SourceId` 와 일치한다.
+
+- **코인 시인성**: 원인 2가지가 겹쳐 있었다.
+  - **스프라이트**: `408c027728b5404f8901c85f6307cfcf` 는 48×28 짜리 **흐릿한 점 두 개**라 바닥에서 코인으로 읽히지 않았다(썸네일 실물 확인). 공식 리소스 `02a489cccff24a139a6c3582a5871f58`(28×24, ko: 금색 메소/동전/메소)로 교체 — 전형적인 둥근 금화다. `Item_Coin` 모델의 `SpriteRUID` 와 `item_dataset` 의 `IconRUID` 를 함께 바꿔 인벤토리 아이콘까지 정합시켰다.
+  - **크기**: 드롭 스케일이 `DropItemScale = 4.0` 전역 공용이었다. `CurrencyDropScale = 7.0` 을 신설하고 **`item_dataset.IsCurrency` 컬럼**으로 분기했다 — 아이템 이름 분기가 아니라 데이터 컬럼이라 [규칙 1](./pitfalls.md#규칙-1-하드코딩-금지-data-driven) 을 지킨다. 없는 컬럼 대비 `pcall` 가드([규칙 7](./pitfalls.md#규칙-7-userdatarow에는-rowindex가-없다)).
+
+- **template_field 정리**: 장식 랜드마크 9종(EastGate_Banner/Crates, NorthCamp_Barrel/Bench, SouthEastCamp_Crates/Lamp, Trailhead_Lamp_Left/Right, PioneerSignpost) 을 `MapBuilder.remove()` 로 철거. 엔티티 31 → 22. 포탈 2종·경계 콜라이더 4종·타일맵 7종·MapLayer 6종·Background·PlacementPreview 는 전량 유지.
+  - ⚠ 퀘스트 216 「이정표 아래에서」는 완료 조건이 **멧돼지 3마리 처치**라 이정표 철거로 깨지지 않는다. 다만 안내문이 맵과 어긋나므로 후속 판단 필요.
+  - `.map` 무결성 확인: 22개 엔티티 전부 `typeof jsonString === "object"` ([규칙 16](./pitfalls.md#규칙-16-map의-jsonstring은-중첩-객체다--문자열-대입-금지)).
+
+- **사냥터 전면 재설계 기획** — [docs/design/story/hunting-grounds-plan.md](./design/story/hunting-grounds-plan.md) 신설.
+  - ⚖️ **`template_field` 공유 구조 폐기.** hunt01~03 이 한 장을 공유하던 전제를 버리고 **구역별 전용 맵**으로 간다. `map-concepts.md` §0.1/§0.3 에 폐기 배너를 달고 README 색인의 Q4·Q5 를 해소 처리했다.
+  - **필드 4종 + 보스 5종**: 흙 벌판(이슬 삼킨 것) → 바위 지대(울림돌 파수꾼) → 모래 언덕(마른 우물의 지킴이) → 첫 정원(뜰지기, 최종) → 눈밭(서리 그늘, 차기 아크).
+  - 보스마다 **학습 목표**를 배정했다 — 예고·회피(B1) → 지형 엄폐(B2) → 동시 처리·약점 활용(B3). 보스 퀘스트는 선택이 아닌 **다음 구역 관문**으로 걸어 구역 간 긴장을 만든다.
+  - 신규 아트 비용은 B1(슬라임 리스킨, 0)에서 최소화하고 B2/B3 는 ❓ 미결로 남겼다. 착수 순서는 F1 → B1 → 퀘스트 217 의 **한 챕터 완결 단위**를 권장.
+
+- **검증**: `maker_refresh_workspace` status ok. `maker_logs(kind="build")` **637건 전량 Info, Error 0 / Warning 0** (Warning baseline 0 유지). 로그 `dateTime 2026-09-10T17:56:36` — 이번 턴 첫 refresh 산출물이며, 2차 refresh 에서는 재빌드 대상이 없어 같은 스냅샷이 반환됐다([규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라) 동작). `item_dataset` 컬럼 수 불일치 0행.
+- 🔴 **런타임 검증 보류(제작자 Play)**: ① 슬라임 처치 시 젤리가 실제로 드롭되는지(로그 `[MONSTER] ItemDropDataSet drop id=slime_jelly`) ② 슬라임킹이 젤리 3~6개를 주는지 ③ 보스가 젤리·도안을 **중복 드롭하지 않는지**(호출 이동의 회귀 지점) ④ 코인이 금화로 보이고 크기가 과하지 않은지 — 과하면 `CurrencyDropScale` 만 조정 ⑤ 인벤토리 코인 아이콘 정상 표시.
+
+
+#### 후속 — 드롭 크기 실측 정규화 & 슬라임 젤리 아이콘 오지정 해소 (2026-09-10)
+
+- **배경**: 사용자 보고 — "슬라임 젤리랑 코인 아이콘이 너무 크다."
+- **실측 기준선 산정** (원본 px × 배율 ÷ 100 = 월드 유닛):
+
+  | 드롭 | 원본 | 배율 | 결과(유닛) | 판정 |
+  |---|---|--:|---|---|
+  | 나무 | 32×24 | 4.0 | 1.28×0.96 | 기준선 |
+  | 돌 | 20×24 | 4.0 | 0.80×0.96 | 기준선 |
+  | 생고기 | 32×32 | 4.0 | 1.28×1.28 | 기준선 |
+  | 슬라임 젤리 (수정 전) | **65×52** | 4.0 | **2.60×2.08** | 🔴 약 2배 초과 |
+  | 코인 (수정 전) | 28×24 | **7.0** | **1.96×1.68** | 🔴 약 1.5배 초과 |
+
+  일반 드롭은 **0.8~1.3 유닛**에 모여 있다. 이 밴드가 이 게임의 드롭 규격이다.
+
+- 🔴 **젤리는 크기 문제가 아니라 RUID 오지정이었다.**
+  `slime_jelly` 의 `IconRUID` 가 `50faf654ee5d479cb2958edce9feaef0` 였는데, 이건 **`animationclip` / category `mob` 의 65×52 슬라임 몬스터 통짜 이미지**다(썸네일 확인 — 눈·입이 그려진 슬라임 본체).
+  즉 바닥에 떨어진 "젤리"가 **작은 슬라임 한 마리**로 그려지고 있었다. 크기가 두 배인 것도 몬스터 스프라이트라서다.
+  - `89ff14273d9940eebe8d44b003563915`(sprite / item / 24×24, ko: `물컹물컹한 액체`)로 교체 — 초록 젤리 방울. 배율 4.0에서 **0.96×0.96 유닛**으로 기준선에 정확히 들어온다.
+  - `itemreact:OnSyncProperty` 가 `IconRUID` 를 읽어 `SpriteRendererComponent.SpriteRUID` 에 대입하므로, 이 한 셀 수정이 **월드 드롭과 인벤토리 아이콘 양쪽**에 동시에 적용된다.
+  - ⚠ `slime_jelly` 는 `ModelName` 이 `Item_Wood`(EntryId 공용)라 모델 자체에는 젤리 정보가 없다. 외형은 전적으로 `IconRUID` 가 결정한다 — 신규 자원 아이템 추가 시 같은 함정에 주의.
+- **코인**: `CurrencyDropScale` **7.0 → 4.5** (28×24 → 1.26×1.08 유닛). 기준선 상단으로 살짝 강조되지만 다른 드롭과 어긋나지 않는다. 7.0은 직전 작업에서 *구* 스프라이트(흐릿한 점 두 개)의 시인성을 보정하려던 값인데, 스프라이트를 또렷한 금화로 바꾼 뒤에는 과잉이 됐다.
+  - 위치: `RootDesk/MyDesk/MapObjects/Scripts/TileDurabilityManager.mlua` **13행** (`@Logic` 프로퍼티). 산정 근거를 주석으로 함께 남겼다.
+- **검증**: `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-10T18:18:50` — 이번 refresh 시각(18:18:55)과 일치([규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라) 대조 완료). **637건 전량 Info, Error 0 / Warning 0**. `mlua-diagnose` errors=0/warnings=0(기존 LIA-1114 크로스 스크립트 Info 9건만).
+- 🔴 **런타임 검증 보류(제작자 Play)**: ① 젤리가 슬라임이 아니라 초록 방울로 떨어지는지 ② 인벤토리 젤리 아이콘도 함께 바뀌었는지 ③ 코인·젤리가 나무·돌과 비슷한 크기로 보이는지 — 어긋나면 `CurrencyDropScale`(코인) 또는 `IconRUID`(젤리) 만 조정.
+
+
+> 🔴 **2026-09-10 원복됨** — Play 검증에서 텍스트 미렌더 문제로 전량 되돌렸다. 아래 조사 항목 참조.
+
+#### 후속 — 인벤토리 아이템 설명창 전면 개편 (2026-09-10 ⚖️ 확정)
+
+- **배경**: 사용자 지시 — "설명창이 좀 더 눈에 띄었으면. 지금 형태 유지하지 말고 UX/UI 이론에 입각해 새로 개편."
+- 🔴 **기존 설명창은 밋밋한 게 아니라 실제로 깨져 있었다** (실측 좌표 기준, 240×270):
+
+  | # | 결함 | 실측 근거 |
+  |---|---|---|
+  | 1 | **수량과 버리기 버튼이 14px 겹침** | Count(bottom-center, pos y=30, h32) = 절대 -105~-73 / BtnDiscard(center, y=-112, h42) = -133~-91 |
+  | 2 | **배경이 패널보다 50px 짧음** | 패널 270 vs `Bg` RectSize 220. `Bg` 는 stretch(align 15)지만 [규칙 10](./pitfalls.md#규칙-10-ui-stretch-앵커를-믿지-말고-rectsize를-명시한다)상 이 런타임은 RectSize 그대로 렌더 → 버튼이 배경 밖으로 23px 돌출 |
+  | 3 | **버리기 버튼이 터치 최소치 미달** | 200×42 (기준 88×88 — ui-fundamentals §9.4) |
+  | 4 | **수량 글자 크기 16** | 권장 하한 18보다도 작음 (§9.5는 18~22도 "모바일에서 거의 읽기 어려움"으로 분류) |
+  | 5 | **스펙과 맛 설명이 한 덩어리** | `tooltipDesc.Text = flavor .. "\n" .. stats` — 무엇이 수치인지 시각적으로 구분 불가 |
+  | 6 | 아이콘·등급·분류 표시 없음 | 등급은 이름 글자색으로만 암시 |
+
+- **새 구조 (300×500, 5블록)** — 게슈탈트 근접성 원리로 성격이 다른 정보를 구분선과 여백으로 분리했다.
+
+  ```
+  ┌─ RarityBar 300×5 ────────── 등급 색 액센트
+  │ [아이콘 76] 이름 fs24 Bold  ← 아이덴티티
+  │             분류 · 등급 fs18
+  ├──────────── Div1
+  │ 스탯 블록 fs20 (골드)       ← 수치만
+  ├──────────── Div2
+  │ 맛 설명 fs19 이탤릭 (저대비) ← 분위기
+  ├──────────── Div3
+  │ [보유 N]        [장착 중]   ← 상태 칩
+  │ [    버리기 268×88    ]     ← 액션
+  └────────────────────────────
+  ```
+
+- **적용한 UX 원칙**:
+  - **전주의 처리(pre-attentive)**: 등급을 상단 색 바 + 이름 색 **두 곳**에 실었다. 글자를 읽기 전에 등급이 먼저 인지된다.
+  - **시각적 위계**: 스탯은 밝은 골드 fs20, 맛 설명은 저대비 회백 fs19 **이탤릭**. 같은 크기여도 중요도가 갈린다.
+  - **점진적 노출**: 상태 칩(`장착 중` / `더블클릭 등록`)은 해당될 때만 `Enable`. 빈 칩을 남기지 않는다.
+  - **일관성**: design-policy §5 **나무 카드** 계열 유지 — 배경 `4fea64a3` + 골드 액센트. 새 스타일을 발명하지 않았다.
+  - **터치 규격**: 버리기 268×88 (§9.4 충족), 라벨 fs26 (§9.5 버튼 권장 26~32).
+
+- **컴포넌트 마이그레이션**: 설명창 텍스트 전량을 레거시 `TextComponent` → **`TextGUIRendererComponent`** 로 옮겼다(Phase 24-A 방향과 정합). `.mlua` 프로퍼티 선언 타입도 함께 바꿨다 — UUID만 맞고 타입이 어긋나면 **에러 없이 바인딩이 nil** 이 된다([규칙 24](./pitfalls.md#규칙-24-입력창-프로퍼티-타입은-textguirendererinputcomponent다--textinputcomponent가-아니다)).
+- **신규 바인딩 7종**: `tooltipMeta` / `tooltipIcon` / `tooltipRarityBar` / `tooltipStats` / `tooltipState` / `tooltipStateText` (+ 기존 4종 재주입). 전부 `b.write(path, { bind })` UUID 자동 주입 — 드래그 바인딩 없음.
+- **컨트롤러 신규 메서드 3종**: `BuildTooltipMeta` / `GetRawItemCategory` / `GetCategoryLabel` / `GetRarityLabel`.
+  - ⚠ 기존 `GetItemCategory` 는 **탭 이름(`Equipment`/`Resources`)만** 돌려줘 표시용으로 못 쓴다. `item_dataset.Category` 원본값(tool/resource/furniture/consumable)을 읽는 `GetRawItemCategory` 를 따로 뒀다.
+- **구 엔티티 정리**: 루트 직속 `Tooltip/Name`·`Tooltip/Count` 는 새 구조에서 `Header/Name`·`Footer/CountChip/Count` 로 옮겨졌다. 남겨 두면 같은 자리에 옛 텍스트가 겹쳐 그려지므로 삭제했다.
+
+- 🔴 **곁가지로 막혀 있던 L027 ERROR 해소**: `SkillTreePopup/Bg/SkillDetailPanel/DUnlock` 에 `TextComponent` 와 `TextGUIRendererComponent` 가 **둘 다** 붙어 있어(이중 렌더) `PopupGroup.ui` 에 대한 **모든 `write()` 가 strict 린트에서 throw** 되고 있었다. 2026-09-10 스킬 패널 작업이 "생성 후 TextGUIRendererComponent 제거"를 의도했으나 실제로는 남아 있었다. 형제 `DParent` 와 동일하게 레거시 `TextComponent` 만 남겼다(`UISkillTreeController` 가 `ent.TextComponent` 로 접근하므로 이쪽이 살아남아야 한다).
+
+- **검증**: `b.validate()` 통과, `ui_lint` **ERROR 0** (경고 98건은 전부 이 파일의 기존 잔여분 — 신규/변경 엔티티 기인 아님). `preview_ui_layout.cjs` 에서 버리기 버튼 268×88 터치 규격 충족 확인.
+  - `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-10T18:27:19` — 이번 refresh 시각(18:27:55)과 일치([규칙 22](./pitfalls.md#규칙-22-build-로그는-refresh마다-갱신되지-않는다--타임스탬프를-확인하라) 대조 완료). **637건 전량 Info, Error 0 / Warning 0**. `mlua-diagnose` errors=0/warnings=0.
+  - **[규칙 11](./pitfalls.md#규칙-11-maker-저장은-워크스페이스-파일을-통째로-재직렬화한다) 대조 완료**: refresh 후 신규 산출물 9종을 빌더로 1건씩 재조회해 **전량 실존** 확인(엔티티 수 일치를 근거로 삼지 않았다). 구 `Name`/`Count` 미부활, `DUnlock` 컴포넌트 2개 유지 확인.
+- 🔴 **런타임 검증 보류(제작자 Play)**: ① 슬롯 선택 시 설명창이 뜨고 아이콘·이름·분류·등급이 채워지는지 ② 등급별로 상단 바 색이 바뀌는지(일반=흰색/고급=초록/희귀=파랑) ③ 스탯 없는 재료에서 스탯 블록이 접히고 구분선만 남지 않는지 ④ 장착 중인 도구에서 상태 칩이 뜨고 아닌 경우 사라지는지 ⑤ 긴 설명이 112px 칸을 넘치지 않는지 — 넘치면 `Desc` 높이 또는 `BestFit` 조정(§9.5: 린트는 글자 높이를 측정하지 못한다) ⑥ 버리기 버튼이 정상 동작하는지(UUID 보존했으나 재확인).
+
+
+##### 배치 보정 — 오프라인 렌더 검증 (2026-09-10)
+
+- **배경**: 사용자 지시 — "직접 캡쳐해서 위치만 다시 조정해봐. 디자인은 마음에 든다."
+- **캡쳐 경로**: `maker_screenshot` 은 **편집 모드**라 Maker 에디터 화면만 잡히고 툴팁은 나오지 않는다. Play·입력 시뮬레이션은 제작자 전담이라 호출하지 않았다.
+  - 대신 `.ui` 의 실제 `AlignmentOption`/`AnchoredPosition`/`RectSize`/`Pivot` 을 읽어 **부모 체인을 따라 절대 좌표를 계산하고 PNG 로 오프라인 렌더**하는 도구를 만들어 눈으로 검증했다(zlib 만 사용, 의존성 0).
+- 🔴 **렌더로 드러난 결함 — 재사용 엔티티가 옛 pivot 을 물려받고 있었다.**
+  UIBuilder 의 creator 재호출은 *"transform 옵션을 일부만 넘기면 생략한 필드를 기존 값에서 병합"* 한다. `anchor`/`pos`/`rect_size` 만 넘기고 **`pivot` 을 생략**하자, 구 레이아웃에서 온 `Desc`·`BtnDiscard` 가 **pivot (0.5,0.5) 을 그대로 유지**했다. top-center 기준으로 계산한 좌표가 `h/2` 만큼 어긋난다.
+
+  | 엔티티 | 의도 | 실제(보정 전) | 증상 |
+  |---|---|---|---|
+  | `Desc` | top 34 | **top 90** | 스탯 블록을 **38px 침범**, Div2 를 뚫고 올라감 |
+  | `BtnDiscard` | top -146 | **top -102** | 푸터 칩과 **32px 겹침** |
+
+  → 보정 후 좌표에 **pivot 을 전부 명시**했다. 신규 생성 엔티티는 auto-pivot 이 맞아 문제가 없었고, **재사용 엔티티 2종만** 어긋났다.
+- **여백 재조정**: 렌더에서 스탯(84)·설명(112) 칸이 과대해 짧은 아이템일수록 카드 가운데가 비었다.
+  - 스탯 **84 → 66** (fs20 3줄) · 설명 **112 → 96** (fs19 4줄) · 카드 **500 → 470**.
+  - 헤더의 이름+분류(60px)를 76px 아이콘 높이에 **세로 중앙 정렬**(오프셋 9). 두 블록 중심이 182 로 일치.
+  - 최종 간격: 구분선 앞뒤 8~12px 균일, 좌우 여백 16px 균일, 하단 여백 20px, 푸터↔버튼 12px.
+- **빈 스탯 접기**: 스탯이 없는 재료 아이템에서 `Stats` 와 `Div2` 를 함께 끄고, `Desc` 를 스탯 자리까지 끌어올려(`pos -198→-114`, `h 96→180`) 구멍을 메운다. `tooltipDiv2` 바인딩 신설.
+- **검증**: 오프라인 렌더로 16개 노드의 top/bottom/left/right 전수 산출 — **겹침 0건**. 바인딩 12종을 `.ui` 실제 UUID 와 대조해 **전부 일치**(타입까지 확인 — [규칙 24](./pitfalls.md#규칙-24-입력창-프로퍼티-타입은-textguirendererinputcomponent다--textinputcomponent가-아니다)).
+  - `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-10T18:38:08` — 이번 refresh 시각(18:38:17)과 일치. **637건 전량 Info, Error 0 / Warning 0**.
+  - **[규칙 11](./pitfalls.md#규칙-11-maker-저장은-워크스페이스-파일을-통째로-재직렬화한다) 대조**: refresh 후 재렌더 + 바인딩 재대조로 좌표·UUID 모두 보존 확인.
+- 🔴 **런타임 검증 보류(제작자 Play)**: 오프라인 렌더는 **글자 실제 높이를 모른다**(§9.5 — 린트도 동일 한계). 긴 설명이 96px(스탯 없을 땐 180px)를 넘치는지는 Play 육안 확인이 필요하다.
+
+> 🔴 **2026-09-10 원복됨** — Play 검증에서 텍스트 미렌더 문제로 전량 되돌렸다. 아래 조사 항목 참조.
+
+### 2026-09-10 [UI/UX] 스킬 트리 창 개편 — 상세 패널 재설계 & 여백 회수 & 터치 규격 (⚖️ 확정)
+
+- **배경**: 사용자 지시 — "스킬 UI도 크게 개선. UX/UI 이론에 입각해 스킬 설명도 새로 구상해도 되니까 눈에 띄도록."
+- **검증 방법**: 인벤 툴팁 때 만든 **오프라인 렌더러**(`.ui` 의 실제 anchor/pivot/RectSize 로 절대 좌표를 계산해 PNG 출력)를 그대로 재사용해 개편 전/후를 눈으로 대조했다. `maker_screenshot` 은 편집 모드라 팝업이 잡히지 않고, Play 는 제작자 전담이라 호출하지 않았다.
+
+- 🔴 **개편 전 실측 결함** (Bg 680×760):
+
+  | # | 결함 | 근거 |
+  |---|---|---|
+  | 1 | **상세 패널이 같은 폭 텍스트 막대 8개의 수직 스택** | DName/DTypeLv/DDesc/DParent/DUnlock/DGate/DCost 전부 `240` 폭 좌측정렬 — 위계 없음 |
+  | 2 | **아이콘이 이름 위에 따로 떠 있음** | DIcon `220..180` vs DName `168..144` — 옆이 아니라 위 |
+  | 3 | **좌하단이 통째로 죽은 여백** | 노드 그리드 하단 `-44` ~ Hint `-180` 약 136px 공백 |
+  | 4 | **EquipBar 버튼 전량 터치 규격 미달** | QWER `64×40`, 레벨업 `220×40` (기준 88×88) |
+  | 5 | 노드 레벨 배지가 아이콘 중앙을 침범 | Icon `218..170` vs LvText `174..156` |
+  | 6 | 그리드가 좌측으로 쏠리고 패널과 26px만 이격 | 노드 우측 `4`, 패널 좌측 `30` |
+
+- **새 상세 패널 (296×452)** — **인벤토리 툴팁과 같은 디자인 언어로 통일**했다. 두 창을 오가는 플레이어가 같은 규칙으로 읽게 된다(규칙 6 비주얼 아이덴티티).
+
+  ```
+  ┌ HeaderBar 296×5 ───────── 스킬 종류 색 액센트
+  │ [아이콘 76] 스킬명 fs24 Bold
+  │             마법 스킬 · Lv 2/5 fs18
+  ├─ Div1
+  │ ▓▓▓▓▓░░░░░  레벨 진행 게이지   ← 신설
+  ├─ Div2
+  │ 설명 fs19 (136px)
+  ├─ Div3
+  │ 선행: … fs18 / 해금: … fs18 2줄
+  ├─ Div4
+  │ [해금 가능]        [SP 2]      ← 상태·비용 칩
+  └────────────────────────────
+  ```
+
+- **적용 원칙**:
+  - **전주의 처리**: `Lv 2/5` 숫자만 있던 것을 **게이지 길이**로도 표현. 선형 게이지는 `Sliced` 스프라이트 **폭 리사이즈**(component-api 권장 — `FillAmount` 는 9-slice 테두리를 왜곡한다). 0레벨은 폭 0 대신 엔티티를 끈다.
+  - **묶음(Gestalt 근접성)**: 아이콘·이름·분류를 `Header` 아래 한 부모로 묶었다. 처음엔 이름/분류를 패널 직속으로 만들었다가 렌더 검산에서 발견해 재중첩(ALWAYS 규칙 9).
+  - **성격 분리**: 설명 / 조건(선행·해금) / 상태·비용을 구분선으로 3개 영역으로 갈랐다. 조건 줄의 충족·미충족 골드/레드 색 규칙은 유지.
+- **SP 카드 신설 (312×128)**: 죽어 있던 좌하단에 배치. 상단 전폭 `SPText` 바와 하단 전폭 `Hint` 바를 **이 카드로 통합·제거**했다. SP 는 플레이어가 소비하는 자원이라 큰 글자(fs32 Bold 골드)로 승격.
+- **레이아웃 재배치**: 노드 3열을 좌측 가용폭에 균등 배치(열 간격 42), 행 간격 100 → **120** 으로 넓혀 세로 여백을 트리가 흡수. 레벨 배지는 아이콘 중앙 침범 대신 **우하단 모서리 배지**로 분리. 패널·SP 카드 하단을 같은 선(`-188`)에 정렬.
+- **터치 규격**: QWER `88×88`, 레벨업 `200×88` (§9.4 충족).
+
+- 🔴 **렌더 검산에서 잡은 보정 2건** (1차 배치 직후):
+  1. `BtnR`(18..106)과 `BtnLevelUp`(80..300)이 **26px 겹침** — 키 4개 중심을 -260/-160/-60/40 으로, 레벨업 폭을 200 으로 조정.
+  2. 노드 하단 ~ EquipBar 사이 **88px 빈 band** — 행 간격 확대 + 패널/SP 카드 하단 정렬로 흡수.
+- **컴포넌트 마이그레이션**: 상세 패널 텍스트를 레거시 `TextComponent` → `TextGUIRendererComponent` 로 옮겼다. `SetTextSafe` 에 GUI 우선 + 레거시 폴백을 넣고, 색 지정은 `SetTextColorSafe` 로 분리했다(기존엔 `ent.TextComponent.FontColor` 직접 접근 2곳).
+- **검증**: 형제 사각형 **겹침 전수 검사 0건**(제목·닫기가 상단 바 위에 얹히는 의도된 2건 제외). `ui_lint` ERROR 0. 신규 산출물 14종 refresh 후 **전량 실존**([규칙 11](./pitfalls.md#규칙-11-maker-저장은-워크스페이스-파일을-통째로-재직렬화한다) 대조), 구 `SPText`/`Hint` 미부활. 바인딩 6종 UUID·타입 일치, `GetChildByName` 대상 9개 이름 **유일성 확인**.
+  - `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-10T18:49:27` — 직전 검증 빌드(18:38:08)보다 새롭고 이번 편집 이후 시각. **637건 전량 Info, Error 0 / Warning 0**. `mlua-diagnose` errors=0/warnings=0.
+- 🔴 **런타임 검증 보류(제작자 Play)**: ① 노드 선택 시 상세가 채워지고 게이지가 레벨만큼 차는지 ② 미해금 스킬에서 게이지가 비는지 ③ 선행/해금 줄 색이 충족 골드·미충족 레드로 뜨는지 ④ SP 카드 숫자가 실시간 갱신되는지 ⑤ QWER 장착·레벨업 버튼이 커진 뒤에도 정상 동작하는지 ⑥ 긴 스킬 설명이 136px 칸을 넘치는지(렌더러는 글자 높이를 모른다).
+
+### 2026-09-10 [UI/조사] 스킬창·설명창 개편 Play 검증 → 텍스트 미렌더 벽에 막혀 전량 원복 (🔴 미해결)
+
+- **배경**: 사용자 지시 — 스킬 설명이 칸을 넘어 생략되니 창을 키우고 설명을 분리하라, Play 검증까지 하라. (Play 실행은 이번 턴 명시 허가)
+- **넘침의 진짜 원인 (확정)**: `DDesc` 한 칸에 **[설명 + "소모: …" + "장착: …"]** 을 이어 붙여 넣고 있었다(`RefreshDetailPanel`). CSV 설명 자체는 30~44자로 짧다(실측 7행 전수). 스펙 2줄이 더해져 줄 수가 불어나 `Overflow=Ellipsis` 로 뒷부분이 잘렸다.
+  - 설계 해법: 스펙을 `DSpec` 전용 블록으로 분리(설명=맛, 스펙=수치). **이 판단은 유효하나 아래 이유로 반영하지 못했다.**
+
+- 🔴 **Play 에서 드러난 차단 요인 — 빌더로 만든 텍스트가 화면에 그려지지 않는다.**
+  - 계측 결과: `SetTextSafe` 에서 대입 후 **되읽기 값 일치**, `Enable=true`, **Error 0**. 그런데 화면은 공란.
+    - `[SKILLUI-DIAG2] DName legacy=OK want='노드를 선택하세요' read='노드를 선택하세요' show=true`
+    - `[SKILLUI-DIAG2] Value legacy=OK want='SP 69  |  Lv 12' read='SP 69  |  Lv 12' show=true`
+  - **렌더된 것 / 안 된 것이 갈렸다**(같은 창, 같은 컴포넌트 타입, 같은 프리팹):
+
+    | 렌더됨 | 공란 |
+    |---|---|
+    | 툴팁 `Desc`, `보유` 칩, `상태` 칩, SP카드 `Label`·`Hint` | 툴팁 `Name`·`Meta`, 패널 `DName`·`DTypeLv`, SP카드 `Value`, 창 `Title` |
+
+  - **배제한 가설(전부 실험으로 반증)**:
+    1. 컴포넌트 종류 — `TextGUIRendererComponent` → 레거시 `TextComponent` 전환해도 공란.
+    2. 프리팹 타입([규칙 15](./pitfalls.md#규칙-15-ui-엔티티의-프리팹-타입이-컴포넌트를-강제한다)) — `uitextguirenderer` → `uitext` 로 교체해도 공란. (교체 전에는 기본값 `"Text"` 가 떠서 **모델이 값을 복원**한다는 것은 확인됨)
+    3. `empty()` 컨테이너 하위 — `Header` 를 걷어내고 패널 직속으로 올려도 공란.
+    4. `Bold` — 굵게가 공통점으로 보였으나 해제해도 공란.
+  - **함께 확인된 기존 결함**: `SkillTreePopup/Bg/Title` 이 Play 에서 **공란**이다. 이 엔티티는 미커밋 상태의 **Phase 24-A 팝업 제목 마이그레이션** 산출물(`uitextguirenderer`)이다. 즉 그 작업은 "시각값 동일 유지"로 기록됐지만 **런타임 검증이 없었고 실제로는 제목이 사라진다.** 별도 확인 필요.
+
+- **조치**: 게임을 깨진 상태로 남기지 않기 위해 `ui/PopupGroup.ui` · `UIInventoryController.mlua` · `UISkillTreeController.mlua` **3개 파일을 마지막 커밋 상태로 원복**했다. 이번 세션의 인벤 툴팁 개편·스킬창 개편이 함께 되돌아갔다.
+  - ⚠️ 원복으로 Phase 24-A 미커밋분도 함께 사라졌다 — 제목 공란 문제는 이로써 해소되지만, 그 작업을 다시 하려면 위 미해결 원인을 먼저 규명해야 한다.
+  - 원복 후 `maker_refresh_workspace` status ok, `maker_logs(kind="build")` `dateTime 2026-09-10T19:17:43`, **637건 전량 Info, Error 0 / Warning 0**.
+
+- **다음에 확인할 것 (재개 시 출발점)**:
+  1. 렌더된 `Desc` 와 공란인 `Name` 의 **엔티티 JSON 전체 diff** — 남은 차이는 `Underlay`/`DropShadow`, `OrderInLayer`, 형제 순서(draw order) 정도다.
+  2. **형제 draw order 가 가장 유력** — 빌더 upsert 가 `Bg` 를 배열 끝으로 옮겨 나중에 그려지면 그 위의 텍스트를 덮는다. `Desc` 계열만 살아남은 것이 이 가설과 맞는지 배열 인덱스로 검증할 것.
+  3. Maker 에디터에서 해당 엔티티를 직접 열어 텍스트가 보이는지 대조(에디터 렌더 vs Play 렌더 분리).
+
+- 🔴 **런타임 검증 결과**: 개편본은 **FAIL**(설명·이름·SP 값 미표시). 원복본은 개편 전 상태로 정상 동작한다.
+
+### 2026-09-10 [UI/스킬트리] 스킬 상세 패널에 해금 업적 조건 노출 (⚖️ 확정)
+
+- **배경**: 사용자 신고 — "슬래시 블러스트가 왜 매직 클로 3레벨이 되어도 배울 수가 없냐".
+  조사 결과 **버그가 아니라 데이터상 의도된 조건**이었다. `earth_shatter`(슬래시 블러스트) 해금은 네 가지를 모두 요구한다.
+
+  | 조건 | 요구치 | 컬럼 |
+  |---|---|---|
+  | 선행 스킬 | 매직 클로 Lv 3 | `ParentSkillId` + `ParentRequiredLevel` |
+  | 캐릭터 레벨 | 5 | `RequiredLevel` |
+  | 해금 업적 | 1004 `제련 입문` | `UnlockAchievementId` |
+  | SP | 2 | `SPCost` |
+
+  업적 1004 는 "광석을 1회 제련해 수거하세요"이고, 해당 신호는 `Furnace.mlua` 의 **출력 슬롯 수거 시점**에만 발행된다(`_ActionSignals:EmitToPlayer(..., _ActionEnum.Smelt, ...)`). 제련을 걸어두기만 하면 오르지 않는다.
+- 🔴 **진짜 결함은 UI였다.** 상세 패널에 `선행:` 줄은 있는데 **해금 업적 줄이 아예 없었다.** 게이트에 걸리면 `UnlockGateReasonClient` 가 `"목표 진행 중 0%"` 만 돌려줘서, **무슨 목표인지 화면 어디에도 나오지 않았다.**
+- **조치 1 — 해금 줄 신설** (`DUnlock`): 업적 이름 + 진행도 + 현재 스텝 설명을 2줄로 표시한다.
+  - 예: `해금: 제련 입문 (0/1)` / `광석을 1회 제련해 수거하세요.`
+  - 색은 `선행:` 줄과 동일 규칙 — 충족 골드(`0.94,0.66,0.19`) / 미충족 레드(`0.85,0.33,0.31`).
+  - 이미 배운 스킬(`level >= 1`)은 지난 조건이라 숨긴다. 게이트가 없는 스킬도 숨긴다.
+  - `UnlockOwnedItem` 게이트(주먹도끼 던지기)도 같은 줄로 처리한다 — `해금: 주먹도끼 제작`.
+- **조치 2 — 사유 문구에 목표 이름 삽입**: `UnlockGateReasonClient` 가 `'제련 입문' 달성 필요 (0%)` 형태로 바뀌었다. 진행률만으로는 무엇을 해야 할지 알 수 없다.
+- **레이아웃**: 상세 패널 `280×300` ➔ **`280×390`**. pivot 이 중앙이라 위쪽 가장자리를 고정하려면 y 를 `90` ➔ `45` 로 내려야 한다(`45 + 195 = 240`). 아래로는 `Hint`(top `-180`)까지 30px 여유가 남는다.
+  - 같이 고친 기존 결함 2건: ① `DGate`(`-248..-284`)와 `DCost`(`-278..`)가 **6px 겹쳐** 있었다 ➔ 재배치. ② `DParent` 가 22px 칸에 **FontSize 24** 였다(글자가 칸보다 큼) ➔ 형제와 같은 14 로 정정.
+- 🔴 **컴포넌트 주의**: 이 패널의 텍스트는 전부 **레거시 `MOD.Core.TextComponent`** 다(`SetTextSafe` 가 `ent.TextComponent` 로 접근). UIBuilder 의 `text()` 는 `TextGUIRendererComponent` 를 만들므로, 새 줄은 생성 후 그 컴포넌트를 제거하고 형제의 `TextComponent` 를 복사해 넣었다. 이걸 놓치면 **에러 없이 글자만 안 나온다.**
+  - 바인딩은 UUID 주입이 아니라 `GetChildByName("DUnlock", true)` 경로 해석이라 기존 프로퍼티 UUID 는 건드리지 않았다.
+- **검증**: `ui_lint` — 신규/변경 엔티티 전부 INFO 만(에러·경고 없음). `b.validate()` 빈 배열.
+  - ⚠ **refresh 검증 보류** — 이번 턴에 Maker MCP 연결이 끊겨 `maker_refresh_workspace` / `maker_logs` 를 돌리지 못했다. **Error=0 을 주장하지 않는다.**
+- 🔴 **런타임 검증 보류(제작자 Play)**: ① 슬래시 블러스트 선택 시 해금 줄이 `제련 입문 (0/1)` + 설명으로 뜨는지 ② 제련 수거 후 골드로 바뀌는지 ③ 패널이 390 으로 커진 뒤 `Hint` 와 겹치지 않는지 ④ 주먹도끼 던지기의 `UnlockOwnedItem` 줄이 정상인지.
 ### 2026-09-09 [스킬/직업] 스킬트리 세분화 및 4대 하이브리드 직업군 & 주먹도끼 분기 설계 (⚖️ 확정)
 
 - **배경**: 사용자 지시 — 주먹도끼의 업그레이드 스킬 고찰 및 석기시대 뗀석기 본질 정립, 스토리 및 마을 주민과 어울리는 직업 체계 구축.

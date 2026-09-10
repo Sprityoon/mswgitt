@@ -6,6 +6,10 @@
 
 ---
 
+> 🔴 **2026-09-10 — §0.1 / §0.3 은 폐기됐다.** hunt01~03이 `template_field` 한 장을 공유하는 구조를 버리고 **구역별 전용 맵 + 구역별 고유 보스**로 간다.
+> 아래 §0.1(구역 = 데이터 행)과 §0.3(공용 픽스처 전략)은 그 시점까지의 기록으로만 읽을 것.
+> 현행 설계는 [hunting-grounds-plan.md](./hunting-grounds-plan.md).
+
 ## 0. 구조 원칙 (✅ 실측 — 컨셉을 세우기 전에 알아야 하는 것)
 
 1. **사냥터 구역은 "맵 신설"이 아니라 데이터 행이다.** `PortalDestinationDataSet` 행이 `TemplateMap`(template_field/template_boss) + `Biome`을 지정해 런타임 인스턴스를 만든다. 신규 구역 = 행 추가(+바이옴 행, 필요 시 타일셋).

@@ -7,6 +7,14 @@ script TileDurabilityManager extends Logic
 
 	property number DropItemScale = 4.0
 
+	-- 화폐(item_dataset.IsCurrency = true) 드롭 전용 배율.
+	-- 아이템 이름 분기가 아니라 데이터 컬럼으로 갈라 R3(데이터 주도)를 지킨다.
+	-- 실측 기준선: 일반 드롭은 DropItemScale 4.0에서 0.8~1.3 월드 유닛에 들어온다
+	--   (나무 32x24 -> 1.28x0.96 / 돌 20x24 -> 0.80x0.96 / 생고기 32x32 -> 1.28x1.28).
+	-- 코인 스프라이트는 28x24이므로 4.5배 = 1.26x1.08 유닛 — 기준선 상단으로 살짝 강조된다.
+	-- 7.0(=1.96x1.68)은 다른 드롭의 약 2배라 과했다.
+	property number CurrencyDropScale = 4.5
+
 	@ExecSpace("ServerOnly")
 	method void OnBeginPlay()
 		-- Initializes the per-resource damage tracking table on the server.
@@ -672,7 +680,14 @@ script TileDurabilityManager extends Logic
 		local itemName = row:GetItem("Name")
 		local modelName = row:GetItem("ModelName")
 		local entryId = row:GetItem("EntryId")
-		
+
+		-- 화폐 여부에 따라 드롭 스케일을 고른다. 없는 컬럼 GetItem은 LEA-3011이라 pcall 가드(규칙 7).
+		local dropScale = self.DropItemScale
+		local okCur, curVal = pcall(function() return row:GetItem("IsCurrency") end)
+		if okCur and tostring(curVal) == "true" then
+			dropScale = self.CurrencyDropScale
+		end
+
 		local minCount = dropMinCount or 1
 		local maxCount = dropMaxCount or 1
 		local spawnCount = math.random(minCount, maxCount)
@@ -704,7 +719,7 @@ script TileDurabilityManager extends Logic
 				-- 드롭 아이템 시인성을 위해 스케일을 확대합니다.
 				local dropTransform = drop.TransformComponent
 				if isvalid(dropTransform) then
-					local s = self.DropItemScale
+					local s = dropScale
 					dropTransform.Scale = Vector3(s, s, 1)
 				end
 		

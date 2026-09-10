@@ -86,6 +86,12 @@ script Monster extends Component
 			end
 		end
 
+		-- ItemDropDataSet 확률 드롭 — 보스/일반 구분 없이 모든 몬스터에 적용한다.
+		-- (과거에는 GrantBossRewards 안에서만 호출돼 일반 슬라임의 slime_jelly 행이 영영 롤링되지 않았다.)
+		if isvalid(map) and isvalid(transform) and _TileDurabilityManager ~= nil then
+			self:DropFromItemDropDataSet(map, transform.WorldPosition)
+		end
+
 		-- Boss reward: drop loot at the corpse + unlock the next-tier waypoint for the killer.
 		if self.IsBoss then
 			self:GrantBossRewards()
@@ -126,10 +132,7 @@ script Monster extends Component
 			_TileDurabilityManager:SpawnResourceDrop(map, Vector3(p.x, p.y, 0), self.BossDropItem, self.BossDropMin, self.BossDropMax, 0)
 		end
 
-		-- T9: ItemDropDataSet 행 (SourceId = 엔티티 이름, 예: SlimeKing) — 도안 등 데이터 주도 추가 드롭.
-		if isvalid(map) and isvalid(t) and _TileDurabilityManager ~= nil then
-			self:DropFromItemDropDataSet(map, t.WorldPosition)
-		end
+		-- ItemDropDataSet 드롭은 Dead()에서 전 몬스터 공통으로 처리한다(여기서 중복 호출하지 않는다).
 
 		-- Next-tier waypoint unlock for the player who landed the killing blow.
 		if self.UnlockWaypointId ~= "" and isvalid(self.LastAttacker) then

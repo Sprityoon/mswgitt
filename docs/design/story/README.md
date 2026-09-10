@@ -22,7 +22,8 @@
 |---|---|---|
 | [story-bible.md](./story-bible.md) | 톤 가드 · 세계관 · 메인 미스터리 · 챕터 시놉시스 · 용어집 | 콘텐츠 원안 |
 | [npc-cast.md](./npc-cast.md) | NPC 성격·말투 카드 (모든 대사 집필의 기준) + 신규 NPC 제안 | 콘텐츠 원안 |
-| [map-concepts.md](./map-concepts.md) | 공간별 컨셉·디자인 · 스토리 픽스처 · 미래 맵 로드맵 | 콘텐츠 원안 |
+| [map-concepts.md](./map-concepts.md) | 공간별 컨셉·디자인 · 스토리 픽스처 · 미래 맵 로드맵 (🔴 §0.1/§0.3 폐기) | 콘텐츠 원안 |
+| [hunting-grounds-plan.md](./hunting-grounds-plan.md) | **사냥터 전면 재설계 — 전용 맵 4종 + 보스 5종 + 퀘스트 연결** (2026-09-10 ⚖️) | 현행 설계 |
 | [quest-design.md](./quest-design.md) | 하드 제약 · 챕터별 퀘스트 라인 · CSV 반영 절차 · 키 목록 부록 | 콘텐츠 원안 + 반영 절차 |
 | [story-npc-quest-plan.md](./story-npc-quest-plan.md) | 시스템 연동 설계 (스키마 · 재생기 · 조건 11종 실측) | **시스템 측 단일 소스** |
 | [magic-skills-and-rare-equipment.md](../magic-skills-and-rare-equipment.md) | **푸른 빛 마법 스킬 해금 체계 & 몬스터 희귀 장비(고유 옵션)** | **시스템·성장 설계 원안** |
@@ -75,8 +76,8 @@
 | Q1 | 메인 미스터리의 답 = "정원사의 등불·푸른 불씨" 설정 채택 여부 | [story-bible.md](./story-bible.md) §1~2 |
 | Q2 | 챕터 제목 5종 + 용어(첫 개척단·첫 정원·뜰지기) 채택 여부 | [story-bible.md](./story-bible.md) §3·§5 |
 | Q3 | ⚖️ **확정 (2026-08-14)**: 주민 4인 NpcId 및 역할 = `researcher`(연구원 엘렌) · `vendor`(노점상 마리) · `blacksmith`(대장장이 로체) · `barnkeeper`(헛간지기 토리) | [npc-cast.md](./npc-cast.md) §2 |
-| Q4 | hunt04 표시명 "보스 사냥터" → "첫 정원" 변경 여부 | [map-concepts.md](./map-concepts.md) §1.6 |
-| Q5 | 구역별 스토리 픽스처 — **1차 (c) 채택**: `template_field` 공용 이정표 배치 (2026-08-15). a/b는 이후 | [map-concepts.md](./map-concepts.md) §0.3 |
+| Q4 | hunt04 표시명 "보스 사냥터" → "첫 정원" — **2026-09-10 변경 확정** | [hunting-grounds-plan.md](./hunting-grounds-plan.md) §2.4 |
+| Q5 | ~~구역별 스토리 픽스처~~ — **2026-09-10 해소: (b) 구역별 전용 맵 채택.** 공용 이정표 포함 랜드마크 9종 철거 | [hunting-grounds-plan.md](./hunting-grounds-plan.md) §0 |
 | Q6 | 챕터 완주 보상 가구 「정원의 등불」 신설 여부 (아이템+모델 비용) | [quest-design.md](./quest-design.md) §4.5 |
 | Q7 | 다음 구역 개방을 퀘스트 보상(RewardPortalId)으로 줄지, 도보 도달만 둘지 | [quest-design.md](./quest-design.md) §2.3 |
 | Q8 | 메인 빌런 이름 선택 — 먹그늘 / 어스름 / 어둑서니 (확정 전 대사에 이름 사용 금지) | [story-bible.md](./story-bible.md) §2-B |

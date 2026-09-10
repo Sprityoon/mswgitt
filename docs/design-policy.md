@@ -11,6 +11,8 @@
 
 ### ⚖️ UI 비주얼 톤앤매너 & 모바일 최적화 HUD 레이아웃 (2026-08-22)
 
+> 📘 **상세 이론 및 프레임워크**: [reference/ui-ux-design-framework.md](reference/ui-ux-design-framework.md) (Fagerholt & Lorentzon 4분면 모델, Celia Hodent 인지부하 제어, 정보 역피라미드, Contextual HUD, XAG 접근성 표준)
+
 - **비주얼 톤**: 앤틱 우든 프레임(Carved Wood) + 골드 림(Gold Trim) + 양피지(Parchment)의 아늑한 픽셀 판타지 스타일
 - **타이틀 로고 아이덴티티**: 곡괭이·도끼 교차 심볼 + 3D 골드 옐로우 '메이플크래프트' + 시안 블루 '마지막 모험가' (투명 PNG: `title_logo_transparent.png`)
 - **모바일 최적화 HUD 레이아웃 규칙**:
