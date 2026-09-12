@@ -476,6 +476,24 @@ script UIMainMenuController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method string GetJobDisplayName(string jobId)
+		if jobId == "trapper" then return "트래퍼"
+		elseif jobId == "battle_smith" then return "배틀스미스"
+		elseif jobId == "alchemist" then return "알케미스트"
+		elseif jobId == "wild_keeper" then return "와일드키퍼"
+		end
+		local ds = _DataService:GetTable("SkillDataSet")
+		if ds ~= nil and jobId ~= nil and jobId ~= "" then
+			local row = ds:FindRow("JobId", jobId)
+			if row ~= nil then
+				local ok, jname = pcall(function() return row:GetItem("JobName") end)
+				if ok and jname ~= nil and jname ~= "" then return tostring(jname) end
+			end
+		end
+		return "모험가"
+	end
+
+	@ExecSpace("ClientOnly")
 	method void RefreshSlots()
 		local isNew = (self.pendingAction == "new")
 		for i = 1, 5 do
@@ -494,8 +512,9 @@ script UIMainMenuController extends Component
 				if occupied then
 					-- 슬롯 카드가 가로 1행이라 한 줄로 표기 (2줄이면 행 높이를 넘친다).
 					local lv = tonumber(meta.level or meta.Level) or 1
-					local fish = tonumber(meta.fishLv or meta.fishingLevel or meta.FishingLevel) or 1
-					info.Text = "Lv." .. tostring(lv) .. "  ·  낚시 Lv." .. tostring(fish)
+					local jobId = tostring(meta.jobId or meta.JobId or "")
+					local jobName = self:GetJobDisplayName(jobId)
+					info.Text = "Lv." .. tostring(lv) .. "  ·  " .. jobName
 				else
 					info.Text = "비어 있음"
 				end

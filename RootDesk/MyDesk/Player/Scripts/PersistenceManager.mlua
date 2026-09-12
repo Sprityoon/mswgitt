@@ -148,7 +148,20 @@ script PersistenceManager extends Logic
 				if slot < 1 or slot > self.MaxSaveSlots then slot = 1 end
 				local meta = self:ReadSlotMetaTable(userId)
 				local existing = meta[tostring(slot)]
-				if existing ~= nil and existing.name ~= nil and tostring(existing.name) ~= "" then
+
+				local storage = _DataStorageService:GetUserDataStorage(userId)
+				local hasRealSave = false
+				if storage ~= nil then
+					local sErr, sRaw = storage:GetAndWait(self:SaveKeyForSlot(slot))
+					if (sErr ~= 0 or sRaw == nil or sRaw == "" or sRaw == "{}") and slot == 1 then
+						sErr, sRaw = storage:GetAndWait("SaveData")
+					end
+					if sErr == 0 and sRaw ~= nil and sRaw ~= "" and sRaw ~= "{}" then
+						hasRealSave = true
+					end
+				end
+
+				if hasRealSave or (existing ~= nil and existing.name ~= nil and tostring(existing.name) ~= "") then
 					self:SelectSaveSlot(player, slot, false, "", "")
 				else
 					local nick = tostring(_TestModeConfig.TestNickname or "Tester")
@@ -283,6 +296,7 @@ script PersistenceManager extends Logic
 				if ok and type(data) == "table" then
 					local slotLevel = math.floor(tonumber(data.level) or 1)
 					local slotFishLv = math.floor(tonumber(data.fishingLevel or data.fishLv) or 1)
+					local slotJobId = tostring(data.jobId or "")
 					local slotName = ""
 					if data.characterName ~= nil and tostring(data.characterName) ~= "" then
 						slotName = tostring(data.characterName)
@@ -305,17 +319,19 @@ script PersistenceManager extends Logic
 					if cur == nil or type(cur) ~= "table"
 						or cur.name ~= slotName
 						or cur.level ~= slotLevel
+						or cur.jobId ~= slotJobId
 						or cur.fishLv ~= slotFishLv then
 						meta[sKey] = {
 							name = slotName,
 							level = slotLevel,
+							jobId = slotJobId,
 							fishLv = slotFishLv,
 							playSec = (cur and cur.playSec) or 0,
 							lastSaveTicks = (cur and cur.lastSaveTicks) or "0",
 							costume = slotCostume
 						}
 						dirty = true
-						log("[SLOT] restored/synced SlotMeta[" .. sKey .. "] name=" .. slotName .. " lv=" .. tostring(slotLevel))
+						log("[SLOT] restored/synced SlotMeta[" .. sKey .. "] name=" .. slotName .. " lv=" .. tostring(slotLevel) .. " job=" .. slotJobId)
 					end
 				end
 			end
@@ -381,12 +397,14 @@ script PersistenceManager extends Logic
 
 		local level = 1
 		local fishLv = 1
+		local jobId = ""
 		local name = "슬롯1"
 		local costume = { useAccount = true }
 		local ok, data = pcall(function() return _HttpService:JSONDecode(targetRaw) end)
 		if ok and type(data) == "table" then
 			level = math.floor(tonumber(data.level) or 1)
 			fishLv = math.floor(tonumber(data.fishingLevel or data.fishLv) or 1)
+			jobId = tostring(data.jobId or "")
 			if data.characterName ~= nil and tostring(data.characterName) ~= "" then
 				name = tostring(data.characterName)
 			end
@@ -395,7 +413,7 @@ script PersistenceManager extends Logic
 			end
 		end
 		local meta = {
-			["1"] = { name = name, level = level, fishLv = fishLv, playSec = 0, lastSaveTicks = "0", costume = costume }
+			["1"] = { name = name, level = level, jobId = jobId, fishLv = fishLv, playSec = 0, lastSaveTicks = "0", costume = costume }
 		}
 		self:WriteSlotMetaTable(userId, meta)
 	end
@@ -568,7 +586,20 @@ script PersistenceManager extends Logic
 		local existing = meta[key]
 
 		if isNew then
-			if existing ~= nil and existing.name ~= nil and tostring(existing.name) ~= "" then
+			local storage = _DataStorageService:GetUserDataStorage(userId)
+			local hasRealSave = false
+			if storage ~= nil then
+				local sErr, sRaw = storage:GetAndWait(self:SaveKeyForSlot(slot))
+				if (sErr ~= 0 or sRaw == nil or sRaw == "" or sRaw == "{}") and slot == 1 then
+					sErr, sRaw = storage:GetAndWait("SaveData")
+				end
+				if sErr == 0 and sRaw ~= nil and sRaw ~= "" and sRaw ~= "{}" then
+					hasRealSave = true
+				end
+			end
+
+			if hasRealSave or (existing ~= nil and existing.name ~= nil and tostring(existing.name) ~= "") then
+				log_error("[SLOT] Blocked attempt to overwrite existing save data for " .. userId .. " slot=" .. tostring(slot))
 				if isvalid(pc) then pc:ClientMainMenuError("이미 데이터가 있는 슬롯입니다") end
 				return
 			end
@@ -606,6 +637,7 @@ script PersistenceManager extends Logic
 			meta[key] = {
 				name = nick,
 				level = 1,
+				jobId = "",
 				fishLv = 1,
 				playSec = 0,
 				lastSaveTicks = "0",
@@ -706,6 +738,37 @@ script PersistenceManager extends Logic
 		if (errorCode ~= 0 or raw == nil or raw == "" or raw == "{}") and slot == 1 then
 			-- 슬롯1 폴백: 레거시 SaveData
 			errorCode, raw = storage:GetAndWait("SaveData")
+		elseif slot == 1 then
+			-- 🔴 레거시 지능형 복원: 현재 s1 세이브가 빈 데이터(돌 2개 등)로 오염되었으나 레거시 SaveData에 도감/아이템이 보존되어 있다면 즉시 복원
+			local legErr, legRaw = storage:GetAndWait("SaveData")
+			if legErr == 0 and legRaw ~= nil and legRaw ~= "" and legRaw ~= "{}" then
+				local okLeg, legData = pcall(function() return _HttpService:JSONDecode(legRaw) end)
+				if okLeg and type(legData) == "table" then
+					local okCur, curData = pcall(function() return _HttpService:JSONDecode(raw or "{}") end)
+					local curItemsCount = 0
+					if okCur and type(curData) == "table" and curData.inventoryData ~= nil then
+						local okI, iTbl = pcall(function() return _HttpService:JSONDecode(curData.inventoryData) end)
+						if okI and type(iTbl) == "table" then
+							for _, _ in pairs(iTbl) do curItemsCount = curItemsCount + 1 end
+						end
+					end
+					local legItemsCount = 0
+					if legData.inventoryData ~= nil then
+						local okI, iTbl = pcall(function() return _HttpService:JSONDecode(legData.inventoryData) end)
+						if okI and type(iTbl) == "table" then
+							for _, _ in pairs(iTbl) do legItemsCount = legItemsCount + 1 end
+						end
+					end
+					local legHasDex = (legData.dexItems ~= nil and legData.dexItems ~= "" and legData.dexItems ~= "{}")
+					local curHasDex = (okCur and type(curData) == "table" and curData.dexItems ~= nil and curData.dexItems ~= "" and curData.dexItems ~= "{}")
+					if (legItemsCount > curItemsCount) or (legHasDex and not curHasDex) then
+						log("[SLOT] Auto-recovered rich legacy SaveData into slot 1! items: " .. tostring(legItemsCount) .. " vs " .. tostring(curItemsCount))
+						raw = legRaw
+						errorCode = 0
+						storage:SetAndWait(self:SaveKeyForSlot(1), legRaw)
+					end
+				end
+			end
 		end
 		if errorCode == 0 and raw and raw ~= "" and raw ~= "{}" then
 			log("PersistenceManager: Load successful for " .. userId .. " slot=" .. tostring(slot) .. ". Parsing data...")
@@ -760,6 +823,9 @@ script PersistenceManager extends Logic
 				pc.UnlockedWaypointsJson = data.unlockedWaypoints or "[]"
 				pc.SkillLevelsJson = data.skillLevels or "{}"
 				pc.SP = data.sp or 0
+				pc.JobId = data.jobId or ""
+				pc:RecoverJobFromQuests()
+				pc.Mana = math.max(0, math.min(pc:GetMaxMana(), tonumber(data.mana) or pc:GetMaxMana()))
 				-- T69: QWER 장착 영속 — SkillLevels 복원 후 · Sanitize 전에 복원 (sanitize가 해금 레벨을 읽음)
 				pc.EquippedSkillsJson = data.equippedSkills or "[]"
 				-- T64: 낚시 숙련
@@ -1122,6 +1188,8 @@ script PersistenceManager extends Logic
 			pc.GatheringSpeed = 1.0
 			pc.SkillLevelsJson = "{}"
 			pc.SP = 0
+			pc.JobId = ""
+			pc.Mana = pc:GetMaxMana()
 			pc.FishingLevel = 1
 			pc.FishingXp = 0
 			pc.EquippedSkillsJson = "[]"
@@ -1198,6 +1266,8 @@ script PersistenceManager extends Logic
 		-- T69: QWER 장착 — 선캡처(규칙 9: 추가 Yield 금지, 기존 캡처 블록과 동일 위치)
 		local capEquippedSkills = pc.EquippedSkillsJson or "[]"
 		local capSp = tonumber(pc.SP) or 0
+		local capJobId = pc.JobId
+		local capMana = pc.Mana
 		local capFishingLevel = tonumber(pc.FishingLevel) or 1
 		local capFishingXp = tonumber(pc.FishingXp) or 0
 		local capSleeping = pc.IsSleeping == true
@@ -1385,6 +1455,8 @@ script PersistenceManager extends Logic
 			skillLevels = capSkills,
 			equippedSkills = capEquippedSkills,
 			sp = capSp,
+			jobId = capJobId,
+			mana = capMana,
 			fishingLevel = capFishingLevel,
 			fishingXp = capFishingXp,
 			isSleeping = capSleeping,
@@ -1468,6 +1540,7 @@ script PersistenceManager extends Logic
 				meta[tostring(slot)] = {
 					name = nick,
 					level = capLevel,
+					jobId = capJobId,
 					fishLv = capFishingLevel,
 					playSec = 0,
 					lastSaveTicks = "0",
@@ -1504,6 +1577,7 @@ script PersistenceManager extends Logic
 					meta[tostring(slot)] = {
 						name = nick,
 						level = capLevel,
+						jobId = capJobId,
 						fishLv = capFishingLevel,
 						playSec = 0,
 						lastSaveTicks = "0",
@@ -1803,6 +1877,8 @@ script PersistenceManager extends Logic
 					end
 					if isvalid(ac) then
 						ac:InitializeFromSave(animalId, penX, penY, hx, hy, fedAt, lastProd, produced, ownerUserId)
+						ac.Bond = math.max(0, math.min(100, tonumber(a.bond) or 0))
+						ac.CareBonus = math.max(0, math.min(0.3, tonumber(a.careBonus) or 0))
 					end
 				end
 			end

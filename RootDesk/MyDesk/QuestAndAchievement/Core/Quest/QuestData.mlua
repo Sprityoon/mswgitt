@@ -2,6 +2,10 @@
 script QuestData
 
 	property integer Id = 0
+	property integer RequiredLevel = 1
+	property string RequiredJobId = ""
+	property string RewardJobId = ""
+	property integer RewardSP = 0
 
 	property string Name = ""
 
@@ -53,6 +57,14 @@ script QuestData
 			return false
 		end
 		self.Id = id
+		local function optional(key)
+			local ok, value = pcall(function() return row:GetItem(key) end)
+			return ok and value or ""
+		end
+		self.RequiredLevel = math.floor(tonumber(optional("RequiredLevel")) or 1)
+		self.RequiredJobId = tostring(optional("RequiredJobId") or "")
+		self.RewardJobId = tostring(optional("RewardJobId") or "")
+		self.RewardSP = math.max(0, math.floor(tonumber(optional("RewardSP")) or 0))
 		
 		self.Name = row:GetItem("Name")
 		self.Desc = row:GetItem("Desc")
@@ -177,6 +189,20 @@ script QuestData
 		
 		outItems[#outItems + 1] = { itemName, itemCount }
 		
+		return true
+	end
+
+
+	method boolean IsPlayerEligible(Entity player, boolean completing)
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return false end
+		if pc.Level < self.RequiredLevel then return false end
+		if self.RequiredJobId == "novice" then
+			if pc.JobId ~= "" and not (completing and self.RewardJobId == pc.JobId) then return false end
+		elseif self.RequiredJobId ~= "" and self.RequiredJobId ~= pc.JobId then
+			return false
+		end
+		if self.RewardJobId ~= "" and pc:GetJobName(self.RewardJobId) == "" then return false end
 		return true
 	end
 

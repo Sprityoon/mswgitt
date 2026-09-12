@@ -177,9 +177,14 @@ script UICharacterController extends Component
 		local controller = player:GetComponent("script.PlayerController")
 		if isvalid(controller) then
 			local name = controller.PlayerName or player.Name
-			local lvl = controller.Level or 12
+			local lvl = controller.Level or 1
 			if isvalid(self.charName) then
-				self.charName.Text = "Lv. " .. lvl .. " 탐험가 " .. name
+				local jobTitle = "모험가"
+				if controller.GetJobName ~= nil then
+					local jName = controller:GetJobName(controller.JobId or "")
+					if jName ~= nil and jName ~= "" then jobTitle = jName end
+				end
+				self.charName.Text = "Lv. " .. lvl .. " " .. jobTitle .. " " .. name
 			end
 		
 			local sta = controller.Stamina or 60

@@ -20,6 +20,12 @@ script PlayerController extends Component
 	@Sync
 	property integer MaxStamina = 100
 
+	@Sync property string JobId = ""
+	@Sync property number Mana = 60
+	property number BaseMaxMana = 60
+	property number BaseManaRegen = 2
+	property string SkillAreaRUID = "0ac43ac8bf83461692fc56565d048df7"
+
 	@Sync
 	property integer XP = 0
 
@@ -198,6 +204,7 @@ script PlayerController extends Component
 			end, 0.5)
 			self._T.StaminaTimer = _TimerService:SetTimerRepeat(function()
 				if self.IsDead then return end
+				self.Mana = math.min(self:GetMaxMana(), self.Mana + self.BaseManaRegen + self:GetPassiveBonus("ManaRegen"))
 				local playerComp = self.Entity.PlayerComponent
 				if self.IsSleeping then
 					self._T.SleepHpAccum = (self._T.SleepHpAccum or 0.0) + (playerComp.MaxHp / 600.0)
@@ -222,6 +229,7 @@ script PlayerController extends Component
 					end
 				end
 			end, 1.0)
+			self._T.SkillAreaTimer = _TimerService:SetTimerRepeat(function() self:TickSkillAreas() end, 0.25)
 		end
 	end
 
@@ -254,6 +262,8 @@ script PlayerController extends Component
 				_TimerService:ClearTimer(self._T.StaminaTimer)
 				self._T.StaminaTimer = nil
 			end
+			if self._T.SkillAreaTimer then _TimerService:ClearTimer(self._T.SkillAreaTimer) end
+			self:ClearSkillAreas()
 			log("PlayerController cleaned up on server.")
 		end
 	end
@@ -517,6 +527,7 @@ script PlayerController extends Component
 	method void ServerDie()
 		if self.IsDead then return end
 		self.IsDead = true
+		self:ClearSkillAreas()
 		log("Player " .. self.Entity.Name .. " has died.")
 		
 		-- Stop movement immediately
@@ -2392,7 +2403,7 @@ script PlayerController extends Component
 					local ds = _DataService:GetTable("SkillDataSet")
 					if ds ~= nil then
 						local row = ds:FindRow("SkillId", sid)
-						if row ~= nil and (row:GetItem("Type") or "") == "Passive" then
+						if row == nil or not self:IsSkillJobAllowed(row) or (row:GetItem("Type") or "") == "Passive" then
 							drop = true
 						end
 					end
@@ -2427,6 +2438,7 @@ script PlayerController extends Component
 		if ds == nil then return end
 		local row = ds:FindRow("SkillId", skillId)
 		if row == nil then return end
+		if not self:IsSkillJobAllowed(row) then return end
 		if (row:GetItem("Type") or "") == "Passive" then return end
 
 		local slots = self:GetEquippedSlots()
@@ -2473,6 +2485,7 @@ script PlayerController extends Component
 		if ds == nil then return end
 		local row = ds:FindRow("SkillId", sid)
 		if row == nil then return end
+		if not self:IsSkillJobAllowed(row) then return end
 		if (row:GetItem("Type") or "") == "Passive" then
 			self:ClientShowMineFeedback("패시브 스킬은 장착할 수 없습니다.", playerComp.UserId)
 			return
@@ -2518,6 +2531,11 @@ script PlayerController extends Component
 		if not ds then return end
 		local row = ds:FindRow("SkillId", skillId)
 		if not row then return end
+		if not self:IsSkillJobAllowed(row) then return end
+		if self.Mana < self:SkillNumber(row, "ManaCost", 0) then
+			self:ShowMineFeedback("MP가 부족합니다.")
+			return
+		end
 		
 		local level = self:GetSkillLevel(skillId)
 		if level < 1 then
@@ -2556,7 +2574,7 @@ script PlayerController extends Component
 		-- Authoritative validation: verify sender, cooldown, stamina; then branch by skill Type.
 		local playerComp = self.Entity.PlayerComponent
 		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
-		if self.IsDead then return end
+		if self.IsDead or self.IsSleeping or self.FishingState ~= "None" then return end
 		-- 방향은 서버 기준 4방향 값만 사용한다. 큰 클라이언트 벡터로 원거리 시전할 수 없게 한다.
 		if math.abs(dirX) >= math.abs(dirY) and dirX ~= 0 then
 			dirX = dirX > 0 and 1 or -1
@@ -2573,6 +2591,10 @@ script PlayerController extends Component
 		if not ds then return end
 		local row = ds:FindRow("SkillId", skillId)
 		if not row then return end
+		if not self:IsSkillJobAllowed(row) then return end
+		local equipped = false
+		for _, sid in ipairs(self:GetEquippedSlots()) do if sid == skillId then equipped = true end end
+		if not equipped then return end
 		
 		local level = self:GetSkillLevel(skillId)
 		if level < 1 then return end
@@ -2583,6 +2605,15 @@ script PlayerController extends Component
 		local skillType = row:GetItem("Type")
 		local effectRUID = row:GetItem("EffectRUID")
 		if (skillType or "") == "Passive" then return end
+		local supported = { Melee = true, Ultimate = true, Dash = true, Projectile = true, Trap = true, Field = true, Guard = true, HealAura = true }
+		if not supported[skillType] then return end
+		if skillType ~= "HealAura" and skillType ~= "Guard" and skillType ~= "Dash" and not self:IsCombatSkillMap() then return end
+		if skillType == "Projectile" then
+			local modelId = _EntryService:GetModelIdByName("Projectile_Fireball")
+			if modelId == nil or modelId == "" then return end
+		end
+		local manaCost = self:SkillNumber(row, "ManaCost", 0)
+		if self.Mana < manaCost then return end
 		
 		if not self.CooldownMap then self.CooldownMap = {} end
 		local now = _UtilLogic.ElapsedSeconds
@@ -2594,6 +2625,7 @@ script PlayerController extends Component
 		if not self:ConsumeSkillItemIfNeeded(row, true) then return end
 		
 		self.Stamina = math.max(0, self.Stamina - cost)
+		self.Mana = math.max(0, self.Mana - manaCost)
 		self.CooldownMap[skillId] = now
 		self:ClientSyncCooldown(skillId, now)
 
@@ -2624,16 +2656,23 @@ script PlayerController extends Component
 			local ch = combatForHit
 			ch.PendingHitEffectRUID = hitEffectRUID or ""
 			ch.PendingHitEffectScale = hitEffectScale
+			ch.PendingSkillId = skillId
 		end
 
 		if skillType == "Melee" then
-			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(dirX, dirY), 3.0, 1.6)
+			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(dirX, dirY), self:SkillNumber(row, "AreaSize", 3), self:SkillNumber(row, "AreaReach", 1.6))
 		elseif skillType == "Ultimate" then
-			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(0, 0), 8.0, 0.0)
+			self:ExecuteAreaDamageSkill(skillId, damageMul, Vector2(0, 0), self:SkillNumber(row, "AreaSize", 8), 0.0)
 		elseif skillType == "Dash" then
 			self:ExecuteDashSkill(skillId, dirX, dirY, damageMul)
 		elseif skillType == "Projectile" then
 			self:ExecuteProjectileSkill(skillId, damageMul, dirX, dirY, hitEffectRUID, hitEffectScale)
+		elseif skillType == "Guard" then
+			self._T.GuardUntil = now + self:SkillNumber(row, "Duration", 6)
+			self._T.GuardReduction = self:SkillNumber(row, "StatusValue", 0)
+			self._T.GuardReflection = damageMul
+		else
+			self:CreateSkillArea(skillId, dirX, dirY)
 		end
 
 		if isvalid(combatForHit) then
@@ -2642,6 +2681,7 @@ script PlayerController extends Component
 			-- 투사체는 탄환 자신의 HitEffectRUID를 쓴다. Pending을 남기면 도구 평타에 스킬 FX가 붙는다.
 			ch2.PendingHitEffectRUID = ""
 			ch2.PendingHitEffectScale = 1.0
+			ch2.PendingSkillId = ""
 		end
 		
 		if effectRUID ~= nil and effectRUID ~= "" then
@@ -2714,27 +2754,20 @@ script PlayerController extends Component
 	end
 
 	method number GetPassiveBonus(string statName)
-		-- 보유 중인 패시브 스킬(PassiveStat == statName)의 효과 합산: PassiveValuePerLevel × level.
-		-- 신규 패시브는 SkillDataSet CSV 행 추가만으로 자동 반영된다 (하드코딩 금지 룰).
-		local total = 0.0
+		local total = 0
 		local ds = _DataService:GetTable("SkillDataSet")
 		if ds == nil then return total end
-		
-		local rowCount = ds:GetRowCount()
-		for i = 1, rowCount do
-			local stat = ds:GetCell(i, "PassiveStat")
-			if stat ~= nil and stat == statName then
-				local skillId = ds:GetCell(i, "SkillId")
-				local level = self:GetSkillLevel(skillId)
-				if level >= 1 then
-					local perLevel = tonumber(ds:GetCell(i, "PassiveValuePerLevel")) or 0.0
-					total = total + perLevel * level
-				end
+		for i = 1, ds:GetRowCount() do
+			local skillId = ds:GetCell(i, "SkillId")
+			local row = ds:FindRow("SkillId", skillId)
+			local level = self:GetSkillLevel(skillId)
+			if level >= 1 and self:IsSkillJobAllowed(row) then
+				if self:SkillText(row, "PassiveStat") == statName then total = total + self:SkillNumber(row, "PassiveValuePerLevel", 0) * level end
+				if self:SkillText(row, "PassiveStat2") == statName then total = total + self:SkillNumber(row, "PassiveValue2", 0) * level end
 			end
 		end
 		return total
 	end
-
 	method number GetEffectiveMineCooldown()
 		-- 실효 채집 쿨다운 = MineCooldown + Σ패시브(MineCooldown, 음수), 하한 0.2초
 		-- T16 GatherSpeed mult: 쿨다운 / mult (채집 빨라짐)
@@ -2833,6 +2866,8 @@ script PlayerController extends Component
 			return false
 		end
 		if doRemove then
+			-- 탄약 보유 검사 뒤에만 보존 확률을 적용한다.
+			if self:SkillText(row, "DamageModel") == "Throw" and math.random() < math.min(1, self:GetPassiveBonus("AmmoSave")) then return true end
 			if not p:RemoveItem(consumeItem, consumeCount) then
 				return false
 			end
@@ -2858,6 +2893,7 @@ script PlayerController extends Component
 	method boolean IsSkillUnlockGateSatisfied(any row)
 		-- UnlockAchievementId와 UnlockOwnedItem이 둘 다 있으면 OR, 하나만 있으면 그 조건.
 		if row == nil then return true end
+		if not self:IsSkillQuestAllowed(row) then return false end
 		local achId = tonumber(row:GetItem("UnlockAchievementId"))
 		local hasAch = achId ~= nil and achId > 0
 		local ok, raw = pcall(function() return row:GetItem("UnlockOwnedItem") end)
@@ -2905,6 +2941,7 @@ script PlayerController extends Component
 		if not ds then return end
 		local row = ds:FindRow("SkillId", skillId)
 		if not row then return end
+		if not self:IsSkillJobAllowed(row) then return end
 		
 		local ok, levels = pcall(function() return _HttpService:JSONDecode(self.SkillLevelsJson) end)
 		if not ok or levels == nil then levels = {} end
@@ -3149,7 +3186,7 @@ script PlayerController extends Component
 		end
 
 		local mul = damageMul or 0
-		if mul > 0 then
+		if mul > 0 and self:IsCombatSkillMap() then
 			local combat = self.Entity:GetComponent("script.PlayerCombat")
 			if isvalid(combat) then
 				---@type PlayerCombat
@@ -3173,70 +3210,55 @@ script PlayerController extends Component
 
 	@ExecSpace("ServerOnly")
 	method void ExecuteProjectileSkill(string skillId, number damageMul, integer dirX, integer dirY, string hitEffectRUID, number hitEffectScale)
-		-- Spawn a flying projectile entity carrying script.Projectile that hits the first monster.
-		local parentMap = self.Entity.CurrentMap
-		if not isvalid(parentMap) then return end
-		
+		local map = self.Entity.CurrentMap
 		local modelId = _EntryService:GetModelIdByName("Projectile_Fireball")
-		if modelId == nil or modelId == "" then
-			log_warning("[SKILL] Projectile_Fireball model not found; fireball skipped.")
-			return
-		end
-		
-		local finalDmg = self:ComputeSkillDamage(skillId, damageMul)
-		local myPos = self.Entity.TransformComponent.WorldPosition
-		local spawnPos = Vector3(myPos.x + dirX * 1.2, myPos.y + dirY * 1.2, myPos.z)
-		
-		local proj = _SpawnService:SpawnByModelId(modelId, "Projectile_" .. skillId, spawnPos, parentMap)
-		if not isvalid(proj) then return end
-		
-		local sprite = proj.SpriteRendererComponent
-		local projRuid = ""
-		local effectRuid = ""
-		if isvalid(sprite) then
-			sprite.IgnoreMapLayerCheck = true
-			sprite.SortingLayer = _RenderLayers.EntityLayer
-			sprite.OrderInLayer = 500
-			sprite.FlipX = dirX > 0
-			local ds = _DataService:GetTable("SkillDataSet")
-			if ds ~= nil then
-				local row = ds:FindRow("SkillId", skillId)
-				if row ~= nil then
-					local okR, rawR = pcall(function() return row:GetItem("ProjectileRUID") end)
-					if okR and rawR ~= nil then projRuid = tostring(rawR) end
-					local okE, rawE = pcall(function() return row:GetItem("EffectRUID") end)
-					if okE and rawE ~= nil then effectRuid = tostring(rawE) end
-					-- 🔴 빈 문자열을 그대로 대입하면 탄환이 에러 없이 투명해진다(8대 규칙 3).
-					--    ProjectileRUID 공란이면 EffectRUID 로 폴백하고, 둘 다 비면 모델 기본값을 유지한다.
-					--    (매직 클로가 ProjectileRUID 공란이라 탄환이 안 보이던 원인.)
-					local resolvedRuid = projRuid
-					if resolvedRuid == "" then resolvedRuid = effectRuid end
-					if resolvedRuid ~= "" then
-						sprite.SpriteRUID = resolvedRuid
-					else
-						log_warning("[SKILL] projectile sprite RUID empty; model default kept. skill=" .. skillId)
-					end
+		if not isvalid(map) or modelId == nil or modelId == "" then return end
+		local row = _DataService:GetTable("SkillDataSet"):FindRow("SkillId", skillId)
+		if row == nil then return end
+		local count = math.max(1, math.min(9, math.floor(self:SkillNumber(row, "ProjectileCount", 1))))
+		local spread = math.rad(self:SkillNumber(row, "SpreadDegrees", 0))
+		local pos = self.Entity.TransformComponent.WorldPosition
+		local damage = self:ComputeSkillDamage(skillId, damageMul)
+		for i = 1, count do
+			local angle = count > 1 and (-spread * 0.5 + spread * (i - 1) / (count - 1)) or 0
+			local dx = dirX * math.cos(angle) - dirY * math.sin(angle)
+			local dy = dirX * math.sin(angle) + dirY * math.cos(angle)
+			local proj = _SpawnService:SpawnByModelId(modelId, "Projectile_" .. skillId, Vector3(pos.x + dx * 1.2, pos.y + dy * 1.2, pos.z), map)
+			if isvalid(proj) then
+				local sprite = proj.SpriteRendererComponent
+				if isvalid(sprite) then
+					local ruid = self:SkillText(row, "ProjectileRUID")
+					if ruid ~= "" then sprite.SpriteRUID = ruid end
+					sprite.IgnoreMapLayerCheck = true
+					sprite.SortingLayer = _RenderLayers.EntityLayer
+					sprite.OrderInLayer = 500
+					sprite.FlipX = dx > 0
+				end
+				if not isvalid(proj.KinematicbodyComponent) then proj:AddComponent("KinematicbodyComponent") end
+				proj.KinematicbodyComponent.EnableJump = false
+				proj.KinematicbodyComponent.EnableShadow = false
+				proj.KinematicbodyComponent.EnableTileCollision = false
+				proj:AddComponent("script.Projectile")
+				local p = proj:GetComponent("script.Projectile")
+				if isvalid(p) then
+					p:Initialize(self.Entity, Vector2(dx, dy), damage, self:SkillNumber(row, "ProjectileSpeed", 6), hitEffectRUID)
+					p.SkillId = skillId
+					p.HitEffectScale = hitEffectScale
+					p.LifeTime = self:SkillNumber(row, "ProjectileLife", 2)
+					p.VisualSize = self:SkillNumber(row, "ProjectileSize", 2)
+					p.HitSize = self:SkillNumber(row, "ProjectileSize", 1.6)
+					p.PierceCount = math.floor(self:SkillNumber(row, "PierceCount", 1))
+					p.SplashSize = self:SkillNumber(row, "SplashSize", 0)
+					p.SplashMultiplier = self:SkillNumber(row, "SplashMultiplier", 0)
+					p.ImpactOnly = self:SkillText(row, "ImpactOnly") == "true"
+					p.Grow = self:SkillText(row, "GrowProjectile") == "true"
+				else
+					proj:Destroy()
 				end
 			end
 		end
-		
-		local projComp = proj:GetComponent("script.Projectile")
-		if not isvalid(projComp) then
-			proj:AddComponent("script.Projectile")
-			projComp = proj:GetComponent("script.Projectile")
-		end
-		if isvalid(projComp) then
-			---@type Projectile
-			local p = projComp
-			p:Initialize(self.Entity, Vector2(dirX, dirY), finalDmg, 6.0, hitEffectRUID or "")
-			-- 피격 이펙트 배율은 프로퍼티로 주입한다(Initialize 시그니처를 늘리지 않기 위해 — LEA-1102 회피).
-			local hs = hitEffectScale
-			if hs == nil or hs <= 0 then hs = 1.0 end
-			p.HitEffectScale = hs
-			log("[SKILL] Projectile spawned skill=" .. skillId .. " dmg " .. finalDmg)
-		end
+		log("[SKILL] projectile skill=" .. skillId .. " count=" .. count)
 	end
-
 	@ExecSpace("Multicast")
 	method void MulticastPlayEffect(string effectRUID, Vector3 pos)
 		-- 하위 호환: 정렬 옵션 포함 기본 재생 (플립/스케일 기본값).
@@ -3324,10 +3346,23 @@ script PlayerController extends Component
 			end
 		end
 		
+		local now = _UtilLogic.ElapsedSeconds
+		if now < (self._T.TemperedUntil or 0) then damage = math.max(1, damage - (self._T.TemperedReduction or 0)) end
+		local guardOn = now < (self._T.GuardUntil or 0)
+		if guardOn then damage = math.max(1, math.floor(damage * (1 - (self._T.GuardReduction or 0)))) end
 		-- Apply damage to player HP and start server-side IFrame cooldown
 		playerComp.Hp = math.max(0, playerComp.Hp - damage)
 		local iframeDuration = 0.4  -- 0.4 second i-frame (빠르고 즉각적인 피격 반응)
 		self.IFrameTimer = iframeDuration
+		if guardOn then
+			local target = event.AttackerEntity
+			local monster = target:GetComponent("script.Monster")
+			local combat = self.Entity:GetComponent("script.PlayerCombat")
+			local distance = Vector2.Distance(target.TransformComponent.WorldPosition:ToVector2(), self.Entity.TransformComponent.WorldPosition:ToVector2())
+			if isvalid(monster) and isvalid(combat) and distance <= 3 then
+				combat:DealSkillHit(target, math.max(1, math.floor(damage * (self._T.GuardReflection or 0))), "", "", 1)
+			end
+		end
 		_TimerService:SetTimerOnce(function()
 			if isvalid(self.Entity) then
 				self.IFrameTimer = 0.0
@@ -3724,6 +3759,22 @@ script PlayerController extends Component
 		return math.floor(self.FishingXpBase * (self.FishingXpGrowth ^ (level - 1)))
 	end
 
+	method integer GetHobbyLevel(string hobbyKey)
+		local key = string.lower(hobbyKey or "")
+		if key == "fishing" or key == "fish" or key == "낚시" then
+			return tonumber(self.FishingLevel) or 1
+		elseif key == "farming" or key == "농사" then
+			return 1
+		elseif key == "mining" or key == "채광" then
+			return 1
+		end
+		return 1
+	end
+
+	method string GetHobbySummary()
+		return "취미: 낚시 Lv." .. tostring(self.FishingLevel)
+	end
+
 	@ExecSpace("ServerOnly")
 	method void AddFishingXP(integer amount)
 		-- T64: 어획 시 숙련 XP 적립 + 레벨업 처리. 영속은 PersistenceManager(dirty 마킹).
@@ -3804,6 +3855,208 @@ script PlayerController extends Component
 				-- 단, 아바타도 유닛이므로 UnitTieBias(+1)를 추가 가산하여 유닛 우선 정렬을 보장한다.
 				local baseOrder = _RenderLayers:ComputeYOrder(y)
 				avatar.OrderInLayer = baseOrder + (_RenderLayers.UnitTieBias or 1)
+			end
+		end
+	end
+
+
+	method string SkillText(any row, string key)
+		if row == nil then return "" end
+		local ok, value = pcall(function() return row:GetItem(key) end)
+		if not ok or value == nil then return "" end
+		return tostring(value)
+	end
+
+	method number SkillNumber(any row, string key, number fallback)
+		return tonumber(self:SkillText(row, key)) or fallback
+	end
+
+	method number GetMaxMana()
+		return self.BaseMaxMana + self:GetPassiveBonus("MaxMana")
+	end
+
+	method boolean IsSkillJobAllowed(any row)
+		if row == nil then return false end
+		local job = self:SkillText(row, "JobId")
+		return job == "" or job == self.JobId
+	end
+
+	method boolean IsSkillQuestAllowed(any row)
+		local id = self:SkillNumber(row, "UnlockQuestId", 0)
+		if id <= 0 then return true end
+		local pq = self.Entity.PlayerQuest
+		if not isvalid(pq) then return false end
+		local data = pq.UserDataTable[id]
+		return data ~= nil and data.State == _QuestStateEnum.Completed
+	end
+
+	method string GetJobName(string jobId)
+		if jobId == "" then return "모험가" end
+		local ds = _DataService:GetTable("SkillDataSet")
+		if ds ~= nil then
+			local row = ds:FindRow("JobId", jobId)
+			if row ~= nil then return self:SkillText(row, "JobName") end
+		end
+		return ""
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean CanReceiveJob(string jobId)
+		return jobId ~= "" and self.JobId == "" and self:GetJobName(jobId) ~= ""
+	end
+
+	@ExecSpace("ServerOnly")
+	method void GrantJob(string jobId)
+		if not self:CanReceiveJob(jobId) then return end
+		self.JobId = jobId
+		self.Mana = self:GetMaxMana()
+		self:SanitizeEquippedSkills()
+		local uid = self.Entity.PlayerComponent.UserId
+		_PersistenceManager:MarkPlayerDirty(uid)
+		self:ClientShowMineFeedback("[전직] " .. self:GetJobName(jobId) .. " — K에서 직업 스킬을 배워 보세요.", uid)
+		log("[JOB] granted user=" .. uid .. " job=" .. jobId)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RecoverJobFromQuests()
+		-- 두 저장소의 로드 순서와 관계없이 완료한 전직 시험을 복구한다. SP/아이템은 재지급하지 않는다.
+		if self.JobId ~= "" then return end
+		local pq = self.Entity.PlayerQuest
+		if not isvalid(pq) then return end
+		local chosen = 0
+		local job = ""
+		for id, state in pairs(pq.UserDataTable) do
+			if state.State == _QuestStateEnum.Completed then
+				local data = _QuestDataSetLogic:GetData(id)
+				if data ~= nil and data.RewardJobId ~= "" and (chosen == 0 or id < chosen) then
+					chosen = id
+					job = data.RewardJobId
+				end
+			end
+		end
+		if job ~= "" then self:GrantJob(job) end
+	end
+
+	method boolean IsCombatSkillMap()
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return false end
+		return map.Name ~= "town" and map.Name ~= "map01" and string.sub(map.Name, 1, 5) ~= "Home_"
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ClearSkillAreas()
+		for _, area in pairs(self._T.SkillAreas or {}) do
+			if isvalid(area.marker) then area.marker:Destroy() end
+		end
+		self._T.SkillAreas = {}
+		self._T.GuardUntil = 0
+		self._T.TemperedUntil = 0
+		self._T.TemperedReduction = 0
+	end
+
+	@ExecSpace("ServerOnly")
+	method void CreateSkillArea(string skillId, integer dirX, integer dirY)
+		local ds = _DataService:GetTable("SkillDataSet")
+		local row = ds:FindRow("SkillId", skillId)
+		local map = self.Entity.CurrentMap
+		if row == nil or not isvalid(map) then return end
+		local pos = self.Entity.TransformComponent.WorldPosition
+		local reach = self:SkillNumber(row, "AreaReach", 0)
+		local center = Vector3(pos.x + dirX * reach, pos.y + dirY * reach, pos.z)
+		if not self._T.SkillAreas then self._T.SkillAreas = {} end
+		local old = self._T.SkillAreas[skillId]
+		if old ~= nil and isvalid(old.marker) then old.marker:Destroy() end
+		local size = self:SkillNumber(row, "AreaSize", 3)
+		local modelId = _EntryService:GetModelIdByName("Projectile_Fireball")
+		local marker = nil
+		if modelId ~= nil and modelId ~= "" then
+			marker = _SpawnService:SpawnByModelId(modelId, "SkillArea_" .. skillId, center, map)
+			if isvalid(marker) then
+				marker.TransformComponent.Scale = Vector3(size, size, 1)
+				local sprite = marker.SpriteRendererComponent
+				sprite.SpriteRUID = self.SkillAreaRUID
+				sprite.Color = Color(0.3, 0.85, 0.45, 0.45)
+				sprite.IgnoreMapLayerCheck = true
+				sprite.SortingLayer = _RenderLayers.EntityLayer
+				sprite.OrderInLayer = -100
+			end
+		end
+		local now = _UtilLogic.ElapsedSeconds
+		self._T.SkillAreas[skillId] = { row = row, map = map, center = center, size = size, marker = marker, expires = now + self:SkillNumber(row, "Duration", 6), nextTick = now, kind = row:GetItem("Type") }
+		log("[SKILL-AREA] create " .. skillId)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void TickSkillAreas()
+		if self.IsDead then self:ClearSkillAreas() return end
+		local now = _UtilLogic.ElapsedSeconds
+		for skillId, area in pairs(self._T.SkillAreas or {}) do
+			if now >= area.expires or area.map ~= self.Entity.CurrentMap then
+				if isvalid(area.marker) then area.marker:Destroy() end
+				self._T.SkillAreas[skillId] = nil
+			elseif now >= area.nextTick then
+				area.nextTick = now + math.max(0.25, self:SkillNumber(area.row, "TickInterval", 1))
+				if area.kind == "HealAura" then
+					for _, player in pairs(_UserService:GetUsersByMapName(area.map.Name)) do
+						local pc = player:GetComponent("script.PlayerController")
+						if isvalid(pc) and not pc.IsDead then
+							local p = player.TransformComponent.WorldPosition
+							if Vector2.Distance(p:ToVector2(), area.center:ToVector2()) <= area.size * 0.5 then
+								local hp = player.PlayerComponent
+								hp.Hp = math.min(hp.MaxHp, hp.Hp + self:SkillNumber(area.row, "HealPerTick", 4) + self:GetSkillLevel(skillId) * 2)
+							end
+						end
+					end
+				else
+					local hits = self:DamageSkillArea(skillId, area.center, area.size, 1)
+					if area.kind == "Trap" and hits > 0 then area.expires = now end
+				end
+				local fx = self:SkillText(area.row, "EffectRUID")
+				if fx ~= "" and area.kind ~= "Trap" then self:MulticastPlayEffectEx(fx, area.center, false, self:SkillNumber(area.row, "EffectScale", 1)) end
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method integer DamageSkillArea(string skillId, Vector3 center, number size, number multiplier)
+		if not self:IsCombatSkillMap() then return 0 end
+		local sim = _CollisionService:GetSimulator(self.Entity)
+		local combat = self.Entity:GetComponent("script.PlayerCombat")
+		if sim == nil or not isvalid(combat) then return 0 end
+		local ds = _DataService:GetTable("SkillDataSet")
+		local row = ds:FindRow("SkillId", skillId)
+		if row == nil then return 0 end
+		local hits = 0
+		local seen = {}
+		local damage = self:ComputeSkillDamage(skillId, self:GetEffectiveDamageMultiplier(skillId, self:GetSkillLevel(skillId)) * multiplier)
+		for _, hit in pairs(sim:OverlapAll({CollisionGroups.HitBox}, BoxShape(center:ToVector2(), Vector2(size, size), 0))) do
+			local target = hit.Entity
+			if isvalid(target) and not seen[target.Id] then
+				seen[target.Id] = true
+				local monster = target:GetComponent("script.Monster")
+				if isvalid(monster) and not monster.IsDead then
+					combat:DealSkillHit(target, damage, skillId, self:SkillText(row, "HitEffectRUID"), self:SkillNumber(row, "HitEffectScale", 1))
+					hits = hits + 1
+				end
+			end
+		end
+		return hits
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RefreshTemperedSkin()
+		local inv = self.Entity:GetComponent("script.PlayerInventory")
+		local ds = _DataService:GetTable("SkillDataSet")
+		if not isvalid(inv) or ds == nil then return end
+		for i = 1, ds:GetRowCount() do
+			local row = ds:FindRow("SkillId", ds:GetCell(i, "SkillId"))
+			if self:IsSkillJobAllowed(row) and self:SkillText(row, "PassiveStat") == "DamageReduction" then
+				local level = self:GetSkillLevel(row:GetItem("SkillId"))
+				local item = self:SkillText(row, "PassiveItem")
+				if level > 0 and item ~= "" and inv:GetItemCount(item) > 0 then
+					self._T.TemperedUntil = _UtilLogic.ElapsedSeconds + self:SkillNumber(row, "Duration", 6)
+					self._T.TemperedReduction = level * self:SkillNumber(row, "PassiveValuePerLevel", 0)
+				end
 			end
 		end
 	end

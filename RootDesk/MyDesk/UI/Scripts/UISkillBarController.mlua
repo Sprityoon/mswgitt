@@ -217,6 +217,9 @@ script UISkillBarController extends Component
 			metaEnt.TextComponent.Text = skType .. " · " .. lvLabel .. " · CD " .. string.format("%.1f", cd) .. "s"
 		end
 
+		if pc ~= nil and isvalid(metaEnt) and isvalid(metaEnt.TextComponent) then
+			metaEnt.TextComponent.Text = metaEnt.TextComponent.Text .. "\nMP " .. pc:SkillNumber(row, "ManaCost", 0) .. " · 기력 " .. (tonumber(row:GetItem("StaminaCost")) or 0)
+		end
 		local descEnt = tip:GetChildByName("Desc", true)
 		if isvalid(descEnt) and isvalid(descEnt.TextComponent) then
 			descEnt.TextComponent.Text = desc
@@ -248,6 +251,10 @@ script UISkillBarController extends Component
 		local lockedBg = Color(0.14, 0.12, 0.12, 0.90)
 
 		local pc = self:GetLocalPlayerController()
+		local manaText = self.Entity:GetChildByName("ManaText", true)
+		if pc ~= nil and isvalid(manaText) and isvalid(manaText.TextGUIRendererComponent) then
+			manaText.TextGUIRendererComponent.Text = "MP " .. math.floor(pc.Mana) .. " / " .. pc:GetMaxMana()
+		end
 		local skills = { "", "", "", "" }
 		local cdMap = {}
 		if pc ~= nil then

@@ -150,6 +150,8 @@ script PlayerQuest extends Component
 	@ExecSpace("ServerOnly")
 	method boolean PostOnLoadedDataFromDB()
 		-- 세이브 로드 후 AutoAccept 재평가 (이미 깬 LinkedPrevId 뒤에 붙은 신규 퀘스트 수주)
+		local pc = self.Entity:GetComponent("script.PlayerController")
+		if isvalid(pc) then pc:RecoverJobFromQuests() end
 		self:AutoAcceptQuests(true)
 		self:TryCompleteReadyQuests()
 		return true
@@ -290,7 +292,12 @@ script PlayerQuest extends Component
 	@ExecSpace("Server")
 	method void RequestAcceptQuests(table ids)
 		if senderUserId ~= self.Entity.PlayerComponent.UserId then return end
-		self:AcceptQuests(ids, true)
+		local filtered = {}
+		for _, id in ipairs(ids or {}) do
+			local data = _QuestDataSetLogic:GetData(id)
+			if data ~= nil and self:IsNearQuestNpc(data.GiverNpcId) then table.insert(filtered, id) end
+		end
+		self:AcceptQuests(filtered, true)
 	end
 
 	@ExecSpace("ServerOnly")
@@ -323,8 +330,29 @@ script PlayerQuest extends Component
 		end
 		self:MarkSaveDirty()
 		
+		-- 전직 시험 퀘스트(302, 312, 322, 332) 수락 시 다른 전직 시험 퀘스트는 자동 포기(Abandon) 처리
+		local jobExamIds = { [302] = true, [312] = true, [322] = true, [332] = true }
+		local syncTable = {}
+		for k, v in pairs(acceptUserDataTable) do syncTable[k] = v end
+
+		for acceptedId, _ in pairs(acceptUserDataTable) do
+			if jobExamIds[acceptedId] == true then
+				for otherExamId, _ in pairs(jobExamIds) do
+					if otherExamId ~= acceptedId and progressingIdTable[otherExamId] == true then
+						local otherUserData = self.UserDataTable[otherExamId]
+						if otherUserData ~= nil and otherUserData.State == _QuestStateEnum.InProgress then
+							otherUserData:Abandon(elapsed)
+							progressingIdTable[otherExamId] = nil
+							syncTable[otherExamId] = otherUserData
+							log(string.format("[JOB-EXAM] Accepted exam %d -> abandoned other exam %d", acceptedId, otherExamId))
+						end
+					end
+				end
+			end
+		end
+
 		if sync then
-			self:SyncDataChanged(acceptUserDataTable, self.Entity.PlayerComponent.UserId)
+			self:SyncDataChanged(syncTable, self.Entity.PlayerComponent.UserId)
 		end
 
 		-- CountMode=State가 수락 시점에 이미 충족되어도, 보고 NPC가 있으면 자동완료하지 않는다.
@@ -418,7 +446,12 @@ script PlayerQuest extends Component
 	@ExecSpace("Server")
 	method void RequestCompleteQuests(table ids)
 		if senderUserId ~= self.Entity.PlayerComponent.UserId then return end
-		self:CompleteQuests(ids)
+		local filtered = {}
+		for _, id in ipairs(ids or {}) do
+			local data = _QuestDataSetLogic:GetData(id)
+			if data ~= nil and self:IsNearQuestNpc(data.TurnInNpcId) then table.insert(filtered, id) end
+		end
+		self:CompleteQuests(filtered)
 	end
 
 	@ExecSpace("ServerOnly")
@@ -699,6 +732,22 @@ script PlayerQuest extends Component
 		
 		local elapsed = _DateTimeLogic:GetTimeElapsed()
 		self:TryCycleResetQuests(elapsed, true)
+	end
+
+
+	@ExecSpace("ServerOnly")
+	method boolean IsNearQuestNpc(string npcId)
+		if npcId == "" then return true end
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return false end
+		local p = self.Entity.TransformComponent.WorldPosition:ToVector2()
+		for _, dialog in pairs(map:GetChildComponentsByTypeName("script.VillagerDialog", true)) do
+			if dialog.NpcId == npcId and dialog.Entity.Enable then
+				local n = dialog.Entity.TransformComponent.WorldPosition:ToVector2()
+				if Vector2.Distance(p, n) <= 4 then return true end
+			end
+		end
+		return false
 	end
 
 end

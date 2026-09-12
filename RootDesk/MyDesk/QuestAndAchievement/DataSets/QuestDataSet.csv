@@ -1,20 +1,32 @@
-Id,Name,Desc,ProgressingDesc,CategoryEnum,CycleEnum,IsRepeatable,LinkedPrevId,RequiredId,AutoAccept,CannotAbandon,ConsumeItems,RewardItems,Priority,Disable,RewardUnlockId,GiverNpcId,TurnInNpcId,RewardPortalId
-101,첫 걸음 - 풀 뜯기,맨손으로 들판의 풀을 뜯어 모아보세요.,풀을 3개 채집하세요. (맨손으로 가능),Sub,,,,,O,O,,Stone:5,1,,,,,
-102,도구 제작 - 주먹도끼,모은 돌로 첫 도구인 주먹도끼를 만들어보세요.,C 키로 제작창을 열고 주먹도끼를 제작하세요.,Sub,,,101,,O,O,,Wood:2,2,,,,,
-103,나무 베기,주먹도끼로 나무를 베어 목재를 모으세요.,나무를 베어 나무 5개를 모으세요.,Sub,,,102,,O,O,,Stone:3,3,,,,,
-104,도구 제작 - 곡괭이,목재와 돌로 돌 곡괭이를 제작하세요.,제작창에서 돌 곡괭이를 제작하세요.,Sub,,,103,,O,O,,Wood:8,4,,,,,
-105,광물 채광 - 돌 캐기,곡괭이로 단단한 돌을 캐보세요.,곡괭이로 돌을 캐 돌 3개를 모으세요.,Sub,,,104,,O,O,,Wood:5,5,,,,,
-106,나만의 창고 짓기,나무 상자를 만들어 영지에 설치하세요.,나무 상자를 제작한 뒤 Ctrl로 설치하세요.,Sub,,,105,,O,O,,Stone:4,6,,,,,town
-107,넓은 세계로,영지의 포탈을 이용해 바깥으로 떠나보세요.,포탈에 상호작용해 다른 지역으로 이동하세요.,Sub,,,106,,O,O,,Wood:10|Stone:10,7,,quest_cooking_pot,,,
-108,왠지 던질 수 있을것 같습니다..,주먹도끼를 손에 쥐니 묘한 생각이 듭니다.,스킬창(K)에서 주먹도끼 던지기를 습득하세요.,Sub,,,102,,O,O,,Hand Axe:20,8,,,,,
-201,어디선가 느껴지는 기운,마을 밖 들판에서 신비로운 기운이 어른거린다네. 조사에 쓸 풀을 조금 모아 와 주게.,풀을 5개 채집해 촌장에게 보고하세요.,Main,,,,107,,O,Grass:5,Wood:15|Stone:10,10,,,elder,elder,
-202,연못가의 첫 수업,마음이 복잡할 땐 낚싯대부터 쥐어보는 법이지. 나무로 하나 만들어 보게.,낚싯대를 제작해 낚시꾼에게 보여 주세요.,Main,,,,201,,O,,Coin:30,11,,,fisher,fisher,
-203,대장간의 땔감 준비,화로에 지필 장작이 필요하다네. 나무를 모아 대장장이 로체에게 전해 주게.,나무 10개를 모아 대장장이에게 전하세요.,Main,,,,202,,O,Wood:10,Grass Seed:5,12,,,blacksmith,blacksmith,
-204,연구원의 받침돌,연구소 창가에 둘 받침석이 필요해. 돌을 모아 줘.,돌 10개를 모아 연구원에게 전하세요.,Main,,,,203,,O,Stone:10,Roasted Grass:3,13,,,researcher,researcher,
-205,벌판의 기척,벌판 소문이 심상치 않네. 흙 벌판에 다녀와 주게.,사냥터 1구역으로 이동하세요.,Main,,,,204,,O,,Wood:20|Stone:20,14,,,elder,elder,
-211,잠식된 이웃 퇴치,벌판의 슬라임이 잠식되었네. 다섯을 퇴치하고 돌아오게.,슬라임을 5마리 퇴치하세요.,Main,,,,205,,O,,Coin:40,20,,,elder,elder,
-212,검은 이슬 표본,퇴치한 슬라임에서 젤리가 떨어질 거야. 표본 세 개를 가져와.,슬라임 젤리 3개를 모아 연구원에게 전하세요.,Main,,,,211,,O,Slime Jelly:3,Roasted Grass:5,21,,,researcher,researcher,
-213,구리 한 줌,이제 광석을 두드릴 때야. 벌판에서 구리 광석을 모아 오자고.,구리 광석 10개를 모아 대장장이에게 전하세요.,Main,,,,212,,O,Copper Ore:10,Wood:10,22,,,blacksmith,blacksmith,
-214,화로의 첫 쇳물,광석을 화로에 넣고 구리 주괴를 뽑아 보게.,구리 주괴 2개를 제련하세요.,Main,,,,213,,O,,Stone:10,23,,,blacksmith,blacksmith,
-215,구리 손맛,구리 곡괭이를 만들어 손맛을 보게. 연구소 연구가 필요할 수 있네.,구리 곡괭이를 제작하세요.,Main,,,,214,,O,,Coin:50,24,,,blacksmith,blacksmith,
-216,이정표 아래에서,벌판 이정표 곁의 멧돼지를 퇴치하고 문양을 살펴보게.,멧돼지를 3마리 퇴치하세요.,Main,,,,215,,O,,Wood:20|Stone:20,25,,,elder,elder,
+Id,Name,Desc,ProgressingDesc,CategoryEnum,CycleEnum,IsRepeatable,LinkedPrevId,RequiredId,AutoAccept,CannotAbandon,ConsumeItems,RewardItems,Priority,Disable,RewardUnlockId,GiverNpcId,TurnInNpcId,RewardPortalId,RequiredLevel,RequiredJobId,RewardJobId,RewardSP
+101,첫 걸음 - 풀 뜯기,맨손으로 들판의 풀을 뜯어 모아보세요.,풀을 3개 채집하세요. (맨손으로 가능),Sub,,,,,O,O,,Stone:5,1,,,,,,,,,
+102,도구 제작 - 주먹도끼,모은 돌로 첫 도구인 주먹도끼를 만들어보세요.,C 키로 제작창을 열고 주먹도끼를 제작하세요.,Sub,,,101,,O,O,,Wood:2,2,,,,,,,,,
+103,나무 베기,주먹도끼로 나무를 베어 목재를 모으세요.,나무를 베어 나무 5개를 모으세요.,Sub,,,102,,O,O,,Stone:3,3,,,,,,,,,
+104,도구 제작 - 곡괭이,목재와 돌로 돌 곡괭이를 제작하세요.,제작창에서 돌 곡괭이를 제작하세요.,Sub,,,103,,O,O,,Wood:8,4,,,,,,,,,
+105,광물 채광 - 돌 캐기,곡괭이로 단단한 돌을 캐보세요.,곡괭이로 돌을 캐 돌 3개를 모으세요.,Sub,,,104,,O,O,,Wood:5,5,,,,,,,,,
+106,나만의 창고 짓기,나무 상자를 만들어 영지에 설치하세요.,나무 상자를 제작한 뒤 Ctrl로 설치하세요.,Sub,,,105,,O,O,,Stone:4,6,,,,,town,,,,
+107,넓은 세계로,영지의 포탈을 이용해 바깥으로 떠나보세요.,포탈에 상호작용해 다른 지역으로 이동하세요.,Sub,,,106,,O,O,,Wood:10|Stone:10,7,,quest_cooking_pot,,,,,,,
+108,왠지 던질 수 있을것 같습니다..,주먹도끼를 손에 쥐니 묘한 생각이 듭니다.,스킬창(K)에서 주먹도끼 던지기를 습득하세요.,Sub,,,102,,O,O,,Hand Axe:20,8,,,,,,,,,
+201,어디선가 느껴지는 기운,마을 밖 들판에서 신비로운 기운이 어른거린다네. 조사에 쓸 풀을 조금 모아 와 주게.,풀을 5개 채집해 촌장에게 보고하세요.,Main,,,,107,,O,Grass:5,Wood:15|Stone:10,10,,,elder,elder,,,,,
+202,연못가의 첫 수업,마음이 복잡할 땐 낚싯대부터 쥐어보는 법이지. 나무로 하나 만들어 보게.,낚싯대를 제작해 낚시꾼에게 보여 주세요.,Main,,,,201,,O,,Coin:30,11,,,fisher,fisher,,,,,
+203,대장간의 땔감 준비,화로에 지필 장작이 필요하다네. 나무를 모아 대장장이 로체에게 전해 주게.,나무 10개를 모아 대장장이에게 전하세요.,Main,,,,202,,O,Wood:10,Grass Seed:5,12,,,blacksmith,blacksmith,,,,,
+204,연구원의 받침돌,연구소 창가에 둘 받침석이 필요해. 돌을 모아 줘.,돌 10개를 모아 연구원에게 전하세요.,Main,,,,203,,O,Stone:10,Roasted Grass:3,13,,,researcher,researcher,,,,,
+205,벌판의 기척,벌판 소문이 심상치 않네. 흙 벌판에 다녀와 주게.,사냥터 1구역으로 이동하세요.,Main,,,,204,,O,,Wood:20|Stone:20,14,,,elder,elder,,,,,
+211,잠식된 이웃 퇴치,벌판의 슬라임이 잠식되었네. 다섯을 퇴치하고 돌아오게.,슬라임을 5마리 퇴치하세요.,Main,,,,205,,O,,Coin:40,20,,,elder,elder,,,,,
+212,검은 이슬 표본,퇴치한 슬라임에서 젤리가 떨어질 거야. 표본 세 개를 가져와.,슬라임 젤리 3개를 모아 연구원에게 전하세요.,Main,,,,211,,O,Slime Jelly:3,Roasted Grass:5,21,,,researcher,researcher,,,,,
+213,구리 한 줌,이제 광석을 두드릴 때야. 벌판에서 구리 광석을 모아 오자고.,구리 광석 10개를 모아 대장장이에게 전하세요.,Main,,,,212,,O,Copper Ore:10,Wood:10,22,,,blacksmith,blacksmith,,,,,
+214,화로의 첫 쇳물,광석을 화로에 넣고 구리 주괴를 뽑아 보게.,구리 주괴 2개를 제련하세요.,Main,,,,213,,O,,Stone:10,23,,,blacksmith,blacksmith,,,,,
+215,구리 손맛,구리 곡괭이를 만들어 손맛을 보게. 연구소 연구가 필요할 수 있네.,구리 곡괭이를 제작하세요.,Main,,,,214,,O,,Coin:50,24,,,blacksmith,blacksmith,,,,,
+216,이정표 아래에서,벌판 이정표 곁의 멧돼지를 퇴치하고 문양을 살펴보게.,멧돼지를 3마리 퇴치하세요.,Main,,,,215,,O,,Wood:20|Stone:20,25,,,elder,elder,,,,,
+301,풀로 엮는 사냥 준비,트래퍼의 기초를 익혀 보세요.,풀로 엮는 사냥 준비을 마치고 멘토에게 보고하세요.,Sub,None,,107,,,,Grass:10,,301,,,vendor,vendor,,2,novice,,1
+302,멧돼지의 빈틈,트래퍼 전직 시험입니다. 보고하면 이 직업으로 확정되며 다른 직업 시험은 포기해야 합니다.,멧돼지의 빈틈을 마치고 멘토에게 보고하세요.,Sub,None,,301,,,,,Hand Axe:20,302,,,vendor,vendor,,4,novice,trapper,5
+303,트래퍼 실전 수련,첫 전투 기술을 배우고 실전에서 익혀 보세요. 보고하면 다음 스킬을 배울 수 있습니다.,기술을 익힌 뒤 사냥하고 멘토에게 보고하세요.,Sub,None,,302,,,,,,303,,,vendor,vendor,,4,trapper,,3
+311,모루를 달굴 땔감,배틀스미스의 기초를 익혀 보세요.,모루를 달굴 땔감을 마치고 멘토에게 보고하세요.,Sub,None,,107,,,,Wood:10,,311,,,blacksmith,blacksmith,,2,novice,,1
+312,단단함을 이해하는 시험,배틀스미스 전직 시험입니다. 보고하면 이 직업으로 확정되며 다른 직업 시험은 포기해야 합니다.,단단함을 이해하는 시험을 마치고 멘토에게 보고하세요.,Sub,None,,311,,,,,Copper Ore:5,312,,,blacksmith,blacksmith,,4,novice,battle_smith,5
+313,배틀스미스 실전 수련,첫 전투 기술을 배우고 실전에서 익혀 보세요. 보고하면 다음 스킬을 배울 수 있습니다.,기술을 익힌 뒤 사냥하고 멘토에게 보고하세요.,Sub,None,,312,,,,,,313,,,blacksmith,blacksmith,,4,battle_smith,,3
+321,촉매가 될 표본,알케미스트의 기초를 익혀 보세요.,촉매가 될 표본을 마치고 멘토에게 보고하세요.,Sub,None,,107,,,,Slime Jelly:3,,321,,,researcher,researcher,,2,novice,,1
+322,움직이는 표본의 비밀,알케미스트 전직 시험입니다. 보고하면 이 직업으로 확정되며 다른 직업 시험은 포기해야 합니다.,움직이는 표본의 비밀을 마치고 멘토에게 보고하세요.,Sub,None,,321,,,,,Slime Jelly:3,322,,,researcher,researcher,,4,novice,alchemist,5
+323,알케미스트 실전 수련,첫 전투 기술을 배우고 실전에서 익혀 보세요. 보고하면 다음 스킬을 배울 수 있습니다.,기술을 익힌 뒤 사냥하고 멘토에게 보고하세요.,Sub,None,,322,,,,,,323,,,researcher,researcher,,4,alchemist,,3
+331,헛간의 겨울 준비,와일드키퍼의 기초를 익혀 보세요.,헛간의 겨울 준비을 마치고 멘토에게 보고하세요.,Sub,None,,107,,,,Grass:10,,331,,,barnkeeper,barnkeeper,,2,novice,,1
+332,사나워진 숲의 친구,와일드키퍼 전직 시험입니다. 보고하면 이 직업으로 확정되며 다른 직업 시험은 포기해야 합니다.,사나워진 숲의 친구을 마치고 멘토에게 보고하세요.,Sub,None,,331,,,,,Chicken Ticket:1|Carrot Seed:5,332,,,barnkeeper,barnkeeper,,4,novice,wild_keeper,5
+333,와일드키퍼 실전 수련,첫 전투 기술을 배우고 실전에서 익혀 보세요. 보고하면 다음 스킬을 배울 수 있습니다.,기술을 익힌 뒤 사냥하고 멘토에게 보고하세요.,Sub,None,,332,,,,,,333,,,barnkeeper,barnkeeper,,4,wild_keeper,,3

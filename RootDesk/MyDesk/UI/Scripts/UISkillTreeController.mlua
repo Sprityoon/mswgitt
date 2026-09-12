@@ -19,6 +19,16 @@ script UISkillTreeController extends Component
 
 	property integer MaxRows = 3
 
+	-- 목록형 UI 풀 크기 (.ui 의 Row_* / Sec_* 개수와 일치해야 한다)
+	property integer RowPoolSize = 24
+
+	property integer SecPoolSize = 5
+
+	-- 목록 배치 수치 (.ui 저작값과 일치)
+	property number RowPitch = 50.0
+
+	property number SecPitch = 38.0
+
 	property integer MaxCols = 3
 
 	property any closeHandler = nil
@@ -29,10 +39,21 @@ script UISkillTreeController extends Component
 	property table nodeHoverHandlers = {}
 	property table equipHandlers = {}
 
-	-- "row_col" -> skillId (Refresh 시 CSV 기준으로 재구성)
+	-- 행 슬롯 인덱스("1".."24") -> skillId (Refresh 시 CSV 기준으로 재구성)
 	property table nodeSkillMap = {}
 
 	property string selectedSkillId = ""
+	property string selectedJobId = ""
+
+	-- 선택된 계열 탭. "" 이면 Refresh 때 첫 계열로 맞춘다.
+	property string selectedCat = ""
+
+	-- 현재 직업 탭에 존재하는 계열 키 목록 (탭 버튼 라벨의 원본)
+	property table catList = {}
+
+	-- 목록 칸(548px)에 실제로 보이는 행 수. 마스크를 못 쓰므로(규칙 49)
+	-- 넘치는 행은 그리지 않고 잘라낸다.
+	property integer VisibleRowCount = 10
 
 	-- 호버 미리보기 중이면 선택 대신 이 skillId를 패널에 표시
 	property string hoverSkillId = ""
@@ -50,6 +71,8 @@ script UISkillTreeController extends Component
 		end
 
 		self:SetupNodeEvents()
+		self:SetupJobTabs()
+		self:SetupCatTabs()
 		self:SetupEquipButtons()
 		self:SetupLevelUpButton()
 		self:RefreshDetailPanel("")
@@ -177,21 +200,20 @@ script UISkillTreeController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void SetupNodeEvents()
-		for r = 1, self.MaxRows do
-			for c = 1, self.MaxCols do
-				local node = self.Entity:GetChildByName("Node_" .. r .. "_" .. c, true)
-				if isvalid(node) then
-					local key = r .. "_" .. c
-					local clickHandler = node:ConnectEvent(ButtonClickEvent, function()
-						self:OnNodeClicked(key)
-					end)
-					self.nodeHandlers[node] = clickHandler
-					-- T50 PC 부가: 호버 시 패널 미리보기, 이탈 시 선택 노드로 복귀
-					local hoverHandler = node:ConnectEvent(ButtonStateChangeEvent, function(ev)
-						self:OnNodeHoverState(key, ev)
-					end)
-					self.nodeHoverHandlers[node] = hoverHandler
-				end
+		-- 목록형: Row_1..RowPoolSize 버튼에 클릭/호버를 건다. 어떤 스킬이 실리는지는
+		-- Refresh 가 rowSkillMap 으로 매 프레임 다시 정한다(행은 재사용되는 슬롯일 뿐).
+		for i = 1, self.RowPoolSize do
+			local row = self.Entity:GetChildByName("Row_" .. i, true)
+			if isvalid(row) then
+				local key = tostring(i)
+				local clickHandler = row:ConnectEvent(ButtonClickEvent, function()
+					self:OnNodeClicked(key)
+				end)
+				self.nodeHandlers[row] = clickHandler
+				local hoverHandler = row:ConnectEvent(ButtonStateChangeEvent, function(ev)
+					self:OnNodeHoverState(key, ev)
+				end)
+				self.nodeHoverHandlers[row] = hoverHandler
 			end
 		end
 	end
@@ -309,6 +331,7 @@ script UISkillTreeController extends Component
 			return result
 		end
 
+		if not controller:IsSkillJobAllowed(row) then result.reason = "해당 직업 전직 필요" return result end
 		local maxLevel = tonumber(row:GetItem("MaxLevel")) or 1
 		local spCost = tonumber(row:GetItem("SPCost")) or 1
 		local parentId = row:GetItem("ParentSkillId")
@@ -407,9 +430,14 @@ script UISkillTreeController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void SetTextSafe(Entity ent, string text, boolean show)
+		-- 이 패널은 레거시 TextComponent 와 TextGUIRendererComponent 가 섞여 있다.
+		-- (DName/DTypeLv 는 렌더 불량으로 재생성하면서 GUI 렌더러가 됐다.)
+		-- 둘 다 지원해야 조용히 글자가 안 바뀌는 사고를 피한다 — 규칙 24 계열.
 		if not isvalid(ent) then return end
 		if isvalid(ent.TextComponent) then
 			ent.TextComponent.Text = text or ""
+		elseif isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.Text = text or ""
 		end
 		ent.Enable = show
 	end
@@ -424,6 +452,7 @@ script UISkillTreeController extends Component
 			self:SetTextSafe(self._T.dName, "노드를 선택하세요", true)
 			self:SetTextSafe(self._T.dTypeLv, "", false)
 			self:SetTextSafe(self._T.dDesc, "", false)
+			self:SetTextSafe(self._T.dUnlock, "", false)
 			self:SetTextSafe(self._T.dParent, "", false)
 			self:SetTextSafe(self._T.dGate, "", false)
 			self:SetTextSafe(self._T.dCost, "", false)
@@ -467,7 +496,7 @@ script UISkillTreeController extends Component
 		end
 
 		self:SetTextSafe(self._T.dName, name, true)
-		local kindLabel = self:TypeDisplayLabel(row:GetItem("Type") or "")
+		local kindLabel = self:TypeDisplayLabel(row:GetItem("Type"))
 		if pc ~= nil then
 			pcall(function() kindLabel = pc:GetSkillKindLabel(row) end)
 		end
@@ -559,6 +588,9 @@ script UISkillTreeController extends Component
 		elseif spCost <= 0 then
 			costLine = "레벨업"
 		end
+		if pc ~= nil and row:GetItem("Type") ~= "Passive" then
+			costLine = costLine .. " · MP " .. pc:SkillNumber(row, "ManaCost", 0) .. " · 기력 " .. (tonumber(row:GetItem("StaminaCost")) or 0)
+		end
 		self:SetTextSafe(self._T.dCost, costLine, true)
 	end
 
@@ -633,6 +665,7 @@ script UISkillTreeController extends Component
 	method boolean IsUnlockGateOpenClient(any row, any pc)
 		-- UnlockAchievementId OR UnlockOwnedItem (둘 다 있으면 OR). 게이트 없으면 true.
 		if row == nil then return true end
+		if pc == nil or not pc:IsSkillJobAllowed(row) or not pc:IsSkillQuestAllowed(row) then return false end
 		local achId = tonumber(row:GetItem("UnlockAchievementId"))
 		local hasAch = achId ~= nil and achId > 0
 		local ok, raw = pcall(function() return row:GetItem("UnlockOwnedItem") end)
@@ -655,6 +688,13 @@ script UISkillTreeController extends Component
 	method string UnlockGateReasonClient(any row, any pc)
 		-- 해금 게이트 미충족 시 상세 패널/버튼 사유.
 		if row == nil then return "해금 목표를 먼저 달성해야 합니다." end
+		if pc ~= nil then
+			local qid = pc:SkillNumber(row, "UnlockQuestId", 0)
+			if qid > 0 then
+				local q = _QuestDataSetLogic:GetData(qid)
+				return "멘토 보고: " .. (q ~= nil and q.Name or tostring(qid))
+			end
+		end
 		local achId = tonumber(row:GetItem("UnlockAchievementId"))
 		if achId ~= nil and achId > 0 then
 			-- 진행률만 보여주면 "무엇을" 해야 하는지 알 수 없다. 업적 이름을 같이 적는다.
@@ -715,6 +755,13 @@ script UISkillTreeController extends Component
 	method string UnlockGoalLine(any row, any pc)
 		-- 상세 패널의 "해금" 줄. 게이트가 없으면 빈 문자열(줄 숨김).
 		if row == nil then return "" end
+		if pc ~= nil then
+			local qid = pc:SkillNumber(row, "UnlockQuestId", 0)
+			if qid > 0 then
+				local q = _QuestDataSetLogic:GetData(qid)
+				return "멘토 보고: " .. (q ~= nil and q.Name or tostring(qid))
+			end
+		end
 		local achId = tonumber(row:GetItem("UnlockAchievementId"))
 		if achId ~= nil and achId > 0 then
 			local goal = self:AchievementGoalText(achId)
@@ -872,53 +919,260 @@ script UISkillTreeController extends Component
 		if pc == nil then return end
 		---@type PlayerController
 		local controller = pc
+		self:RefreshJobTabs(controller)
 
 		if isvalid(self.spText) and isvalid(self.spText.TextComponent) then
-			self.spText.TextComponent.Text = "SP " .. controller.SP .. "  |  Lv " .. controller.Level
+			self.spText.TextComponent.Text = controller:GetJobName(controller.JobId) .. " · Lv " .. controller.Level .. " · SP " .. controller.SP .. " · MP " .. math.floor(controller.Mana) .. "/" .. controller:GetMaxMana()
 		end
 
-		-- 모든 노드 슬롯을 일단 숨김 — CSV에 좌표가 있는 스킬만 다시 켠다
+		self:RefreshSkillList(controller)
+		self:RefreshCatTabs()
+		self:RefreshEquipDetail()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshSkillList(any pc)
+		-- 계열은 상단 탭으로 갈라지고, 선택된 계열 안에서만 선행 사슬을 따라
+		-- 세로로 늘어놓는다. 들여쓰기 + └ 로 "무엇이 무엇의 강화인지"를 표현한다
+		-- (skill-tree-plan §8 의 트리 의도를 목록 형태로 유지).
+		---@type PlayerController
+		local controller = pc
 		self.nodeSkillMap = {}
-		for r = 1, self.MaxRows do
-			for c = 1, self.MaxCols do
-				local node = self.Entity:GetChildByName("Node_" .. r .. "_" .. c, true)
-				if isvalid(node) then
-					node.Enable = false
-				end
-			end
-		end
-		-- T58: 링크도 기본 숨김
-		for r = 2, self.MaxRows do
-			for c = 1, self.MaxCols do
-				local link = self.Entity:GetChildByName("Link_" .. r .. "_" .. c, true)
-				if isvalid(link) then
-					link.Enable = false
-				end
-			end
-		end
 
 		local ds = _DataService:GetTable("SkillDataSet")
 		if ds == nil then return end
 
+		-- 1) 현재 탭에 속한 스킬을 CSV 순서대로 모은다
+		local entries = {}
+		local byId = {}
 		local rowCount = ds:GetRowCount()
 		for i = 1, rowCount do
 			local skillId = ds:GetCell(i, "SkillId")
-			local treeRow = tonumber(ds:GetCell(i, "TreeRow")) or 0
-			local treeCol = tonumber(ds:GetCell(i, "TreeCol")) or 0
-
-			if skillId ~= nil and skillId ~= "" and treeRow >= 1 and treeRow <= self.MaxRows
-				and treeCol >= 1 and treeCol <= self.MaxCols then
-				local node = self.Entity:GetChildByName("Node_" .. treeRow .. "_" .. treeCol, true)
-				if isvalid(node) then
-					node.Enable = true
-					self.nodeSkillMap[treeRow .. "_" .. treeCol] = skillId
-					self:RefreshNode(node, ds, i, skillId, controller)
+			if skillId ~= nil and skillId ~= "" then
+				local row = ds:FindRow("SkillId", skillId)
+				if controller:SkillText(row, "JobId") == self.selectedJobId then
+					local e = {
+						id = skillId,
+						rowIndex = i,
+						parent = ds:GetCell(i, "ParentSkillId") or "",
+						cat = self:SkillCategoryOf(ds, i),
+						children = {},
+					}
+					entries[#entries + 1] = e
+					byId[skillId] = e
 				end
 			end
 		end
 
-		self:RefreshLinks(ds, controller)
-		self:RefreshEquipDetail()
+		-- 2) 부모-자식 연결 (같은 탭 안에서만)
+		local roots = {}
+		for _, e in ipairs(entries) do
+			local p = byId[e.parent]
+			if e.parent ~= "" and p ~= nil then
+				p.children[#p.children + 1] = e
+			else
+				roots[#roots + 1] = e
+			end
+		end
+
+		-- 3) 계열 목록을 정해진 순서로 만든다 (탭 버튼의 원본)
+		local order = { "combat", "mobility", "support", "passive", "gather" }
+		local catRoots = {}
+		local seen = {}
+		for _, e in ipairs(roots) do
+			if catRoots[e.cat] == nil then catRoots[e.cat] = {} end
+			table.insert(catRoots[e.cat], e)
+			seen[e.cat] = true
+		end
+		self.catList = {}
+		for _, cat in ipairs(order) do
+			if seen[cat] then table.insert(self.catList, cat) end
+		end
+		-- order 에 없는 계열(향후 Category 열로 추가될 값)도 뒤에 붙인다
+		for _, e in ipairs(roots) do
+			local known = false
+			for _, c in ipairs(self.catList) do
+				if c == e.cat then known = true end
+			end
+			if not known then table.insert(self.catList, e.cat) end
+		end
+
+		-- 4) 선택 계열 보정 — 탭을 바꿔 사라진 계열이면 첫 계열로 되돌린다
+		local valid = false
+		for _, c in ipairs(self.catList) do
+			if c == self.selectedCat then valid = true end
+		end
+		if not valid then
+			self.selectedCat = #self.catList > 0 and self.catList[1] or ""
+		end
+
+		-- 5) 선택된 계열만 배치한다. 계열이 탭으로 갈렸으니 섹션 머리글은 쓰지 않는다.
+		self._T.listRowIdx = 0
+		self._T.listY = 0.0
+		local picked = catRoots[self.selectedCat]
+		if picked ~= nil then
+			for _, root in ipairs(picked) do
+				self:EmitSkillRow(root, 0, ds, controller)
+			end
+		end
+
+		-- 6) 남는 슬롯은 숨긴다
+		for i = 1, self.SecPoolSize do
+			local sec = self.Entity:GetChildByName("Sec_" .. i, true)
+			if isvalid(sec) then sec.Enable = false end
+		end
+		for i = self._T.listRowIdx + 1, self.RowPoolSize do
+			local row = self.Entity:GetChildByName("Row_" .. i, true)
+			if isvalid(row) then row.Enable = false end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void EmitSkillRow(any entry, integer depth, any ds, any pc)
+		-- 한 스킬과 그 자식들을 깊이 우선으로 슬롯에 배치한다.
+		-- 커서(_T.listRowIdx / _T.listY)를 전진시킨다 — 다중 반환 금지(규칙 23).
+		if entry == nil then return end
+		local cap = self.RowPoolSize
+		if self.VisibleRowCount < cap then cap = self.VisibleRowCount end
+		if self._T.listRowIdx >= cap then return end
+		self._T.listRowIdx = self._T.listRowIdx + 1
+		local idx = self._T.listRowIdx
+		local row = self.Entity:GetChildByName("Row_" .. idx, true)
+		if isvalid(row) then
+			row.Enable = true
+			self.nodeSkillMap[tostring(idx)] = entry.id
+			local tf = row.UITransformComponent
+			if isvalid(tf) then tf.anchoredPosition = Vector2(0, -self._T.listY) end
+			self:RefreshRow(row, ds, entry.rowIndex, entry.id, pc, depth)
+		end
+		self._T.listY = self._T.listY + self.RowPitch
+		for _, child in ipairs(entry.children) do
+			self:EmitSkillRow(child, depth + 1, ds, pc)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean HasCategoryColumn(any ds)
+		-- 없는 열을 GetCell 로 찔러보면 pcall 로 감싸도 LEA-3011 이 로그에 남는다.
+		-- UserDataSet.Columns 로 먼저 존재를 확인한다.
+		if self._T.hasCatCol ~= nil then return self._T.hasCatCol end
+		local found = false
+		local cols = ds.Columns
+		if cols ~= nil then found = cols:Contains("Category") end
+		self._T.hasCatCol = found
+		return found
+	end
+
+	@ExecSpace("ClientOnly")
+	method string SkillCategoryOf(any ds, integer rowIndex)
+		-- CSV 에 Category 열이 생기면 그걸 우선 쓰고, 없으면 Type 으로 계열을 유추한다.
+		if self:HasCategoryColumn(ds) then
+			local v = ds:GetCell(rowIndex, "Category")
+			if v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		end
+		local t = ds:GetCell(rowIndex, "Type")
+		local ty = (t ~= nil) and tostring(t) or ""
+		if ty == "Passive" then return "passive" end
+		if ty == "Dash" then return "mobility" end
+		if ty == "Guard" or ty == "HealAura" then return "support" end
+		return "combat"
+	end
+
+	method string CategoryLabel(string cat)
+		-- 계열 키 -> 화면 표시명 (design-policy §6: 키는 영문, 표시는 한글)
+		if cat == "combat" then return "공격" end
+		if cat == "mobility" then return "이동" end
+		if cat == "support" then return "보조" end
+		if cat == "passive" then return "특성" end
+		if cat == "gather" then return "채집" end
+		return cat
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetChildText(Entity parent, string childName, string text)
+		if not isvalid(parent) then return end
+		local c = parent:GetChildByName(childName, true)
+		if not isvalid(c) then return end
+		self:SetTextSafe(c, text, true)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshRow(Entity row, any ds, integer rowIndex, string skillId, any pc, integer depth)
+		-- 한 행의 아이콘 / 이름(들여쓰기) / 상태 / 레벨을 채우고 배경색으로 상태를 구분한다.
+		---@type PlayerController
+		local controller = pc
+		local skillName = ds:GetCell(rowIndex, "Name") or skillId
+		local maxLevel = tonumber(ds:GetCell(rowIndex, "MaxLevel")) or 1
+		local parentId = ds:GetCell(rowIndex, "ParentSkillId")
+		local parentNeed = self:GetParentRequiredLevelFromDs(ds, rowIndex)
+		local reqLevel = tonumber(ds:GetCell(rowIndex, "RequiredLevel")) or 1
+		local iconRuid = ds:GetCell(rowIndex, "IconRUID") or ""
+		local level = controller:GetSkillLevel(skillId)
+		local selected = (self.selectedSkillId == skillId)
+
+		-- 계보 표현: 깊이만큼 들여쓰고, 자식이면 └ 를 앞에 붙인다
+		local indent = depth * 26
+		local label = skillName
+		if depth > 0 then label = "└ " .. skillName end
+
+		local icon = row:GetChildByName("Icon", true)
+		if isvalid(icon) then
+			local tf = icon.UITransformComponent
+			if isvalid(tf) then tf.anchoredPosition = Vector2(8 + indent, 0) end
+			local spr = icon.SpriteGUIRendererComponent
+			if isvalid(spr) then
+				if iconRuid ~= "" then
+					icon.Enable = true
+					spr.ImageRUID = iconRuid
+				else
+					icon.Enable = false
+				end
+			end
+		end
+		local nameEnt = row:GetChildByName("Name", true)
+		if isvalid(nameEnt) then
+			local tf = nameEnt.UITransformComponent
+			if isvalid(tf) then tf.anchoredPosition = Vector2(52 + indent, 0) end
+			self:SetTextSafe(nameEnt, label, true)
+		end
+		self:SetChildText(row, "Lv", tostring(level) .. "/" .. tostring(maxLevel))
+
+		-- 상태 판정 (서버 게이트의 클라 미러)
+		local parentOk = true
+		if parentId ~= nil and parentId ~= "" then
+			parentOk = (controller:GetSkillLevel(parentId) >= parentNeed)
+		end
+		local levelOk = (controller.Level >= reqLevel)
+		local dsRow = ds:FindRow("SkillId", skillId)
+		local achOk = self:IsUnlockGateOpenClient(dsRow, controller)
+
+		local state = ""
+		local bg = Color(0.20, 0.16, 0.11, 1.0)
+		if level >= maxLevel and level >= 1 then
+			state = "MAX"
+			bg = Color(0.22, 0.30, 0.24, 1.0)
+		elseif level >= 1 then
+			state = "강화 가능"
+			bg = Color(0.20, 0.26, 0.34, 1.0)
+		elseif parentOk and levelOk and achOk then
+			state = "해금 가능"
+			bg = Color(0.40, 0.30, 0.10, 1.0)
+		elseif not levelOk then
+			state = "Lv " .. tostring(reqLevel) .. " 필요"
+			bg = Color(0.16, 0.14, 0.13, 1.0)
+		elseif not parentOk then
+			state = "선행 필요"
+			bg = Color(0.16, 0.14, 0.13, 1.0)
+		else
+			state = "목표 미달"
+			bg = Color(0.16, 0.14, 0.13, 1.0)
+		end
+		if selected then
+			bg = Color(bg.r + 0.12, bg.g + 0.12, bg.b + 0.12, 1.0)
+		end
+		self:SetChildText(row, "State", state)
+		local rspr = row.SpriteGUIRendererComponent
+		if isvalid(rspr) then rspr.Color = bg end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -929,6 +1183,7 @@ script UISkillTreeController extends Component
 		for i = 1, rowCount do
 			local skillId = ds:GetCell(i, "SkillId") or ""
 			local parentId = ds:GetCell(i, "ParentSkillId") or ""
+			if pc:SkillText(ds:FindRow("SkillId", skillId), "JobId") ~= self.selectedJobId then continue end
 			if skillId == "" or parentId == "" then continue end
 
 			local treeRow = tonumber(ds:GetCell(i, "TreeRow")) or 0
@@ -941,7 +1196,7 @@ script UISkillTreeController extends Component
 			local parentRow = tonumber(pRow:GetItem("TreeRow")) or 0
 			local parentCol = tonumber(pRow:GetItem("TreeCol")) or 0
 			-- 위상 가드: 같은 열 + 바로 위 행
-			if parentCol ~= treeCol or parentRow ~= (treeRow - 1) then
+			if math.abs(parentCol - treeCol) > 1 or parentRow ~= (treeRow - 1) then
 				log_warning("[SKILL-TREE] link topology skip skill=" .. skillId
 					.. " child=(" .. tostring(treeRow) .. "," .. tostring(treeCol) .. ")"
 					.. " parent=(" .. tostring(parentRow) .. "," .. tostring(parentCol) .. ")")
@@ -957,6 +1212,17 @@ script UISkillTreeController extends Component
 				continue
 			end
 			link.Enable = true
+			local parentNode = self.Entity:GetChildByName("Node_" .. parentRow .. "_" .. parentCol, true)
+			local childNode = self.Entity:GetChildByName("Node_" .. treeRow .. "_" .. treeCol, true)
+			if isvalid(parentNode) and isvalid(childNode) then
+				local a = parentNode.UITransformComponent.anchoredPosition
+				local b = childNode.UITransformComponent.anchoredPosition
+				local dx = b.x - a.x
+				local dy = b.y - a.y
+				link.UITransformComponent.anchoredPosition = Vector2((a.x + b.x) * 0.5, (a.y + b.y) * 0.5)
+				link.UITransformComponent.RectSize = Vector2(8, math.max(8, math.sqrt(dx * dx + dy * dy) - 88))
+				link.UITransformComponent.ZRotation = -math.deg(math.atan(dx, dy))
+			end
 
 			local parentNeed = self:GetParentRequiredLevelFromDs(ds, i)
 			local parentLv = pc:GetSkillLevel(parentId)
@@ -1026,6 +1292,84 @@ script UISkillTreeController extends Component
 	@ExecSpace("ClientOnly")
 	method void OnCloseClicked(ButtonClickEvent event)
 		self:Close()
+	end
+
+
+	@ExecSpace("ClientOnly")
+	method void SetupCatTabs()
+		-- 계열 탭 6칸은 고정 슬롯이고, 라벨/표시 여부는 Refresh 때 catList 로 정해진다.
+		for i = 1, 6 do
+			local tab = self.Entity:GetChildByName("CatTab_" .. i, true)
+			if isvalid(tab) then
+				local slot = i
+				self.nodeHandlers[tab] = tab:ConnectEvent(ButtonClickEvent, function()
+					if self.catList[slot] == nil then return end
+					self.selectedCat = self.catList[slot]
+					self.selectedSkillId = ""
+					self.hoverSkillId = ""
+					self:Refresh()
+				end)
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshCatTabs()
+		for i = 1, 6 do
+			local tab = self.Entity:GetChildByName("CatTab_" .. i, true)
+			if isvalid(tab) then
+				local cat = self.catList[i]
+				if cat == nil then
+					tab.Enable = false
+				else
+					tab.Enable = true
+					self:SetTextSafe(tab, self:CategoryLabel(cat), true)
+					if isvalid(tab.SpriteGUIRendererComponent) then
+						if cat == self.selectedCat then
+							tab.SpriteGUIRendererComponent.Color = Color(0.65, 0.43, 0.15, 1)
+						else
+							tab.SpriteGUIRendererComponent.Color = Color(0.24, 0.18, 0.13, 1)
+						end
+					end
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetupJobTabs()
+		for _, name in ipairs({ "TabCommon", "TabJob" }) do
+			local tab = self.Entity:GetChildByName(name, true)
+			if isvalid(tab) then
+				local tabName = name
+				self.nodeHandlers[tab] = tab:ConnectEvent(ButtonClickEvent, function()
+					local pc = self:GetLocalPlayerController()
+					if pc == nil then return end
+					self.selectedJobId = tabName == "TabCommon" and "" or pc.JobId
+					self.selectedCat = ""
+					self.selectedSkillId = ""
+					self.hoverSkillId = ""
+					self:Refresh()
+				end)
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshJobTabs(any pc)
+		if self.selectedJobId ~= "" and self.selectedJobId ~= pc.JobId then self.selectedJobId = "" end
+		local common = self.Entity:GetChildByName("TabCommon", true)
+		local job = self.Entity:GetChildByName("TabJob", true)
+		self:SetTextSafe(common, "공용", true)
+		self:SetTextSafe(job, pc:GetJobName(pc.JobId), pc.JobId ~= "")
+		for _, tab in ipairs({ common, job }) do
+			if isvalid(tab) and isvalid(tab.SpriteGUIRendererComponent) then
+				local selected = (tab == common and self.selectedJobId == "") or (tab == job and self.selectedJobId ~= "")
+				tab.SpriteGUIRendererComponent.Color = selected and Color(0.65, 0.43, 0.15, 1) or Color(0.24, 0.18, 0.13, 1)
+			end
+		end
+		local hint = pc.JobId == "" and "마을 멘토의 기초 과제 → 전직 시험" or "실전 수련을 보고하면 다음 기술이 열립니다."
+		self:SetTextSafe(self.Entity:GetChildByName("JobHint", true), hint, true)
 	end
 
 end

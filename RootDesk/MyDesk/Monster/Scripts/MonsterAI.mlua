@@ -247,6 +247,15 @@ script MonsterAI extends Component
 			return
 		end
 		if self.DeathPlayed then self.DeathPlayed = false end
+		-- Boss phases remain uninterrupted; boss hard control is converted to a brief slow.
+		if isvalid(monster) and monster:GetSkillStatus("Stun") ~= nil and self.CurrentAIState ~= "LEAP" then
+			self:StopMovement()
+			self.AttackStrikePending = false
+			self.TelegraphOn = false
+			self:ClearTelegraphMarker()
+			self:EnterState("STAND")
+			return
+		end
 
 		-- Knockback window: drift away from the attacker, overriding AI movement.
 		if self.KnockTimer > 0 then
@@ -1324,7 +1333,10 @@ script MonsterAI extends Component
 		if r == nil or r <= 0 then r = 0.6 end
 		local queryR = self.ObstacleQueryRadius
 		if queryR == nil or queryR < r then queryR = 3.0 end
-		local step = mc.InputSpeed * delta
+		local monster = self:GetMonster()
+		local skillFactor = isvalid(monster) and monster:GetSkillMoveFactor() or 1
+		if skillFactor <= 0 then mc:Stop() return end
+		local step = mc.InputSpeed * delta * skillFactor
 		local moved = false
 		local outDx = 0
 		local outDy = 0
@@ -1370,7 +1382,7 @@ script MonsterAI extends Component
 			moved = true
 		end
 		if moved then
-			mc:MoveToDirection(Vector2(outDx, outDy), delta)
+			mc:MoveToDirection(Vector2(outDx, outDy), delta * skillFactor)
 			self:Face(outDx ~= 0 and outDx or dir.x)
 		else
 			mc:Stop()
@@ -1486,7 +1498,7 @@ script MonsterAI extends Component
 			self.ObstacleLastY = target.y
 		end
 		self:EnterState("RETURN")
-		log("[T99][OBS] stuck escape push=" .. tostring(ok) .. " entity=" .. tostring(self.Entity.Name))
+		-- log("[T99][OBS] stuck escape push=" .. tostring(ok) .. " entity=" .. tostring(self.Entity.Name))
 	end
 
 	@ExecSpace("ServerOnly")

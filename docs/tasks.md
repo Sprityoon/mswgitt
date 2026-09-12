@@ -19,9 +19,13 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `item_dataset.csv` · `MonsterAI.mlua` · `docs/pitfalls.md` | **[핫픽스/영지편집] CSV 설명문 쉼표로 인한 지형 편집 도구(삽/호미/물삽) TerrainEditAction 컬럼 밀림 복원('더 이상 편집할 수 없습니다' 결함 원천 해소) & 몬스터 장애물 탈출 디버그 로그 정리 & 함정 규칙 51 등록** (2026-09-11 ⚖️ 확정) — 아래 참조 |
+| `UIMainMenuController.mlua` · `PersistenceManager.mlua` · `UICharacterController.mlua` · `PlayerController.mlua` · `game_design.md` | **[시스템/UI] 게임 시작 슬롯 카드 낚시 레벨 표기 제거 & 직업명(`Lv.X · 모험가/직업명`) 표기 전환 및 생활 '취미(Hobby)' 이원화 성장 체계 기틀 구축** (2026-09-11 ⚖️ 확정) — 아래 참조 |
+| `StoryDialogDataSet.csv` · `QuestDataSet.csv` · `PlayerQuest.mlua` · `UserQuestData.mlua` | **[스토리/직업] 4대 직업 퀘스트 주민 4인 대화 76행 신설 & 메이플스토리식 '직업 고민 안내 및 전직 시험 수락 시 타 직업 자동 포기' 배타적 전직 파이프라인 구축 & 전직 완료 시 잔여 퀘스트 정리** (2026-09-11 ⚖️ 확정) — 아래 참조 |
 | `.agents/skills/msw-ui-system/SKILL.md` · `game-ui-ux-theory.md` · `ui-ux-design-framework.md` · `docs/design-policy.md` | **[UI/UX/설계] 게임 UI/UX 핵심 이론(Fagerholt 4분면, Celia Hodent 인지부하 제어, 정보 역피라미드, Contextual HUD, XAG 접근성) 체계화 및 메이플월드 개발 프레임워크 문서 구축 & 스킬 영구 레퍼런스 연동** (2026-09-10 ⚖️ 확정) — 아래 참조 |
 | `ui/PopupGroup.ui` · `UISkillTreeController.mlua` | **[UI/UX] 스킬 트리 창 개편 — 상세 패널을 인벤 툴팁과 같은 디자인 언어로 재설계 & 레벨 진행 게이지 신설 & 죽은 좌하단에 SP 카드 배치 & QWER/레벨업 터치 88px 확보 & TextGUIRenderer 마이그레이션** (2026-09-10 ⚖️ 확정) — 아래 참조 |
 | `ui/PopupGroup.ui` · `UIInventoryController.mlua` | **[UI/UX] 인벤토리 아이템 설명창 전면 개편 — 겹침·배경 돌출·터치 규격 미달 등 결함 6건 해소 & 아이콘/등급 바/스킬·설명 분리/상태 칩 5블록 재설계 & TextGUIRenderer 마이그레이션 & PopupGroup.ui 전체 write 를 막던 L027 ERROR 해소** (2026-09-10 ⚖️ 확정) — 아래 참조 |
+| `ui/PopupGroup.ui` · `scripts/check_ui_text_occlusion.cjs` · `docs/pitfalls.md` | **[UI/원인규명] 팝업 제목 5종이 자기 TopBar 에 가려 통째로 안 보이던 결함 규명·수정 & 형제 가림 전수 점검 도구 신설 & 함정 규칙 47 등록 (상세 패널 미렌더는 가설 12종 반증 후 미해결)** (2026-09-11) — 아래 참조 |
 | `Monster.mlua` · `TileDurabilityManager.mlua` · `Item_Coin` 모델 · `item_dataset.csv` · `ItemDropDataSet.csv` · `template_field.map` · `hunting-grounds-plan.md` | **[전투/드롭/기획] 일반 몬스터 ItemDropDataSet 미롤링 결함 해소(슬라임 젤리 영구 미드롭) & 코인 드롭 스프라이트·크기 직관화 & template_field 공용 랜드마크 9종 철거 & 사냥터 전면 재설계(전용 맵 4종 + 보스 5종) 기획 확정** (2026-09-10 ⚖️ 확정) — 아래 참조 |
 | `ResourceSpawner.mlua` · `BiomeResourceDataSet.csv` · `template_field.map` · `template_boss.map` | **[지형/UX] 사냥터·보스 템플릿 랜드마크 구체화 & 에디터 포탈 이동 좌표 자동 추적 & 포탈 반경 5칸 자원 생성 차단 & 바이옴 자원 밀도 하향** (2026-09-10) — 코드·MapBuilder 구조 검증 완료 / refresh 검증 보류 / 런타임 검증 보류(제작자 수행) |
 | `UISkillTreeController.mlua` · `PopupGroup.ui` | **[UI/스킬트리] 스킬 상세 패널에 해금 업적 조건 노출 — 어떤 업적을 달성해야 해금되는지 화면에 전혀 없어 조건 미충족 사유를 알 수 없던 문제 해소** (2026-09-10 ⚖️ 확정) — 아래 참조 |
@@ -308,6 +312,77 @@
 - **검증**: 형제 사각형 **겹침 전수 검사 0건**(제목·닫기가 상단 바 위에 얹히는 의도된 2건 제외). `ui_lint` ERROR 0. 신규 산출물 14종 refresh 후 **전량 실존**([규칙 11](./pitfalls.md#규칙-11-maker-저장은-워크스페이스-파일을-통째로-재직렬화한다) 대조), 구 `SPText`/`Hint` 미부활. 바인딩 6종 UUID·타입 일치, `GetChildByName` 대상 9개 이름 **유일성 확인**.
   - `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-10T18:49:27` — 직전 검증 빌드(18:38:08)보다 새롭고 이번 편집 이후 시각. **637건 전량 Info, Error 0 / Warning 0**. `mlua-diagnose` errors=0/warnings=0.
 - 🔴 **런타임 검증 보류(제작자 Play)**: ① 노드 선택 시 상세가 채워지고 게이지가 레벨만큼 차는지 ② 미해금 스킬에서 게이지가 비는지 ③ 선행/해금 줄 색이 충족 골드·미충족 레드로 뜨는지 ④ SP 카드 숫자가 실시간 갱신되는지 ⑤ QWER 장착·레벨업 버튼이 커진 뒤에도 정상 동작하는지 ⑥ 긴 스킬 설명이 136px 칸을 넘치는지(렌더러는 글자 높이를 모른다).
+
+### 2026-09-11 [UI/원인규명] 텍스트 미렌더 원인 추적 — 팝업 제목 5종 가림 결함 해소 & 상세 패널은 미해결
+
+- **배경**: 사용자 지시 — UI 재구성 전에 원인부터 규명할 것.
+- **방법**: 추측 대신 ① Play 스크린샷을 **픽셀 단위로 측정**(축소 스크린샷 육안 판정의 오독 제거) ② `.ui` 값 전수 대조 ③ 변수별 반증. 도중 Maker MCP 연결이 끊겨 이후는 오프라인 분석으로 진행했다.
+
+- ✅ **결함 A — 확정·수정 완료: 팝업 제목이 자기 `TopBar` 에 가려져 있었다.**
+  - 같은 부모의 UI 형제는 **뒤에 오는 것이 위에** 그려진다. `SkillTreePopup/Bg` 에서 `Title`(배열 260)이 `TopBar`(배열 262, `Color.a=1` 불투명)보다 먼저 그려져 **완전히 덮였다**. 사각형도 포함 관계다(`Title` y 372~332 ⊂ `TopBar` y 380~324).
+  - 픽셀 측정: 제목 영역 **밝은 픽셀 0개**. `.ui` 에는 `Text="스킬트리"`, `enable=true`, `FontColor.a=1` 로 멀쩡히 저장돼 있었다 — 데이터만 보면 정상이라 놓치기 쉽다.
+  - **전수 점검 5건**: `FurnacePopup` · `ChestPopup` · `PermissionPopup` · `SkillTreePopup` · `ShopPopup` 의 `Bg/Title`. 전부 `TopBar` 를 쓰는 **나무 카드 계열**(design-policy §5). 종이창 계열(인벤 등)은 `TopBar` 가 없어 무사했다.
+  - **조치**: 대상 5종을 `remove()` 후 같은 경로로 재생성해 **부모 자식 배열의 끝**으로 옮겼다(`displayOrder` 만 올리는 건 엔진이 배열 순서를 쓸 경우 무효라 배열까지 고쳤다). 재생성 전 5개 UUID 가 `.mlua` 에서 참조되지 않음을 grep 으로 확인했다(컨트롤러는 이름 해석만 사용).
+  - **점검 도구 신설**: [`scripts/check_ui_text_occlusion.cjs`](../scripts/check_ui_text_occlusion.cjs) — 모든 텍스트 엔티티에 대해 "뒤에 그려지는 불투명 스프라이트 형제와 80% 이상 겹치는가"를 전수 판정. 수정 후 **가려진 텍스트 0건**.
+  - 함정 사전 [규칙 47](./pitfalls.md#47-형제-중-나중에-그려지는-불투명-스프라이트가-앞-형제-텍스트를-덮는다--팝업-제목-5종이-이렇게-사라져-있었다) 신설.
+
+- 🔴 **결함 B — 미해결: `SkillDetailPanel` 하위 텍스트 7종이 안 나온다.**
+  - HEAD(=개편 전)에서도 동일하게 재현된다. **내 개편이 만든 문제가 아니다.**
+  - 픽셀 측정으로 확정: 패널 영역에서 렌더되는 것은 `HeaderBar` 골드 1px 라인뿐이고, `DName`("노드를 선택하세요") 위치에 **글자 픽셀 0개**. 패널의 스프라이트는 그려지는데 **텍스트만** 안 그려진다.
+  - **반증한 가설 12종** (재조사 시 반복하지 말 것):
+
+    | # | 가설 | 반증 근거 |
+    |---|---|---|
+    | 1 | `TextGUIRendererComponent` 가 안 그려짐 | 인벤 제목 `가방`(GUI, fs32)은 정상 렌더 |
+    | 2 | 프리팹 `uitextguirenderer` 문제 | 양쪽 진영에 모두 존재 |
+    | 3 | 레거시로 바꾸면 해결 | 전환해도 공란 |
+    | 4 | `uiempty` 부모 하위라서 | `InventoryPopup`(uiempty) 하위 텍스트는 정상 |
+    | 5 | 부모 체인에 GUI 렌더러가 없어서 | `Tooltip(uiempty) < InventoryPopup(uiempty)` 도 정상 |
+    | 6 | `Bold` | 해제해도 공란 |
+    | 7 | `FontSize` 가 큼 | fs48 레거시 텍스트도 정상 렌더 |
+    | 8 | 정렬(`Alignment`) | align 3/4 가 양쪽에 모두 존재 |
+    | 9 | 컴포넌트/엔티티 `Enable` | 전부 `true` |
+    | 10 | `FontColor` 알파 0 | 전부 `a=1` |
+    | 11 | `ActivePlatform` 누락 | 전부 `255` |
+    | 12 | 이름 중복으로 엉뚱한 엔티티에 기록 | 팝업 내 전부 유일 |
+
+  - **런타임 계측 결과**(연결이 살아 있던 동안): 대입도 되읽기도 성공, `Enable=true`, **Error 0**.
+    `[SKILLUI-DIAG2] DName legacy=OK want='노드를 선택하세요' read='노드를 선택하세요' show=true`
+  - **다음 출발점**: 통제 실험 스크립트를 준비해 뒀다(`Bg` 직속 / `SkillDetailPanel` 하위 / `EquipBar` 하위에 동일 프로브 텍스트를 심어 한 번의 Play 로 가름). MCP 복구 후 실행할 것.
+
+- **검증**: `ui_lint` ERROR 0(경고 98건은 기존 잔여분). `scripts/check_ui_text_occlusion.cjs` **0건**.
+  - ⚠️ **refresh 검증 보류** — 작업 도중 Maker MCP 연결이 끊겨 `maker_refresh_workspace` / `maker_logs` 를 돌리지 못했다. **Error=0 을 주장하지 않는다.**
+- 🔴 **런타임 검증 보류(제작자 Play)**: ① 화로·상자·권한·스킬트리·상점 5개 팝업의 제목이 실제로 보이는지 ② 제목 위치·색이 기존 의도와 같은지.
+
+
+#### 후속 (2026-09-11) — "안 그려진다"는 판정 정정 & 가독성 교정
+
+- 🔴 **이전 판정 정정**: "상세 패널 텍스트가 렌더되지 않는다"는 **틀렸다.** 사용자 보고(호버 시 설명 정상 표시) + Play 재확인 결과, 설명·상태·비용은 모두 정상 렌더된다. 앞선 판정은 **축소 스크린샷(1920→901)** 을 광도 임계값 100으로 훑은 탓이다. 작은 글자는 그 임계 아래라 "0픽셀"로 잡혔다. 임계값을 60으로 낮추자 전부 검출됐다.
+  - 교훈: Play 스크린샷은 약 0.47배로 축소된다. **fs14 → 화면 약 6.5px.** 육안·임계값 판정 모두 이 배율을 전제해야 한다.
+
+- **진짜 문제는 글자 크기였다.** 상세 패널이 fs 13~14 로, [ui-fundamentals §9.5](../.claude/skills/msw-ui-system/references/ui-fundamentals.md) 본문 권장 24~28 의 **절반**이다. 같은 문서는 18~22 조차 "모바일에서 거의 읽기 어려움, 사용 자제" 구간으로 본다.
+  - 대비는 문제가 아니었다(실측: DName 14.3:1, DDesc 9.0:1 — WCAG 기준 충족). `DUnlock`(4.12) / `DGate`(4.44)만 본문 기준 4.5 에 근소 미달.
+- **적용**: `DName` 18→24 · `DTypeLv` 14→20 · `DDesc` 14→20 · `DParent`/`DUnlock`/`DGate`/`DCost` 13~14→18 · `SPText` 18→24.
+  - **Play 검증 완료**: 스킬 설명이 또렷하게 읽힌다. 상단 `SP 69 | Lv 12` 도 확대 반영.
+  - 제목 가림 수정([규칙 47](./pitfalls.md#47-형제-중-나중에-그려지는-불투명-스프라이트가-앞-형제-텍스트를-덮는다--팝업-제목-5종이-이렇게-사라져-있었다))도 **Play 검증 완료** — 창 상단에 `스킬트리` 가 실제로 표시된다.
+
+- 🔴 **남은 미해결: `DName`(스킬 이름) · `DTypeLv`(종류·레벨) 2줄이 화면에 안 나온다.**
+  - `DName` 은 **HEAD 시점부터 이미 안 나왔다**(개편 전 스크린샷 픽셀 스캔으로 확인 — 밴드가 아이콘/DTypeLv/DDesc/DGate/DCost 만 잡힘). 신규 회귀가 아니다.
+  - `DTypeLv` 는 HEAD 에서는 나왔고, 폰트를 14→20 으로 올린 뒤 사라졌다.
+  - **추가로 반증한 가설**(앞선 12종에 이어):
+
+    | 가설 | 반증 |
+    |---|---|
+    | 배치 위치 문제 | 렌더 확인된 하단 구역으로 옮겨도 안 나옴 |
+    | 형제/배열 순서 | 배열 최후미·최상위 displayOrder 로 올려도 안 나옴 |
+    | 엔티티 손상 | 제거 후 재생성(제목 5종을 고친 처방)해도 안 나옴 |
+    | 자체 배경 스프라이트가 덮음 | 7종 전부 알파 0 으로 동일 |
+    | 칸 높이 대비 폰트가 큼 | 칸 높이를 30/28 로 올려도 안 나옴 |
+    | 값 미반영 | 런타임 로그상 대입·되읽기 성공, `Enable=true`, Error 0 |
+
+  - 현재 상태는 **HEAD 대비 `DTypeLv` 1줄 회귀**를 안고 있다. 되돌리려면 `DTypeLv` FontSize 를 14 로 낮추면 된다(그 값에서는 렌더 확인됨).
+- ⚠️ **동시 편집 주의**: 이 턴 도중 제작자가 `Monster.mlua` / `SkillDataSet.csv` / 퀘스트 CSV / `scripts/expand_skill_pipeline.cjs` 등을 병행 수정 중이었다. `ui/PopupGroup.ui` 도 값이 중간에 달라진 정황이 있어(패치 전후 rect 높이 불일치) **같은 파일을 동시에 만지지 않도록 조율 필요**.
+- **검증**: `maker_refresh_workspace` status ok. `maker_logs(kind="build")` `dateTime 2026-09-11T15:38:39` — 이번 refresh 시각과 일치. **679건 중 Info 678 / Warning 1 / Error 0**. (Warning 1건 `LWA-1109` 은 병행 작업분으로 보이며 내 변경과 무관.) `scripts/check_ui_text_occlusion.cjs` 가려진 텍스트 0건.
 
 ### 2026-09-10 [UI/조사] 스킬창·설명창 개편 Play 검증 → 텍스트 미렌더 벽에 막혀 전량 원복 (🔴 미해결)
 
@@ -2355,3 +2430,47 @@ F9 슬롯 (벌목 실루엣, 전투·네온 제외):
 - 함정 사전: [pitfalls.md](./pitfalls.md)
 - Phase 트래커(설계 관점 진행 현황): [../game_design.md](../game_design.md) §5
 - 구 T티켓 원문·보고서: [agents/](./agents/)
+
+### 스킬창 계열 탭 전환 + LEA-3011 제거 (2026-09-11)
+
+- `LEA-3011 NotFound: 'Category' 열` — 없는 열을 `GetCell` 로 찔러보면 **pcall 로 감싸도 로그에 남는다.**
+  `UserDataSet.Columns:Contains("Category")` 로 열 존재를 먼저 확인하도록 바꿨다 (`HasCategoryColumn`, `_T` 캐시).
+  `SkillDataSet.csv` 에 `Category` 열이 생기면 자동으로 그 값을 우선 쓴다. 없으면 `Type` 으로 유추한다
+  (`Passive`→특성, `Dash`→이동, `Guard`/`HealAura`→보조, 나머지→공격).
+- 계열을 **한 목록에 섞지 않고 상단 탭으로 분리**했다 (제작대 티어 탭과 같은 방식).
+  `Bg/CatTabs/CatTab_1..6` 고정 슬롯, 라벨·표시 여부는 `catList` 로 런타임 결정. 섹션 머리글(`Sec_*`)은 더 이상 쓰지 않는다.
+- 탭 한 줄(48px)만큼 `SkillList` / `SkillDetailPanel` 을 596 → 548 로 줄였다.
+  마스크를 못 쓰므로(규칙 49) `VisibleRowCount = 10` 으로 목록 칸 밖 행은 그리지 않는다.
+- 검증: `refresh ok` · build `2026-09-11T17:01:05` 699건 전량 Info (Error 0) · 가려진 텍스트 0 · DataRef 중첩 0.
+  **런타임 검증 보류(제작자 수행)**.
+
+### 스킬·직업·퀘스트 파이프라인 무결성 (2026-09-11)
+
+- 저작된 신규 컬럼 30종의 **소비 코드 전수 대조 — 구현 누락 없음**. 상세는
+  [docs/reports/skill-job-quest-implementation.md](reports/skill-job-quest-implementation.md).
+- 신규 검사기 `scripts/check_skill_quest_pipeline.cjs` — CSV 오타가 빌드를 통과한 채
+  조용히 죽는 유형을 잡는다. 허용 집합은 소비 코드에서 추출하므로 코드가 바뀌면 같이 따라간다.
+  **스킬·퀘스트 CSV 를 고칠 때마다 돌릴 것.**
+- 음성 대조 5/5 통과 · 현재 데이터 결함 0건.
+- **런타임 검증 보류(제작자 수행)**: 실제 전직 수행과 PAP/PAJ/MHP 계열 거동.
+
+### 4대 직업 퀘스트 주민 대화 신설 & 메이플식 배타적 전직 파이프라인 (2026-09-11 ⚖️ 확정)
+
+- **문제 배경**:
+  - `QuestDataSet.csv`에 직업 퀘스트 301~333번이 등록되었으나, `StoryDialogDataSet.csv`에 대사가 전혀 없어 수주 시 `【퀘스트명】 / 설명 / 이 부탁을 맡아 주겠나?` 라는 시스템 기본 fallback만 출력되는 어색함 발생.
+  - 또한 여러 직업 전직 시험을 동시에 수락하거나 전직 완료 후에도 타 직업 퀘스트가 남는 문제 해소 필요 (메이플스토리식 "직업 고민 안내 및 전직 시험 수락 시 타 직업 포기" 배타적 구조).
+- **조치 내역**:
+  1. **주민 4인 대화 76행 신설 (`StoryDialogDataSet.csv`)**:
+     - 트래퍼(노점상 마리, 301~303), 배틀스미스(대장장이 로체, 311~313), 알케미스트(연구원 엘렌, 321~323), 와일드키퍼(헛간지기 토리, 331~333) 전 구간(offer / progress / complete) 대사 구축.
+     - 전직 시험(302, 312, 322, 332) 수주 시 다른 주민의 직업 3종을 언급하며 충분히 고민하도록 안내하고, "내 시험을 시작하면 다른 직업 시험은 포기해야 해"라는 메이플풍 자연스러운 화법 적용.
+  2. **전직 시험 수락 시 타 직업 자동 포기 (`PlayerQuest.mlua`)**:
+     - `AcceptQuests`에서 302/312/322/332 중 하나를 수락하는 즉시 진행 중이던 다른 전직 시험 퀘스트를 `Abandon` 처리하여 동시 진행 차단.
+  3. **전직 확정 시 잔여 퀘스트 정리 (`UserQuestData.mlua`)**:
+     - `Complete`에서 `RewardJobId`가 주어지는 순간 타 직업의 미완료 전직 관련 퀘스트(301, 302, 311, 312, 321, 322, 331, 332 중 타 직업)를 일괄 `Abandon` 처리.
+  4. **기초 퀘스트 novice 제약 부여 (`QuestDataSet.csv`)**:
+     - 301, 311, 321, 331의 `RequiredJobId`를 `novice`로 지정하여 이미 전직한 유저는 타 직업 기초 퀘스트 수주 불가.
+- **검증**:
+  - `node scripts/check_skill_quest_pipeline.cjs` -> 결함 없음 통과.
+  - `maker_refresh_workspace` status ok & `maker_logs(kind="build")` 타임스탬프 일치, **Error 0건, Warning 0건**.
+  - **런타임 검증 보류(제작자 수행)**: 인게임 대화 연출 및 전직 수락 시 타 직업 포기 거동.
+

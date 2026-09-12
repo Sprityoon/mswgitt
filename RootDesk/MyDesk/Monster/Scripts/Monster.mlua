@@ -4,6 +4,9 @@ script Monster extends Component
 	-- HP uses `number` (double); the AI script reads IsDead to play the death clip.
 
 	@Sync property number MaxHp = 30
+	property number Defense = 6
+	property number RootThrowBonus = 0.25
+	property number BossControlScale = 0.25
 	@Sync @HideFromInspector property number Hp = 0
 	@Sync property boolean RespawnOn = false
 	@Sync @HideFromInspector property boolean IsDead = false
@@ -163,6 +166,15 @@ script Monster extends Component
 					local maxC = math.floor(tonumber(ds:GetCell(i, "MaxCount")) or minC)
 					if maxC < minC then maxC = minC end
 					local count = math.random(minC, maxC)
+					local okNatural, natural = pcall(function() return ds:GetCell(i, "NaturalLoot") end)
+					if okNatural and natural == "true" and isvalid(self.LastAttacker) then
+						local pc = self.LastAttacker:GetComponent("script.PlayerController")
+						if isvalid(pc) then
+							local chance = pc:GetPassiveBonus("LootChance")
+							if self:GetSkillStatus("Root") ~= nil then chance = chance * 2 end
+							if math.random() < math.min(1, chance) then count = count + 1 end
+						end
+					end
 					if itemId ~= "" and count > 0 then
 						_TileDurabilityManager:SpawnResourceDrop(map, Vector3(worldPos.x, worldPos.y, 0), itemId, count, count, 0)
 						log("[MONSTER] ItemDropDataSet drop id=" .. itemId .. " x" .. tostring(count) .. " from " .. sourceId)
@@ -176,6 +188,8 @@ script Monster extends Component
 	method void Respawn()
 		-- Restores visibility/HP and returns to IDLE (only used when RespawnOn = true).
 		self.IsDead = false
+		self._T.SkillStatuses = {}
+		self.LastAttacker = nil
 		self.Entity:SetVisible(true)
 		self.Entity:SetEnable(true)
 		self.Hp = self.MaxHp
@@ -224,6 +238,7 @@ script Monster extends Component
 				if isvalid(combatComp) then
 					---@type PlayerCombat
 					local combat = combatComp
+					self:ApplySkillHit(combat.PendingSkillId, event.AttackerEntity)
 					local fx = combat.PendingHitEffectRUID
 					if fx ~= nil and fx ~= "" then
 						local mpos = self.Entity.TransformComponent.WorldPosition
@@ -256,6 +271,65 @@ script Monster extends Component
 			local s = self.Entity.SpriteRendererComponent
 			if isvalid(s) then s.Color = Color(1, 1, 1, 1) end
 		end, 0.1)
+	end
+
+
+	method table GetSkillStatus(string key)
+		local status = (self._T.SkillStatuses or {})[key]
+		if status == nil or status.expires <= _UtilLogic.ElapsedSeconds then return nil end
+		return status
+	end
+
+	method number GetSkillMoveFactor()
+		if self:GetSkillStatus("Root") ~= nil then return 0 end
+		local acid = self:GetSkillStatus("Acid")
+		local slow = self:GetSkillStatus("Slow")
+		return math.max(0.1, 1 - math.max(acid ~= nil and acid.value or 0, slow ~= nil and slow.value or 0))
+	end
+
+	method integer ResolveSkillDamage(integer baseDamage, string skillId, Entity attacker)
+		local pc = attacker:GetComponent("script.PlayerController")
+		local damage = baseDamage
+		local shred = 0
+		local armor = self:GetSkillStatus("ArmorBreak")
+		local root = self:GetSkillStatus("Root")
+		if armor ~= nil then shred = armor.value * armor.stacks end
+		if root ~= nil then shred = math.max(shred, root.value) end
+		if isvalid(pc) then
+			local ds = _DataService:GetTable("SkillDataSet")
+			local row = ds ~= nil and ds:FindRow("SkillId", skillId) or nil
+			if row ~= nil then
+				local combo = self:GetSkillStatus(pc:SkillText(row, "ComboStatus"))
+				if combo ~= nil then damage = damage * (1 + combo.stacks * pc:SkillNumber(row, "ComboMultiplier", 0)) end
+				if root ~= nil and pc:SkillText(row, "DamageModel") == "Throw" then damage = damage * (1 + self.RootThrowBonus) end
+			end
+		end
+		return math.max(1, math.floor(damage - self.Defense * (1 - math.min(0.8, shred))))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplySkillHit(string skillId, Entity attacker)
+		local pc = attacker:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		pc:RefreshTemperedSkin()
+		local ds = _DataService:GetTable("SkillDataSet")
+		local row = ds ~= nil and ds:FindRow("SkillId", skillId) or nil
+		if row == nil then return end
+		if not self._T.SkillStatuses then self._T.SkillStatuses = {} end
+		if pc:SkillText(row, "ConsumeCombo") == "true" then self._T.SkillStatuses[pc:SkillText(row, "ComboStatus")] = nil end
+		local key = pc:SkillText(row, "Status")
+		if key == "" then return end
+		local duration = pc:SkillNumber(row, "StatusDuration", 0)
+		local value = pc:SkillNumber(row, "StatusValue", 0)
+		if self.IsBoss and (key == "Root" or key == "Stun") then
+			key = "Slow"
+			value = self.BossControlScale
+			duration = duration * self.BossControlScale
+		end
+		local old = self:GetSkillStatus(key)
+		local stacks = math.min(pc:SkillNumber(row, "StatusMaxStacks", 1), (old ~= nil and old.stacks or 0) + 1)
+		self._T.SkillStatuses[key] = { expires = _UtilLogic.ElapsedSeconds + duration, value = value, stacks = stacks }
+		log("[SKILL-STATUS] " .. self:GetMonsterId() .. " " .. key .. " stacks=" .. stacks)
 	end
 
 end

@@ -28,6 +28,8 @@ script Animal extends Component
 	property boolean ProducedForFeed = false
 
 	property string OwnerUserId = ""
+	@Sync property integer Bond = 0
+	@Sync property number CareBonus = 0
 
 	property number WanderRadius = 2.5
 
@@ -271,6 +273,7 @@ script Animal extends Component
 			if n ~= nil and n > 0 then interval = math.floor(n) end
 		end
 		local now = math.floor(os.time())
+		interval = math.max(1, math.floor(interval * (1 - self.CareBonus)))
 		if now - self.FedAtUnix < interval then return end
 
 		local map = self.Entity.CurrentMap
@@ -356,10 +359,13 @@ script Animal extends Component
 		end
 		if not inv:RemoveItem(feedItem, 1) then return end
 
+		local keeper = player:GetComponent("script.PlayerController")
+		self.CareBonus = isvalid(keeper) and math.min(0.3, keeper:GetPassiveBonus("AnimalCare")) or 0
+		self.Bond = math.min(100, self.Bond + 1 + math.floor(self.CareBonus * 10 + 0.5))
 		self.FedAtUnix = now
 		self.ProducedForFeed = false
 		self:MarkOwnerDirty()
-		self:Feedback(player, self.AnimalId .. "에게 " .. feedItem .. "을(를) 줬습니다.")
+		self:Feedback(player, self.AnimalId .. "에게 먹이를 줬습니다. 친밀도 " .. self.Bond .. "/100 · 생산 대기 -" .. math.floor(self.CareBonus * 100 + 0.5) .. "%")
 		log("[ANIMAL] feed " .. self.AnimalId .. " item=" .. feedItem .. " by=" .. userId)
 	end
 
@@ -397,6 +403,8 @@ script Animal extends Component
 		local pos = self.Entity.TransformComponent.WorldPosition
 		return {
 			animalId = self.AnimalId,
+			bond = self.Bond,
+			careBonus = self.CareBonus,
 			penX = self.PenCellX,
 			penY = self.PenCellY,
 			x = pos.x,

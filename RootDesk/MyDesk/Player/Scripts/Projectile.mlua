@@ -1,103 +1,92 @@
 @Component
 script Projectile extends Component
-
 	property Entity Owner = nil
 	property Vector2 Direction = Vector2(1, 0)
 	property integer Damage = 0
-	property number Speed = 6.0
-	property number LifeTime = 2.0
-	property number ElapsedTime = 0.0
-	-- T66: 명중 시 Monster.HandleHitEvent가 소비할 피격 이펙트
+	property number Speed = 6
+	property number LifeTime = 2
+	property number ElapsedTime = 0
 	property string HitEffectRUID = ""
-	-- 피격 이펙트 배율(SkillDataSet.HitEffectScale). 탄환이 시전 정보를 명중 시점까지 실어 나른다.
-	property number HitEffectScale = 1.0
+	property number HitEffectScale = 1
+	property string SkillId = ""
+	property number HitSize = 1.6
+	property number VisualSize = 2
+	property integer PierceCount = 1
+	property number SplashSize = 0
+	property number SplashMultiplier = 0
+	property boolean ImpactOnly = false
+	property boolean Grow = false
 
 	method void Initialize(Entity owner, Vector2 dir, integer dmg, number speed, string hitEffectRUID)
-		-- 탄환 초기화. 방향 0벡터는 오른쪽으로 보정한다.
-		-- ⚠ 시그니처를 늘리지 않는다. 스크립트 간 메서드 인자 수를 바꾸면 호출부/선언부 컴파일
-		--   순서에 따라 LEA-1102 가 난다. 추가 값은 HitEffectScale 처럼 프로퍼티로 주입한다.
 		self.Owner = owner
-
-		if dir:Magnitude() <= 0.0001 then
-			self.Direction = Vector2(1, 0)
-		else
-			self.Direction = dir:Normalize()
-		end
-
+		self.Direction = dir:Magnitude() > 0.0001 and dir:Normalize() or Vector2(1, 0)
 		self.Damage = dmg
 		self.Speed = speed
-		self.ElapsedTime = 0.0
-		self.HitEffectRUID = hitEffectRUID or ""
-		log("[PROJECTILE] Initialized at direction (" .. string.format("%.2f, %.2f", self.Direction.x, self.Direction.y) .. ") with dmg " .. dmg)
+		self.ElapsedTime = 0
+		self.HitEffectRUID = hitEffectRUID
+		self._T.HitTargets = {}
+		self._T.HitCount = 0
 	end
 
 	@ExecSpace("ServerOnly")
 	method void OnUpdate(number delta)
-		self.ElapsedTime = self.ElapsedTime + delta
-		if self.ElapsedTime >= self.LifeTime then
-			log("[PROJECTILE] Destroyed due to lifetime limit.")
-			self.Entity:Destroy()
-			return
-		end
-
-		-- Flying forward
+		if not isvalid(self.Owner) or self.Owner.CurrentMap ~= self.Entity.CurrentMap then self.Entity:Destroy() return end
+		local pc = self.Owner:GetComponent("script.PlayerController")
+		if not isvalid(pc) or pc.IsDead then self.Entity:Destroy() return end
 		local transform = self.Entity.TransformComponent
-		if not isvalid(transform) then return end
-		local pos = transform.WorldPosition
-		local nextPos = pos + Vector3(self.Direction.x * self.Speed * delta, self.Direction.y * self.Speed * delta, 0)
-		transform.WorldPosition = nextPos
-
-		-- Check collision with monsters (HitBox) via the map's collision simulator.
-		-- (_CollisionService has no OverlapBox; overlap queries go through GetSimulator():OverlapAll().)
-		local myPos2D = nextPos:ToVector2()
+		local body = self.Entity.KinematicbodyComponent
+		if not isvalid(transform) or not isvalid(body) then self.Entity:Destroy() return end
+		if self._T.HitTargets == nil then return end
+		local travel = math.max(0, math.min(delta, self.LifeTime - self.ElapsedTime))
+		self.ElapsedTime = self.ElapsedTime + delta
+		local grow = self.Grow and math.min(1, self.ElapsedTime / math.max(0.1, self.LifeTime * 0.5)) or 1
+		local size = self.Grow and (1 + (self.VisualSize - 1) * grow) or self.VisualSize
+		transform.Scale = Vector3(size, size, 1)
+		local hitSize = self.Grow and size or self.HitSize
+		local steps = math.max(1, math.ceil(travel * self.Speed / math.max(0.25, hitSize * 0.4)))
 		local sim = _CollisionService:GetSimulator(self.Entity)
-		if not sim then return end
-		local shape = BoxShape(myPos2D, Vector2(1.6, 1.6), 0)
-		local overlaps = sim:OverlapAll({ CollisionGroups.HitBox }, shape)
-
-		if overlaps and #overlaps > 0 then
-			for _, hitBox in ipairs(overlaps) do
+		if sim == nil then self.Entity:Destroy() return end
+		for step = 1, steps do
+			local pos = transform.WorldPosition
+			local nextPos = Vector2(pos.x + self.Direction.x * self.Speed * travel / steps, pos.y + self.Direction.y * self.Speed * travel / steps)
+			if pc:IsWallAt(nextPos) then self:FinishImpact() return end
+			body:SetWorldPosition(nextPos)
+			for _, hitBox in pairs(sim:OverlapAll({CollisionGroups.HitBox}, BoxShape(nextPos, Vector2(hitSize, hitSize), 0))) do
 				local target = hitBox.Entity
-				if isvalid(target) and target ~= self.Owner then
+				if isvalid(target) and not self._T.HitTargets[target.Id] then
 					local monster = target:GetComponent("script.Monster")
-					if isvalid(monster) then
-						-- Trigger Hit against the monster using Owner's PlayerCombat to leverage damage skin/reactions
-						self:TriggerAttackOnTarget(target)
-						
-						-- Destroy projectile on first hit
-						self.Entity:Destroy()
-						return
+					if isvalid(monster) and not monster.IsDead and monster.Hp > 0 then
+						self._T.HitTargets[target.Id] = true
+						if not self.ImpactOnly then self:TriggerAttackOnTarget(target) end
+						self._T.HitCount = self._T.HitCount + 1
+						if self._T.HitCount >= self.PierceCount then self:FinishImpact() return end
 					end
 				end
 			end
 		end
+		if self.ElapsedTime >= self.LifeTime then self:FinishImpact() end
 	end
 
 	@ExecSpace("ServerOnly")
 	method void TriggerAttackOnTarget(Entity target)
 		if not isvalid(self.Owner) then return end
-		local combatComp = self.Owner:GetComponent("script.PlayerCombat")
-		if not isvalid(combatComp) then return end
-		---@type PlayerCombat
-		local combat = combatComp
-
-		-- Store original PendingDamage and apply skill damage
-		local originalPending = combat.PendingDamage
-		combat.PendingDamage = self.Damage
-		combat.PendingHitEffectRUID = self.HitEffectRUID or ""
-		combat.PendingHitEffectScale = self.HitEffectScale
-
-		-- Attack shape directly centered on the monster's HitBox position
-		local targetPos = target.TransformComponent.WorldPosition
-		local shape = BoxShape(Vector2(targetPos.x, targetPos.y), Vector2(1.0, 1.0), 0)
-		
-		combat:AttackFast(shape, nil, CollisionGroups.HitBox)
-		
-		-- Restore original PendingDamage. Hit FX는 이 명중분만 — 이전 스킬 Pending을 되살리면 평타에 붙는다.
-		combat.PendingDamage = originalPending
-		combat.PendingHitEffectRUID = ""
-		combat.PendingHitEffectScale = 1.0
-		log("[PROJECTILE] Struck monster target " .. target.Name .. " dealing " .. self.Damage .. " damage.")
+		local combat = self.Owner:GetComponent("script.PlayerCombat")
+		if not isvalid(combat) then return end
+		combat:DealSkillHit(target, self.Damage, self.SkillId, self.HitEffectRUID, self.HitEffectScale)
 	end
 
+	@ExecSpace("ServerOnly")
+	method void FinishImpact()
+		if self._T.Finished then return end
+		self._T.Finished = true
+		if isvalid(self.Owner) and self.Owner.CurrentMap == self.Entity.CurrentMap and self.SplashSize > 0 then
+			local pc = self.Owner:GetComponent("script.PlayerController")
+			if isvalid(pc) and not pc.IsDead then
+				local pos = self.Entity.TransformComponent.WorldPosition
+				pc:DamageSkillArea(self.SkillId, pos, self.SplashSize, self.SplashMultiplier)
+				if self.HitEffectRUID ~= "" then pc:MulticastPlayEffectEx(self.HitEffectRUID, pos, false, self.SplashSize * 0.5) end
+			end
+		end
+		self.Entity:Destroy()
+	end
 end

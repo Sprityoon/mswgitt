@@ -10,7 +10,7 @@ script TestModeConfig extends Logic
 	-- =========================================================================
 
 	-- [스위치] 테스트 모드 활성화 여부
-	property boolean EnableTestMode = true
+	property boolean EnableTestMode = false
 
 	-- [목표 맵] 진입할 맵 식별자 (대소문자 무관)
 	--   - "town"           : 마을 광장 (기본 좌표 10, -2)

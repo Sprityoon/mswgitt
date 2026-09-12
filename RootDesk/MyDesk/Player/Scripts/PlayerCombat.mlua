@@ -4,6 +4,8 @@ script PlayerCombat extends AttackComponent
 	-- (mine/attack) flow: when a monster occupies the aimed cell, attack instead of mining.
 
 	property integer BaseDamage = 8
+	@HideFromInspector property string PendingSkillId = ""
+	@HideFromInspector property string PendingTargetId = ""
 	property number AttackBoxSize = 3.2
 	@HideFromInspector property integer PendingDamage = 8
 	-- T66: 스킬 피격 이펙트 RUID — AttackFast 직전 설정, HandleHitEvent에서 소비
@@ -34,6 +36,8 @@ script PlayerCombat extends AttackComponent
 			end
 		end
 		
+		self.PendingSkillId = ""
+		self.PendingTargetId = ""
 		self.PendingDamage = dmg
 		-- 도구 평타는 스킬 HitEffect를 쓰지 않는다. 투사체 스킬이 Pending을 비행 중 남겨 두면 Ctrl 평타에 붙는다.
 		self.PendingHitEffectRUID = ""
@@ -63,6 +67,8 @@ script PlayerCombat extends AttackComponent
 			end
 		end
 		
+		self.PendingSkillId = ""
+		self.PendingTargetId = ""
 		self.PendingDamage = dmg
 		self.PendingHitEffectRUID = ""
 		self.PendingHitEffectScale = 1.0
@@ -80,13 +86,44 @@ script PlayerCombat extends AttackComponent
 
 	method integer CalcDamage(Entity attacker, Entity defender, string attackInfo)
 		-- Damage dealt to the struck monster (PendingDamage = CharAtk + Attack, or skill core).
+		local monster = defender:GetComponent("script.Monster")
+		if isvalid(monster) then return monster:ResolveSkillDamage(self.PendingDamage, self.PendingSkillId, attacker) end
 		return self.PendingDamage
 	end
 
 	method boolean IsAttackTarget(Entity defender, string attackInfo)
-		-- Restrict victims to entities carrying script.Monster (never the player itself).
+		-- Exact target filtering prevents nearby monsters from receiving each pellet twice.
+		if not isvalid(defender) then return false end
+		if self.PendingTargetId ~= "" and defender.Id ~= self.PendingTargetId then return false end
+		local pc = self.Entity:GetComponent("script.PlayerController")
+		if isvalid(pc) and not pc:IsCombatSkillMap() then return false end
+		local monster = defender:GetComponent("script.Monster")
+		if isvalid(monster) and (monster.IsDead or monster.Hp <= 0) then return false end
 		if isvalid(defender:GetComponent("script.Monster")) == false then return false end
 		return __base:IsAttackTarget(defender, attackInfo)
+	end
+
+
+	@ExecSpace("ServerOnly")
+	method void DealSkillHit(Entity target, integer damage, string skillId, string hitRUID, number hitScale)
+		if not isvalid(target) then return end
+		local oldDamage = self.PendingDamage
+		local oldSkill = self.PendingSkillId
+		local oldTarget = self.PendingTargetId
+		local oldFx = self.PendingHitEffectRUID
+		local oldScale = self.PendingHitEffectScale
+		self.PendingDamage = damage
+		self.PendingSkillId = skillId
+		self.PendingTargetId = target.Id
+		self.PendingHitEffectRUID = hitRUID
+		self.PendingHitEffectScale = hitScale
+		local p = target.TransformComponent.WorldPosition
+		self:AttackFast(BoxShape(p:ToVector2(), Vector2(1, 1), 0), nil, CollisionGroups.HitBox)
+		self.PendingDamage = oldDamage
+		self.PendingSkillId = oldSkill
+		self.PendingTargetId = oldTarget
+		self.PendingHitEffectRUID = oldFx
+		self.PendingHitEffectScale = oldScale
 	end
 
 end
