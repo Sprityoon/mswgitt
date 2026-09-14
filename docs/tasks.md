@@ -19,6 +19,8 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `Raid/BossRaidLogic.mlua` · `BossContentsDataSet.csv` · `BossDifficultyDataSet.csv` · `Monster.mlua` · `PlayerController.mlua` · `PersistenceManager.mlua` · `ItemDropDataSet.csv` · `TestModeConfig.mlua` | **[레이드/전투] 보스 레이드 R-1 코어 구축 — `_DynamicMapService` 파티 전용 인스턴스 보스방 · 난이도 4단(EASY/NORMAL/HARD/EXTREME) 스탯·스킬빈도·보상 차등 · 주간 처치 제한 · F5 테스트 진입점** (2026-09-14 ⚖️ 확정, UI 창은 R-1 Stage B로 잔여) — 아래 참조 |
+| `QuestDataSet.csv` · `QuestConditionDataSet.csv` · `ItemDropDataSet.csv` · `item_dataset.csv` · `Monster.mlua` · `PlayerInventory.mlua` · `UICharacterController.mlua` | **[직업/퀘스트/드롭] 4대 전직 시험 공통 관문 신설 — 슬라임킹 처치·대형 슬라임 젤리 제출 일괄 요구 & 퀘스트 수락 시 최초 1회 확정 드롭(`GuaranteeQuestIds`) 체계 구축 & 직업 전용 무기 4종 지급 & 전직 레벨 게이트 상향(기초 2→4 / 시험·수련 4→6)** (2026-09-14 ⚖️ 확정) — 아래 참조 |
 | `item_dataset.csv` · `MonsterAI.mlua` · `docs/pitfalls.md` | **[핫픽스/영지편집] CSV 설명문 쉼표로 인한 지형 편집 도구(삽/호미/물삽) TerrainEditAction 컬럼 밀림 복원('더 이상 편집할 수 없습니다' 결함 원천 해소) & 몬스터 장애물 탈출 디버그 로그 정리 & 함정 규칙 51 등록** (2026-09-11 ⚖️ 확정) — 아래 참조 |
 | `UIMainMenuController.mlua` · `PersistenceManager.mlua` · `UICharacterController.mlua` · `PlayerController.mlua` · `game_design.md` | **[시스템/UI] 게임 시작 슬롯 카드 낚시 레벨 표기 제거 & 직업명(`Lv.X · 모험가/직업명`) 표기 전환 및 생활 '취미(Hobby)' 이원화 성장 체계 기틀 구축** (2026-09-11 ⚖️ 확정) — 아래 참조 |
 | `StoryDialogDataSet.csv` · `QuestDataSet.csv` · `PlayerQuest.mlua` · `UserQuestData.mlua` | **[스토리/직업] 4대 직업 퀘스트 주민 4인 대화 76행 신설 & 메이플스토리식 '직업 고민 안내 및 전직 시험 수락 시 타 직업 자동 포기' 배타적 전직 파이프라인 구축 & 전직 완료 시 잔여 퀘스트 정리** (2026-09-11 ⚖️ 확정) — 아래 참조 |
@@ -112,6 +114,71 @@
 | 데이터셋 + `ui/PopupGroup.ui`·`HUDGroup.ui` + UI 컨트롤러 | **한글화 1차** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
+
+### 2026-09-14 [레이드] 보스 레이드 R-1 코어 — 인스턴스 보스방 · 난이도 4단 · 주간 제한 (⚖️ 확정)
+
+- **배경**: 제작자 지시 — 디아블로식 웨이포인트(현행 `UIWarpController`)는 **세계 이동**, 메이플식 보스 창은 **입장 계약**으로 층을 나눈다는 방향 확정. R-1(보스 창 + 인스턴스 + 난이도 + 주간 제한)부터 착수하되 난이도는 **4단(EASY/NORMAL/HARD/EXTREME)**, 높을수록 **스킬 빈도 증가 + 스탯 증가 + 보상 강화**.
+- **선행 검증 (지난 턴 미해결 항목 해소)**: `template_boss.map`의 `IsInstanceMap`은 `false`지만 **이 플래그를 켤 필요가 없다.** 이 프로젝트는 이미 `ResourceSpawner:EnsureHuntMap`에서 **`_DynamicMapService:CreateDynamicMap(template, newName)`** 으로 `hunt01~hunt04`를 런타임 복제하고 있다(`map/hunt04.map` 파일은 존재하지 않는다 — 전부 동적 생성본). 레이드는 같은 경로로 파티 전용 사본을 만든다.
+  - API 정의 확인(`Environment/NativeScripts/Service/DynamicMapService.d.mlua`): `CreateDynamicMap(source, new)` / `DestroyDynamicMap(name)` — **유저가 남아 있으면 파기 실패** / `GetDynamicMapNameList()`.
+- **조치 1 — 데이터셋 2종 신설** (`RootDesk/MyDesk/Raid/DataSets/`, `serveronly=false` — 클라 UI가 직접 읽어야 한다):
+  - `BossContentsDataSet.csv`: `BossId, DisplayName, BossModelId, TemplateMap, ArtRUID, SpawnX/Y, ArriveX/Y, RequiredLevel, RequiredQuestId, MinPlayers, MaxPlayers, WeeklyLimit, RequiredWaypointId, Order, Disable`. 슬라임킹 1행 (주간 12회, 최대 4인, ArtRUID = 공식 "킹슬라임" 스프라이트 `13ce4f3c…`).
+  - `BossDifficultyDataSet.csv`: `(BossId, DifficultyId)` 복합키 + `EntryLevel, HpScale, DefenseScale, DamageScale, SkillIntervalScale, ReactionScale, DropSourceId, CoinReward`.
+
+  | 난이도 | 입장Lv | HP | 방어 | 피해 | 스킬간격 | 예고시간 | 코인 |
+  |---|--:|--:|--:|--:|--:|--:|--:|
+  | EASY | 4 | ×0.6 | ×0.8 | ×0.7 | ×1.35 | ×1.3 | 30 |
+  | NORMAL | 6 | ×1.0 | ×1.0 | ×1.0 | ×1.0 | ×1.0 | 60 |
+  | HARD | 10 | ×2.4 | ×1.4 | ×1.5 | ×0.72 | ×0.85 | 150 |
+  | EXTREME | 15 | ×5.0 | ×1.8 | ×2.2 | ×0.55 | ×0.7 | 400 |
+
+  - `SkillIntervalScale`은 **간격 배율**이라 값이 작을수록 스킬이 잦다(`MonsterAI.AttackCooldown` · `MinionSummonInterval`에 곱한다). `ReactionScale`은 `LeapReactionWindow`(내려찍기 예고 시간)에 곱해 난이도가 오를수록 피할 시간이 짧아진다.
+- **조치 2 — `BossRaidLogic.mlua` 신설** (`@Logic`, 서버 권위):
+  - `RequestEnterRaid`(@ExecSpace("Server"))는 `senderUserId` 대조로 위조 요청을 막고, `EnterRaid`가 ① 레벨(보스 기본 vs 난이도 입장 레벨 중 높은 쪽) ② 선행 웨이포인트 ③ 선행 퀘스트 ④ 주간 처치 제한 4단 검증 후 인스턴스를 만든다.
+  - 인스턴스명 `raid_<bossId>_<difficulty>_<seq>`. 생성 직후 `SetMapForceBiomeId(…, "green_island")`(MonsterSpawner 세이프존 → 잡몹 자동 생성 없음) + `SetMapProceduralTerrain(…, false)` + 귀환 포탈 스폰.
+  - **난이도는 `.model` 복제 없이 스폰 직후 프로퍼티 대입으로 주입**한다(규칙 46 — 크로스 스크립트 시그니처 고정, 값은 프로퍼티로). `Monster.MaxHp`는 `OnBeginPlay`가 이미 `Hp = MaxHp`를 잡은 뒤라 **`Hp`도 함께 재대입**한다(누락 시 HP만 원본값).
+  - 클리어 시 그 방에 있던 **전원**에게 주간 카운트 + 코인을 주고(파티 R-2에서 그대로 동작), `ClearGraceSeconds`(45초) 전리품 회수 유예 후 마을로 퇴장시킨 뒤 다음 스윕에서 맵을 파기한다.
+  - 🔴 **스윕에 `EntryGraceSeconds`(60초) 가드 필수**: 생성 직후에는 `MoveToMapPosition`이 아직 반영되지 않아 인원 0으로 보인다. 가드가 없으면 방금 만든 방을 스윕이 곧바로 파기해 **입장이 조용히 실패**한다.
+- **조치 3 — 보상 분기**: `Monster`에 `DropSourceOverride` 프로퍼티 신설. `DropFromItemDropDataSet`의 `SourceId`만 난이도별(`slime_king_easy/hard/extreme`)로 갈아끼우고 **`MonsterId`는 그대로 둔다** — 퀘스트 `Kill` 조건과 도감 집계 키가 `MonsterId`이기 때문. `ItemDropDataSet.csv`에 난이도별 13행 추가(EXTREME은 대형 젤리 2~3개 35%, 철광석 확정 등).
+- **조치 4 — 주간 제한 영속**: `PlayerController.RaidClearsJson`(`@Sync`) 신설 — `{"resetAt":<elapsed>,"counts":{"<bossId>":n}}`. 주간 경계는 퀘스트와 같은 배관(`_DateTimeLogic:GetNextCycleBaseTime(_CycleEnum.Week, now)`)을 쓰고, 경계를 지나면 읽는 시점에 지연 리셋한다(별도 타이머 없음). 저장/복원은 `UnlockedWaypointsJson`과 동일 패턴으로 `PersistenceManager`에 2줄 배선.
+- **조치 5 — 임시 진입점**: 보스 창(Stage B)이 붙기 전까지 `TestModeConfig` **F5**로 입장 요청(`TestRaidBossId`/`TestRaidDifficulty` 프로퍼티로 보스·난이도 선택). F6 도움말 HUD 문구도 갱신.
+- **검증**: `mlua-diagnose` **Error 0 / Warning 0**(잔여 Info는 기존 LIA-1114 크로스 스크립트 노이즈 — `RaidClearsJson` 2건은 형제 `UnlockedWaypointsJson` 2건·`SkillLevelsJson` 3건과 동일 패턴으로 대조 확인) · CSV 컬럼 정합 전수 검증 · `maker_refresh_workspace` `status ok` · **`BossRaidLogic.codeblock` 생성 확인** · `maker_logs(kind="build")` **Error 0 / Warning 0 / Info 704**, 로그 `dateTime 2026-09-14T23:11:36`이 이번 refresh 시각과 일치(규칙 22 대조 완료).
+- **미완 (R-1 Stage B) → [§4 후속 후보](#4-후속-후보-미착수)의 보스 레이드 로드맵 블록에 등재**: 보스 컨텐츠 창 `.ui` + `UIBossContentsController`. 상세 구성·준수 규칙은 그쪽에 적어 두었다.
+- **미검증(제작자 수행)**: 런타임 검증 보류 — ① F5 입장 시 `raid_slime_king_normal_1` 생성 및 입장 ② 난이도별 HP/피해/스킬 빈도 체감 차이 ③ 클리어 시 주간 카운트·코인·난이도별 드롭 ④ 45초 후 마을 퇴장 및 맵 파기 로그 ⑤ 주간 12회 초과 시 입장 거부.
+- **후속 판단 필요**: 상시 공유 맵 `hunt04`에도 항상 부활하는 슬라임킹이 그대로 남아 있다. 레이드가 정식화되면 (a) hunt04 보스를 무제한 솔로 연습용으로 남길지 (b) 철거하고 레이드로 일원화할지 결정이 필요하다.
+
+### 2026-09-14 [직업/퀘스트/드롭] 전직 시험 공통 관문(슬라임킹 → 대형 슬라임 젤리) & 최초 1회 확정 드롭 & 직업 전용 무기 (⚖️ 확정)
+
+- **배경**: 제작자 지시 — 네 직업 모두 같은 관문을 통과하게 하고 싶다. 초급 사냥터 보스 **슬라임킹**을 처치해 **대형 슬라임 젤리**를 받아 와야 전직이 되도록, 평소 획득 확률은 매우 낮게 두되 **전직 시험 수락 시 최초 1회만 100%** 로 올리고 획득 후 원래 확률로 복귀. 직업별 전용 무기도 함께 지급.
+- **조치 1 — 신규 아이템 `large_slime_jelly`**: `item_dataset.csv`. Name `Large Slime Jelly` / 표시명 `대형 슬라임 젤리` / Rarity `Rare` / IconRUID `10caa1f4a2644af5bc9050ccf0c3bd53`(공식 스프라이트 "변형된 슬라임의 방울" 32×28 — 규칙 45에 따라 UGC 업로드 미사용).
+- **조치 2 — 드롭 테이블**: `ItemDropDataSet.csv`에 `slime_king,,large_slime_jelly,1,1,0.03`(평시 3%) 추가. 기존 `slime_king` 젤리·레시피 행은 그대로.
+- **조치 3 — 데이터 주도 보장 드롭(신규 컬럼 `GuaranteeQuestIds`)**: 같은 CSV에 컬럼을 신설하고 위 행에 `302|312|322|332` 기입. `Monster.IsQuestGuaranteedDrop(guaranteeIds, itemId)`가 **막타 플레이어**의 `PlayerQuest.ProgressingIdTable`에 그 퀘스트가 있고 **해당 아이템 보유 수량이 0**일 때만 `true`를 반환해 확률을 무시한다.
+  - 획득하면 보유 수량 때문에 자동으로 `false`가 되어 **원래 3%로 복귀**한다 — 별도 세이브 플래그를 만들지 않았다(영속 상태 추가 없이 자기 정리).
+  - 젤리를 버리거나 잃으면 보장이 다시 켜져 **소프트락이 생기지 않는다.**
+  - 아이템 키는 `item_dataset.Name`으로 환산해 조회(규칙 4). 컬럼 조회는 `pcall` 가드(규칙 7).
+- **조치 4 — 전직 시험 4종 공통 조건**: `QuestConditionDataSet.csv`에 302/312/322/332 각각 `Gather / Large Slime Jelly / 1 / Action` 행 추가(기존 직업별 조건은 index 1로 유지 — 저장된 `Values` 정합 보존). `QuestDataSet.csv`의 네 행에 `ConsumeItems = Large Slime Jelly:1` 및 슬라임킹 언급 설명문 반영.
+- **조치 5 — 직업 전용 무기 4종**(`item_dataset.csv`, Category `tool` / ToolType `weapon` / ToolTier 2 / Rarity Uncommon). 전직 시험 `RewardItems`로 지급된다.
+
+  | 직업 | 아이템(Name) | 표시명 | 슬롯·모션 | Attack | MagicAttack | SkillAttack | WeaponRUID |
+  |---|---|---|---|--:|--:|--:|---|
+  | `trapper` | `Hunter Dagger` | 사냥꾼의 투척검 | 한손 `stabO1` | 10 | 0 | 4 | `92bf8a758ee04f1aa044db9d8bcf1ec1` |
+  | `battle_smith` | `Smith Big Hammer` | 대장장이의 빅해머 | 양손 `swingT1` | 16 | 0 | 0 | `47177796f6964727a15e9bf30ca3b1e3` |
+  | `alchemist` | `Azure Ember Wand` | 푸른 불씨 완드 | 한손 `swingO1` | 4 | 12 | 4 | `133e697ac731441a912f1e58ec2a9182` |
+  | `wild_keeper` | `Nature Vine` | 네이처 바인 | 한손 `swingO2` | 8 | 0 | 8 | `d834b2cb87f24aceac565762d455fb7d` |
+
+  - 액션 계열 ↔ 슬롯 정합 준수(한손 `stabO*`/`swingO*` ↔ WeaponSlot 공란, 양손 `swingT*` ↔ `twohand`) — `MineState`/`ApplyHeldToolCostume` 주석의 과거 곡괭이 버그 재발 방지.
+  - `ToolType = weapon` 표시명("무기")을 `PlayerInventory.GetToolTypeLabel` / `UICharacterController.GetToolTypeLabel` 양쪽에 추가.
+- **검증**: `mlua-diagnose` Error 0 / Warning 0 · CSV 정규 파서로 헤더↔행 컬럼 수 1:1 전수 검증(규칙 51) · `maker_refresh_workspace` `status ok` · `maker_logs(kind="build")` **Error 0 / Warning 0 / Info 702**, 로그 `dateTime 2026-09-14T22:32:11`이 이번 refresh 시각과 일치(규칙 22 대조 완료).
+- **조치 6 — 전직 레벨 게이트 상향 (제작자 지시, 2026-09-14 2차)**: 튜토리얼(107) 직후부터 주민 4인에게 전직 `!` 알림이 전부 켜지던 것이 미완성으로 보인다는 지적. 알림 파이프라인 자체는 이미 레벨을 존중한다(`VillagerDialog.FindOfferQuest` → `UserQuestData.IsAcceptable` → `QuestData.IsPlayerEligible` → `pc.Level < RequiredLevel`이면 제외, `UIQuestNavigationController.ScanTargetNpc`도 `GetQuestPingKind`를 재사용). 따라서 **데이터만 상향**했다.
+
+  | 단계 | 퀘스트 | 기존 | 변경 |
+  |---|---|--:|--:|
+  | 기초 | 301 · 311 · 321 · 331 | 2 | **4** |
+  | 전직 시험 | 302 · 312 · 322 · 332 | 4 | **6** |
+  | 실전 수련 | 303 · 313 · 323 · 333 | 4 | **6** |
+
+  - 근거(레벨 곡선 실측): `PlayerController.AddXP`는 `MaxXP` 100에서 레벨당 ×1.5. 누적 XP는 Lv4 = 475 · Lv6 = 1,318 · Lv8 = 3,216. **몬스터 처치는 XP를 주지 않고**(`Monster`/`MonsterAI`에 `AddXP` 없음) 채집·제작·수확만 XP원이다(`ResourceDataSet.XpReward` 풀 5 / 돌 10 / 나무 15~25 / 큰돌 20~30 / 철 40). Lv8은 Lv4의 6.8배 그라인딩이라 "조금만 상향" 범위를 벗어나 Lv6을 택했다.
+- **미검증(제작자 수행)**: 런타임 검증 보류 — ① 시험 수락 후 슬라임킹 처치 시 젤리 100% 드롭, ② 획득 뒤 재처치 시 3%로 복귀, ③ 무기 4종 장착 시 아바타 파츠 렌더·평타 데미지 반영, ④ 멘토 보고 시 젤리 소모 및 무기 지급, ⑤ Lv3 이하에서 주민 4인 머리 위 `!`가 뜨지 않는지.
+- **후속 검토 필요**: 보스방(hunt04) 워프가 Lv6 시점에 열려 있는지 동선 확인. 더 강한 게이트가 필요하면 기초 퀘스트의 `LinkedPrevId 107`을 메인 라인 완주(`RequiredId 216`)로 바꾸는 서사 게이트가 대안이다(이번에는 적용하지 않음).
 
 ### 2026-09-10 [UI/UX/설계] 게임 UI/UX 핵심 이론 체계화 & 메이플월드 프레임워크 문서 구축 (⚖️ 확정)
 
@@ -2401,8 +2468,14 @@ F9 슬롯 (벌목 실루엣, 전투·네온 제외):
 
 > 🗺️ **2026-08-08 제작자 로드맵 5건** — ② 상호작용 가이드는 §1에서 구현 완료(Play 대기), ④ 지형 편집 시각 피드백은 §1 재검증 완료(Play 대기). 나머지 3건은 설계 문서 작성 완료, 구현 미착수.
 
+> 🐉 **보스 레이드 로드맵** — R-1 코어는 §1(2026-09-14)에서 구현 완료(F5 테스트 진입점으로 검증 가능). 아래 3건이 순서대로 남았다. 설계 맥락과 데이터 계약은 [§1 2026-09-14 레이드 항목](#2026-09-14-레이드-보스-레이드-r-1-코어--인스턴스-보스방--난이도-4단--주간-제한-⚖️-확정) 참조.
+
 | 항목 | 선행 조건 |
 |---|---|
+| **⭐ R-1 Stage B — 보스 컨텐츠 창 `.ui` + `UIBossContentsController`** (다음 착수 1순위) | 코어 완료. 구성: 좌측 보스 리스트(잠금 상태는 웨이포인트 해금 플래그 재사용) / 중앙 아트(`BossContentsDataSet.ArtRUID`)·입장 레벨·선행 조건 / 우측 난이도 칩 4종(**T42 도감 카테고리 칩 행 패턴 재사용** — 새 스타일 발명 금지) / 하단 주간 `n/12` + [입장] CTA. 입장은 `_BossRaidLogic:RequestEnterRaid(bossId, difficultyId, localPlayer)` 호출 1줄. 데이터셋 2종은 `serveronly=false`라 클라에서 바로 읽힌다. ⚠️ 저작 시 [규칙 47](./pitfalls.md#47-형제-중-나중에-그려지는-불투명-스프라이트가-앞-형제-텍스트를-덮는다--팝업-제목-5종이-이렇게-사라져-있었다)(배경→헤더바→텍스트 순서) · [규칙 49](./pitfalls.md#49-maskcomponent-를-붙이면-그-ui-파일-전체가-런타임에-로드되지-않는다-에러-로그-없음)(`MaskComponent` 금지 — 목록 스크롤에 쓰지 말 것) · [규칙 50](./pitfalls.md#50-별도-자식-text-엔티티는-렌더가-불안정하다--글자는-렌더러와-같은-엔티티에-얹는다)(자식 text 엔티티 회피) · [규칙 6](./pitfalls.md#규칙-6-ui-작업은-미학-루브릭을-통과해야-끝난다)(나무 카드 아이덴티티 유지) 준수 |
+| **⚖️ 판단 필요 — 공유 맵 `hunt04` 슬라임킹 처리** | Stage B 착수 전에 결정. 현재 상시 공유 맵 `hunt04`에 **항상 부활하는 슬라임킹**이 남아 있어 레이드와 경로가 이중화돼 있다. ⓐ 무제한 솔로 연습용으로 존치 ⓑ 철거하고 레이드로 일원화. 존치 시 전직 시험(302/312/322/332)의 대형 젤리 확정 드롭이 레이드 밖에서도 동작해야 하는지 함께 확인할 것 |
+| **R-2 파티 시스템** | R-1 Stage B 완료 후. `PartyLogic`(`@Logic`, 서버 권위, 리더 권한, 최대 4인). 초대는 기존 타 유저 클릭 메뉴(`UIPlayerInteractController` 영지 초대)에 항목 추가로 재사용. **`BossRaidLogic`은 이미 "그 방에 있던 전원"에게 보상·카운트를 주므로 입장 인원만 1→N으로 열면 된다** — 클리어/정리 로직 변경 불필요. MSWPackages에 파티/매칭 패키지는 **없다**(자체 구현 영역) |
+| **R-3 파티 모집 탭** | R-2 완료 + 동접 확보 후. 보스 창 2번째 탭(게시글 목록). 자동 매칭은 그 이후 |
 | **로드맵 ① 스토리·NPC·퀘스트 연동** | 설계 완료 + **챕터1 샘플(Quest 201) 코드 투입**. 톤=코지+미스터리 확정. 추가 챕터는 스토리 에이전트 §5 브리프 |
 | **로드맵 ③ 메인화면 + 슬롯 세이브** | **코드 완료(Play 대기)** — 슬롯5·닉네임 중복금지·캐릭터 단위 낚시왕 |
 | **로드맵 ⑤ 아트 스타일 가이드·생성 프롬프트** | 가이드 = [design/art-style-guide.md](./design/art-style-guide.md) 작성 완료. 제작자가 타사 에이전트로 생성 → image-to-pixel 도트화 → RUID 교체 파이프라인 |

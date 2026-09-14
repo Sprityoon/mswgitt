@@ -325,6 +325,7 @@ script UICharacterController extends Component
 		if toolType == "hoe" then return "호미" end
 		if toolType == "rod" then return "낚싯대" end
 		if toolType == "water_spade" then return "물삽" end
+		if toolType == "weapon" then return "무기" end
 		return toolType
 	end
 

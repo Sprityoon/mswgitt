@@ -64,6 +64,10 @@ script PlayerController extends Component
 	@Sync
 	property string UnlockedWaypointsJson = "[]"
 
+	-- 보스 레이드 주간 처치 기록: {"resetAt":<elapsed>,"counts":{"<bossId>":n}}
+	@Sync
+	property string RaidClearsJson = "{}"
+
 	property string ReticleSpriteRUID = "662fd2de11094cf08be40d8b3fab11bc"
 
 	property number ReticleScale = 1.0
@@ -2029,6 +2033,49 @@ script PlayerController extends Component
 			end
 		end
 		return false
+	end
+
+	method table DecodeRaidClears()
+		-- RaidClearsJson -> { resetAt = integer, counts = { bossId = n } }.
+		-- 주간 경계는 퀘스트와 같은 배관(_DateTimeLogic:GetNextCycleBaseTime(_CycleEnum.Week))을 쓴다.
+		-- 경계를 지났으면 counts 를 비우고 다음 경계를 다시 잡는다(지연 리셋 — 별도 타이머 불필요).
+		local state = { resetAt = 0, counts = {} }
+		local ok, decoded = pcall(function() return _HttpService:JSONDecode(self.RaidClearsJson) end)
+		if ok and decoded ~= nil and type(decoded) == "table" then
+			state.resetAt = math.floor(tonumber(decoded.resetAt) or 0)
+			if type(decoded.counts) == "table" then state.counts = decoded.counts end
+		end
+
+		local now = 0
+		if _DateTimeLogic ~= nil then now = _DateTimeLogic:GetTimeElapsed() end
+		if state.resetAt <= 0 or now >= state.resetAt then
+			state.counts = {}
+			if _DateTimeLogic ~= nil then
+				state.resetAt = _DateTimeLogic:GetNextCycleBaseTime(_CycleEnum.Week, now)
+			end
+		end
+		return state
+	end
+
+	method integer GetRaidClearCount(string bossId)
+		-- 이번 주 해당 보스 처치 횟수. 주간 경계를 지났으면 0.
+		if bossId == nil or bossId == "" then return 0 end
+		local state = self:DecodeRaidClears()
+		return math.floor(tonumber(state.counts[bossId]) or 0)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void AddRaidClear(string bossId)
+		-- 주간 처치 카운트 +1 후 즉시 dirty 표시 (웨이포인트 해금과 동일 패턴).
+		if bossId == nil or bossId == "" then return end
+		local state = self:DecodeRaidClears()
+		state.counts[bossId] = math.floor(tonumber(state.counts[bossId]) or 0) + 1
+		self.RaidClearsJson = _HttpService:JSONEncode(state)
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp ~= nil and _PersistenceManager ~= nil then
+			_PersistenceManager:MarkPlayerDirty(playerComp.UserId)
+		end
+		log("[RAID] clear count " .. bossId .. " -> " .. tostring(state.counts[bossId]))
 	end
 
 	@ExecSpace("Server")

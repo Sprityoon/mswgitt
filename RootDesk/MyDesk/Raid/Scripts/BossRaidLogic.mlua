@@ -1,0 +1,437 @@
+@Logic
+script BossRaidLogic extends Logic
+	-- 보스 레이드 코어 (R-1). 파티 이전 단계이므로 현재는 요청자 1인 입장이지만,
+	-- 인스턴스·난이도·주간 제한 구조는 파티(R-2)에서 members 배열만 채우면 그대로 확장된다.
+	--
+	-- 인스턴스는 ResourceSpawner:EnsureHuntMap 과 같은 경로(_DynamicMapService:CreateDynamicMap)로
+	-- template_boss 를 복제해 만든다. hunt04(상시 공유 맵)는 건드리지 않는다 — 레이드는 별도 사본이다.
+	--
+	-- 데이터: BossContentsDataSet(보스별 입장 조건) · BossDifficultyDataSet(난이도별 배율)
+	-- 난이도는 모델 값을 복제하지 않고 스폰 직후 **프로퍼티 대입**으로 주입한다
+	-- (규칙 46 — 크로스 스크립트 메서드 시그니처는 고정으로 취급하고 값은 프로퍼티로 넘긴다).
+
+	-- mapName -> { bossId, difficultyId, ownerUserId, cleared, createdAt }
+	property table Instances = {}
+	property integer InstanceSeq = 0
+
+	-- 보스 처치 후 전리품을 줍는 시간. 이 시간이 지나면 남은 인원을 마을로 내보내고 맵을 파기한다.
+	property number ClearGraceSeconds = 45
+	-- 아무도 클리어하지 못한 인스턴스의 안전 정리 상한 (방치·튕김 대비).
+	property number InstanceMaxLifetimeSeconds = 2400
+	-- 빈 인스턴스 청소 주기.
+	property number SweepIntervalSeconds = 20
+	-- 생성 직후 유예. 이 시간 안에는 인원 0이어도 파기하지 않는다 (맵 이동 반영 지연 대비).
+	property number EntryGraceSeconds = 60
+
+	property integer sweepTimerId = 0
+
+	@ExecSpace("ServerOnly")
+	method void OnBeginPlay()
+		-- 서버에서만 인스턴스 청소 타이머를 건다.
+		self.Instances = {}
+		self.sweepTimerId = _TimerService:SetTimerRepeat(self.SweepInstances, self.SweepIntervalSeconds)
+		log("[RAID] BossRaidLogic ready")
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnEndPlay()
+		-- OnBeginPlay 에서 건 타이머를 반드시 해제한다.
+		if self.sweepTimerId ~= 0 then
+			_TimerService:ClearTimer(self.sweepTimerId)
+			self.sweepTimerId = 0
+		end
+	end
+
+	---------------------------------------------------------------------------
+	-- 데이터 조회
+	---------------------------------------------------------------------------
+
+	method any GetBossRow(string bossId)
+		-- BossContentsDataSet 행. 없거나 Disable 이면 nil.
+		-- 커스텀 script 타입을 반환 타입에 쓰지 않는다 (규칙 23) — any 로 돌린다.
+		if bossId == nil or bossId == "" then return nil end
+		local ds = _DataService:GetTable("BossContentsDataSet")
+		if ds == nil then return nil end
+		local row = ds:FindRow("BossId", bossId)
+		if row == nil then return nil end
+		if self:RowStr(row, "Disable", "") ~= "" then return nil end
+		return row
+	end
+
+	method any GetDifficultyRow(string bossId, string difficultyId)
+		-- BossDifficultyDataSet 은 (BossId, DifficultyId) 복합키라 FindRow 로는 못 찾는다 — 전수 주사.
+		if bossId == nil or bossId == "" then return nil end
+		if difficultyId == nil or difficultyId == "" then return nil end
+		local ds = _DataService:GetTable("BossDifficultyDataSet")
+		if ds == nil then return nil end
+		for i = 1, ds:GetRowCount() do
+			if ds:GetCell(i, "BossId") == bossId and ds:GetCell(i, "DifficultyId") == difficultyId then
+				local dis = ""
+				local okD, rawD = pcall(function() return ds:GetCell(i, "Disable") end)
+				if okD and rawD ~= nil then dis = tostring(rawD) end
+				if dis ~= "" then return nil end
+				return ds:GetRow(i)
+			end
+		end
+		return nil
+	end
+
+	method string RowStr(any row, string col, string fallback)
+		-- UserDataRow 는 GetItem 만 있고 없는 컬럼은 LEA-3011 이라 pcall 가드가 필수다 (규칙 7).
+		if row == nil then return fallback end
+		local ok, v = pcall(function() return row:GetItem(col) end)
+		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		return fallback
+	end
+
+	method number RowNum(any row, string col, number fallback)
+		-- 숫자 컬럼 조회. 공란·누락·비숫자는 fallback.
+		local raw = self:RowStr(row, col, "")
+		if raw == "" then return fallback end
+		return tonumber(raw) or fallback
+	end
+
+	---------------------------------------------------------------------------
+	-- 입장
+	---------------------------------------------------------------------------
+
+	@ExecSpace("Server")
+	method void RequestEnterRaid(string bossId, string difficultyId, Entity requester)
+		-- 클라이언트(보스 컨텐츠 창)의 입장 요청. 검증은 전부 서버에서 한다.
+		if not isvalid(requester) then return end
+		local playerComp = requester.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then
+			log_warning("[RAID] rejected spoofed enter request")
+			return
+		end
+		self:EnterRaid(requester, bossId, difficultyId)
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean EnterRaid(Entity player, string bossId, string difficultyId)
+		-- 조건 검증 → 인스턴스 생성 → 보스 스폰(난이도 주입) → 입장. 실패 사유는 클라에 문자열로 돌려준다.
+		if not isvalid(player) then return false end
+		local playerComp = player.PlayerComponent
+		if playerComp == nil then return false end
+		local userId = playerComp.UserId
+
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return false end
+		---@type PlayerController
+		local controller = pc
+
+		local bossRow = self:GetBossRow(bossId)
+		if bossRow == nil then
+			self:SendFeedback(player, "아직 열리지 않은 보스입니다.")
+			return false
+		end
+		local diffRow = self:GetDifficultyRow(bossId, difficultyId)
+		if diffRow == nil then
+			self:SendFeedback(player, "선택한 난이도를 찾을 수 없습니다.")
+			return false
+		end
+
+		-- ① 레벨: 보스 기본 입장 레벨과 난이도별 입장 레벨 중 높은 쪽
+		local needLevel = math.floor(self:RowNum(bossRow, "RequiredLevel", 1))
+		local diffLevel = math.floor(self:RowNum(diffRow, "EntryLevel", 1))
+		if diffLevel > needLevel then needLevel = diffLevel end
+		if controller.Level < needLevel then
+			self:SendFeedback(player, "입장 레벨이 부족합니다. (Lv." .. tostring(needLevel) .. " 필요)")
+			return false
+		end
+
+		-- ② 선행 웨이포인트: 해당 티어까지 도달한 적이 있어야 한다
+		local needWaypoint = self:RowStr(bossRow, "RequiredWaypointId", "")
+		if needWaypoint ~= "" and not controller:IsWaypointUnlocked(needWaypoint) then
+			self:SendFeedback(player, "먼저 해당 사냥터 웨이포인트를 활성화해야 합니다.")
+			return false
+		end
+
+		-- ③ 선행 퀘스트 (공란이면 무시)
+		local needQuest = math.floor(self:RowNum(bossRow, "RequiredQuestId", 0))
+		if needQuest > 0 and not self:IsQuestCompleted(player, needQuest) then
+			self:SendFeedback(player, "선행 퀘스트를 먼저 완료해야 합니다.")
+			return false
+		end
+
+		-- ④ 주간 처치 제한
+		local weeklyLimit = math.floor(self:RowNum(bossRow, "WeeklyLimit", 0))
+		if weeklyLimit > 0 and controller:GetRaidClearCount(bossId) >= weeklyLimit then
+			self:SendFeedback(player, "이번 주 처치 제한에 도달했습니다. (" .. tostring(weeklyLimit) .. "/" .. tostring(weeklyLimit) .. ")")
+			return false
+		end
+
+		-- 인스턴스 생성
+		local templateMap = self:RowStr(bossRow, "TemplateMap", "template_boss")
+		self.InstanceSeq = self.InstanceSeq + 1
+		local mapName = "raid_" .. bossId .. "_" .. difficultyId .. "_" .. tostring(self.InstanceSeq)
+
+		local ec = _DynamicMapService:CreateDynamicMap(templateMap, mapName)
+		if ec ~= DynamicMapResultCode.Success then
+			log_error("[RAID] CreateDynamicMap failed " .. mapName .. " from " .. templateMap .. ": " .. tostring(ec))
+			self:SendFeedback(player, "보스방을 여는 데 실패했습니다. 잠시 후 다시 시도해 주세요.")
+			return false
+		end
+
+		local raidMap = _EntityService:GetEntityByPath("/maps/" .. mapName)
+		if not isvalid(raidMap) then
+			log_error("[RAID] raid map entity missing after creation: " .. mapName)
+			self:SendFeedback(player, "보스방을 여는 데 실패했습니다.")
+			return false
+		end
+
+		-- 사냥터와 동일한 바이옴 가드: green_island 는 MonsterSpawner 세이프존이라 잡몹이 자동 생성되지 않는다.
+		-- 절차 지형도 끈다 (템플릿의 손디자인 아레나를 그대로 쓴다).
+		if _ResourceSpawner ~= nil then
+			_ResourceSpawner:SetMapForceBiomeId(mapName, "green_island")
+			_ResourceSpawner:SetMapProceduralTerrain(mapName, false)
+		end
+
+		self.Instances[mapName] = {
+			bossId = bossId,
+			difficultyId = difficultyId,
+			ownerUserId = userId,
+			cleared = false,
+			createdAt = _UtilLogic.ServerElapsedSeconds
+		}
+
+		-- 귀환 포탈 (보스방 좌하단). 클리어 전에도 자력 탈출이 가능해야 한다.
+		if _ResourceSpawner ~= nil then
+			_ResourceSpawner:SpawnFixedPortal(raidMap, "Portal", 0, -8, "Home", Vector2(-3, 0))
+		end
+
+		self:SpawnRaidBoss(raidMap, bossRow, diffRow)
+
+		local arriveX = self:RowNum(bossRow, "ArriveX", 0)
+		local arriveY = self:RowNum(bossRow, "ArriveY", -5)
+		playerComp:MoveToMapPosition(mapName, Vector2(arriveX, arriveY))
+		log("[RAID] enter user=" .. tostring(userId) .. " boss=" .. bossId .. " diff=" .. difficultyId .. " map=" .. mapName)
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsQuestCompleted(Entity player, integer questId)
+		-- PlayerQuest 의 저장 상태를 읽어 완료 여부만 본다. 진행 중/미수락은 false.
+		if questId <= 0 then return true end
+		local quest = player:GetComponent("script.PlayerQuest")
+		if not isvalid(quest) then return false end
+		---@type PlayerQuest
+		local pq = quest
+		local userData = pq.UserDataTable[questId]
+		if userData == nil then return false end
+		return userData.State == _QuestStateEnum.Completed
+	end
+
+	---------------------------------------------------------------------------
+	-- 보스 스폰 + 난이도 주입
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ServerOnly")
+	method void SpawnRaidBoss(Entity raidMap, any bossRow, any diffRow)
+		-- ResourceSpawner:SpawnHuntBoss 와 같은 스폰 절차를 쓰되, 스폰 직후 난이도 배율을 프로퍼티로 주입한다.
+		local bossModelId = self:RowStr(bossRow, "BossModelId", "")
+		if bossModelId == "" then
+			log_error("[RAID] BossModelId empty")
+			return
+		end
+		local bx = self:RowNum(bossRow, "SpawnX", 0)
+		local by = self:RowNum(bossRow, "SpawnY", 10)
+
+		local modelId = _EntryService:GetModelIdByName(bossModelId)
+		if modelId == nil or modelId == "" then modelId = bossModelId end
+
+		local spawnPos = Vector3(bx + 0.5, by + 0.5, 0)
+		local boss = _SpawnService:SpawnByModelId(modelId, "RaidBoss_" .. bossModelId, spawnPos, raidMap)
+		if not isvalid(boss) then
+			log_error("[RAID] failed to spawn boss " .. bossModelId .. " in " .. raidMap.Name)
+			return
+		end
+
+		local hpScale = self:RowNum(diffRow, "HpScale", 1.0)
+		local defScale = self:RowNum(diffRow, "DefenseScale", 1.0)
+		local dmgScale = self:RowNum(diffRow, "DamageScale", 1.0)
+		local intervalScale = self:RowNum(diffRow, "SkillIntervalScale", 1.0)
+		local reactionScale = self:RowNum(diffRow, "ReactionScale", 1.0)
+		local dropSource = self:RowStr(diffRow, "DropSourceId", "")
+
+		-- Monster: HP/방어. OnBeginPlay 가 이미 Hp = MaxHp 를 잡아 둔 뒤라 Hp 도 같이 올려야 한다.
+		local mComp = boss:GetComponent("script.Monster")
+		if isvalid(mComp) then
+			---@type Monster
+			local mon = mComp
+			mon.MonsterId = bossModelId          -- 퀘스트/도감 키는 난이도와 무관하게 유지
+			mon.DropSourceOverride = dropSource  -- 드롭 테이블만 난이도별로 분기
+			mon.RespawnOn = false                -- 레이드 사본에서는 부활하지 않는다
+			mon.MaxHp = mon.MaxHp * hpScale
+			mon.Hp = mon.MaxHp
+			mon.Defense = mon.Defense * defScale
+		end
+
+		-- MonsterMeleeAttack: 접촉·평타·내려찍기 피해량
+		local atkComp = boss:GetComponent("script.MonsterMeleeAttack")
+		if isvalid(atkComp) then
+			---@type MonsterMeleeAttack
+			local atk = atkComp
+			atk.ContactDamage = atk.ContactDamage * dmgScale
+			atk.TouchDamage = atk.TouchDamage * dmgScale
+			if atk.SlamDamage > 0 then atk.SlamDamage = atk.SlamDamage * dmgScale end
+		end
+
+		-- MonsterAI: 스킬 빈도(쿨다운·소환 주기가 짧아짐) + 예고 반응 시간 + 투사체 피해
+		local aiComp = boss:GetComponent("script.MonsterAI")
+		if isvalid(aiComp) then
+			---@type MonsterAI
+			local ai = aiComp
+			ai.SpawnPos = Vector2(bx + 0.5, by + 0.5)
+			ai.EngagementStarted = false
+			ai.AttackCooldownTimer = 0
+			ai.SpawnGraceTimer = 0
+			ai.AttackCooldown = ai.AttackCooldown * intervalScale
+			if ai.MinionSummonInterval > 0 then
+				ai.MinionSummonInterval = ai.MinionSummonInterval * intervalScale
+			end
+			ai.LeapReactionWindow = ai.LeapReactionWindow * reactionScale
+			ai.ProjectileDamage = math.floor(ai.ProjectileDamage * dmgScale)
+		end
+
+		-- 사냥터 보스와 동일한 렌더 레이어 정합 (바닥 타일 위로 올린다)
+		local sprite = boss.SpriteRendererComponent
+		if isvalid(sprite) then
+			sprite.IgnoreMapLayerCheck = true
+			if _RenderLayers ~= nil then sprite.SortingLayer = _RenderLayers.EntityLayer end
+		end
+
+		log(string.format("[RAID] boss spawned %s hp x%.2f dmg x%.2f interval x%.2f drop=%s",
+			bossModelId, hpScale, dmgScale, intervalScale, dropSource))
+	end
+
+	---------------------------------------------------------------------------
+	-- 클리어 / 정리
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ServerOnly")
+	method void OnRaidBossDefeated(Entity bossEntity, any killer)
+		-- Monster:Dead() 가 호출한다. 레이드 사본에서 죽은 보스만 처리한다.
+		if not isvalid(bossEntity) then return end
+		local map = bossEntity.CurrentMap
+		if not isvalid(map) then return end
+		local inst = self.Instances[map.Name]
+		if inst == nil then return end
+		if inst.cleared then return end
+		inst.cleared = true
+
+		-- 주간 카운트는 그 방에 실제로 있던 전원에게 준다 (파티 도입 시 그대로 동작).
+		local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+		local coin = 0
+		local diffRow = self:GetDifficultyRow(inst.bossId, inst.difficultyId)
+		if diffRow ~= nil then coin = math.floor(self:RowNum(diffRow, "CoinReward", 0)) end
+
+		if users ~= nil then
+			for _, user in ipairs(users) do
+				if isvalid(user) then
+					local pc = user:GetComponent("script.PlayerController")
+					if isvalid(pc) then
+						---@type PlayerController
+						local controller = pc
+						controller:AddRaidClear(inst.bossId)
+					end
+					local inv = user:GetComponent("script.PlayerInventory")
+					if isvalid(inv) and coin > 0 then
+						---@type PlayerInventory
+						local pinv = inv
+						-- 화폐는 AddItem 이 IsCurrencyItem 분기로 Coin 프로퍼티에 누적한다 (item_dataset Name = "Coin").
+						pinv:AddItem("Coin", coin)
+					end
+					self:SendFeedback(user, "보스 토벌 완료! 잠시 후 마을로 돌아갑니다.")
+				end
+			end
+		end
+
+		log("[RAID] cleared map=" .. map.Name .. " boss=" .. inst.bossId .. " diff=" .. inst.difficultyId)
+
+		-- 전리품 회수 유예 후 정리. 클로저로 mapName 을 캡처한다.
+		local capturedMap = map.Name
+		local expel = function()
+			self:ExpelAndDestroy(capturedMap)
+		end
+		_TimerService:SetTimerOnce(expel, self.ClearGraceSeconds)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ExpelAndDestroy(string mapName)
+		-- 남은 인원을 마을로 내보낸 뒤 맵을 파기한다.
+		-- DestroyDynamicMap 은 유저가 남아 있으면 실패하므로 퇴장이 먼저다.
+		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
+		if isvalid(map) then
+			local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+			if users ~= nil then
+				for _, user in ipairs(users) do
+					if isvalid(user) and user.PlayerComponent ~= nil then
+						user.PlayerComponent:MoveToMapPosition("town", Vector2(10, -2))
+					end
+				end
+			end
+		end
+		-- 퇴장 처리가 한 프레임 뒤에 반영될 수 있으므로 파기는 다음 스윕에 맡긴다.
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SweepInstances()
+		-- 빈 인스턴스를 주기적으로 파기한다. 클리어 실패로 방치된 방도 수명 상한으로 회수한다.
+		local now = _UtilLogic.ServerElapsedSeconds
+		local doomed = {}   -- 아직 살아 있어 파기해야 할 맵
+		local stale = {}    -- 맵 엔티티가 이미 없어 레지스트리만 지우면 되는 항목
+		for mapName, inst in pairs(self.Instances) do
+			local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
+			if not isvalid(map) then
+				-- 이미 사라진 맵에 DestroyDynamicMap 을 걸면 실패만 반환하고 레지스트리가 영구히 남는다.
+				stale[#stale + 1] = mapName
+				continue
+			end
+			local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+			local occupied = users ~= nil and #users > 0
+			local age = now - (tonumber(inst.createdAt) or 0)
+			-- 🔴 유예 필수: 생성 직후엔 MoveToMapPosition 이 아직 반영되지 않아 인원 0으로 보인다.
+			--    이 가드가 없으면 방금 만든 방을 스윕이 곧바로 파기해 입장이 조용히 실패한다.
+			local settling = age < self.EntryGraceSeconds
+			if not occupied and not settling then
+				doomed[#doomed + 1] = mapName
+			elseif occupied and age > self.InstanceMaxLifetimeSeconds then
+				self:ExpelAndDestroy(mapName)
+			end
+		end
+
+		for _, mapName in ipairs(stale) do
+			self.Instances[mapName] = nil
+			log("[RAID] stale instance entry cleared: " .. mapName)
+		end
+
+		for _, mapName in ipairs(doomed) do
+			local ec = _DynamicMapService:DestroyDynamicMap(mapName)
+			if ec == DynamicMapResultCode.Success then
+				self.Instances[mapName] = nil
+				log("[RAID] instance destroyed: " .. mapName)
+			else
+				log_warning("[RAID] DestroyDynamicMap failed " .. mapName .. ": " .. tostring(ec))
+			end
+		end
+	end
+
+	---------------------------------------------------------------------------
+	-- 클라 피드백
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ServerOnly")
+	method void SendFeedback(Entity player, string message)
+		-- 대상 플레이어 본인의 PlayerController 를 통해 토스트를 띄운다.
+		-- PlayerController:ClientShowMineFeedback 은 @ExecSpace("Client") 라 그 컴포넌트의
+		-- 소유 클라이언트로 전달된다 (UnlockWaypoint 가 쓰는 것과 같은 경로).
+		if not isvalid(player) then return end
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		---@type PlayerController
+		local controller = pc
+		controller:ClientShowMineFeedback(message)
+	end
+
+end

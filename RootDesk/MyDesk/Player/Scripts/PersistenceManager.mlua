@@ -821,6 +821,7 @@ script PersistenceManager extends Logic
 				pc.MaxStamina = data.maxStamina or 100
 				pc.GatheringSpeed = data.gatheringSpeed or 1.0
 				pc.UnlockedWaypointsJson = data.unlockedWaypoints or "[]"
+				pc.RaidClearsJson = data.raidClears or "{}"
 				pc.SkillLevelsJson = data.skillLevels or "{}"
 				pc.SP = data.sp or 0
 				pc.JobId = data.jobId or ""
@@ -1262,6 +1263,7 @@ script PersistenceManager extends Logic
 		local capMaxStamina = tonumber(pc.MaxStamina) or 100
 		local capGather = tonumber(pc.GatheringSpeed) or 1.0
 		local capWaypoints = pc.UnlockedWaypointsJson or "[]"
+		local capRaidClears = pc.RaidClearsJson or "{}"
 		local capSkills = pc.SkillLevelsJson or "{}"
 		-- T69: QWER 장착 — 선캡처(규칙 9: 추가 Yield 금지, 기존 캡처 블록과 동일 위치)
 		local capEquippedSkills = pc.EquippedSkillsJson or "[]"
@@ -1452,6 +1454,7 @@ script PersistenceManager extends Logic
 			dexMonsters = capDexMonsters,
 			activePetId = capActivePet,
 			unlockedWaypoints = capWaypoints,
+			raidClears = capRaidClears,
 			skillLevels = capSkills,
 			equippedSkills = capEquippedSkills,
 			sp = capSp,
