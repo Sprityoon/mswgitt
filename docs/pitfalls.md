@@ -63,6 +63,7 @@
 | [49](#49-maskcomponent-를-붙이면-그-ui-파일-전체가-런타임에-로드되지-않는다-에러-로그-없음) | 빌더로 붙인 Mask = .ui 전체 로드 실패 | 같은 파일의 모든 팝업이 안 열림 (로그 0) |
 | [50](#50-별도-자식-text-엔티티는-렌더가-불안정하다--글자는-렌더러와-같은-엔티티에-얹는다) | 자식 text 엔티티 렌더 불안정 | 값은 정상인데 글자만 안 보임 |
 | [51](#51-csv-데이터셋-값에-쉼표가-포함되면-반드시-큰따옴표로-감싸야-한다--컬럼-밀림으로-런타임-오작동) | CSV 값 내 쉼표 = 반드시 큰따옴표 래핑 | 뒷부분 컬럼이 1칸씩 밀려 엉뚱한 값 대입 (에러 0) |
+| [52](#52-한-부모-밑-자식들의-앵커가-섞여-있으면-pos-는-서로-다른-기준선으로-해석된다--중심-기준-좌표-계산은-조용히-틀린다) | 자식 앵커 혼재 시 `pos` 기준선이 제각각 | UI가 패널 밖에 그려지는데 자체 검산은 통과 |
 
 ---
 
@@ -479,6 +480,15 @@ MSW 메이커 및 엔진의 엔티티 직렬화/역직렬화기는 엔티티 `id
 
 MSW 맵 에디터의 레이어 트리 뷰포트는 각 `RectTileMap` 엔티티가 참조하는 `SortingLayer`(MapLayer0~5)에 대응되는 **`MapleMapLayer` 엔티티(`MapLayerComponent`)** 가 씬 파일(`.map`)에 존재해야 정상적으로 렌더링하고 편집을 허용한다. `MapleMapLayer` 엔티티가 누락되면 메이커 에디터에서 해당 타일맵 레이어들이 **`Invalid layer`** 로 표시되며 렌더링 및 편집이 불가능해진다.
 
+**⚠️ "쌍"은 존재만이 아니라 `displayOrder` 인접까지다 (2026-09-15 실측·제작자 확인).**
+`MapleMapLayer` 6종이 전부 존재하고 `MapLayerName`(Layer1~6)·`LayerSortOrder`(0~5)가 모두 유일해도, **레이어 엔티티가 자기 `RectTileMap` 바로 앞 `displayOrder` 에 있지 않으면 `Invalid layer` 가 된다.**
+
+- 정상 배치 (map01 / town / template_field): `MapleMapLayer → RectTileMap → MapleMapLayer2 → RectTileMap2 → …` 교차. `RectTileMap0`(물 오버레이용 후발 엔티티)만 관례적으로 맨 뒤.
+- 결함 배치 (당시 template_boss): 타일맵만 `6:RectTileMap3 7:RectTileMap4 8:RectTileMap5 9:RectTileMap0 10:RectTileMap6` 로 연속하고, `MapleMapLayer3~6` 이 경계·포탈 뒤(17~20)로 밀려 있었다 → 기본 바닥 담당 레이어가 편집 불가.
+- `displayOrder` 는 **렌더 순서가 아니라 에디터 계층 트리 순서**다. 값 자체는 `LayerSortOrder`·`SortingLayer` 와 무관하므로, 재배치해도 화면 출력은 바뀌지 않는다(실측: 타일 총량·정렬값 불변, 시각 회귀 0).
+- 🔴 `scripts/fix_maple_map_layers_consistency.cjs` 는 **이름으로 존재 여부만 검사**하므로 이 결함을 잡지 못하고 `[OK] all consistent` 를 반환한다. 순서까지 봐야 한다.
+- MapBuilder §1.6 은 MapLayer 정렬을 커버리지 갭으로 두므로, `displayOrder` 숫자 필드만 최소 범위 직접 편집한다(`jsonString` 객체 구조 보존 — 규칙 16).
+
 ### 41. 서브셀 타일셋 마스크 연산 방향 법칙 (Water/WetRim/Farmland 감산 체계) & 밭은 순수 흙(15) 필수 & 2×2 전체 밭 검사 가드
 
 MSW 서브셀 타일셋(wall.tileset)의 마스크 비트 체계(TL=4, TR=8, BL=1, BR=2)에서, 타일 종류에 따라 마스크 연산의 기준 방향이 정반대로 동작한다:
@@ -626,6 +636,18 @@ CSV 파일의 설명(`Description` 등) 텍스트에 문장 부호 쉼표(`,`)�
 - ✅ **예방 및 저작 규칙**:
   - CSV 값을 수동 수정하거나 편집할 때, 텍스트 안에 쉼표(`,`)가 1개라도 포함되어 있으면 **반드시 큰따옴표(`"..."`)로 해당 필드 전체를 감싸야 한다.**
   - 수정 후에는 반드시 정규 CSV 파서로 헤더 컬럼 수와 데이터 행 컬럼 수가 1:1로 정확히 일치하는지 검증한다.
+
+### 52. 한 부모 밑 자식들의 앵커가 섞여 있으면 `pos` 는 서로 다른 기준선으로 해석된다 — 중심 기준 좌표 계산은 조용히 틀린다
+
+`UIBuilder.patch(path, { pos })` 는 **기존 `AlignmentOption`(앵커)과 `Pivot` 을 보존**한다. 그래서 같은 `pos.y` 를 넘겨도 자식마다 기준선이 다르면 전혀 다른 위치에 놓인다. 에러도 lint 경고도 없다.
+
+- **실측 (2026-09-15, 인벤 아이템 툴팁)**: `Tooltip` 의 자식 4종 앵커가 `Name`=top-center(pivot 0.5,**1**) / `Count`=bottom-center(pivot 0.5,**0**) / `Desc`·`BtnDiscard`=middle-center(0.5,0.5) 로 섞여 있었다. 네 자식에 중심 기준으로 계산한 `pos` 를 넣었더니 `Name` 의 `pos.y=146` 이 **부모 위 모서리에서 146 위**로 해석돼 패널 **바깥 허공**에 그려졌다(화면에서 가방 창 위쪽에 아이템명만 떠 있음). `Count` 는 아래 모서리 기준이라 의도보다 180 아래에 붙었다.
+- 🔴 **검증까지 같이 속는다.** `anchoredPosition ± RectSize/2` 로 span 을 구하는 자체 검산은 **모든 자식이 middle-center 라고 가정**하므로, 실제로는 패널 밖인데 "inside OK / overlaps=0" 을 돌려준다. 첫 라운드에서 이 계산을 근거로 정상이라 판단했다가 스크린샷에서 뒤집혔다.
+- ✅ **저작 규칙**:
+  1. 한 컨테이너 안에서 좌표를 다시 잡을 때는 **먼저 앵커를 하나로 통일**한다 — `patch(path, { anchor: 'middle-center', pivot: [0.5, 0.5], pos, rect_size })` 처럼 `anchor` 와 `pivot` 을 **명시**해서 넘긴다.
+  2. 검산식은 앵커·피벗을 반영해야 한다: `center = (anchor - 0.5) * parentSize + pos + (0.5 - pivot) * rectSize`.
+  3. 좌표를 만지기 전에 대상 자식들의 `AlignmentOption` / `Pivot` 을 먼저 덤프해 섞여 있는지 확인한다.
+- ⚠️ 기하 검산이 통과해도 **UI 배치는 스크린샷으로 눈으로 확인**하기 전까지 끝난 것이 아니다 (규칙 6 미학 루브릭과 같은 맥락).
 
 ## 관련 문서
 

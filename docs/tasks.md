@@ -19,6 +19,11 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `ResourceSpawner.mlua` · `PortalDestinationDataSet.csv` · `SlimeKing.model` · `BossContentsDataSet.csv` · `BGMManager.mlua` · `UIMinimapController.mlua` · `PlayerController.mlua` · `TestModeConfig.mlua` | **[레이드/사냥터] 상시 공유 보스 아레나(hunt04) 철거 & 보스전 경로를 레이드 인스턴스로 일원화 & 레이드 맵명(`raid_*`/`raidlobby_*`) 분기 누락 3곳 정합** (2026-09-15 ⚖️ 확정, 런타임 검증 완료) — 아래 참조 |
+| `SkillDataSet.csv` · `UISkillTreeController.mlua` · `docs/design/skill-tree-plan.md` | **[스킬/직업] 매직 클로를 공용 탭에서 알케미스트로 이관 & 공용 '회복'(HealAura) 신설(선행 없음) & 슬래시 블러스트 선행을 강타로 정리 & 스킬창 헤더 MP 표기 제거** (2026-09-15 ⚖️ 확정, 런타임 검증 완료) — 아래 참조 |
+| `ui/HUDGroup.ui` · `UIMyInfo.mlua` · `UISkillBarController.mlua` | **[UI/HUD] 프로필 상태창 마나/기력 바 분리 — 기력으로 전용되던 파란 바를 실제 마나로 환원하고 노란 기력 바 신설(4바 구성) & 스킬바 MP 표기 철거 & 4바 앵커 단일 좌표계 통일** (2026-09-15 ⚖️ 확정, 런타임 검증 완료) — 아래 참조 |
+| `ui/HUDGroup.ui` · `UISkillBarController.mlua` · `ui/PopupGroup.ui` | **[핫픽스/UI] 스킬 퀵슬롯 MP 표기 `60 / 60.0` 정수 정합 및 슬롯 위 겹침 해소 & 인벤 아이템 설명창 글씨 넘침·'버리기' 버튼 패널 이탈 해소 (자식 앵커 혼재 규명 → 함정 규칙 52)** (2026-09-15 ⚖️ 확정, 런타임 검증 완료) — 아래 참조 |
+| `map/template_raid_lobby.map` · `Raid/RaidGate.mlua` · `Raid/BossRaidLogic.mlua` · `BossContentsDataSet.csv` · `PlayerController.mlua` · `TestModeConfig.mlua` | **[레이드/맵] 보스전 진입 전 대기실 신설 — `template_raid_lobby` 템플릿 맵 제작 & 입장을 2단(대기실 → 게이트 → 보스방)으로 재구성 & 보스방 지연 생성으로 빈 인스턴스 방지** (2026-09-15 ⚖️ 확정) — 아래 참조 |
 | `Raid/BossRaidLogic.mlua` · `BossContentsDataSet.csv` · `BossDifficultyDataSet.csv` · `Monster.mlua` · `PlayerController.mlua` · `PersistenceManager.mlua` · `ItemDropDataSet.csv` · `TestModeConfig.mlua` | **[레이드/전투] 보스 레이드 R-1 코어 구축 — `_DynamicMapService` 파티 전용 인스턴스 보스방 · 난이도 4단(EASY/NORMAL/HARD/EXTREME) 스탯·스킬빈도·보상 차등 · 주간 처치 제한 · F5 테스트 진입점** (2026-09-14 ⚖️ 확정, UI 창은 R-1 Stage B로 잔여) — 아래 참조 |
 | `QuestDataSet.csv` · `QuestConditionDataSet.csv` · `ItemDropDataSet.csv` · `item_dataset.csv` · `Monster.mlua` · `PlayerInventory.mlua` · `UICharacterController.mlua` | **[직업/퀘스트/드롭] 4대 전직 시험 공통 관문 신설 — 슬라임킹 처치·대형 슬라임 젤리 제출 일괄 요구 & 퀘스트 수락 시 최초 1회 확정 드롭(`GuaranteeQuestIds`) 체계 구축 & 직업 전용 무기 4종 지급 & 전직 레벨 게이트 상향(기초 2→4 / 시험·수련 4→6)** (2026-09-14 ⚖️ 확정) — 아래 참조 |
 | `item_dataset.csv` · `MonsterAI.mlua` · `docs/pitfalls.md` | **[핫픽스/영지편집] CSV 설명문 쉼표로 인한 지형 편집 도구(삽/호미/물삽) TerrainEditAction 컬럼 밀림 복원('더 이상 편집할 수 없습니다' 결함 원천 해소) & 몬스터 장애물 탈출 디버그 로그 정리 & 함정 규칙 51 등록** (2026-09-11 ⚖️ 확정) — 아래 참조 |
@@ -114,6 +119,98 @@
 | 데이터셋 + `ui/PopupGroup.ui`·`HUDGroup.ui` + UI 컨트롤러 | **한글화 1차** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
+
+### 2026-09-15 [스킬/직업] 매직 클로 알케미스트 이관 & 공용 '회복' 신설 & 슬래시 블러스트 선행 정리 (⚖️ 확정 · 런타임 검증 완료)
+
+- **배경**: 제작자 지적 — 매직 클로가 **모두가 배우는 공용 스킬치고 거창**하고, `DamageModel=Magic` 인데 **초반 마법 공격력이 사실상 0** 이라 체감이 죽는다. 마법사 계열로 빼고 공용 자리는 버프 계열로 교체, 강타를 굳이 선행으로 달지 말 것.
+- **직업 매핑 확인**: 4대 직업에 '마법사'는 없다. 마법/마나 정체성은 **알케미스트(연금사, 멘토 연구원 엘렌)** — `비전 마나 친화`·`푸른 불씨 폭발`·`슬라임 산성 포션`이 모두 Magic 계열이라 여기로 이관했다.
+- **조치 1 — 매직 클로(`fireball`) → 알케미스트 (2,1)**: 선행 `비전 마나 친화`(Lv 3), `RequiredLevel` 3→4(직업 스킬 공통), `ManaCost` 공란→**12**(마나 직업으로 옮기는 이상 무료 마법 스킬은 '비전 마나 친화'의 존재 의미를 깎는다). **`SkillId` 는 `skillLevels` 저장 키라 변경하지 않았다**(§7.1 세이브 호환).
+- **조치 2 — 슬래시 블러스트(`earth_shatter`) 선행 = 파워 스트라이크**, 좌표 (3,1)→**(2,1)**.
+  - 🔴 **행을 함께 올려야 하는 이유**: `UISkillTreeController.RefreshLinks` 의 위상 가드가 `부모행 == 자식행 − 1` 이라, (3,1)에 둔 채 부모만 강타로 바꾸면 **연결선이 안 그려지고 `link topology skip` 경고만 남는다**(§8.3 저작 규칙과 동일).
+- **조치 3 — `회복`(`recovery`) 신설 · 공용 (3,1) · 선행 없음**: `Type=HealAura`, 6초 동안 매초 `20 + 스킬레벨×2` 회복(반경 2 / 쿨 20초 / MP 무소모 / 기력 5). 공격력·마법력과 완전히 무관해 초반 생존에 바로 쓰이며, 와일드키퍼 `자연의 활력`(광역 힐 + 가축 친밀도)의 자기 전용 약화판이라 직업 정체성을 침범하지 않는다.
+  - ⚠️ 전용 아이콘 RUID 미지정. 공식 리소스 검색이 **메타데이터 없이 RUID만 반환**해 용도를 확인할 수 없었고, 미확인 RUID 지정은 [규칙 45](./pitfalls.md#45-계정-업로드ugc-스프라이트는-play-에서-쓸-수-없다--공식-ruid만-쓴다) 위험이라 같은 HealAura 인 `자연의 활력` 선례대로 비워 뒀다(노드는 이름 폴백 렌더, 실제 화면 확인함). 이펙트는 검증된 오라 FX 재사용.
+- **조치 4 — 스킬창 헤더 MP 표기 제거**: 플레이 확인 중 `스킬트리` 머리글에도 `MP 60/60.0` 이 떠 있는 것을 발견(직전에 고친 스킬 퀵슬롯과는 **다른 위치**). 마나는 좌상단 프로필 MP 바로 일원화했으므로 `UISkillTreeController` 머리글에서도 제거했다. 스킬 **상세 패널의 `MP <ManaCost>`(시전 비용)** 는 정보성이라 존치.
+- **CSV 저작 주의**: `SkillDataSet.csv` 는 **UTF-8 BOM + CRLF**. 컬럼명 기준으로 파싱·수정·재직렬화하고 BOM/CRLF 를 보존했다(규칙 51 — 값 내 쉼표 따옴표 래핑 포함). 전 22행 컬럼 수 63개 일치 검증.
+- **검증 (런타임 포함)**: `check_skill_quest_pipeline.cjs` **결함 없음** · `mlua-lsp diagnose` **errors=0 / warnings=0** · build **Error 0 / Warning 0 / Info 704**(`dateTime 19:28:28`, 대조 완료) · **Play: 공용 공격 탭에서 매직 클로 사라짐 + 슬래시 블러스트가 파워 스트라이크 자식으로 들여쓰기 표시, 보조 탭에 `회복 해금 가능 0/5`, 헤더가 `모험가 · Lv 6 · SP 9`(MP 제거), `[SKILL-TREE] link topology skip` 경고 0건, 런타임 Error 0건.**
+- **미검증**: 알케미스트 탭의 매직 클로 배치는 **전직 후에만 보이는 탭**이라 이번 Play(모험가 상태)에서는 화면 확인 못 했다 — 데이터·위상은 검사기로 확인.
+
+### 2026-09-15 [UI/HUD] 프로필 상태창 마나/기력 바 분리 & 스킬바 MP 표기 철거 (⚖️ 확정 · 런타임 검증 완료)
+
+- **배경**: 제작자 지적 — ① 스킬창 위에 마나를 띄우지 말 것 ② 프로필의 **기력 바가 파란색이라 마나로 오해**된다. → 파란 바를 진짜 마나로 되돌리고, 기력은 **노란 계열 바로 분리 신설**.
+- **원인**: `UIMyInfo.mlua` 가 `info_bottom/Mp`(파랑) 게이지를 **기력(Stamina) 용도로 전용**하고 있었다(주석에 `Mp gauge repurposed as the player's Stamina bar`). 색은 마나인데 값은 기력이라 의미가 어긋나 있었고, 그래서 실제 마나는 표시할 곳이 없어 스킬바에 텍스트로 얹혀 있었다.
+- **조치 1 — 4바 구성으로 확장** (`ui/HUDGroup.ui`): `UIMyInfo` 162 → **188**(`info_top` 80 + `info_bottom` 108), 위젯 **상단 y=525 는 고정**하고 아래로만 확장. 바 순서 **HP(빨강) → MP(파랑) → 기력(노랑) → EXP(초록)**.
+  - `Sta` 바 신설: `Mp` 구조(컨테이너 + `img_background` + `img_bar` + `text_value`)를 동일 RUID·동일 텍스트 스펙으로 복제하고 `img_bar` 색만 `(1.00, 0.82, 0.25)` 노랑으로.
+  - 🔴 **4바를 한 좌표계로 통일**: 기존 3바는 `Hp`=top-center / `Mp`=middle-center / `Exp`=bottom-center 로 **앵커가 제각각**이었다(규칙 52 의 그 패턴). 전부 `top-center + pivot(0.5,1)` 로 통일하고 `pos.y = 0 / -26 / -52 / -78` 등간격(pitch 26)으로 재배치.
+  - `ChatPanel`(상단 y=350)과 위젯 하단이 13px 밖에 안 떨어져 있어 챗을 **30px 내렸다**(신규 간격 17px).
+- **조치 2 — 스킬바 MP 텍스트 제거**: `HUDGroup.ui` 의 `SkillBar/ManaText` 엔티티 삭제 + `UISkillBarController:UpdateSlots` 의 갱신 코드 제거(잔여 참조 0건 확인).
+- **조치 3 — 배선** (`UIMyInfo.mlua`): `mpBar`/`mpText` 프로퍼티 신설 → `info_bottom/Mp` 에 `pcon.Mana` / `pcon:GetMaxMana()`. `staBar`/`staText` 는 `info_bottom/Sta` 로 옮겨 `pcon.Stamina` / `pcon.MaxStamina`. 표기는 `string.format("%d / %d", …)` 로 정수 정합.
+- **검증 (런타임 포함)**: `mlua-lsp diagnose` 2파일 **errors=0 / warnings=0 / diagnostics=0** · 앵커 반영 재검산(`info_top [14,94]` / `info_bottom [-94,14]`, 4바 전부 `info_bottom` 내부, `Sta` 자식 3종이 `Hp`/`Mp`/`Exp` 와 동일 align·span) · `ui_lint` ERROR 0 · build **Error 0 / Warning 0 / Info 704**(`dateTime 18:42:44`, 대조 완료) · **Play 스크린샷: HP 1000/1000(빨강) · MP 60/60(파랑) · 기력 150/150(노랑) · EXP 11% 4바 정상 표시, 스킬 퀵슬롯 MP 표기 사라짐, 런타임 Error 0건**(잔여 Warning 174건은 전부 선재 `LWA-3019`).
+
+### 2026-09-15 [레이드/사냥터] hunt04 철거 & 보스전 경로 일원화 (⚖️ 확정 · 런타임 검증 완료)
+
+- **배경**: 대기실 신설로 보스전 경로가 갖춰지면서, 상시 공유 맵 `hunt04` 의 **항상 부활하는 슬라임킹**과 레이드가 이중화됐다. 제작자 판단 ⓑ(철거 후 레이드 일원화) → "현 로비로 생성되는 맵을 hunt04 대신 대체한다".
+- **🔴 선행 발견 — 그냥 지우면 레이드가 영구 차단된다**: `SlimeKing.model` 의 `script.Monster.UnlockWaypointId = "hunt04"` 로 **보스를 잡아야 hunt04 웨이포인트가 열리고**, 그게 `BossContentsDataSet.RequiredWaypointId` 였다. hunt04 를 없애면 "레이드에 들어가려면 레이드에서만 얻는 웨이포인트가 필요한" 순환이 된다.
+  - 조치: `RequiredWaypointId` 를 **`hunt03`**(체인 종점, 나가면서 해금)으로 이관. `SlimeKing.model` 의 `UnlockWaypointId`/`UnlockWaypointName` 은 목적지가 사라졌으므로 `""` 로 비웠다(`Monster:Dead()` 가 빈 값이면 해금 분기를 건너뛴다 — 확인 완료).
+  - 전직 시험(302/312/322/332)의 대형 슬라임 젤리 **확정 드롭은 영향 없음** — `GuaranteeQuestIds` 가 `slime_king_easy/_hard/_extreme` 난이도 행 전부에 걸려 있고, EASY 입장 레벨 4 < 전직 게이트 6.
+- **조치 1 — 체인 축소**: `ResourceSpawner:EnsureHuntingGroundMaps` 에서 hunt04 생성·포탈 2종·`SpawnHuntBoss` 및 hunt03→hunt04 연결 포탈 제거. 체인은 `hunt01 → hunt02 → hunt03` 에서 끝난다.
+- **조치 2 — 데이터 정리**: `PortalDestinationDataSet.csv` 의 `hunt04` 행 삭제(워프 목록에서 제거). `TestModeConfig` 의 `hunt04` 맵 매핑·스폰 좌표 제거 — 입력 시 경고 로그와 함께 `hunt03` 으로 폴백하고, 보스전은 F5 안내로 돌린다.
+- **조치 3 (선재 결함 동반 수정) — 레이드 맵명 분기 누락**: 동적 인스턴스는 이름이 `raid_<boss>_<diff>_<n>` / `raidlobby_…` 라 **`mapName == "template_boss"` 리터럴 비교에 걸리지 않았다.** hunt04 시절에도 마찬가지여서 보스 BGM·미니맵 줌이 실제로는 한 번도 적용된 적이 없다.
+  - `BGMManager.ClassifyMapKind`: `raidlobby_` / `raid_` 접두사 → `boss`(대기실도 같은 긴장감 트랙. 전용 트랙 생기면 분리).
+  - `UIMinimapController`: `NormalizeMapKey` 신설 — `raid*` → `template_boss`, `hunt*` → `template_field` 로 환산해 `MapCameraDataSet` 조회와 폴백 분기 양쪽에 적용.
+  - `PlayerController.GetMapSpotType`: 레이드 접두사 → `boss`.
+- **검증 (런타임 포함)**: `mlua-lsp diagnose` 변경 7파일 **errors=0 / warnings=0** · `check_skill_quest_pipeline.cjs` 결함 0 · `maker_refresh_workspace` ok · build **Error 0 / Warning 0 / Info 704** (타임스탬프 대조 완료) · **Play 실행: `ResourceSpawner: Hunting-ground chain ready (hunt01..hunt03).` · `[RAID] BossRaidLogic ready` · 런타임 Error 0건** (잔여 Warning 34건은 전부 선재 `LWA-3019 IsLegacy` Trigger 경고).
+
+### 2026-09-15 [핫픽스/UI] 스킬바 MP 표기·겹침 & 인벤 설명창 넘침·버튼 이탈 (⚖️ 확정 · 런타임 검증 완료)
+
+- **① 스킬 퀵슬롯 MP `60 / 60.0`**:
+  - 표기: `GetMaxMana()` 가 `number` 라 문자열 결합 시 `60.0` 으로 찍혔다. `string.format("MP %d / %d", …)` 로 현재값과 같이 정수 정합.
+  - 위치: `ManaText` 가 `y=-30`(h26)이라 **슬롯(y∈[-44,+44]) 하단을 덮고 있었다.** 위로 올렸더니 이번엔 정보/제작/가방 버튼 행과 겹쳐(스크린샷 확인) — 위아래가 다 찬 클러스터라, **스킬 행과 같은 높이의 왼쪽 빈 공간**(`x` 우단 -200, Q 슬롯 좌단 -194 바로 앞)으로 이동. 폭 150(110은 `MP 60 / 60` 이 잘림) · fs20 · 밝은 지형 위 가독성용 `Underlay` 적용.
+  - 참고: 프로필 위젯의 `Mp` 게이지는 `UIMyInfo` 에서 **기력(Stamina)으로 전용**돼 있어 MP 표기는 스킬바가 유일하다 → 제거하지 않고 위치만 정리했다.
+  - ⤷ **이 항목은 같은 날 후속 작업으로 대체됨**: 스킬바 `ManaText` 는 삭제되고 마나는 프로필 위젯 MP 바로 일원화됐다 (아래 "프로필 상태창 마나/기력 바 분리" 참조).
+- **② 인벤 아이템 설명창**: 패널 260×360 으로 키우고 `Bg` 를 전체로 덮은 뒤 **이름 → 보유 → 설명 → 버리기** 세로 스택으로 재배치.
+  - `BtnDiscard` 가 `Bg`(220 높이) 아래로 빠져나가 있던 것 해소 + **42 → 88px 터치 규격** 충족(디자인 정책 §1).
+  - 넘침: `BestFit=false / Overflow=0` 이라 긴 설명이 그대로 흘러넘쳤다. `BestFit=true`(Min/Max 지정)로 축소 대응. **`Overflow=Ellipsis(2)` 를 같이 주면 BestFit 축소보다 먼저 걸려 짧은 설명도 `…` 로 잘린다**(실측) → `Overflow=0` 유지.
+- **🔴 오진 1건 + 규칙 52 신설**: 1차 배치 후 기하 검산이 "inside OK / overlaps=0" 을 돌려줬으나 **스크린샷에서 아이템명이 패널 바깥 허공에 떠 있었다.** 원인은 자식 앵커 혼재(`Name`=top-center / `Count`=bottom-center / 나머지 middle-center) — 같은 `pos.y` 가 부모의 서로 다른 모서리 기준으로 해석됐고, 중심 기준으로 짠 검산식도 똑같이 속았다. 전 자식을 `anchor/pivot` **명시**로 middle-center 통일해 해결. 상세는 [함정 규칙 52](./pitfalls.md#52-한-부모-밑-자식들의-앵커가-섞여-있으면-pos-는-서로-다른-기준선으로-해석된다--중심-기준-좌표-계산은-조용히-틀린다).
+- **검증 (런타임 포함)**: `ui_lint` ERROR 0(경고는 파일 기존 baseline) · `check_ui_text_occlusion.cjs` **가려진 텍스트 없음** · 앵커 반영 재검산 4블록 전부 `Bg` 내부 / 겹침 0 · build **Error 0 / Warning 0** · **Play 스크린샷 확인: 아이템명("제작 두루마리: 구리 도구")·보유·설명 3줄 전문(잘림 없음)·버리기 버튼이 모두 패널 안에 정렬**, MP 표기는 슬롯과 비겹침.
+- 진단용 임시 `log()` 는 확인 후 제거했고 `UIInventoryController.mlua` 는 **무변경 상태로 복귀**(`git status` 미표시로 확인).
+- **남은 것**: 툴팁 텍스트 3종이 아직 legacy `MOD.Core.TextComponent` 다. Phase 24-A 의 `TextGUIRendererComponent` 마이그레이션 대상으로 남긴다(이번엔 요청 범위 밖이라 미실시).
+
+### 2026-09-15 [레이드/맵] 보스전 대기실(`template_raid_lobby`) 신설 & 2단 입장 파이프라인 (⚖️ 확정)
+
+- **배경**: 제작자 지시 — "보스전 진입 전 잠시 대기하는 공간이 필요하다. 새 템플릿을 만들어 대기 맵을 생성해라." R-1 코어는 입장 즉시 보스방에 떨어뜨리는 구조라 파티 집결(R-2)·난이도 재확인·이탈 여지가 전혀 없었다.
+- **조치 1 — 대기실 템플릿 맵 신설 (`map/template_raid_lobby.map`)**:
+  - `MapBuilder.fromTemplate("map/template_boss.map", "template_raid_lobby")` 로 복제. **타일 페인팅은 MapBuilder 커버리지 갭(§1.6)** 이라 바닥이 있는 맵을 얻는 유일한 안전 경로가 기존 손디자인 맵 복제였다.
+  - 보스방 정체성 요소 제거: `ArenaCrest_Banner_Left/Right`(아레나 문장) · `PortalToHunt03`(사냥터 체인). 입구 램프 2기는 대기실 입구 연출로 존치.
+  - 귀환 포탈(`Portal`)을 도착 지점 옆 `(-4.5, -11.5)` 로 이전. 원본 템플릿에서는 `(7.36, 9.26)` 에 있어 대기실 동선과 맞지 않았다.
+  - `TileMapMode = 1` (RectTile, 프로젝트 고정 스펙) · 5041 타일 · 레이어 구성은 원본과 동일.
+- **조치 2 — `RaidGate.mlua` 신설** (`@Component`): 대기실 입구의 보스방 진입 게이트. **트리거 감지·`ActivePortal` 배선·정렬 레이어는 같은 엔티티에 함께 붙는 `PortalGate` 를 그대로 재사용**하고(프리셋 우선 R1), 이 컴포넌트는 `BossId` / `DifficultyId` 만 들고 있다. `PortalGate.TargetMapName` 은 `"Home"` 으로 둬서 **분기가 어떤 이유로 빠져도 최악이 "마을 귀환"** 이 되게 했다.
+- **조치 3 — `BossRaidLogic` 입장 2단 재구성**:
+  - `EnterRaid` → 검증 → **대기실** 인스턴스(`raidlobby_<boss>_<diff>_<seq>`) 생성 → 귀환 포탈 + `RaidGate` 스폰 → 요청자 이동.
+  - `EnterBossRoom(player, gate)` → **보스방**(`raid_<boss>_<diff>_<seq>`) 생성 → 그 대기실에 있던 **전원** 이동. 조건 미충족자는 대기실에 남기고 사유만 통보(파티 R-2 대비).
+  - 🔴 **보스방을 대기실과 동시에 만들지 않는다** — 대기 중 이탈하면 빈 보스방만 남아 스윕까지 자원을 물고 있다. 지연 생성으로 해소.
+  - 검증 로직을 `ValidateEntry`(레벨/웨이포인트/선행퀘스트/주간제한)로 추출해 **대기실 입장과 보스방 입장 양쪽에서 재사용**. 대기 중 주간 제한이 차는 경우를 잡는다.
+  - `CreateInstanceMap` 공용화 (CreateDynamicMap + `green_island` 세이프존 + 절차 지형 off). 대기실도 잡몹이 생성되지 않는다.
+  - 비워진 대기실은 보스방과 동일한 `SweepInstances` 규칙(`EntryGraceSeconds` 60초 유예 후 빈 방 파기)으로 회수된다 — 별도 코드 없음.
+- **조치 4 — `BossContentsDataSet.csv` `LobbyMap` 컬럼 신설**: 보스별 테마 대기실을 위한 데이터 주도 슬롯(R3). 공란이면 `BossRaidLogic.DefaultLobbyMap` 로 폴백. `.userdataset` 래퍼에는 컬럼 스키마가 없어 CSV 헤더만 늘리면 된다.
+- **조치 5 — `PlayerController`**: `ServerRequestWarp` 최상단에 RaidGate 분기 추가(같은 엔티티에 `PortalGate` 도 있으므로 **반드시 먼저 본다**). `ReadInteractLabel` 탐색 목록 맨 앞에 `script.RaidGate` 추가 → 조준 라벨이 "보스전 입장하기"로 뜬다. **기존 메서드 시그니처는 불변**(규칙 46).
+- **조치 6 (제작자 지적 반영) — 게이트 에디터 배치 & 포탈 스케일 정합**:
+  - *"포탈이 하나만 있네"* — `RaidGate` 가 런타임 스폰뿐이라 에디터 맵에는 귀환 `Portal` 하나만 보였다. `template_boss` 가 `Portal`+`PortalToHunt03` 를 에디터에 배치해 두는 방식과 어긋난다. **`template_raid_lobby` 에 `RaidGate` 를 `placeModel`(Furniture_Portal) 로 실배치** `(0.5, -7.5)` — 입구 램프(-3,-8)~(3,-8) 사이. `script.RaidGate` 부착 + `PortalColor="red"` 도 맵에 박아 에디터에서도 붉은 게이트로 보인다. `SpawnFixedPortal` 은 원래 **이름으로 찾은 에디터 배치 위치를 우선**하므로 런타임 경로는 그대로 동작하고, `LobbyGateX/Y`·`LobbyReturnPortalX/Y` 는 폴백으로 강등(실좌표와 값 일치시킴).
+  - *"보스방도 그렇고 포탈이 너무 작더라"* — **원인: 맵 배치 인스턴스가 `Scale 1`, 모델(`Furniture_Portal.model`) 기본값은 `Scale 2`.** 2026-08-21 전체 2배 스케일 패스가 모델만 갱신하고 맵 배치분을 놓쳤다(마을 `PortalToHome` 은 Scale 2 로 정상이라 대비됐다). `template_field`(Portal, PortalToHunt02) · `template_boss`(Portal, PortalToHunt03) · `template_raid_lobby`(Portal, RaidGate) **6개 전부 Scale 2 로 정합**.
+  - 규칙 14(실콜라이더 = `BoxSize × Scale`) 동반 조정: `BoxSize 1.5×2.0` → `1.0×1.25`. 유효 판정 `1.5×2.0` → **`2.0×2.5`** — 시각은 2배가 되면서 상호작용 판정은 과대해지지 않게 소폭만 키웠다.
+- **검증**: `mlua-lsp diagnose` 변경 `.mlua` 전부 **errors=0 / warnings=0 / diagnosticCount=0** (`workspaceLoaded=true`, `staleCrossFileResults=false`) · `RaidGate.codeblock` 생성 확인 · `maker_refresh_workspace` `status ok` · `maker_logs(kind="build")` **Error 0 / Warning 0 / Info 704**, 로그 `dateTime 2026-09-15T16:32:50` 이 이번 refresh 시각과 일치(규칙 22 대조 완료) · 맵 구조 전수 검증 3종(규칙 16 `jsonString` 객체 유지 / 규칙 39 GUID 36자리 / `path`↔`jsonString.path` / `componentNames`↔`@components` 드리프트 0 / `EntryKey` 재작성 / 잔여 `template_boss` 참조 0건).
+  - 참고: 조치 1~5 직후 라운드에서는 build 로그가 refresh 2회에 동일 스냅샷(`16:16:16`)을 반환해 갱신 미확인이었다(규칙 22 실사례). 조치 6 라운드에서 정상 갱신되어 함께 확증됐다.
+- ✅ **런타임 검증 완료 (2026-09-15 제작자 Play)**: F5 대기실 입장 · 귀환 포탈 · 붉은 게이트 F → 보스방 생성/이동 · 빈 대기실 스윕 파기 · 2배 포탈의 체감 크기와 F 판정 거리까지 전부 정상 확인.
+- **조치 7 (제작자 지적) — `template_boss` / `template_raid_lobby` 레이어 트리 `Invalid layer` 대응 (⚠️ 원인 미확정)**:
+  - 증상: 기본 바닥 담당 타일맵 레이어 2종이 Maker 레이어 트리에서 `Invalid layer` 로 떠서 편집 불가. `template_raid_lobby` 는 `template_boss` 복제본이라 그대로 물려받았다. **`template_boss` 의 선재 결함이며 이번 대기실 작업이 만든 것이 아니다.**
+  - **오진 1건 기록**: 최초에 `MapleMapLayer`/`MapleMapLayer2` 가 Layer5/Layer6 중복이라 판단했으나, **원본 JSON 확인 결과 전 맵이 Layer1~6 + sort 0~5 유일값으로 정상**이었다(규칙 40 위반 아님). 해당 patch 는 같은 값 재기입이라 무변경(`git diff` 확인). 빌더 조회가 어긋난 값을 반환한 정황이 있었으나 **재현되지 않아 원인 미특정** — 레이어 진단은 원본 JSON 을 근거로 삼는다.
+  - **실제로 확인된 구조 차이 = `displayOrder` 이탈**. 정상 맵(map01/town/template_field)은 레이어와 타일맵이 **쌍으로 교차 배치**된다(`MapleMapLayer→RectTileMap→MapleMapLayer2→RectTileMap2→…`). `template_boss` 는 `MapleMapLayer3~6` 이 자기 타일맵에서 분리돼 경계·포탈 뒤(17~20)로 밀려 있었다. `displayOrder` 는 렌더 순서가 아니라 **에디터 계층 트리 순서**라 증상 영역과 일치한다.
+  - 조치: 두 맵을 정상 맵과 동일한 교차 배치로 복원하고 `RectTileMap0` 은 관례대로 맨 뒤에 둔다. `MapLayerComponent` 값과 타일 데이터는 일절 손대지 않았다.
+  - MapBuilder §1.6 은 `MapLayer creation, rename, sorting` 을 **명시적 커버리지 갭**으로 둔다 → `displayOrder` 숫자 필드만 최소 범위 직접 편집, `jsonString` 객체 구조 보존(규칙 16).
+  - 검증: 타일 총량 **10226칸 보존**(5041+4416+385+384) · 레이어 6개 `Layer1~6` / sort `0~5` 유일 · GUID·`path`·`componentNames` 드리프트 0 · `displayOrder` 중복은 루트↔`PlacementPreview` 1건뿐으로 **정상 맵 3종과 동일한 기존 관례** · `maker_refresh_workspace` `status ok`.
+  - ⚠️ **build 로그 갱신 미확인**(규칙 22, `dateTime 16:32:50` 고착). 이번 라운드는 `.mlua` 무변경이라 영향 없음.
+  - ✅ **원인 확정 (2026-09-15 제작자 Maker 확인)**: `displayOrder` 교차 배치 복원으로 `Invalid layer` 해소, 두 맵 모두 레이어 편집 정상 복귀. **`MapleMapLayer` 는 자기 `RectTileMap` 바로 앞에 와야 한다**는 것이 확정된 규칙이다 — 레이어 엔티티가 존재하고 `MapLayerName`/`LayerSortOrder` 가 유일해도, 계층 순서가 떨어지면 에디터가 `Invalid layer` 로 처리한다. 규칙 40 의 "1:1 쌍"은 **존재만이 아니라 `displayOrder` 인접까지** 포함한다.
+  - 참고: `LayerSortOrder` 의 Layer3/Layer4 스왑(`template_boss`+`map01` = `3/2`, `town`+`template_field` = `2/3`)은 원인이 아니었다. 손대지 않았고 그대로 둔다.
+- **후속**: 대기실 지형이 아직 **보스 아레나와 같은 타일 페인팅**이다. 전실다운 지형으로 다듬으려면 Maker 타일 편집(빌더 커버리지 갭)이 필요하므로 제작자 작업으로 남긴다.
 
 ### 2026-09-14 [레이드] 보스 레이드 R-1 코어 — 인스턴스 보스방 · 난이도 4단 · 주간 제한 (⚖️ 확정)
 

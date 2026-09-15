@@ -1817,10 +1817,14 @@ script ResourceSpawner extends Logic
 
 	@ExecSpace("ServerOnly")
 	method void EnsureHuntingGroundMaps()
-		-- Builds the 4-stage hunting-ground chain (game_design.md §2.2 ③ / Phase 12):
-		--   hunt01 (field, easy) -> hunt02 (field, copper) -> hunt03 (field, hard) -> hunt04 (boss arena).
-		-- Each zone has an immovable Home-return portal and a forward connection portal; hunt04 hosts the
-		-- King Slime boss. Idempotent — re-entry is a no-op once the maps exist.
+		-- Builds the 3-stage hunting-ground chain (game_design.md §2.2 ③ / Phase 12):
+		--   hunt01 (field, easy) -> hunt02 (field, copper) -> hunt03 (field, hard).
+		-- Each zone has an immovable Home-return portal and a forward connection portal.
+		-- Idempotent — re-entry is a no-op once the maps exist.
+		--
+		-- 🔴 hunt04(상시 공유 보스 아레나)는 2026-09-15 철거됐다. 보스전은 BossRaidLogic 의
+		--    대기실(template_raid_lobby) → 보스방(template_boss) 인스턴스로 일원화된다.
+		--    상시 부활 보스와 레이드로 경로가 이중화돼 있던 문제를 없앤 조치다.
 		-- 템플릿/바이옴은 전부 PortalDestinationDataSet(TemplateMap/Biome 컬럼) 데이터 주도.
 		local ds = _DataService:GetTable("PortalDestinationDataSet")
 		local getCol = function(mapName, colName, fallback)
@@ -1840,7 +1844,6 @@ script ResourceSpawner extends Logic
 		local hunt01 = self:EnsureHuntMap("hunt01", getCol("hunt01", "TemplateMap", "template_field"), getCol("hunt01", "Biome", "earth_field"))
 		local hunt02 = self:EnsureHuntMap("hunt02", getCol("hunt02", "TemplateMap", "template_field"), getCol("hunt02", "Biome", "earth_field"))
 		local hunt03 = self:EnsureHuntMap("hunt03", getCol("hunt03", "TemplateMap", "template_field"), getCol("hunt03", "Biome", "earth_field"))
-		local hunt04 = self:EnsureHuntMap("hunt04", getCol("hunt04", "TemplateMap", "template_boss"), getCol("hunt04", "Biome", "green_island"))
 
 		-- hunt01: Home return + forward to hunt02.
 		if isvalid(hunt01) then
@@ -1857,24 +1860,14 @@ script ResourceSpawner extends Logic
 			self:SpawnTreasureChestsForMap(hunt02, "hunt02")
 		end
 
-		-- hunt03: Home return + back to hunt02 + forward to the boss arena hunt04.
+		-- hunt03: Home return + back to hunt02. 체인의 종점 — 보스전은 레이드 대기실로 간다.
 		if isvalid(hunt03) then
 			self:SpawnFixedPortal(hunt03, "Portal", 0, -3, "Home", Vector2(-3, 0))
 			self:SpawnFixedPortal(hunt03, "PortalToHunt02", -10, 0, "hunt02", Vector2(8, 0))
-			-- 입장 좌표를 맵 남쪽 입구 쪽에 두어 보스(북쪽)와 거리 확보.
-			self:SpawnFixedPortal(hunt03, "PortalToHunt04", 10, 0, "hunt04", Vector2(0, -10))
 			self:SpawnTreasureChestsForMap(hunt03, "hunt03")
 		end
 
-		-- hunt04 (boss arena): Home return + back to hunt03 + the King Slime boss.
-		if isvalid(hunt04) then
-			self:SpawnFixedPortal(hunt04, "Portal", 0, -8, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(hunt04, "PortalToHunt03", 0, -7, "hunt03", Vector2(8, 0))
-			-- 입구(y≈-10)와 거리 확보 — 입장 직후 교전 범위 밖.
-			self:SpawnHuntBoss(hunt04, "slime_king", 0, 10)
-		end
-
-		log("ResourceSpawner: Hunting-ground chain ready (hunt01..hunt04).")
+		log("ResourceSpawner: Hunting-ground chain ready (hunt01..hunt03).")
 	end
 
 	method any ParseHexColor(string hex)

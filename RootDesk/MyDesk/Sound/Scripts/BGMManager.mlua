@@ -57,6 +57,11 @@ script BGMManager extends Logic
 		if string.sub(mapName, 1, 5) == "Home_" then return "home" end
 		if mapName == "town" then return "town" end
 		if mapName == "template_boss" then return "boss" end
+		-- 레이드 인스턴스는 런타임 복제본이라 이름이 raidlobby_<boss>_<diff>_<n> / raid_<boss>_<diff>_<n> 다.
+		-- 이름에 "boss" 가 안 들어가 아래 폴백에도 안 걸리므로 접두사로 직접 잡는다.
+		-- 대기실도 보스 권역이라 같은 긴장감 BGM 을 쓴다(전용 대기실 트랙이 생기면 분리).
+		if string.sub(mapName, 1, 10) == "raidlobby_" then return "boss" end
+		if string.sub(mapName, 1, 5) == "raid_" then return "boss" end
 		local lower = string.lower(mapName)
 		if string.find(lower, "boss", 1, true) ~= nil then return "boss" end
 		return "field"

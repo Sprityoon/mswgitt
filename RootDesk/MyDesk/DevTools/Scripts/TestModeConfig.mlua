@@ -10,18 +10,18 @@ script TestModeConfig extends Logic
 	-- =========================================================================
 
 	-- [스위치] 테스트 모드 활성화 여부
-	property boolean EnableTestMode = false
+	property boolean EnableTestMode = true
 
 	-- [목표 맵] 진입할 맵 식별자 (대소문자 무관)
 	--   - "town"           : 마을 광장 (기본 좌표 10, -2)
 	--   - "home"           : 유저 개인 영지 (Home_<UserId>, 기본 좌표 -3, 0)
 	--   - "hunt01"         : 사냥터 1구역 (template_field 기반)
 	--   - "hunt02"         : 사냥터 2구역
-	--   - "hunt03"         : 사냥터 3구역
-	--   - "hunt04"         : 보스 사냥터 (King Slime 아레나, template_boss 기반)
+	--   - "hunt03"         : 사냥터 3구역 (체인 종점)
 	--   - "template_field" : 사냥터 1구역 ("hunt01"로 자동 매핑)
-	--   - "template_boss"  : 보스 사냥터 ("hunt04"로 자동 매핑)
 	--   - 기타 맵 이름     : 명시한 맵 엔티티 이름 그대로 사용
+	-- ⚠️ 상시 공유 보스 아레나(hunt04)는 철거됐다. 보스전은 F5(레이드 대기실)로 들어간다 —
+	--    대기실·보스방은 요청 시 생성되는 인스턴스라 TargetMap 으로 직접 지정할 수 없다.
 	property string TargetMap = "template_field"
 
 	-- [테스트 슬롯] 테스트에 사용할 세이브 슬롯 (1~5)
@@ -40,7 +40,8 @@ script TestModeConfig extends Logic
 	-- =========================================================================
 	-- [디버그 핫키]  ※ EnableTestMode 가 true 일 때만 동작한다.
 	-- =========================================================================
-	--   F5 : 보스 레이드 입장 — TestRaidBossId / TestRaidDifficulty 로 인스턴스 생성 후 입장
+	--   F5 : 보스 레이드 대기실 입장 — TestRaidBossId / TestRaidDifficulty 로 대기실 생성 후 입장
+	--        (보스방은 대기실 입구의 붉은 게이트에서 F)
 	--   F6 : 좌하단 키 목록 HUD 표시/숨김 토글
 	--   F7 : 레벨업 — GrantLevelCount 만큼 (경험치를 채워 실제 레벨업 경로를 그대로 태운다)
 	--   F8 : 스킬 포인트(SP) 즉시 주입 — GrantSPAmount 만큼
@@ -92,7 +93,7 @@ script TestModeConfig extends Logic
 	@ExecSpace("ClientOnly")
 	method string BuildDebugKeyHelp()
 		-- HUD 본문에 들어갈 키 목록. 수치는 프로퍼티에서 읽어 안내와 실제가 어긋나지 않게 한다.
-		return "F5            보스 레이드 입장 (" .. self.TestRaidBossId .. " / " .. self.TestRaidDifficulty .. ")\n"
+		return "F5            보스 레이드 대기실 (" .. self.TestRaidBossId .. " / " .. self.TestRaidDifficulty .. ")\n"
 			.. "F6            키 목록 표시/숨김\n"
 			.. "F7            레벨업 +" .. tostring(self.GrantLevelCount) .. "\n"
 			.. "F8            SP +" .. tostring(self.GrantSPAmount) .. "\n"
@@ -103,7 +104,7 @@ script TestModeConfig extends Logic
 	@ExecSpace("ClientOnly")
 	method string BuildDebugKeyHelpLine()
 		-- 로그 한 줄용 요약(개행 없는 형태).
-		return "F5 레이드 입장 · F6 목록 · F7 레벨업 +" .. tostring(self.GrantLevelCount)
+		return "F5 레이드 대기실 · F6 목록 · F7 레벨업 +" .. tostring(self.GrantLevelCount)
 			.. " · F8 SP +" .. tostring(self.GrantSPAmount)
 			.. " · F9 리소스 프리뷰 · F2/F3/F4 랭킹 샘플"
 	end
@@ -165,6 +166,7 @@ script TestModeConfig extends Logic
 	method void RequestEnterTestRaid()
 		-- 보스 컨텐츠 창(R-1 UI)이 붙기 전까지 레이드 입장을 검증하기 위한 임시 진입점.
 		-- 실제 조건 검증·인스턴스 생성은 전부 BossRaidLogic(서버)이 한다 — 여기서는 요청만 보낸다.
+		-- F5 는 **대기실**로 보낸다. 보스방은 대기실 입구의 붉은 게이트에서 F 로 연다.
 		if _BossRaidLogic == nil then
 			log_warning("[TESTMODE] BossRaidLogic missing")
 			return
@@ -251,7 +253,9 @@ script TestModeConfig extends Logic
 		elseif raw == "hunt03" then
 			return "hunt03"
 		elseif raw == "template_boss" or raw == "boss" or raw == "hunt04" then
-			return "hunt04"
+			-- 보스 아레나 철거. 인스턴스는 TargetMap 으로 못 가므로 체인 종점으로 보낸다(F5 로 레이드 입장).
+			log_warning("[TESTMODE] boss arena was removed — falling back to hunt03. Use F5 for the raid lobby.")
+			return "hunt03"
 		end
 		-- 그 외 직접 입력된 맵 이름
 		return self.TargetMap
@@ -275,8 +279,6 @@ script TestModeConfig extends Logic
 			return Vector2(0.0, 0.0)
 		elseif mapName == "hunt03" then
 			return Vector2(0.0, 0.0)
-		elseif mapName == "hunt04" then
-			return Vector2(0.0, -5.0)
 		end
 
 		return Vector2(0.0, 0.0)

@@ -1,7 +1,7 @@
 {
   "Id": "",
   "GameId": "",
-  "EntryKey": "map://template_boss",
+  "EntryKey": "map://template_raid_lobby",
   "ContentType": "x-mod/map",
   "Content": "",
   "Usage": 0,
@@ -14,12 +14,12 @@
     "Use": "Binary",
     "Entities": [
       {
-        "id": "bf8cc34e-0fae-4e0d-b005-3ce647804871",
-        "path": "/maps/template_boss",
+        "id": "c2d60dd2-daed-4b11-971e-84a16636b9bd",
+        "path": "/maps/template_raid_lobby",
         "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent",
         "jsonString": {
-          "name": "template_boss",
-          "path": "/maps/template_boss",
+          "name": "template_raid_lobby",
+          "path": "/maps/template_raid_lobby",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -54,12 +54,12 @@
         }
       },
       {
-        "id": "739a8261-0000-4000-8000-000000000001",
-        "path": "/maps/template_boss/PlacementPreview",
+        "id": "b82899d9-3c6b-46da-a307-2437ead64e41",
+        "path": "/maps/template_raid_lobby/PlacementPreview",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent",
         "jsonString": {
           "name": "PlacementPreview",
-          "path": "/maps/template_boss/PlacementPreview",
+          "path": "/maps/template_raid_lobby/PlacementPreview",
           "nameEditable": true,
           "enable": false,
           "visible": true,
@@ -115,12 +115,12 @@
         }
       },
       {
-        "id": "264ecb50-9df2-46d9-bfbc-7bca1f0d5aa3",
-        "path": "/maps/template_boss/Background",
+        "id": "74b34234-35f6-475b-9c59-69329913565e",
+        "path": "/maps/template_raid_lobby/Background",
         "componentNames": "MOD.Core.BackgroundComponent",
         "jsonString": {
           "name": "Background",
-          "path": "/maps/template_boss/Background",
+          "path": "/maps/template_raid_lobby/Background",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -147,12 +147,12 @@
         }
       },
       {
-        "id": "4861303c-70d6-4152-8c67-9a8624f4e766",
-        "path": "/maps/template_boss/MapleMapLayer",
+        "id": "7a48f277-03e0-4651-a964-e3aa7e623548",
+        "path": "/maps/template_raid_lobby/MapleMapLayer",
         "componentNames": "MOD.Core.MapLayerComponent",
         "jsonString": {
           "name": "MapleMapLayer",
-          "path": "/maps/template_boss/MapleMapLayer",
+          "path": "/maps/template_raid_lobby/MapleMapLayer",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -183,12 +183,12 @@
         }
       },
       {
-        "id": "94dc2499-333f-45b0-b1fa-b0a23f3e9952",
-        "path": "/maps/template_boss/RectTileMap",
+        "id": "e184af45-9b97-4d5f-9496-3cc833bedff7",
+        "path": "/maps/template_raid_lobby/RectTileMap",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
         "jsonString": {
           "name": "RectTileMap",
-          "path": "/maps/template_boss/RectTileMap",
+          "path": "/maps/template_raid_lobby/RectTileMap",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -40567,12 +40567,12 @@
         }
       },
       {
-        "id": "78ed9703-25b1-41d9-8d6d-1d56e0a40c2a",
-        "path": "/maps/template_boss/MapleMapLayer2",
+        "id": "2c109d90-bb81-4a4a-87f5-ec38625fb4dc",
+        "path": "/maps/template_raid_lobby/MapleMapLayer2",
         "componentNames": "MOD.Core.MapLayerComponent",
         "jsonString": {
           "name": "MapleMapLayer2",
-          "path": "/maps/template_boss/MapleMapLayer2",
+          "path": "/maps/template_raid_lobby/MapleMapLayer2",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -40603,12 +40603,12 @@
         }
       },
       {
-        "id": "3dbb0a1b-7e17-4eb7-ab72-5fc41700892a",
-        "path": "/maps/template_boss/RectTileMap2",
+        "id": "410a1ae1-86cf-4a5c-8ed2-941565bf1a81",
+        "path": "/maps/template_raid_lobby/RectTileMap2",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
         "jsonString": {
           "name": "RectTileMap2",
-          "path": "/maps/template_boss/RectTileMap2",
+          "path": "/maps/template_raid_lobby/RectTileMap2",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -42058,7 +42058,7 @@
                     "x": -2,
                     "y": -12
                   },
-                  "tileIndex": 16
+                  "tileIndex": 17
                 },
                 {
                   "type": 0,
@@ -42066,7 +42066,7 @@
                     "x": -2,
                     "y": -11
                   },
-                  "tileIndex": 27
+                  "tileIndex": 10
                 },
                 {
                   "type": 0,
@@ -42114,7 +42114,7 @@
                     "x": -2,
                     "y": 10
                   },
-                  "tileIndex": 16
+                  "tileIndex": 17
                 },
                 {
                   "type": 0,
@@ -42122,7 +42122,7 @@
                     "x": -2,
                     "y": 11
                   },
-                  "tileIndex": 18
+                  "tileIndex": 10
                 },
                 {
                   "type": 0,
@@ -42130,127 +42130,7 @@
                     "x": -2,
                     "y": 12
                   },
-                  "tileIndex": 2
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": -1,
-                    "y": -12
-                  },
-                  "tileIndex": 16
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": -1,
-                    "y": -11
-                  },
-                  "tileIndex": 2
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": -1,
-                    "y": 10
-                  },
-                  "tileIndex": 16
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": -1,
-                    "y": 11
-                  },
-                  "tileIndex": 18
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": -1,
-                    "y": 12
-                  },
-                  "tileIndex": 2
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 0,
-                    "y": -12
-                  },
-                  "tileIndex": 16
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 0,
-                    "y": -11
-                  },
-                  "tileIndex": 2
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 0,
-                    "y": 10
-                  },
-                  "tileIndex": 16
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 0,
-                    "y": 11
-                  },
-                  "tileIndex": 18
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 0,
-                    "y": 12
-                  },
-                  "tileIndex": 2
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 1,
-                    "y": -12
-                  },
-                  "tileIndex": 16
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 1,
-                    "y": -11
-                  },
-                  "tileIndex": 2
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 1,
-                    "y": 10
-                  },
-                  "tileIndex": 16
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 1,
-                    "y": 11
-                  },
-                  "tileIndex": 18
-                },
-                {
-                  "type": 0,
-                  "position": {
-                    "x": 1,
-                    "y": 12
-                  },
-                  "tileIndex": 2
+                  "tileIndex": 3
                 },
                 {
                   "type": 0,
@@ -42258,7 +42138,7 @@
                     "x": 2,
                     "y": -12
                   },
-                  "tileIndex": 16
+                  "tileIndex": 15
                 },
                 {
                   "type": 0,
@@ -42266,7 +42146,7 @@
                     "x": 2,
                     "y": -11
                   },
-                  "tileIndex": 28
+                  "tileIndex": 8
                 },
                 {
                   "type": 0,
@@ -42314,7 +42194,7 @@
                     "x": 2,
                     "y": 10
                   },
-                  "tileIndex": 16
+                  "tileIndex": 15
                 },
                 {
                   "type": 0,
@@ -42322,7 +42202,7 @@
                     "x": 2,
                     "y": 11
                   },
-                  "tileIndex": 18
+                  "tileIndex": 8
                 },
                 {
                   "type": 0,
@@ -42330,7 +42210,7 @@
                     "x": 2,
                     "y": 12
                   },
-                  "tileIndex": 2
+                  "tileIndex": 1
                 },
                 {
                   "type": 0,
@@ -43739,12 +43619,12 @@
         }
       },
       {
-        "id": "3c668f5a-f3b4-4c8b-a0b4-681a5402f7f8",
-        "path": "/maps/template_boss/RectTileMap3",
+        "id": "7f407c0b-9e45-4471-88b4-b4a4c999e1f8",
+        "path": "/maps/template_raid_lobby/RectTileMap3",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
         "jsonString": {
           "name": "RectTileMap3",
-          "path": "/maps/template_boss/RectTileMap3",
+          "path": "/maps/template_raid_lobby/RectTileMap3",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -43794,12 +43674,12 @@
         }
       },
       {
-        "id": "35d344b4-fc5a-478b-8dff-9cff6dc73468",
-        "path": "/maps/template_boss/RectTileMap4",
+        "id": "019ca845-3bae-4c69-8f8e-a6487e8f5c21",
+        "path": "/maps/template_raid_lobby/RectTileMap4",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
         "jsonString": {
           "name": "RectTileMap4",
-          "path": "/maps/template_boss/RectTileMap4",
+          "path": "/maps/template_raid_lobby/RectTileMap4",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -43849,12 +43729,12 @@
         }
       },
       {
-        "id": "f9f797b3-e585-4150-9228-4efa3495b2aa",
-        "path": "/maps/template_boss/RectTileMap5",
+        "id": "eec19359-723e-4761-97e7-ae51925bd3b7",
+        "path": "/maps/template_raid_lobby/RectTileMap5",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
         "jsonString": {
           "name": "RectTileMap5",
-          "path": "/maps/template_boss/RectTileMap5",
+          "path": "/maps/template_raid_lobby/RectTileMap5",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -43904,12 +43784,12 @@
         }
       },
       {
-        "id": "e3863801-1111-4444-8888-cbbdc130c00d",
-        "path": "/maps/template_boss/RectTileMap0",
+        "id": "a242aac8-bd10-407f-8c4f-99c2811157b8",
+        "path": "/maps/template_raid_lobby/RectTileMap0",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
         "jsonString": {
           "name": "RectTileMap0",
-          "path": "/maps/template_boss/RectTileMap0",
+          "path": "/maps/template_raid_lobby/RectTileMap0",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -79293,12 +79173,12 @@
         }
       },
       {
-        "id": "eacfb24b-1111-4444-8888-958fa9e592ff",
-        "path": "/maps/template_boss/RectTileMap6",
+        "id": "171d0f07-0cb2-4523-8fae-cfd3c9c45c4b",
+        "path": "/maps/template_raid_lobby/RectTileMap6",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
         "jsonString": {
           "name": "RectTileMap6",
-          "path": "/maps/template_boss/RectTileMap6",
+          "path": "/maps/template_raid_lobby/RectTileMap6",
           "nameEditable": false,
           "enable": true,
           "visible": true,
@@ -82426,12 +82306,12 @@
         }
       },
       {
-        "id": "b095ef66-2222-4444-8888-cd82aca2a77a",
-        "path": "/maps/template_boss/Boundary_Left",
+        "id": "0b254762-fac8-488e-a7da-6436c8326b71",
+        "path": "/maps/template_raid_lobby/Boundary_Left",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Boundary_Left",
-          "path": "/maps/template_boss/Boundary_Left",
+          "path": "/maps/template_raid_lobby/Boundary_Left",
           "nameEditable": true,
           "enable": true,
           "visible": true,
@@ -82494,12 +82374,12 @@
         }
       },
       {
-        "id": "bc457500-2222-4444-8888-d77319bd4dc3",
-        "path": "/maps/template_boss/Boundary_Right",
+        "id": "7273f1e3-b74c-4674-9e64-f3a9bec6cbc5",
+        "path": "/maps/template_raid_lobby/Boundary_Right",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Boundary_Right",
-          "path": "/maps/template_boss/Boundary_Right",
+          "path": "/maps/template_raid_lobby/Boundary_Right",
           "nameEditable": true,
           "enable": true,
           "visible": true,
@@ -82562,12 +82442,12 @@
         }
       },
       {
-        "id": "b5c1e6c9-2222-4444-8888-f77250f83ec0",
-        "path": "/maps/template_boss/Boundary_Top",
+        "id": "cceedaae-3d46-4d15-a2ae-ca5bf29e729d",
+        "path": "/maps/template_raid_lobby/Boundary_Top",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Boundary_Top",
-          "path": "/maps/template_boss/Boundary_Top",
+          "path": "/maps/template_raid_lobby/Boundary_Top",
           "nameEditable": true,
           "enable": true,
           "visible": true,
@@ -82630,12 +82510,12 @@
         }
       },
       {
-        "id": "b99c4146-2222-4444-8888-251c949755ce",
-        "path": "/maps/template_boss/Boundary_Bottom",
+        "id": "9732c83e-816e-46ac-8c52-ed20e3efc7d0",
+        "path": "/maps/template_raid_lobby/Boundary_Bottom",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.TriggerComponent,script.ResourceOccupiedArea",
         "jsonString": {
           "name": "Boundary_Bottom",
-          "path": "/maps/template_boss/Boundary_Bottom",
+          "path": "/maps/template_raid_lobby/Boundary_Bottom",
           "nameEditable": true,
           "enable": true,
           "visible": true,
@@ -82698,12 +82578,12 @@
         }
       },
       {
-        "id": "155fa029-5441-48a8-bbc3-73680144f9f5",
-        "path": "/maps/template_boss/Portal",
+        "id": "b233d0da-9a99-48f9-b970-1178897b0e3c",
+        "path": "/maps/template_raid_lobby/Portal",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.PortalGate,script.PlaceableFurniture",
         "jsonString": {
           "name": "Portal",
-          "path": "/maps/template_boss/Portal",
+          "path": "/maps/template_raid_lobby/Portal",
           "nameEditable": true,
           "enable": true,
           "visible": true,
@@ -82728,8 +82608,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 7.3552,
-                "y": 9.264823,
+                "x": 0.5090084,
+                "y": -11.8719492,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -82795,114 +82675,17 @@
         }
       },
       {
-        "id": "34a86ae4-898a-4157-b7c0-ec918effb17f",
-        "path": "/maps/template_boss/PortalToHunt03",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.PortalGate,script.PlaceableFurniture",
-        "jsonString": {
-          "name": "PortalToHunt03",
-          "path": "/maps/template_boss/PortalToHunt03",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 16,
-          "pathConstraints": "///",
-          "revision": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b1",
-            "sub_entity_id": null,
-            "root_entity_id": null,
-            "replaced_model_id": null
-          },
-          "modelId": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b1",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Rotation": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              },
-              "Position": {
-                "x": 0.7592659,
-                "y": -9.656154,
-                "z": 0.0
-              },
-              "QuaternionRotation": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0,
-                "w": 1.0
-              },
-              "Scale": {
-                "x": 2.0,
-                "y": 2.0,
-                "z": 1.0
-              },
-              "ZRotation": 0.0,
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "ActionSheet": {},
-              "IgnoreMapLayerCheck": true,
-              "OrderInLayer": 15,
-              "RenderSetting": 0,
-              "SortingLayer": "MapLayer5",
-              "SpriteRUID": "aba58d2139ca4736bab39f6b4c39aa37",
-              "Color": {
-                "r": 1.0,
-                "g": 1.0,
-                "b": 1.0,
-                "a": 1.0
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "BoxSize": {
-                "x": 1.0,
-                "y": 1.25
-              },
-              "ColliderOffset": {
-                "x": 0.0,
-                "y": 0.0
-              },
-              "IsLegacy": true,
-              "Enable": true
-            },
-            {
-              "@type": "script.PortalGate",
-              "Enable": true,
-              "TargetMapName": "hunt03",
-              "TargetPosition": {
-                "x": 8.0,
-                "y": 0.0
-              },
-              "DestinationGroup": "hunt",
-              "PortalColor": "white"
-            },
-            {
-              "@type": "script.PlaceableFurniture",
-              "Enable": true
-            }
-          ],
-          "@version": 1
-        }
-      },
-      {
-        "id": "8718bc66-28ae-4998-bcd3-8250f3fa9b0b",
-        "path": "/maps/template_boss/MapleMapLayer3",
+        "id": "74454d43-1b03-4cb3-a2be-856573e5163c",
+        "path": "/maps/template_raid_lobby/MapleMapLayer3",
         "componentNames": "MOD.Core.MapLayerComponent",
         "jsonString": {
           "name": "MapleMapLayer3",
-          "path": "/maps/template_boss/MapleMapLayer3",
+          "path": "/maps/template_raid_lobby/MapleMapLayer3",
           "nameEditable": false,
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 17,
+          "displayOrder": 16,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -82928,17 +82711,17 @@
         }
       },
       {
-        "id": "454f2a2f-84f2-492d-a786-48d6643365fb",
-        "path": "/maps/template_boss/MapleMapLayer4",
+        "id": "fa276b66-46ce-4adf-9392-65279fa734e3",
+        "path": "/maps/template_raid_lobby/MapleMapLayer4",
         "componentNames": "MOD.Core.MapLayerComponent",
         "jsonString": {
           "name": "MapleMapLayer4",
-          "path": "/maps/template_boss/MapleMapLayer4",
+          "path": "/maps/template_raid_lobby/MapleMapLayer4",
           "nameEditable": false,
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 18,
+          "displayOrder": 17,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -82964,17 +82747,17 @@
         }
       },
       {
-        "id": "73bf8157-4823-4169-8231-003d32f8e314",
-        "path": "/maps/template_boss/MapleMapLayer5",
+        "id": "815b81e4-8b2b-4eff-a214-ef6ffcf32889",
+        "path": "/maps/template_raid_lobby/MapleMapLayer5",
         "componentNames": "MOD.Core.MapLayerComponent",
         "jsonString": {
           "name": "MapleMapLayer5",
-          "path": "/maps/template_boss/MapleMapLayer5",
+          "path": "/maps/template_raid_lobby/MapleMapLayer5",
           "nameEditable": false,
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 19,
+          "displayOrder": 18,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -83000,17 +82783,17 @@
         }
       },
       {
-        "id": "55f9e634-3ea2-4447-8662-6a9a19046695",
-        "path": "/maps/template_boss/MapleMapLayer6",
+        "id": "4a1cac4f-b6c5-4b25-9b79-8b647102d844",
+        "path": "/maps/template_raid_lobby/MapleMapLayer6",
         "componentNames": "MOD.Core.MapLayerComponent",
         "jsonString": {
           "name": "MapleMapLayer6",
-          "path": "/maps/template_boss/MapleMapLayer6",
+          "path": "/maps/template_raid_lobby/MapleMapLayer6",
           "nameEditable": false,
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 20,
+          "displayOrder": 19,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -83036,27 +82819,27 @@
         }
       },
       {
-        "id": "92880aad-d5d9-42c7-84f6-84f7a437f3a5",
-        "path": "/maps/template_boss/ArenaCrest_Banner_Left",
+        "id": "e7b9dc73-b284-4cf9-a721-547ab9b5fa6b",
+        "path": "/maps/template_raid_lobby/ArenaEntry_Lamp_Left",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
         "jsonString": {
-          "name": "ArenaCrest_Banner_Left",
-          "path": "/maps/template_boss/ArenaCrest_Banner_Left",
+          "name": "ArenaEntry_Lamp_Left",
+          "path": "/maps/template_raid_lobby/ArenaEntry_Lamp_Left",
           "nameEditable": true,
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 21,
+          "displayOrder": 20,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
             "type": "Model",
-            "entry_id": "prop_banner",
+            "entry_id": "prop_lamppost",
             "sub_entity_id": null,
-            "root_entity_id": "92880aad-d5d9-42c7-84f6-84f7a437f3a5",
+            "root_entity_id": "e7b9dc73-b284-4cf9-a721-547ab9b5fa6b",
             "replaced_model_id": null
           },
-          "modelId": "prop_banner",
+          "modelId": "prop_lamppost",
           "@components": [
             {
               "@type": "MOD.Core.TransformComponent",
@@ -83066,8 +82849,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": -9.0,
-                "y": 8.0,
+                "x": -3.0,
+                "y": -8.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -83095,7 +82878,7 @@
               "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer5",
-              "SpriteRUID": "b4f985e6aff343c5984f8e5d6e70a891",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
               "StartFrameIndex": 0,
               "Color": {
                 "r": 1.0,
@@ -83108,7 +82891,7 @@
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 0.8,
+                "x": 0.9,
                 "y": 1.0
               },
               "ColliderOffset": {
@@ -83131,27 +82914,27 @@
         }
       },
       {
-        "id": "96e245d4-1804-417e-aa58-5162bf3d88cc",
-        "path": "/maps/template_boss/ArenaCrest_Banner_Right",
+        "id": "ae4199ec-c532-49ba-bfbd-536c35fa44f5",
+        "path": "/maps/template_raid_lobby/ArenaEntry_Lamp_Right",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
         "jsonString": {
-          "name": "ArenaCrest_Banner_Right",
-          "path": "/maps/template_boss/ArenaCrest_Banner_Right",
+          "name": "ArenaEntry_Lamp_Right",
+          "path": "/maps/template_raid_lobby/ArenaEntry_Lamp_Right",
           "nameEditable": true,
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 22,
+          "displayOrder": 21,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
             "type": "Model",
-            "entry_id": "prop_banner",
+            "entry_id": "prop_lamppost",
             "sub_entity_id": null,
-            "root_entity_id": "96e245d4-1804-417e-aa58-5162bf3d88cc",
+            "root_entity_id": "ae4199ec-c532-49ba-bfbd-536c35fa44f5",
             "replaced_model_id": null
           },
-          "modelId": "prop_banner",
+          "modelId": "prop_lamppost",
           "@components": [
             {
               "@type": "MOD.Core.TransformComponent",
@@ -83161,8 +82944,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 9.0,
-                "y": 8.0,
+                "x": 3.0,
+                "y": -8.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -83190,7 +82973,7 @@
               "PlayRate": 1.0,
               "RenderSetting": 0,
               "SortingLayer": "MapLayer5",
-              "SpriteRUID": "b4f985e6aff343c5984f8e5d6e70a891",
+              "SpriteRUID": "055b5b19b938480ba40cb6549bdc4da8",
               "StartFrameIndex": 0,
               "Color": {
                 "r": 1.0,
@@ -83203,7 +82986,7 @@
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 0.8,
+                "x": 0.9,
                 "y": 1.0
               },
               "ColliderOffset": {
@@ -83220,6 +83003,111 @@
               "Dynamic": false,
               "IsUnit": false,
               "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "fc315c3c-5367-47f2-87ee-713e91a935ed",
+        "path": "/maps/template_raid_lobby/RaidGate",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.PortalGate,script.PlaceableFurniture,script.RaidGate",
+        "jsonString": {
+          "name": "RaidGate",
+          "path": "/maps/template_raid_lobby/RaidGate",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 22,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b1",
+            "sub_entity_id": null,
+            "root_entity_id": "fc315c3c-5367-47f2-87ee-713e91a935ed",
+            "replaced_model_id": null
+          },
+          "modelId": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b1",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.5495796,
+                "y": 11.4166775,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "aba58d2139ca4736bab39f6b4c39aa37",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.0,
+                "y": 1.25
+              },
+              "IsLegacy": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.PortalGate",
+              "Enable": true,
+              "TargetMapName": "Home",
+              "TargetPosition": {
+                "x": 3.0,
+                "y": 0.0
+              },
+              "PortalColor": "red"
+            },
+            {
+              "@type": "script.PlaceableFurniture",
+              "Enable": true,
+              "ItemId": "Portal",
+              "BlocksMovement": false
+            },
+            {
+              "@type": "script.RaidGate",
+              "Enable": true,
+              "BossId": "",
+              "DifficultyId": ""
             }
           ],
           "@version": 1

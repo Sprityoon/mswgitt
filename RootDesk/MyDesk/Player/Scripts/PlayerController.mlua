@@ -1463,6 +1463,7 @@ script PlayerController extends Component
 		-- 대상의 상호작용 컴포넌트에서 InteractLabel 프로퍼티를 읽는다 (ReadAimFootprint와 같은 탐색 패턴).
 		-- 라벨 문구는 각 인터랙터블 스크립트의 property 기본값이 소스 — 여기서 이름 분기 금지(R3).
 		local typeNames = {
+			"script.RaidGate",
 			"script.PortalGate",
 			"script.TerritoryPortal",
 			"script.ResearchLab",
@@ -1921,9 +1922,17 @@ script PlayerController extends Component
 			end
 		end
 		
+		-- 레이드 대기실의 보스방 진입 게이트는 "정해진 맵으로 이동"이 아니라 "인스턴스를 새로 연다".
+		-- 같은 엔티티에 PortalGate 도 붙어 있으므로(트리거·색 담당) 반드시 이 분기를 먼저 본다.
+		local raidGate = self.ActivePortal:GetComponent("script.RaidGate")
+		if isvalid(raidGate) and _BossRaidLogic ~= nil then
+			_BossRaidLogic:EnterBossRoom(self.Entity, self.ActivePortal)
+			return
+		end
+
 		local portalGate = self.ActivePortal:GetComponent("script.PortalGate")
 		local territoryPortal = self.ActivePortal:GetComponent("script.TerritoryPortal")
-		
+
 		if isvalid(portalGate) then
 			local targetMap = portalGate.TargetMapName
 			if targetMap == "Home" then
@@ -3676,7 +3685,9 @@ script PlayerController extends Component
 			return "estate"
 		elseif mapName == "town" then
 			return "town"
-		elseif mapName == "template_boss" or mapName == "boss" then
+		elseif mapName == "template_boss" or mapName == "boss"
+			or string.sub(mapName, 1, 10) == "raidlobby_" or string.sub(mapName, 1, 5) == "raid_" then
+			-- 레이드 대기실/보스방은 template_boss 의 런타임 사본이라 이름이 다르다.
 			return "boss"
 		else
 			return "field"

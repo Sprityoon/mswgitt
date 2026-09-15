@@ -4,15 +4,36 @@ script BossRaidLogic extends Logic
 	-- 인스턴스·난이도·주간 제한 구조는 파티(R-2)에서 members 배열만 채우면 그대로 확장된다.
 	--
 	-- 인스턴스는 ResourceSpawner:EnsureHuntMap 과 같은 경로(_DynamicMapService:CreateDynamicMap)로
-	-- template_boss 를 복제해 만든다. hunt04(상시 공유 맵)는 건드리지 않는다 — 레이드는 별도 사본이다.
+	-- 템플릿을 복제해 만든다. 상시 공유 보스 아레나(hunt04)는 2026-09-15 철거됐고,
+	-- 보스전 경로는 이 로직의 인스턴스로 일원화됐다 — 사냥터 체인은 hunt01~hunt03 에서 끝난다.
+	--
+	-- 입장은 2단이다:
+	--   ① EnterRaid       → template_raid_lobby 사본(대기실)을 열고 요청자를 보낸다.
+	--   ② EnterBossRoom   → 대기실 게이트(RaidGate)에서 F. template_boss 사본(보스방)을 열고
+	--                        그때 대기실에 있던 인원 전원을 옮긴다.
+	-- 보스방을 ①에서 미리 만들지 않는 이유: 대기 중 이탈하면 빈 보스방만 남는다.
+	-- 비워진 대기실은 보스방과 같은 규칙(SweepInstances)으로 회수된다.
 	--
 	-- 데이터: BossContentsDataSet(보스별 입장 조건) · BossDifficultyDataSet(난이도별 배율)
 	-- 난이도는 모델 값을 복제하지 않고 스폰 직후 **프로퍼티 대입**으로 주입한다
 	-- (규칙 46 — 크로스 스크립트 메서드 시그니처는 고정으로 취급하고 값은 프로퍼티로 넘긴다).
 
-	-- mapName -> { bossId, difficultyId, ownerUserId, cleared, createdAt }
+	-- mapName -> { kind, bossId, difficultyId, ownerUserId, cleared, createdAt }
+	-- kind 는 "lobby"(대기실) 또는 "boss"(보스방). 청소 규칙은 둘이 같다 — 비면 파기한다.
 	property table Instances = {}
 	property integer InstanceSeq = 0
+
+	-- 대기실: BossContentsDataSet.LobbyMap 이 비었을 때 쓰는 기본 템플릿.
+	property string DefaultLobbyMap = "template_raid_lobby"
+	-- 대기실 도착 지점과 포탈 위치. 아래 셀 좌표는 **폴백**이다 —
+	-- template_raid_lobby 에는 Portal / RaidGate 가 이미 배치돼 있고,
+	-- SpawnFixedPortal 은 이름으로 찾은 에디터 배치 위치를 우선한다. 값은 그 위치와 맞춰 둔다.
+	property number LobbyArriveX = 0
+	property number LobbyArriveY = -11
+	property integer LobbyGateX = 0
+	property integer LobbyGateY = -8
+	property integer LobbyReturnPortalX = -5
+	property integer LobbyReturnPortalY = -12
 
 	-- 보스 처치 후 전리품을 줍는 시간. 이 시간이 지나면 남은 인원을 마을로 내보내고 맵을 파기한다.
 	property number ClearGraceSeconds = 45
@@ -108,17 +129,82 @@ script BossRaidLogic extends Logic
 	end
 
 	@ExecSpace("ServerOnly")
+	method string ValidateEntry(Entity player, any bossRow, any diffRow)
+		-- 입장 가능하면 "" 를, 불가하면 그대로 띄울 사유 문자열을 돌려준다.
+		-- 대기실 입장과 보스방 입장 양쪽에서 같은 검증을 쓴다 — 대기 중에 주간 제한이 찼을 수 있고,
+		-- 파티(R-2)에서는 데려가는 인원 각자를 따로 봐야 하기 때문이다.
+		if not isvalid(player) then return "플레이어를 찾을 수 없습니다." end
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return "플레이어 정보를 불러오지 못했습니다." end
+		---@type PlayerController
+		local controller = pc
+
+		-- ① 레벨: 보스 기본 입장 레벨과 난이도별 입장 레벨 중 높은 쪽
+		local needLevel = math.floor(self:RowNum(bossRow, "RequiredLevel", 1))
+		local diffLevel = math.floor(self:RowNum(diffRow, "EntryLevel", 1))
+		if diffLevel > needLevel then needLevel = diffLevel end
+		if controller.Level < needLevel then
+			return "입장 레벨이 부족합니다. (Lv." .. tostring(needLevel) .. " 필요)"
+		end
+
+		-- ② 선행 웨이포인트: 해당 티어까지 도달한 적이 있어야 한다
+		local needWaypoint = self:RowStr(bossRow, "RequiredWaypointId", "")
+		if needWaypoint ~= "" and not controller:IsWaypointUnlocked(needWaypoint) then
+			return "먼저 해당 사냥터 웨이포인트를 활성화해야 합니다."
+		end
+
+		-- ③ 선행 퀘스트 (공란이면 무시)
+		local needQuest = math.floor(self:RowNum(bossRow, "RequiredQuestId", 0))
+		if needQuest > 0 and not self:IsQuestCompleted(player, needQuest) then
+			return "선행 퀘스트를 먼저 완료해야 합니다."
+		end
+
+		-- ④ 주간 처치 제한
+		local weeklyLimit = math.floor(self:RowNum(bossRow, "WeeklyLimit", 0))
+		if weeklyLimit > 0 then
+			local bossId = self:RowStr(bossRow, "BossId", "")
+			if controller:GetRaidClearCount(bossId) >= weeklyLimit then
+				return "이번 주 처치 제한에 도달했습니다. (" .. tostring(weeklyLimit) .. "/" .. tostring(weeklyLimit) .. ")"
+			end
+		end
+
+		return ""
+	end
+
+	@ExecSpace("ServerOnly")
+	method Entity CreateInstanceMap(string templateMap, string mapName)
+		-- template 을 복제해 동적 맵을 만들고 맵 엔티티를 돌려준다. 실패하면 nil.
+		-- 대기실·보스방이 같은 절차를 쓴다.
+		local ec = _DynamicMapService:CreateDynamicMap(templateMap, mapName)
+		if ec ~= DynamicMapResultCode.Success then
+			log_error("[RAID] CreateDynamicMap failed " .. mapName .. " from " .. templateMap .. ": " .. tostring(ec))
+			return nil
+		end
+
+		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
+		if not isvalid(map) then
+			log_error("[RAID] instance map entity missing after creation: " .. mapName)
+			return nil
+		end
+
+		-- 사냥터와 동일한 바이옴 가드: green_island 는 MonsterSpawner 세이프존이라 잡몹이 자동 생성되지 않는다.
+		-- 절차 지형도 끈다 (템플릿의 손디자인 지형을 그대로 쓴다).
+		if _ResourceSpawner ~= nil then
+			_ResourceSpawner:SetMapForceBiomeId(mapName, "green_island")
+			_ResourceSpawner:SetMapProceduralTerrain(mapName, false)
+		end
+
+		return map
+	end
+
+	@ExecSpace("ServerOnly")
 	method boolean EnterRaid(Entity player, string bossId, string difficultyId)
-		-- 조건 검증 → 인스턴스 생성 → 보스 스폰(난이도 주입) → 입장. 실패 사유는 클라에 문자열로 돌려준다.
+		-- 조건 검증 → **대기실** 인스턴스 생성 → 입장. 보스방은 대기실의 게이트에서 연다.
+		-- 보스방을 여기서 미리 만들지 않는 이유: 대기 중에 이탈하면 빈 보스방만 남는다.
 		if not isvalid(player) then return false end
 		local playerComp = player.PlayerComponent
 		if playerComp == nil then return false end
 		local userId = playerComp.UserId
-
-		local pc = player:GetComponent("script.PlayerController")
-		if not isvalid(pc) then return false end
-		---@type PlayerController
-		local controller = pc
 
 		local bossRow = self:GetBossRow(bossId)
 		if bossRow == nil then
@@ -131,66 +217,139 @@ script BossRaidLogic extends Logic
 			return false
 		end
 
-		-- ① 레벨: 보스 기본 입장 레벨과 난이도별 입장 레벨 중 높은 쪽
-		local needLevel = math.floor(self:RowNum(bossRow, "RequiredLevel", 1))
-		local diffLevel = math.floor(self:RowNum(diffRow, "EntryLevel", 1))
-		if diffLevel > needLevel then needLevel = diffLevel end
-		if controller.Level < needLevel then
-			self:SendFeedback(player, "입장 레벨이 부족합니다. (Lv." .. tostring(needLevel) .. " 필요)")
+		local reason = self:ValidateEntry(player, bossRow, diffRow)
+		if reason ~= "" then
+			self:SendFeedback(player, reason)
 			return false
 		end
 
-		-- ② 선행 웨이포인트: 해당 티어까지 도달한 적이 있어야 한다
-		local needWaypoint = self:RowStr(bossRow, "RequiredWaypointId", "")
-		if needWaypoint ~= "" and not controller:IsWaypointUnlocked(needWaypoint) then
-			self:SendFeedback(player, "먼저 해당 사냥터 웨이포인트를 활성화해야 합니다.")
+		local lobbyTemplate = self:RowStr(bossRow, "LobbyMap", self.DefaultLobbyMap)
+		self.InstanceSeq = self.InstanceSeq + 1
+		local mapName = "raidlobby_" .. bossId .. "_" .. difficultyId .. "_" .. tostring(self.InstanceSeq)
+
+		local lobby = self:CreateInstanceMap(lobbyTemplate, mapName)
+		if not isvalid(lobby) then
+			self:SendFeedback(player, "대기실을 여는 데 실패했습니다. 잠시 후 다시 시도해 주세요.")
 			return false
 		end
 
-		-- ③ 선행 퀘스트 (공란이면 무시)
-		local needQuest = math.floor(self:RowNum(bossRow, "RequiredQuestId", 0))
-		if needQuest > 0 and not self:IsQuestCompleted(player, needQuest) then
-			self:SendFeedback(player, "선행 퀘스트를 먼저 완료해야 합니다.")
+		self.Instances[mapName] = {
+			kind = "lobby",
+			bossId = bossId,
+			difficultyId = difficultyId,
+			ownerUserId = userId,
+			cleared = false,
+			createdAt = _UtilLogic.ServerElapsedSeconds
+		}
+
+		-- 귀환 포탈 (도착 지점 옆). 보스방에 들어가기 전에도 자력 이탈이 가능해야 한다.
+		if _ResourceSpawner ~= nil then
+			_ResourceSpawner:SpawnFixedPortal(lobby, "Portal", self.LobbyReturnPortalX, self.LobbyReturnPortalY, "Home", Vector2(-3, 0))
+		end
+		self:SpawnLobbyGate(lobby, bossId, difficultyId)
+
+		playerComp:MoveToMapPosition(mapName, Vector2(self.LobbyArriveX, self.LobbyArriveY))
+		log("[RAID] lobby opened user=" .. tostring(userId) .. " boss=" .. bossId .. " diff=" .. difficultyId .. " map=" .. mapName)
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SpawnLobbyGate(Entity lobby, string bossId, string difficultyId)
+		-- 대기실 입구(램프 사이)의 보스방 진입 게이트를 활성화한다.
+		-- 게이트 엔티티 자체는 template_raid_lobby 에 배치돼 있고, SpawnFixedPortal 이 이름으로 찾아
+		-- 에디터 위치를 그대로 쓴다 (없을 때만 LobbyGateX/Y 로 폴백 스폰).
+		-- 트리거·ActivePortal 배선·정렬 레이어는 함께 붙은 PortalGate 가 담당하고(프리셋 우선),
+		-- 어떤 보스·난이도로 들어갈지는 RaidGate 프로퍼티로 얹는다.
+		-- PortalGate 의 TargetMapName 은 "Home" 으로 둔다 — RaidGate 분기가 어떤 이유로 빠지더라도
+		-- 최악의 결과가 "마을 귀환"이 되도록 하는 안전망이다.
+		if _ResourceSpawner == nil then return end
+		_ResourceSpawner:SpawnFixedPortal(lobby, "RaidGate", self.LobbyGateX, self.LobbyGateY, "Home", Vector2(-3, 0))
+
+		local gate = lobby:GetChildByName("RaidGate")
+		if not isvalid(gate) then
+			log_error("[RAID] lobby gate missing in " .. lobby.Name)
+			return
+		end
+
+		local rg = gate:GetComponent("script.RaidGate")
+		if not isvalid(rg) then
+			gate:AddComponent("script.RaidGate")
+			rg = gate:GetComponent("script.RaidGate")
+		end
+		if isvalid(rg) then
+			---@type RaidGate
+			local raidGate = rg
+			raidGate.BossId = bossId
+			raidGate.DifficultyId = difficultyId
+		end
+
+		local pg = gate:GetComponent("script.PortalGate")
+		if isvalid(pg) then
+			---@type PortalGate
+			local portalGate = pg
+			portalGate.PortalColor = "red"
+		end
+		log("[RAID] lobby gate ready in " .. lobby.Name .. " boss=" .. bossId .. " diff=" .. difficultyId)
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean EnterBossRoom(Entity player, Entity gate)
+		-- 대기실 게이트에서 F 를 눌렀을 때 PlayerController:ServerRequestWarp 가 부른다.
+		-- 그 대기실에 있던 인원 전원을 새 보스방 인스턴스로 옮긴다 (파티 R-2 에서 그대로 동작).
+		if not isvalid(player) or not isvalid(gate) then return false end
+
+		local rg = gate:GetComponent("script.RaidGate")
+		if not isvalid(rg) then return false end
+		---@type RaidGate
+		local raidGate = rg
+		local bossId = raidGate.BossId
+		local difficultyId = raidGate.DifficultyId
+
+		local bossRow = self:GetBossRow(bossId)
+		local diffRow = self:GetDifficultyRow(bossId, difficultyId)
+		if bossRow == nil or diffRow == nil then
+			self:SendFeedback(player, "보스 정보를 찾을 수 없습니다.")
 			return false
 		end
 
-		-- ④ 주간 처치 제한
-		local weeklyLimit = math.floor(self:RowNum(bossRow, "WeeklyLimit", 0))
-		if weeklyLimit > 0 and controller:GetRaidClearCount(bossId) >= weeklyLimit then
-			self:SendFeedback(player, "이번 주 처치 제한에 도달했습니다. (" .. tostring(weeklyLimit) .. "/" .. tostring(weeklyLimit) .. ")")
+		local lobby = gate.CurrentMap
+		if not isvalid(lobby) then return false end
+
+		-- 데려갈 인원 추리기. 조건 미충족자는 대기실에 남기고 사유만 알려 준다.
+		local party = {}
+		local users = _UserService:GetUsersByMapComponent(lobby.MapComponent)
+		if users ~= nil then
+			for _, user in ipairs(users) do
+				if isvalid(user) and user.PlayerComponent ~= nil then
+					local reason = self:ValidateEntry(user, bossRow, diffRow)
+					if reason == "" then
+						party[#party + 1] = user
+					else
+						self:SendFeedback(user, reason)
+					end
+				end
+			end
+		end
+		if #party == 0 then
+			self:SendFeedback(player, "입장 조건을 충족한 인원이 없습니다.")
 			return false
 		end
 
-		-- 인스턴스 생성
 		local templateMap = self:RowStr(bossRow, "TemplateMap", "template_boss")
 		self.InstanceSeq = self.InstanceSeq + 1
 		local mapName = "raid_" .. bossId .. "_" .. difficultyId .. "_" .. tostring(self.InstanceSeq)
 
-		local ec = _DynamicMapService:CreateDynamicMap(templateMap, mapName)
-		if ec ~= DynamicMapResultCode.Success then
-			log_error("[RAID] CreateDynamicMap failed " .. mapName .. " from " .. templateMap .. ": " .. tostring(ec))
+		local raidMap = self:CreateInstanceMap(templateMap, mapName)
+		if not isvalid(raidMap) then
 			self:SendFeedback(player, "보스방을 여는 데 실패했습니다. 잠시 후 다시 시도해 주세요.")
 			return false
 		end
 
-		local raidMap = _EntityService:GetEntityByPath("/maps/" .. mapName)
-		if not isvalid(raidMap) then
-			log_error("[RAID] raid map entity missing after creation: " .. mapName)
-			self:SendFeedback(player, "보스방을 여는 데 실패했습니다.")
-			return false
-		end
-
-		-- 사냥터와 동일한 바이옴 가드: green_island 는 MonsterSpawner 세이프존이라 잡몹이 자동 생성되지 않는다.
-		-- 절차 지형도 끈다 (템플릿의 손디자인 아레나를 그대로 쓴다).
-		if _ResourceSpawner ~= nil then
-			_ResourceSpawner:SetMapForceBiomeId(mapName, "green_island")
-			_ResourceSpawner:SetMapProceduralTerrain(mapName, false)
-		end
-
 		self.Instances[mapName] = {
+			kind = "boss",
 			bossId = bossId,
 			difficultyId = difficultyId,
-			ownerUserId = userId,
+			ownerUserId = player.PlayerComponent.UserId,
 			cleared = false,
 			createdAt = _UtilLogic.ServerElapsedSeconds
 		}
@@ -204,8 +363,13 @@ script BossRaidLogic extends Logic
 
 		local arriveX = self:RowNum(bossRow, "ArriveX", 0)
 		local arriveY = self:RowNum(bossRow, "ArriveY", -5)
-		playerComp:MoveToMapPosition(mapName, Vector2(arriveX, arriveY))
-		log("[RAID] enter user=" .. tostring(userId) .. " boss=" .. bossId .. " diff=" .. difficultyId .. " map=" .. mapName)
+		for _, user in ipairs(party) do
+			if isvalid(user) and user.PlayerComponent ~= nil then
+				user.PlayerComponent:MoveToMapPosition(mapName, Vector2(arriveX, arriveY))
+			end
+		end
+
+		log("[RAID] boss room opened map=" .. mapName .. " boss=" .. bossId .. " diff=" .. difficultyId .. " party=" .. tostring(#party))
 		return true
 	end
 

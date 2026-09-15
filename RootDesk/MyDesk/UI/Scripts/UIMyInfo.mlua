@@ -9,6 +9,10 @@ script UIMyInfo extends Component
 	property TextComponent hpText = nil
 	property number hpMaxWidth = 0
 
+	property UITransformComponent mpBar = nil
+	property TextComponent mpText = nil
+	property number mpMaxWidth = 0
+
 	property UITransformComponent staBar = nil
 	property TextComponent staText = nil
 	property number staMaxWidth = 0
@@ -19,7 +23,7 @@ script UIMyInfo extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
-		-- Caches the widget's name/level texts and the Hp/Mp/Exp fill bars once at start.
+		-- Caches the widget's name/level texts and the Hp/Mp/Sta/Exp fill bars once at start.
 		local base = self.Entity.Path
 
 		self.nameText = _EntityService:GetEntityByPath(base .. "/info_top/text_name").TextComponent
@@ -29,9 +33,14 @@ script UIMyInfo extends Component
 		self.hpText = _EntityService:GetEntityByPath(base .. "/info_bottom/Hp/text_value").TextComponent
 		self.hpMaxWidth = self.hpBar.RectSize.x
 
-		-- Mp gauge repurposed as the player's Stamina bar.
-		self.staBar = _EntityService:GetEntityByPath(base .. "/info_bottom/Mp/img_bar").UITransformComponent
-		self.staText = _EntityService:GetEntityByPath(base .. "/info_bottom/Mp/text_value").TextComponent
+		-- Mp = 실제 마나(파랑). 예전에는 이 바가 기력을 대신 쓰고 있어 색과 의미가 어긋났다.
+		self.mpBar = _EntityService:GetEntityByPath(base .. "/info_bottom/Mp/img_bar").UITransformComponent
+		self.mpText = _EntityService:GetEntityByPath(base .. "/info_bottom/Mp/text_value").TextComponent
+		self.mpMaxWidth = self.mpBar.RectSize.x
+
+		-- Sta = 기력(노랑). 마나와 구분하기 위해 별도 바로 분리했다.
+		self.staBar = _EntityService:GetEntityByPath(base .. "/info_bottom/Sta/img_bar").UITransformComponent
+		self.staText = _EntityService:GetEntityByPath(base .. "/info_bottom/Sta/text_value").TextComponent
 		self.staMaxWidth = self.staBar.RectSize.x
 
 		self.xpBar = _EntityService:GetEntityByPath(base .. "/info_bottom/Exp/img_bar").UITransformComponent
@@ -48,7 +57,7 @@ script UIMyInfo extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnUpdate(number delta)
-		-- Mirrors the local player's Name/Level/HP/Stamina/XP into the widget each frame.
+		-- Mirrors the local player's Name/Level/HP/Mana/Stamina/XP into the widget each frame.
 		local player = _UserService.LocalPlayer
 		if not isvalid(player) then return end
 
@@ -67,6 +76,13 @@ script UIMyInfo extends Component
 			---@type PlayerController
 			local pcon = ctrl
 			if isvalid(self.levelText) then self.levelText.Text = "Lv " .. pcon.Level end
+
+			-- GetMaxMana() 는 number 라 표기는 정수로 맞춘다 (스킬바 MP 표기와 같은 규약).
+			local maxMp = pcon:GetMaxMana()
+			if maxMp > 0 then
+				self:SetFill(self.mpBar, self.mpMaxWidth, pcon.Mana / maxMp)
+				if isvalid(self.mpText) then self.mpText.Text = string.format("%d / %d", pcon.Mana, maxMp) end
+			end
 
 			local maxSta = pcon.MaxStamina
 			if maxSta > 0 then

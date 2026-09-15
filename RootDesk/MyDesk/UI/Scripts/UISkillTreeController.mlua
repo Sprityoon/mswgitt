@@ -922,7 +922,8 @@ script UISkillTreeController extends Component
 		self:RefreshJobTabs(controller)
 
 		if isvalid(self.spText) and isvalid(self.spText.TextComponent) then
-			self.spText.TextComponent.Text = controller:GetJobName(controller.JobId) .. " · Lv " .. controller.Level .. " · SP " .. controller.SP .. " · MP " .. math.floor(controller.Mana) .. "/" .. controller:GetMaxMana()
+			-- 마나 현재치는 좌상단 프로필 위젯(UIMyInfo)의 MP 바로 일원화했다 — 스킬창 머리글에는 두지 않는다.
+			self.spText.TextComponent.Text = controller:GetJobName(controller.JobId) .. " · Lv " .. controller.Level .. " · SP " .. controller.SP
 		end
 
 		self:RefreshSkillList(controller)

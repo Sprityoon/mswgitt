@@ -250,11 +250,8 @@ script UISkillBarController extends Component
 		local emptyBg = Color(0.10, 0.10, 0.12, 0.88)
 		local lockedBg = Color(0.14, 0.12, 0.12, 0.90)
 
+		-- 마나 표기는 좌상단 프로필 위젯(UIMyInfo)의 MP 바로 일원화했다 — 스킬바에는 두지 않는다.
 		local pc = self:GetLocalPlayerController()
-		local manaText = self.Entity:GetChildByName("ManaText", true)
-		if pc ~= nil and isvalid(manaText) and isvalid(manaText.TextGUIRendererComponent) then
-			manaText.TextGUIRendererComponent.Text = "MP " .. math.floor(pc.Mana) .. " / " .. pc:GetMaxMana()
-		end
 		local skills = { "", "", "", "" }
 		local cdMap = {}
 		if pc ~= nil then

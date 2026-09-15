@@ -209,8 +209,21 @@ script UIMinimapController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method string NormalizeMapKey(string mapName)
+		-- 런타임 복제 맵을 원본 템플릿 키로 환산한다.
+		-- 사냥터(hunt01~)와 레이드 대기실/보스방(raidlobby_*, raid_*)은 _DynamicMapService 사본이라
+		-- 이름이 템플릿과 달라 MapCameraDataSet 조회도, 아래 리터럴 비교도 그냥 빗나간다.
+		if mapName == nil or mapName == "" then return "" end
+		if string.sub(mapName, 1, 10) == "raidlobby_" then return "template_boss" end
+		if string.sub(mapName, 1, 5) == "raid_" then return "template_boss" end
+		if string.sub(mapName, 1, 4) == "hunt" then return "template_field" end
+		return mapName
+	end
+
+	@ExecSpace("ClientOnly")
 	method number GetMapPanRadius(string mapName)
 		if mapName == nil or mapName == "" then return 30.0 end
+		mapName = self:NormalizeMapKey(mapName)
 		if string.sub(mapName, 1, 5) == "Home_" or mapName == "map01" then
 			return 30.0
 		elseif mapName == "town" then
@@ -234,6 +247,7 @@ script UIMinimapController extends Component
 
 	@ExecSpace("ClientOnly")
 	method number GetOptimalZoomRatio(string mapName)
+		mapName = self:NormalizeMapKey(mapName)
 		local ds = _DataService:GetTable("MapCameraDataSet")
 		if ds ~= nil then
 			local rowCount = ds:GetRowCount()
