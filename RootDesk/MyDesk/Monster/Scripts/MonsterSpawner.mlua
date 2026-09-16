@@ -279,6 +279,9 @@ script MonsterSpawner extends Logic
 										local nightAtk = self.IsNight and self.NightAtkMult or 1.0
 										local finalAtkMul = chosenOpt.atkMul * nightAtk
 										atkComp.ContactDamage = atkComp.ContactDamage * finalAtkMul
+										if atkComp.TouchDamage > 0 then
+											atkComp.TouchDamage = atkComp.TouchDamage * finalAtkMul
+										end
 									end
 
 									-- Set initial AI anchor pos to avoid leashing bugs

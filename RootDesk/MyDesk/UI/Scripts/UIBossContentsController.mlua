@@ -1,0 +1,372 @@
+@Component
+script UIBossContentsController extends Component
+
+	-- 보스 컨텐츠 창 (보스 레이드 R-1 Stage B).
+	--
+	-- 역할은 **대기실 워프 목록**이다. 난이도 선택도, 보스방 입장도 여기서 하지 않는다 —
+	-- 대기실(raidlobby_<bossId>)로 보내 주기만 하고, 난이도는 대기실 게이트에서 고른다
+	-- (UIRaidDifficultyController).
+	--
+	-- 🔴 보낼 수 있는 보스는 **직접 걸어서 도달해 활성화한 보스뿐**이다. 최초 1회는 사냥터 끝
+	--    (BossContentsDataSet.RequiredWaypointId 구역)의 대기실 포탈로만 갈 수 있고, 그때 활성화된다.
+	--    활성화 기록은 웨이포인트 해금 배관(UnlockedWaypointsJson)을 그대로 쓴다.
+	--
+	-- 데이터는 BossContentsDataSet(serveronly=false)에서 직접 읽는다 — 보스 추가는 CSV 행 추가로 끝난다.
+
+	-- .ui 바인딩 (UIBuilder 가 UUID 를 주입한다)
+	property Entity btnClose = "f3510b28-f70c-4997-a1fe-3a6a1ebb2cfe"
+	property Entity btnEnter = "7f6dcaf2-3d54-49e6-975b-59b42cb504fc"
+
+	-- 풀 크기. `.ui` 의 BossList/Slot1..N 엔티티 수와 반드시 일치해야 한다.
+	property integer BossSlotCount = 4
+
+	-- 런타임 상태 (클라 전용)
+	property table bosses = {}            -- index -> { bossId, name, artRuid, requiredLevel, fromMap, maxPlayers, weeklyLimit }
+	property table slotHandlers = {}
+	property integer selectedBossIndex = 0
+	property any closeHandler = nil
+	property any enterHandler = nil
+	property number refreshAccum = 0
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 닫기 · 이동 · 보스 슬롯 클릭을 배선한다. 창은 닫힌 채로 시작한다.
+		self.Entity.Enable = false
+
+		if isvalid(self.btnClose) then
+			self.closeHandler = self.btnClose:ConnectEvent(ButtonClickEvent, function() self:Close() end)
+		end
+		if isvalid(self.btnEnter) then
+			self.enterHandler = self.btnEnter:ConnectEvent(ButtonClickEvent, function() self:OnEnterClick() end)
+		end
+
+		for i = 1, self.BossSlotCount do
+			local slot = self:FindChild("Slot" .. tostring(i))
+			if isvalid(slot) then
+				local idx = i
+				local h = slot:ConnectEvent(ButtonClickEvent, function() self:OnSlotClick(idx) end)
+				self.slotHandlers[i] = { entity = slot, eventHandler = h }
+			end
+		end
+
+		log("[RAID-UI] UIBossContentsController ready (slots=" .. tostring(self.BossSlotCount) .. ")")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- OnBeginPlay 에서 건 핸들러를 전부 해제한다.
+		if isvalid(self.btnClose) and self.closeHandler ~= nil then
+			self.btnClose:DisconnectEvent(ButtonClickEvent, self.closeHandler)
+		end
+		if isvalid(self.btnEnter) and self.enterHandler ~= nil then
+			self.btnEnter:DisconnectEvent(ButtonClickEvent, self.enterHandler)
+		end
+		for _, rec in pairs(self.slotHandlers) do
+			if rec ~= nil and isvalid(rec.entity) then
+				rec.entity:DisconnectEvent(ButtonClickEvent, rec.eventHandler)
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 열려 있는 동안 0.5초 주기로 갱신 (활성화·주간 카운트 변화 반영).
+		if not self.Entity.Enable then return end
+		self.refreshAccum = self.refreshAccum + delta
+		if self.refreshAccum < 0.5 then return end
+		self.refreshAccum = 0.0
+		self:Refresh()
+	end
+
+	---------------------------------------------------------------------------
+	-- 열기 / 닫기
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ClientOnly")
+	method void Toggle()
+		-- B 키 / HUD 보스전 버튼 공통 진입점.
+		if self.Entity.Enable then
+			self:Close()
+		else
+			self:Open()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Open()
+		-- 데이터셋을 다시 읽어 목록을 채우고 연다.
+		self:LoadBosses()
+		if #self.bosses == 0 then
+			self.selectedBossIndex = 0
+		elseif self.selectedBossIndex < 1 or self.selectedBossIndex > #self.bosses then
+			self.selectedBossIndex = 1
+		end
+		self.Entity.Enable = true
+		self.refreshAccum = 0.0
+		self:Refresh()
+		log("[RAID-UI] boss contents open bosses=" .. tostring(#self.bosses))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		self.Entity.Enable = false
+	end
+
+	---------------------------------------------------------------------------
+	-- 데이터
+	---------------------------------------------------------------------------
+
+	method Entity FindChild(string name)
+		-- 창 하위 엔티티를 이름으로 찾는다 (경로 문자열 하드코딩 회피).
+		if not isvalid(self.Entity) then return nil end
+		return self.Entity:GetChildByName(name, true)
+	end
+
+	method string Cell(any ds, integer row, string col, string fallback)
+		-- UserDataSet 셀 조회. 없는 컬럼은 LEA-3011 이라 pcall 가드가 필수다 (함정 규칙 7).
+		if ds == nil then return fallback end
+		local ok, v = pcall(function() return ds:GetCell(row, col) end)
+		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		return fallback
+	end
+
+	method number CellNum(any ds, integer row, string col, number fallback)
+		local raw = self:Cell(ds, row, col, "")
+		if raw == "" then return fallback end
+		return tonumber(raw) or fallback
+	end
+
+	method string LobbyMapName(string bossId)
+		-- BossRaidLogic:LobbyMapName 과 같은 규약. 활성화 플래그 키로도 쓰인다.
+		if bossId == nil or bossId == "" then return "" end
+		return "raidlobby_" .. bossId
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LoadBosses()
+		-- BossContentsDataSet 전 행 -> Order 오름차순. Disable 행은 제외한다.
+		self.bosses = {}
+		local ds = _DataService:GetTable("BossContentsDataSet")
+		if ds == nil then
+			log_warning("[RAID-UI] BossContentsDataSet missing")
+			return
+		end
+		for i = 1, ds:GetRowCount() do
+			local bossId = self:Cell(ds, i, "BossId", "")
+			if bossId ~= "" and self:Cell(ds, i, "Disable", "") == "" then
+				table.insert(self.bosses, {
+					bossId = bossId,
+					name = self:Cell(ds, i, "DisplayName", bossId),
+					artRuid = self:Cell(ds, i, "ArtRUID", ""),
+					requiredLevel = math.floor(self:CellNum(ds, i, "RequiredLevel", 1)),
+					fromMap = self:Cell(ds, i, "RequiredWaypointId", ""),
+					maxPlayers = math.floor(self:CellNum(ds, i, "MaxPlayers", 1)),
+					weeklyLimit = math.floor(self:CellNum(ds, i, "WeeklyLimit", 0)),
+					order = self:CellNum(ds, i, "Order", 999)
+				})
+			end
+		end
+		table.sort(self.bosses, function(a, b) return a.order < b.order end)
+	end
+
+	method any GetLocalPlayerController()
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return nil end
+		local pc = lp:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return nil end
+		return pc
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsActivated(table boss)
+		-- 그 보스의 대기실에 직접 도달한 적이 있는가. 서버 EnterLobby 가 보는 것과 같은 플래그다.
+		if boss == nil then return false end
+		local pc = self:GetLocalPlayerController()
+		if pc == nil then return false end
+		---@type PlayerController
+		local c = pc
+		return c:IsWaypointUnlocked(self:LobbyMapName(boss.bossId))
+	end
+
+	method string GetHuntDisplayName(string mapName)
+		-- 사냥터 표시명(PortalDestinationDataSet). 없으면 맵 이름 그대로.
+		if mapName == nil or mapName == "" then return "" end
+		local ds = _DataService:GetTable("PortalDestinationDataSet")
+		if ds == nil then return mapName end
+		for i = 1, ds:GetRowCount() do
+			if self:Cell(ds, i, "DestinationId", "") == mapName then
+				return self:Cell(ds, i, "DisplayName", mapName)
+			end
+		end
+		return mapName
+	end
+
+	---------------------------------------------------------------------------
+	-- 표시 (글자는 렌더러와 같은 엔티티에 얹혀 있다 — 함정 규칙 50)
+	---------------------------------------------------------------------------
+
+	method void SetBoxText(Entity target, string text, Color fontColor)
+		if not isvalid(target) then return end
+		local t = target.TextGUIRendererComponent
+		if isvalid(t) then
+			t.Text = text
+			t.FontColor = fontColor
+		end
+	end
+
+	method void SetBoxTint(Entity target, Color tint)
+		if not isvalid(target) then return end
+		local spr = target.SpriteGUIRendererComponent
+		if isvalid(spr) then spr.Color = tint end
+	end
+
+	---------------------------------------------------------------------------
+	-- 화면 갱신
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ClientOnly")
+	method void Refresh()
+		-- 보스 슬롯 · 중앙 상세 · 하단 주간/안내/CTA 를 한 번에 다시 그린다.
+		local selectedBg = Color(0.94, 0.66, 0.19, 1.0)
+		local idleBg = Color(0.18, 0.20, 0.16, 1.0)
+		local lockedBg = Color(0.14, 0.14, 0.14, 1.0)
+		local selectedText = Color(0.15, 0.12, 0.08, 1.0)
+		local idleText = Color(0.79, 0.75, 0.70, 1.0)
+		local lockedText = Color(0.52, 0.50, 0.47, 1.0)
+		local creamText = Color(1.0, 0.90, 0.70, 1.0)
+
+		-- ① 보스 목록 — 잠금 = "아직 직접 도달하지 못함"
+		for i = 1, self.BossSlotCount do
+			local rec = self.slotHandlers[i]
+			local slot = nil
+			if rec ~= nil then slot = rec.entity end
+			if isvalid(slot) then
+				local boss = self.bosses[i]
+				if boss == nil then
+					slot.Enable = false
+				else
+					slot.Enable = true
+					local activated = self:IsActivated(boss)
+					local label = boss.name
+					if not activated then label = "[미발견] " .. boss.name end
+					if i == self.selectedBossIndex then
+						self:SetBoxTint(slot, selectedBg)
+						self:SetBoxText(slot, label, selectedText)
+					elseif activated then
+						self:SetBoxTint(slot, idleBg)
+						self:SetBoxText(slot, label, idleText)
+					else
+						self:SetBoxTint(slot, lockedBg)
+						self:SetBoxText(slot, label, lockedText)
+					end
+				end
+			end
+		end
+		if #self.bosses > self.BossSlotCount then
+			log_warning("[RAID-UI] boss slot pool exhausted (" .. tostring(#self.bosses)
+				.. " rows > " .. tostring(self.BossSlotCount) .. "). Add Slot entities and raise BossSlotCount.")
+		end
+
+		-- ② 중앙 상세
+		local boss = self.bosses[self.selectedBossIndex]
+		local art = self:FindChild("Art")
+		if isvalid(art) then
+			local spr = art.SpriteGUIRendererComponent
+			if isvalid(spr) then
+				if boss ~= nil and boss.artRuid ~= "" then
+					spr.ImageRUID = boss.artRuid
+					spr.Color = Color(1, 1, 1, 1)
+				else
+					spr.Color = Color(1, 1, 1, 0)
+				end
+			end
+		end
+
+		if boss == nil then
+			self:SetBoxText(self:FindChild("NameBox"), "열린 보스가 없습니다", creamText)
+			self:SetBoxText(self:FindChild("InfoLevel"), "", idleText)
+			self:SetBoxText(self:FindChild("InfoReq"), "", idleText)
+			self:SetBoxText(self:FindChild("InfoReward"), "", idleText)
+			self:SetBoxText(self:FindChild("WeeklyBox"), "이번 주 -", idleText)
+			self:SetBoxText(self:FindChild("HintBox"), "", idleText)
+			self:SetBoxTint(self.btnEnter, lockedBg)
+			self:SetBoxText(self.btnEnter, "대기실로 이동", lockedText)
+			return
+		end
+
+		self:SetBoxText(self:FindChild("NameBox"), boss.name, creamText)
+		self:SetBoxText(self:FindChild("InfoLevel"),
+			"입장 Lv." .. tostring(boss.requiredLevel) .. "   ·   최대 " .. tostring(boss.maxPlayers) .. "인", idleText)
+		self:SetBoxText(self:FindChild("InfoReq"),
+			"위치: " .. self:GetHuntDisplayName(boss.fromMap) .. " 너머", idleText)
+		self:SetBoxText(self:FindChild("InfoReward"), "난이도는 대기실 게이트에서 선택합니다", idleText)
+
+		local pc = self:GetLocalPlayerController()
+		if boss.weeklyLimit > 0 then
+			local done = 0
+			if pc ~= nil then
+				---@type PlayerController
+				local c = pc
+				done = c:GetRaidClearCount(boss.bossId)
+			end
+			self:SetBoxText(self:FindChild("WeeklyBox"),
+				"이번 주 " .. tostring(done) .. " / " .. tostring(boss.weeklyLimit), idleText)
+		else
+			self:SetBoxText(self:FindChild("WeeklyBox"), "주간 제한 없음", idleText)
+		end
+
+		-- ③ 안내문 + 이동 CTA
+		if self:IsActivated(boss) then
+			self:SetBoxText(self:FindChild("HintBox"), "대기실로 이동할 수 있습니다", Color(0.72, 0.90, 0.64, 1.0))
+			self:SetBoxTint(self.btnEnter, selectedBg)
+			self:SetBoxText(self.btnEnter, "대기실로 이동", selectedText)
+		else
+			self:SetBoxText(self:FindChild("HintBox"),
+				self:GetHuntDisplayName(boss.fromMap) .. " 끝의 포탈로 먼저 도달해야 합니다",
+				Color(0.94, 0.72, 0.60, 1.0))
+			self:SetBoxTint(self.btnEnter, lockedBg)
+			self:SetBoxText(self.btnEnter, "대기실로 이동", lockedText)
+		end
+	end
+
+	---------------------------------------------------------------------------
+	-- 클릭
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ClientOnly")
+	method void OnSlotClick(integer slotIndex)
+		-- 보스 선택 -> 상세 갱신.
+		if self.bosses[slotIndex] == nil then return end
+		if slotIndex == self.selectedBossIndex then return end
+		self.selectedBossIndex = slotIndex
+		self:Refresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEnterClick()
+		-- 대기실 워프 요청. 미발견 보스는 서버까지 가지 않고 여기서 사유 토스트만 띄운다.
+		local boss = self.bosses[self.selectedBossIndex]
+		if boss == nil then return end
+		local pc = self:GetLocalPlayerController()
+
+		if not self:IsActivated(boss) then
+			if pc ~= nil then
+				---@type PlayerController
+				local c = pc
+				c:ClientShowMineFeedback(self:GetHuntDisplayName(boss.fromMap) .. " 끝의 포탈로 먼저 도달해야 합니다!")
+			end
+			return
+		end
+
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return end
+		if _BossRaidLogic == nil then
+			log_warning("[RAID-UI] BossRaidLogic missing")
+			return
+		end
+		log("[RAID-UI] lobby warp request boss=" .. boss.bossId)
+		_BossRaidLogic:RequestEnterLobby(boss.bossId, lp)
+		self:Close()
+	end
+
+end

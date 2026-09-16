@@ -64,6 +64,7 @@
 | [50](#50-별도-자식-text-엔티티는-렌더가-불안정하다--글자는-렌더러와-같은-엔티티에-얹는다) | 자식 text 엔티티 렌더 불안정 | 값은 정상인데 글자만 안 보임 |
 | [51](#51-csv-데이터셋-값에-쉼표가-포함되면-반드시-큰따옴표로-감싸야-한다--컬럼-밀림으로-런타임-오작동) | CSV 값 내 쉼표 = 반드시 큰따옴표 래핑 | 뒷부분 컬럼이 1칸씩 밀려 엉뚱한 값 대입 (에러 0) |
 | [52](#52-한-부모-밑-자식들의-앵커가-섞여-있으면-pos-는-서로-다른-기준선으로-해석된다--중심-기준-좌표-계산은-조용히-틀린다) | 자식 앵커 혼재 시 `pos` 기준선이 제각각 | UI가 패널 밖에 그려지는데 자체 검산은 통과 |
+| [53](#53-rpc-메서드-본문의---type-사용자-타입-주석은-lea-1118-빌드-에러다) | RPC 본문에 `---@type <사용자스크립트>` 금지 | build Error 1건 (같은 주석이 일반 메서드에선 무사) |
 
 ---
 
@@ -648,6 +649,17 @@ CSV 파일의 설명(`Description` 등) 텍스트에 문장 부호 쉼표(`,`)�
   2. 검산식은 앵커·피벗을 반영해야 한다: `center = (anchor - 0.5) * parentSize + pos + (0.5 - pivot) * rectSize`.
   3. 좌표를 만지기 전에 대상 자식들의 `AlignmentOption` / `Pivot` 을 먼저 덤프해 섞여 있는지 확인한다.
 - ⚠️ 기하 검산이 통과해도 **UI 배치는 스크린샷으로 눈으로 확인**하기 전까지 끝난 것이 아니다 (규칙 6 미학 루브릭과 같은 맥락).
+
+### 53. RPC 메서드 본문의 `---@type <사용자 스크립트>` 주석은 `LEA-1118` 빌드 에러다
+
+`@ExecSpace("Client")` / `("Server")` / `("Multicast")` 메서드 **본문 안에서** 사용자 `@Component`·`@Logic` 타입을 `---@type` 으로 캐스팅하면 build Error 가 난다. **같은 주석이 일반 메서드나 `ClientOnly`/`ServerOnly` 에서는 아무 문제 없다** — 그래서 "이 프로젝트는 원래 `---@type` 을 쓰는데?" 하고 넘기기 쉽다.
+
+- **실측 (2026-09-16)**: `PlayerController:ClientOpenRaidDifficulty`(`@ExecSpace("Client")`) 안의 `---@type UIRaidDifficultyController` 1줄 →
+  `maker_logs(kind="build")` 에 `<MODIssueFormat>LEA&Default&1118&0</MODIssueFormat><MODIssueArg>UIRaidDifficultyController</MODIssueArg>` **Error 1건**.
+  같은 턴에 추가한 B 키 핸들러(일반 메서드)와 `UIHUDController` 의 `---@type UIBossContentsController` 는 **둘 다 에러 없음**.
+- 🔴 **`mlua-lsp diagnose` 는 이걸 못 잡는다.** 진단은 `errors=0 / warnings=0` 으로 깨끗했고, 오직 **Maker build 로그**에만 떴다. 스택의 `methodName` 이 어느 메서드인지 정확히 지목해 준다.
+- ✅ **해법**: 주석을 빼고 동적 디스패치로 호출한다(`local c = e:GetComponent("script.X")` → `c:Method()`). 남는 `LIA-1114` Info 는 무해한 크로스 스크립트 노이즈다. 타입 힌트가 꼭 필요하면 RPC 는 얇게 두고 **본체를 일반 메서드로 빼서** 거기서 캐스팅한다.
+- **선례**: T19 의 `---@type Animal`, T57 의 패키지 RPC 파라미터 — 같은 계열이 세 번째 재발이라 규칙으로 승격한다.
 
 ## 관련 문서
 

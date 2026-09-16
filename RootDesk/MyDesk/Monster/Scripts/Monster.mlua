@@ -140,9 +140,14 @@ script Monster extends Component
 		local t = self.Entity.TransformComponent
 
 		-- Loot drop (reuses the resource-drop spawner; pickupGrace 0 = immediately pickable).
+		-- 보스 고정 드롭도 기여자 각자에게 소유권을 붙여 따로 떨군다 (일반 드롭과 같은 규칙).
 		if isvalid(map) and isvalid(t) and self.BossDropItem ~= "" and _TileDurabilityManager ~= nil then
 			local p = t.WorldPosition
-			_TileDurabilityManager:SpawnResourceDrop(map, Vector3(p.x, p.y, 0), self.BossDropItem, self.BossDropMin, self.BossDropMax, 0)
+			for _, player in ipairs(self:GetDropContributors()) do
+				if isvalid(player) and player.PlayerComponent ~= nil then
+					_TileDurabilityManager:SpawnResourceDropOwned(map, Vector3(p.x, p.y, 0), self.BossDropItem, self.BossDropMin, self.BossDropMax, 0, player.PlayerComponent.UserId, 0)
+				end
+			end
 		end
 
 		-- ItemDropDataSet 드롭은 Dead()에서 전 몬스터 공통으로 처리한다(여기서 중복 호출하지 않는다).
@@ -159,15 +164,17 @@ script Monster extends Component
 	end
 
 	@ExecSpace("ServerOnly")
-	method boolean IsQuestGuaranteedDrop(string guaranteeIds, string itemId)
+	method boolean IsQuestGuaranteedDrop(Entity player, string guaranteeIds, string itemId)
 		-- ItemDropDataSet.GuaranteeQuestIds("302|312|...") 보장 판정.
-		-- 막타 플레이어가 그 퀘스트를 진행 중이고 해당 아이템을 아직 하나도 갖고 있지 않을 때만 true.
+		-- **해당 기여자**가 그 퀘스트를 진행 중이고 해당 아이템을 아직 하나도 갖고 있지 않을 때만 true.
 		-- 획득하면 보유 수량 때문에 false로 돌아가 원래 확률로 복귀한다(= 최초 1회 확정).
+		-- 🔴 판정 대상이 파티원 각자여야 한다 — 막타자 한 명으로 굴리면 그 사람의 퀘스트 상태가
+		--    파티 전체 드롭을 결정해 버린다 (2026-09-16 제작자 지적).
 		if guaranteeIds == nil or guaranteeIds == "" then return false end
 		if itemId == nil or itemId == "" then return false end
-		if not isvalid(self.LastAttacker) then return false end
+		if not isvalid(player) then return false end
 
-		local quest = self.LastAttacker:GetComponent("script.PlayerQuest")
+		local quest = player:GetComponent("script.PlayerQuest")
 		if not isvalid(quest) then return false end
 		---@type PlayerQuest
 		local pq = quest
@@ -192,7 +199,7 @@ script Monster extends Component
 		local itemName = row:GetItem("Name") or ""
 		if itemName == "" then return false end
 
-		local inv = self.LastAttacker:GetComponent("script.PlayerInventory")
+		local inv = player:GetComponent("script.PlayerInventory")
 		if not isvalid(inv) then return false end
 		---@type PlayerInventory
 		local pinv = inv
@@ -203,44 +210,66 @@ script Monster extends Component
 	end
 
 	@ExecSpace("ServerOnly")
+	method table GetDropContributors()
+		-- 전리품을 받을 사람들. 지금은 막타자 1인이지만, R-2 파티가 붙으면 여기에 파티원을 채우면 된다.
+		-- 드롭 루틴은 이 목록을 받아 **1인씩 따로** 확률을 굴리므로 호출부 변경만으로 파티 드롭이 완성된다.
+		local list = {}
+		if isvalid(self.LastAttacker) then
+			list[#list + 1] = self.LastAttacker
+		end
+		return list
+	end
+
 	method void DropFromItemDropDataSet(Entity map, any worldPos)
 		-- ItemDropDataSet에서 SourceId==MonsterId 행을 확률 드롭. ItemId = item_dataset.id.
+		-- 🔴 확률은 **기여자 1인마다 따로** 굴리고, 떨어진 전리품에는 그 사람의 소유권을 건다.
+		--    퀘스트 확정 드롭·LootChance 보너스가 개인 상태로 평가돼야 하기 때문이다
+		--    (막타자 한 명으로 굴리면 그 사람의 퀘스트 상태가 파티 전체 드롭을 결정해 버린다).
 		local ds = _DataService:GetTable("ItemDropDataSet")
 		if ds == nil then return end
 		-- 레이드 난이도 사본은 DropSourceOverride 로 보상 테이블만 분기한다(MonsterId 는 그대로).
 		local sourceId = self.DropSourceOverride
 		if sourceId == nil or sourceId == "" then sourceId = self:GetMonsterId() end
 		if sourceId == "" then return end
+
+		local contributors = self:GetDropContributors()
+		if #contributors == 0 then return end
+
 		local rowCount = ds:GetRowCount()
-		for i = 1, rowCount do
-			local sid = ds:GetCell(i, "SourceId") or ""
-			if sid == sourceId then
-				local prob = tonumber(ds:GetCell(i, "Probability")) or 0.0
-				-- 퀘스트 보장 드롭: GuaranteeQuestIds에 적힌 퀘스트를 진행 중이고 아직 그 아이템이
-				-- 없으면 확률을 무시하고 1회 확정 드롭한다(전직 시험 증표 — 대형 슬라임 젤리).
-				local guaranteeIds = ""
-				local okGuar, guarRaw = pcall(function() return ds:GetCell(i, "GuaranteeQuestIds") end)
-				if okGuar and guarRaw ~= nil then guaranteeIds = tostring(guarRaw) end
-				local rowItemId = ds:GetCell(i, "ItemId") or ""
-				local forced = self:IsQuestGuaranteedDrop(guaranteeIds, rowItemId)
-				if forced or math.random() <= prob then
-					local itemId = rowItemId
-					local minC = math.floor(tonumber(ds:GetCell(i, "MinCount")) or 1)
-					local maxC = math.floor(tonumber(ds:GetCell(i, "MaxCount")) or minC)
-					if maxC < minC then maxC = minC end
-					local count = math.random(minC, maxC)
-					local okNatural, natural = pcall(function() return ds:GetCell(i, "NaturalLoot") end)
-					if okNatural and natural == "true" and isvalid(self.LastAttacker) then
-						local pc = self.LastAttacker:GetComponent("script.PlayerController")
-						if isvalid(pc) then
-							local chance = pc:GetPassiveBonus("LootChance")
-							if self:GetSkillStatus("Root") ~= nil then chance = chance * 2 end
-							if math.random() < math.min(1, chance) then count = count + 1 end
+		for _, player in ipairs(contributors) do
+			if isvalid(player) and player.PlayerComponent ~= nil then
+				local ownerId = player.PlayerComponent.UserId
+				for i = 1, rowCount do
+					local sid = ds:GetCell(i, "SourceId") or ""
+					if sid == sourceId then
+						local prob = tonumber(ds:GetCell(i, "Probability")) or 0.0
+						-- 퀘스트 보장 드롭: GuaranteeQuestIds에 적힌 퀘스트를 진행 중이고 아직 그 아이템이
+						-- 없으면 확률을 무시하고 1회 확정 드롭한다(전직 시험 증표 — 대형 슬라임 젤리).
+						local guaranteeIds = ""
+						local okGuar, guarRaw = pcall(function() return ds:GetCell(i, "GuaranteeQuestIds") end)
+						if okGuar and guarRaw ~= nil then guaranteeIds = tostring(guarRaw) end
+						local rowItemId = ds:GetCell(i, "ItemId") or ""
+						local forced = self:IsQuestGuaranteedDrop(player, guaranteeIds, rowItemId)
+						if forced or math.random() <= prob then
+							local itemId = rowItemId
+							local minC = math.floor(tonumber(ds:GetCell(i, "MinCount")) or 1)
+							local maxC = math.floor(tonumber(ds:GetCell(i, "MaxCount")) or minC)
+							if maxC < minC then maxC = minC end
+							local count = math.random(minC, maxC)
+							local okNatural, natural = pcall(function() return ds:GetCell(i, "NaturalLoot") end)
+							if okNatural and natural == "true" then
+								local pc = player:GetComponent("script.PlayerController")
+								if isvalid(pc) then
+									local chance = pc:GetPassiveBonus("LootChance")
+									if self:GetSkillStatus("Root") ~= nil then chance = chance * 2 end
+									if math.random() < math.min(1, chance) then count = count + 1 end
+								end
+							end
+							if itemId ~= "" and count > 0 then
+								_TileDurabilityManager:SpawnResourceDropOwned(map, Vector3(worldPos.x, worldPos.y, 0), itemId, count, count, 0, ownerId, 0)
+								log("[MONSTER] drop id=" .. itemId .. " x" .. tostring(count) .. " from " .. sourceId .. " owner=" .. ownerId)
+							end
 						end
-					end
-					if itemId ~= "" and count > 0 then
-						_TileDurabilityManager:SpawnResourceDrop(map, Vector3(worldPos.x, worldPos.y, 0), itemId, count, count, 0)
-						log("[MONSTER] ItemDropDataSet drop id=" .. itemId .. " x" .. tostring(count) .. " from " .. sourceId)
 					end
 				end
 			end

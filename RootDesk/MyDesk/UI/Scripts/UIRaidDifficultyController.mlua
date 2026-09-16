@@ -1,0 +1,359 @@
+@Component
+script UIRaidDifficultyController extends Component
+
+	-- 보스방 난이도 선택 창.
+	--
+	-- 대기실(raidlobby_<bossId>)의 붉은 게이트에서 F 를 누르면 서버(BossRaidLogic:OpenDifficultySelect)가
+	-- PlayerController:ClientOpenRaidDifficulty 로 이 창만 띄운다. 창이 고른 난이도로
+	-- `_BossRaidLogic:RequestEnterBossRoom(bossId, difficultyId, localPlayer)` 을 부르면 보스방이 열린다.
+	--
+	-- 🔴 난이도를 게이트 엔티티에 박아 두지 않는 이유: 대기실은 공유 맵이라 먼저 들어온 사람의 선택이
+	--    뒤에 온 사람에게 그대로 적용돼 버린다. 선택은 개인 클라이언트에만 남는다.
+	--
+	-- 데이터는 BossDifficultyDataSet(serveronly=false)에서 직접 읽는다 — 난이도 추가는 CSV 행 추가로 끝난다.
+
+	-- .ui 바인딩 (UIBuilder 가 UUID 를 주입한다)
+	property Entity btnClose = "8bab640e-853c-4fe6-83b4-fc0dae82227e"
+	property Entity btnEnter = "8c28e1fd-82ed-4374-a37e-28610812b94c"
+
+	-- 풀 크기. `.ui` 의 DiffList/Chip1..N 엔티티 수와 반드시 일치해야 한다.
+	property integer DifficultyChipCount = 4
+
+	property string bossId = ""
+	property table difficulties = {}      -- index -> { difficultyId, name, entryLevel, coinReward }
+	property table chipHandlers = {}
+	property integer selectedIndex = 0
+	property any closeHandler = nil
+	property any enterHandler = nil
+	property number refreshAccum = 0
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 닫기 · 입장 · 난이도 칩 클릭을 배선한다. 창은 닫힌 채로 시작한다.
+		self.Entity.Enable = false
+
+		if isvalid(self.btnClose) then
+			self.closeHandler = self.btnClose:ConnectEvent(ButtonClickEvent, function() self:Close() end)
+		end
+		if isvalid(self.btnEnter) then
+			self.enterHandler = self.btnEnter:ConnectEvent(ButtonClickEvent, function() self:OnEnterClick() end)
+		end
+
+		for i = 1, self.DifficultyChipCount do
+			local chip = self:FindChild("Chip" .. tostring(i))
+			if isvalid(chip) then
+				local idx = i
+				local h = chip:ConnectEvent(ButtonClickEvent, function() self:OnChipClick(idx) end)
+				self.chipHandlers[i] = { entity = chip, eventHandler = h }
+			end
+		end
+
+		log("[RAID-UI] UIRaidDifficultyController ready (chips=" .. tostring(self.DifficultyChipCount) .. ")")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- OnBeginPlay 에서 건 핸들러를 전부 해제한다.
+		if isvalid(self.btnClose) and self.closeHandler ~= nil then
+			self.btnClose:DisconnectEvent(ButtonClickEvent, self.closeHandler)
+		end
+		if isvalid(self.btnEnter) and self.enterHandler ~= nil then
+			self.btnEnter:DisconnectEvent(ButtonClickEvent, self.enterHandler)
+		end
+		for _, rec in pairs(self.chipHandlers) do
+			if rec ~= nil and isvalid(rec.entity) then
+				rec.entity:DisconnectEvent(ButtonClickEvent, rec.eventHandler)
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 열려 있는 동안 0.5초 주기로 갱신 (레벨업·주간 카운트 변화 반영).
+		if not self.Entity.Enable then return end
+		self.refreshAccum = self.refreshAccum + delta
+		if self.refreshAccum < 0.5 then return end
+		self.refreshAccum = 0.0
+		self:Refresh()
+	end
+
+	---------------------------------------------------------------------------
+	-- 열기 / 닫기
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ClientOnly")
+	method void OpenFor(string targetBossId)
+		-- 게이트에서 F 를 눌렀을 때 서버가 부른다.
+		if targetBossId == nil or targetBossId == "" then return end
+		self.bossId = targetBossId
+		self:LoadDifficulties()
+		self.Entity.Enable = true
+		self.refreshAccum = 0.0
+		self:Refresh()
+		log("[RAID-UI] difficulty select open boss=" .. targetBossId .. " diffs=" .. tostring(#self.difficulties))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		self.Entity.Enable = false
+	end
+
+	---------------------------------------------------------------------------
+	-- 데이터
+	---------------------------------------------------------------------------
+
+	method Entity FindChild(string name)
+		-- 창 하위 엔티티를 이름으로 찾는다.
+		if not isvalid(self.Entity) then return nil end
+		return self.Entity:GetChildByName(name, true)
+	end
+
+	method string Cell(any ds, integer row, string col, string fallback)
+		-- UserDataSet 셀 조회. 없는 컬럼은 LEA-3011 이라 pcall 가드가 필수다 (함정 규칙 7).
+		if ds == nil then return fallback end
+		local ok, v = pcall(function() return ds:GetCell(row, col) end)
+		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		return fallback
+	end
+
+	method number CellNum(any ds, integer row, string col, number fallback)
+		local raw = self:Cell(ds, row, col, "")
+		if raw == "" then return fallback end
+		return tonumber(raw) or fallback
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LoadDifficulties()
+		-- (BossId, DifficultyId) 복합키라 FindRow 로는 못 찾는다 — 전수 주사 후 Order 오름차순.
+		self.difficulties = {}
+		local ds = _DataService:GetTable("BossDifficultyDataSet")
+		if ds == nil then
+			log_warning("[RAID-UI] BossDifficultyDataSet missing")
+			return
+		end
+		for i = 1, ds:GetRowCount() do
+			if self:Cell(ds, i, "BossId", "") == self.bossId and self:Cell(ds, i, "Disable", "") == "" then
+				local diffId = self:Cell(ds, i, "DifficultyId", "")
+				if diffId ~= "" then
+					table.insert(self.difficulties, {
+						difficultyId = diffId,
+						name = self:Cell(ds, i, "DisplayName", diffId),
+						entryLevel = math.floor(self:CellNum(ds, i, "EntryLevel", 1)),
+						coinReward = math.floor(self:CellNum(ds, i, "CoinReward", 0)),
+						order = self:CellNum(ds, i, "Order", 999)
+					})
+				end
+			end
+		end
+		table.sort(self.difficulties, function(a, b) return a.order < b.order end)
+
+		-- 기본 선택 = 지금 레벨로 들어갈 수 있는 가장 높은 난이도. 하나도 없으면 첫 칸.
+		local level = self:GetPlayerLevel()
+		local pick = 0
+		for i, d in ipairs(self.difficulties) do
+			if level >= d.entryLevel then pick = i end
+		end
+		if pick == 0 and #self.difficulties > 0 then pick = 1 end
+		self.selectedIndex = pick
+	end
+
+	method any GetBossRow()
+		-- 이 창이 다루는 보스의 BossContentsDataSet 행.
+		local ds = _DataService:GetTable("BossContentsDataSet")
+		if ds == nil or self.bossId == "" then return nil end
+		return ds:FindRow("BossId", self.bossId)
+	end
+
+	method any GetLocalPlayerController()
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return nil end
+		local pc = lp:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return nil end
+		return pc
+	end
+
+	method integer GetPlayerLevel()
+		local pc = self:GetLocalPlayerController()
+		if pc == nil then return 1 end
+		---@type PlayerController
+		local c = pc
+		return c.Level
+	end
+
+	@ExecSpace("ClientOnly")
+	method string EvaluateEntry(table diff)
+		-- 입장 가능하면 "". 서버 ValidateEntry 와 같은 순서지만 **안내용**이다 —
+		-- 최종 판정과 거절 토스트는 서버가 한다. 선행 퀘스트는 서버 전용 판정이라 여기서 보지 않는다.
+		if diff == nil then return "난이도를 선택해 주세요." end
+		local pc = self:GetLocalPlayerController()
+		if pc == nil then return "플레이어 정보를 불러오는 중입니다." end
+		---@type PlayerController
+		local c = pc
+
+		local bossRow = self:GetBossRow()
+		local needLevel = 1
+		if bossRow ~= nil then
+			local okL, rawL = pcall(function() return bossRow:GetItem("RequiredLevel") end)
+			if okL and rawL ~= nil then needLevel = math.floor(tonumber(tostring(rawL)) or 1) end
+		end
+		if diff.entryLevel > needLevel then needLevel = diff.entryLevel end
+		if c.Level < needLevel then
+			return "입장 레벨이 부족합니다. (Lv." .. tostring(needLevel) .. " 필요)"
+		end
+
+		local weeklyLimit = self:GetWeeklyLimit()
+		if weeklyLimit > 0 and c:GetRaidClearCount(self.bossId) >= weeklyLimit then
+			return "이번 주 처치 제한에 도달했습니다."
+		end
+		return ""
+	end
+
+	method integer GetWeeklyLimit()
+		local bossRow = self:GetBossRow()
+		if bossRow == nil then return 0 end
+		local ok, raw = pcall(function() return bossRow:GetItem("WeeklyLimit") end)
+		if ok and raw ~= nil then return math.floor(tonumber(tostring(raw)) or 0) end
+		return 0
+	end
+
+	method string GetBossDisplayName()
+		local bossRow = self:GetBossRow()
+		if bossRow == nil then return self.bossId end
+		local ok, raw = pcall(function() return bossRow:GetItem("DisplayName") end)
+		if ok and raw ~= nil and tostring(raw) ~= "" then return tostring(raw) end
+		return self.bossId
+	end
+
+	---------------------------------------------------------------------------
+	-- 표시 (글자는 렌더러와 같은 엔티티에 얹혀 있다 — 함정 규칙 50)
+	---------------------------------------------------------------------------
+
+	method void SetBoxText(Entity target, string text, Color fontColor)
+		if not isvalid(target) then return end
+		local t = target.TextGUIRendererComponent
+		if isvalid(t) then
+			t.Text = text
+			t.FontColor = fontColor
+		end
+	end
+
+	method void SetBoxTint(Entity target, Color tint)
+		if not isvalid(target) then return end
+		local spr = target.SpriteGUIRendererComponent
+		if isvalid(spr) then spr.Color = tint end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Refresh()
+		-- 칩 · 머리글 · 안내문 · 입장 CTA 를 다시 그린다.
+		local selectedBg = Color(0.94, 0.66, 0.19, 1.0)
+		local idleBg = Color(0.18, 0.20, 0.16, 1.0)
+		local lockedBg = Color(0.14, 0.14, 0.14, 1.0)
+		local selectedText = Color(0.15, 0.12, 0.08, 1.0)
+		local idleText = Color(0.79, 0.75, 0.70, 1.0)
+		local lockedText = Color(0.52, 0.50, 0.47, 1.0)
+		local creamText = Color(1.0, 0.90, 0.70, 1.0)
+
+		local level = self:GetPlayerLevel()
+		self:SetBoxText(self:FindChild("NameBox"), self:GetBossDisplayName(), creamText)
+
+		local weeklyLimit = self:GetWeeklyLimit()
+		if weeklyLimit > 0 then
+			local pc = self:GetLocalPlayerController()
+			local done = 0
+			if pc ~= nil then
+				---@type PlayerController
+				local c = pc
+				done = c:GetRaidClearCount(self.bossId)
+			end
+			self:SetBoxText(self:FindChild("WeeklyBox"),
+				"이번 주 " .. tostring(done) .. " / " .. tostring(weeklyLimit), idleText)
+		else
+			self:SetBoxText(self:FindChild("WeeklyBox"), "주간 제한 없음", idleText)
+		end
+
+		for i = 1, self.DifficultyChipCount do
+			local rec = self.chipHandlers[i]
+			local chip = nil
+			if rec ~= nil then chip = rec.entity end
+			if isvalid(chip) then
+				local diff = self.difficulties[i]
+				if diff == nil then
+					chip.Enable = false
+				else
+					chip.Enable = true
+					local reachable = (level >= diff.entryLevel)
+					local label = diff.name .. "   Lv." .. tostring(diff.entryLevel) .. "   코인 " .. tostring(diff.coinReward)
+					if not reachable then
+						label = diff.name .. "   Lv." .. tostring(diff.entryLevel) .. " 필요"
+					end
+					if i == self.selectedIndex then
+						self:SetBoxTint(chip, selectedBg)
+						self:SetBoxText(chip, label, selectedText)
+					elseif reachable then
+						self:SetBoxTint(chip, idleBg)
+						self:SetBoxText(chip, label, idleText)
+					else
+						self:SetBoxTint(chip, lockedBg)
+						self:SetBoxText(chip, label, lockedText)
+					end
+				end
+			end
+		end
+		if #self.difficulties > self.DifficultyChipCount then
+			log_warning("[RAID-UI] difficulty chip pool exhausted (" .. tostring(#self.difficulties)
+				.. " rows > " .. tostring(self.DifficultyChipCount) .. "). Add Chip entities and raise DifficultyChipCount.")
+		end
+
+		local reason = self:EvaluateEntry(self.difficulties[self.selectedIndex])
+		if reason == "" then
+			self:SetBoxText(self:FindChild("HintBox"), "보스방으로 입장할 수 있습니다", Color(0.72, 0.90, 0.64, 1.0))
+			self:SetBoxTint(self.btnEnter, selectedBg)
+			self:SetBoxText(self.btnEnter, "입 장", selectedText)
+		else
+			self:SetBoxText(self:FindChild("HintBox"), reason, Color(0.94, 0.72, 0.60, 1.0))
+			self:SetBoxTint(self.btnEnter, lockedBg)
+			self:SetBoxText(self.btnEnter, "입 장", lockedText)
+		end
+	end
+
+	---------------------------------------------------------------------------
+	-- 클릭
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ClientOnly")
+	method void OnChipClick(integer chipIndex)
+		-- 입장 불가 난이도도 고를 수는 있고, 사유는 하단 안내문에 나온다.
+		if self.difficulties[chipIndex] == nil then return end
+		self.selectedIndex = chipIndex
+		self:Refresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEnterClick()
+		-- 보스방 입장 요청. 조건 미충족이면 서버까지 가지 않고 사유 토스트만 띄운다.
+		local diff = self.difficulties[self.selectedIndex]
+		local reason = self:EvaluateEntry(diff)
+		local pc = self:GetLocalPlayerController()
+
+		if reason ~= "" then
+			if pc ~= nil then
+				---@type PlayerController
+				local c = pc
+				c:ClientShowMineFeedback(reason)
+			end
+			return
+		end
+
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return end
+		if _BossRaidLogic == nil then
+			log_warning("[RAID-UI] BossRaidLogic missing")
+			return
+		end
+		log("[RAID-UI] boss room request boss=" .. self.bossId .. " diff=" .. diff.difficultyId)
+		_BossRaidLogic:RequestEnterBossRoom(self.bossId, diff.difficultyId, lp)
+		self:Close()
+	end
+
+end

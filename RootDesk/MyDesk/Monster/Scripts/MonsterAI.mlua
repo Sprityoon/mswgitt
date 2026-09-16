@@ -451,8 +451,9 @@ script MonsterAI extends Component
 		-- ⚠ 착지 좌표 확정 시점부터 착지까지는 접촉 틱을 멈춘다(규칙 44). 플레이어 i-frame 이
 		--   0.4초인데 접촉 틱이 그보다 잦으면, 착지 직전에 소모된 i-frame 때문에 정작 광역타가
 		--   조용히 씹힌다. 예고 앞부분(추적 구간)과 그 외 지상 구간에서는 그대로 돌기 때문에
-		--   규칙 42의 파고들기 방지와도 충돌하지 않는다.
-		if self:IsSlamCommitted() then return end
+		-- T102: 공격 준비/타격 중(ATTACK)이나 돌진 중(CHARGE), 착지 확정(LEAP) 중에는 접촉 틱을 중단한다.
+		-- 플레이어 i-frame(0.4초)이 얄팍한 접촉 틱에 먼저 소모되어 정작 강력한 공격 데미지가 씹히는 현상을 방어.
+		if self.CurrentAIState == "ATTACK" or self.CurrentAIState == "CHARGE" or self:IsSlamCommitted() then return end
 		local atk = self:GetAttack()
 		if not isvalid(atk) then return end
 		if self.TouchCooldownTimer > 0 then
@@ -472,7 +473,7 @@ script MonsterAI extends Component
 		if dx <= box.halfX and dy <= box.halfY then
 			atk:DoTouchAttackBox(Vector2(box.cx, box.cy), Vector2(box.halfX * 2, box.halfY * 2))
 			local interval = atk.TouchTickInterval
-			if interval == nil or interval <= 0 then interval = 0.35 end
+			if interval == nil or interval <= 0 then interval = 0.8 end
 			self.TouchCooldownTimer = interval
 		end
 	end
@@ -746,14 +747,16 @@ script MonsterAI extends Component
 						distToTarget = len
 					end
 				end
-				-- 최소 한 걸음은 나가도록 하되, 고정 overshoot 배율은 쓰지 않는다.
-				if distToTarget < 0.35 then distToTarget = 0.35 end
+				-- T103: 조준 당시 플레이어 위치를 넘어 훨씬 멀리까지 전속 돌진 (플레이어 거리 + 3.0m 오버슈트, 최소 4.5m)
+				local totalChargeDist = distToTarget + 3.0
+				if totalChargeDist < 4.5 then totalChargeDist = 4.5 end
 				self.ChargeDir = dir
-				self.ChargeDistanceRemaining = distToTarget
+				self.ChargeDistanceRemaining = totalChargeDist
 				self.ChargeLastPos = myPos
 				self.ChargePhase = "DASH"
 				self.StateTimer = self.ChargeMaxDuration
 				self.TelegraphOn = false
+				self._T.ChargeHitDone = false
 			end
 			return
 		end
@@ -771,6 +774,38 @@ script MonsterAI extends Component
 				self:EndCharge()
 				return
 			end
+
+			-- T102/T103: 돌진 중 최근접 플레이어와의 충돌(타격) 판정 (1회 돌진당 1회 적중)
+			if not self._T.ChargeHitDone then
+				local target = self:FindNearestPlayer()
+				if isvalid(target) then
+					local tp = self:EntityPos2D(target)
+					local box = self:GetTouchBox()
+					local dx = tp.x - box.cx
+					local dy = tp.y - box.cy
+					if dx < 0 then dx = -dx end
+					if dy < 0 then dy = -dy end
+					local atk = self:GetAttack()
+					local attackBoxSize = 2.2
+					if isvalid(atk) and atk.AttackBoxSize > 0 then
+						attackBoxSize = atk.AttackBoxSize
+					end
+					-- 멧돼지 몸체(box) + 플레이어 몸체 반폭(0.35m): 실제 몸이 맞닿는 순간에만 정확하게 들이받기 트리거
+					local hitBoxExtentX = box.halfX + 0.35
+					local hitBoxExtentY = box.halfY + 0.35
+					if dx <= hitBoxExtentX and dy <= hitBoxExtentY then
+						if isvalid(atk) then
+							-- 멧돼지와 플레이어의 실제 접촉 지점을 중심으로 정밀 타격
+							local atkCenter = Vector2((box.cx + tp.x) * 0.5, (box.cy + tp.y) * 0.5)
+							atk:DoAttackBoxAt(atkCenter, Vector2(attackBoxSize, attackBoxSize), "charge")
+							log("[MONSTER][CHARGE] Hit player with dash attack! center=(" .. string.format("%.2f,%.2f", atkCenter.x, atkCenter.y) .. ") size=" .. attackBoxSize)
+						end
+						self._T.ChargeHitDone = true
+						-- 플레이어를 들이받은 후에도 멈추지 않고 목표 거리까지 시원하게 질주하여 통과
+					end
+				end
+			end
+
 			if self.ChargeDistanceRemaining <= 0 then
 				self.ChargePhase = "DECEL"
 				self.ChargeDecelTimer = 0

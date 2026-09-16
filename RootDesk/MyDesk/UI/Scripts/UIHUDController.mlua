@@ -48,6 +48,11 @@ script UIHUDController extends Component
 
 	property any btnSkillTreeHandler = nil
 
+	property any btnBossRaidHandler = nil
+
+	-- 보스 클리어 후 마을 귀환까지 남은 시간(절대 시각). 0 이면 카운트다운 없음.
+	property number raidReturnDeadline = 0
+
 	property boolean playHudReady = false
 
 	@ExecSpace("ClientOnly")
@@ -55,7 +60,7 @@ script UIHUDController extends Component
 		-- 타이틀이 떠 있는 동안 HUD 크롬을 끈다. 슬롯 확정(Close) 뒤에만 켠다.
 		self.playHudReady = on
 		local names = {
-			"BtnCollection", "BtnSkillTree", "Minimap", "MobileUI",
+			"BtnCollection", "BtnSkillTree", "BtnBossRaid", "Minimap", "MobileUI",
 			"QuestTracker", "QuestNavigator", "QuickSlots", "SkillBar", "UIMyInfo",
 			"FishingGauge",
 		}
@@ -245,6 +250,32 @@ script UIHUDController extends Component
 			log("[SKILL-TREE-UX] BtnSkillTree wired")
 		else
 			log_warning("[SKILL-TREE-UX] BtnSkillTree entity not found on HUD")
+		end
+
+		-- R-1 Stage B: 보스 컨텐츠 창 열기 버튼 (B 키와 동일 Toggle 경로)
+		local btnBossRaid = _EntityService:GetEntityByPath("/ui/HUDGroup/BtnBossRaid")
+		if isvalid(btnBossRaid) then
+			if isvalid(btnBossRaid.SpriteGUIRendererComponent) then
+				btnBossRaid.SpriteGUIRendererComponent.RaycastTarget = true
+			end
+			self.btnBossRaidHandler = btnBossRaid:ConnectEvent(ButtonClickEvent, function()
+				local popup = _EntityService:GetEntityByPath("/ui/PopupGroup/BossContentsPopup")
+				if not isvalid(popup) then
+					log_warning("[RAID-UI] BtnBossRaid: BossContentsPopup missing")
+					return
+				end
+				---@type UIBossContentsController
+				local controller = popup:GetComponent("script.UIBossContentsController")
+				if isvalid(controller) then
+					controller:Toggle()
+					log("[RAID-UI] HUD BtnBossRaid toggle")
+				else
+					log_warning("[RAID-UI] BtnBossRaid: UIBossContentsController missing")
+				end
+			end)
+			log("[RAID-UI] BtnBossRaid wired")
+		else
+			log_warning("[RAID-UI] BtnBossRaid entity not found on HUD")
 		end
 
 		-- Connect Quick Slot Touch Events for Drag & Drop and Click
@@ -447,6 +478,11 @@ script UIHUDController extends Component
 			btnSkillTree:DisconnectEvent(ButtonClickEvent, self.btnSkillTreeHandler)
 		end
 
+		local btnBossRaid = _EntityService:GetEntityByPath("/ui/HUDGroup/BtnBossRaid")
+		if isvalid(btnBossRaid) and self.btnBossRaidHandler then
+			btnBossRaid:DisconnectEvent(ButtonClickEvent, self.btnBossRaidHandler)
+		end
+
 		-- Disconnect Quick Slot Touch Events
 		if self.quickSlotTouchDownHandlers then
 			for slotEntity, eventHandler in pairs(self.quickSlotTouchDownHandlers) do
@@ -552,6 +588,65 @@ script UIHUDController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method void StartRaidCountdown(number seconds)
+		-- 보스 클리어 후 "마을 귀환까지 n초" 를 HUD 상단에 띄운다.
+		-- 서버(BossRaidLogic:OnRaidBossDefeated)가 PlayerController RPC 를 통해 그 방 인원에게 각각 건다.
+		if seconds <= 0 then
+			self:StopRaidCountdown()
+			return
+		end
+		self.raidReturnDeadline = _UtilLogic.ElapsedSeconds + seconds
+		self:UpdateRaidCountdown()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void StopRaidCountdown()
+		-- 카운트다운 종료 + 표시 숨김.
+		self.raidReturnDeadline = 0
+		local ent = self.Entity:GetChildByName("RaidReturnTimer", false)
+		if isvalid(ent) then ent.Enable = false end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateRaidCountdown()
+		-- UpdateHUD(10Hz)가 부른다. 남은 초를 갱신하고 0 이 되면 스스로 숨는다.
+		local ent = self.Entity:GetChildByName("RaidReturnTimer", false)
+		if not isvalid(ent) then return end
+		if self.raidReturnDeadline <= 0 then
+			if ent.Enable then ent.Enable = false end
+			return
+		end
+
+		-- 보스방을 이미 벗어났으면(포탈로 자력 이탈 등) 남은 시간과 무관하게 끈다.
+		-- 보스방만 "raid_" 로 시작한다 — 대기실은 "raidlobby_" 라 여기 걸리지 않는다.
+		local player = _UserService.LocalPlayer
+		if isvalid(player) then
+			local map = player.CurrentMap
+			if isvalid(map) and string.sub(map.Name, 1, 5) ~= "raid_" then
+				self:StopRaidCountdown()
+				return
+			end
+		end
+
+		local remain = self.raidReturnDeadline - _UtilLogic.ElapsedSeconds
+		if remain <= 0 then
+			self:StopRaidCountdown()
+			return
+		end
+
+		ent.Enable = true
+		local t = ent.TextGUIRendererComponent
+		if isvalid(t) then
+			t.Text = "마을 귀환까지 " .. tostring(math.ceil(remain)) .. "초"
+			-- 색상 단독 전달 금지(XAG) — 문구에 초가 항상 있고 색은 임박 강조만 한다.
+			if remain <= 5 then
+				t.FontColor = Color(1.0, 0.55, 0.45, 1.0)
+			else
+				t.FontColor = Color(1.0, 0.90, 0.70, 1.0)
+			end
+		end
+	end
+
 	method void UpdateHUD()
 		-- description: Updates quick slots (icons, counts, rarity colors) and the day/night time UI.
 		-- HP / Level / Stamina now live in the UIMyInfo widget (script.UIMyInfo).
@@ -560,6 +655,7 @@ script UIHUDController extends Component
 		if not isvalid(player) then return end
 
 		self:UpdateBuffBar(player)
+		self:UpdateRaidCountdown()
 
 		local inv = player:GetComponent("script.PlayerInventory")
 		if isvalid(inv) then

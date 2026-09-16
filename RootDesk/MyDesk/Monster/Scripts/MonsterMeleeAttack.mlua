@@ -8,16 +8,20 @@ script MonsterMeleeAttack extends AttackComponent
 
 	-- T38: 접촉 데미지 (겹침 시 주기 타격)
 	property number TouchDamage = 2
-	@HideFromInspector property number TouchTickInterval = 0.5
+	@HideFromInspector property number TouchTickInterval = 0.8
 	@HideFromInspector property number TouchRadius = 0.55
 	@HideFromInspector property number TouchBoxSize = 1.1
 
 	-- 착지 내려찍기(LEAP) 전용 피해량. 0 이하면 ContactDamage 를 그대로 쓴다.
 	property number SlamDamage = 0
 
+	@Sync
+	property string LastAttackInfo = ""
+
 	@ExecSpace("ServerOnly")
 	method void DoAttack()
 		-- 윈드업 만료 시점 정식 공격 (attackInfo="attack")
+		self.LastAttackInfo = "attack"
 		self:DoAttackWithInfo("attack", self.AttackBoxSize)
 	end
 
@@ -26,6 +30,7 @@ script MonsterMeleeAttack extends AttackComponent
 		-- LEAP 착지 광역 타격 (attackInfo="slam").
 		-- 판정 원의 중심/반지름은 텔레그래프 마커에 쓴 값과 동일하게 호출부에서 넘겨받는다
 		-- (보이는 원 = 맞는 원. 몬스터 위치 기준 사각 박스를 쓰던 구형 경로는 시각 불일치였다).
+		self.LastAttackInfo = "slam"
 		local r = radius
 		if r == nil or r <= 0 then r = self.AttackBoxSize * 0.5 end
 		local shape = CircleShape(center, r)
@@ -36,6 +41,7 @@ script MonsterMeleeAttack extends AttackComponent
 	@ExecSpace("ServerOnly")
 	method void DoTouchAttack()
 		-- (legacy) 트랜스폼 원점 기준 정사각 접촉 틱. 콜라이더를 못 읽는 폴백 경로 전용.
+		self.LastAttackInfo = "touch"
 		self:DoAttackWithInfo("touch", self.TouchBoxSize)
 	end
 
@@ -44,12 +50,14 @@ script MonsterMeleeAttack extends AttackComponent
 		-- 접촉 틱 공격 (attackInfo="touch"). 판정 박스를 호출부가 실제 콜라이더에서 산출해 넘긴다.
 		-- 구형은 몬스터 트랜스폼 원점 기준 고정 정사각이라, Scale 이 큰 몹(슬라임킹 2.8)이나
 		-- ColliderOffset 이 있는 발밑 피벗 몹에서 "몸에 붙어도 안 맞는" 상태가 됐다.
+		self.LastAttackInfo = "touch"
 		local shape = BoxShape(center, size, 0)
 		self:AttackFast(shape, "touch", CollisionGroups.HitBox)
 	end
 
 	@ExecSpace("ServerOnly")
 	method void DoAttackWithInfo(string attackInfo, number boxSize)
+		self.LastAttackInfo = attackInfo
 		local t = self.Entity.TransformComponent
 		if not isvalid(t) then return end
 		local p = t.WorldPosition
@@ -57,10 +65,22 @@ script MonsterMeleeAttack extends AttackComponent
 		self:AttackFast(shape, attackInfo, CollisionGroups.HitBox)
 	end
 
+	@ExecSpace("ServerOnly")
+	method void DoAttackBoxAt(Vector2 center, Vector2 size, string attackInfo)
+		self.LastAttackInfo = attackInfo
+		local shape = BoxShape(center, size, 0)
+		self:AttackFast(shape, attackInfo, CollisionGroups.HitBox)
+	end
+
 	method integer CalcDamage(Entity attacker, Entity defender, string attackInfo)
 		-- attackInfo 태깅으로 분기 (이름 분기 아님). ⚠ AttackComponent 훅에 @ExecSpace 금지.
 		if attackInfo == "touch" then
-			return math.floor(self.TouchDamage)
+			local dmg = self.TouchDamage
+			-- T102: 모델 기본값 2이거나 미설정된 경우, 몬스터 본체 공격력(ContactDamage)의 50%로 자동 비례 산출
+			if dmg <= 0 or dmg == 2 then
+				dmg = math.max(1, math.floor(self.ContactDamage * 0.5))
+			end
+			return math.floor(dmg)
 		end
 		if attackInfo == "slam" and self.SlamDamage > 0 then
 			return math.floor(self.SlamDamage)

@@ -26,11 +26,40 @@ script itemreact extends Component
 
 	property number PickupGrace = 0.0
 
+	-- 드롭 소유권. 비어 있으면 누구나 주울 수 있다(자원 채집·버리기 드롭 등 기존 경로).
+	-- 몬스터 처치 드롭만 소유자를 달아 "남이 잡은 몹의 전리품 훔쳐가기"를 막는다.
+	@Sync
+	property string OwnerUserId = ""
+
+	-- 소유권이 풀리는 시각(월드 경과초). 이 시간이 지나면 누구나 주울 수 있다 —
+	-- 소유자가 줍지 않고 떠났을 때 아이템이 바닥에 영원히 잠기는 것을 막는 안전장치다.
+	property number OwnerLockUntil = 0.0
+
 	@ExecSpace("ServerOnly")
 	method void SetPickupGrace(number seconds)
 		-- Suppresses magnet pickup for the given seconds (used by discard-drop so the dropper
 		-- can step away before the item is re-collected).
 		self.PickupGrace = seconds
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SetOwner(string userId, number lockSeconds)
+		-- 소유자 지정. lockSeconds 동안은 그 유저(또는 그 유저의 펫)만 획득할 수 있다.
+		if userId == nil or userId == "" then return end
+		self.OwnerUserId = userId
+		if lockSeconds == nil or lockSeconds <= 0 then lockSeconds = 60 end
+		self.OwnerLockUntil = _UtilLogic.ElapsedSeconds + lockSeconds
+	end
+
+	method boolean CanPickup(Entity player)
+		-- 이 플레이어가 지금 이 드롭을 주울 수 있는가.
+		-- 소유자 미지정이거나 잠금 시간이 지났으면 전체 공개.
+		if self.OwnerUserId == "" then return true end
+		if _UtilLogic.ElapsedSeconds >= self.OwnerLockUntil then return true end
+		if not isvalid(player) then return false end
+		local pc = player.PlayerComponent
+		if pc == nil then return false end
+		return pc.UserId == self.OwnerUserId
 	end
 
 	method void OnBeginPlay()
@@ -152,7 +181,8 @@ script itemreact extends Component
 		local minDistance = 3.2 -- player magnet range (3.2 units)
 		
 		for _, user in ipairs(users) do
-			if isvalid(user) then
+			-- 소유권이 걸린 드롭은 소유자에게만 자석이 걸린다. 남이 잡은 몹의 전리품을 지나가다 빨아가지 못한다.
+			if isvalid(user) and self:CanPickup(user) then
 				local playerPos = user.TransformComponent.WorldPosition
 				local dist = Vector2.Distance(Vector2(self.BasePosition.x, self.BasePosition.y), Vector2(playerPos.x, playerPos.y))
 				if dist < minDistance then
@@ -177,7 +207,8 @@ script itemreact extends Component
 						if ownerId ~= "" then
 							owner = _UserService:GetUserEntityByUserId(ownerId)
 						end
-						if isvalid(owner) and owner.CurrentMap == self.Entity.CurrentMap then
+						-- 펫도 같은 소유권 규칙을 탄다 — 타인의 펫이 대신 훔쳐가지 못한다.
+						if isvalid(owner) and owner.CurrentMap == self.Entity.CurrentMap and self:CanPickup(owner) then
 							closestPlayer = owner
 							magnetPos = petPos
 							minDistance = dist

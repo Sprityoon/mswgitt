@@ -1860,14 +1860,48 @@ script ResourceSpawner extends Logic
 			self:SpawnTreasureChestsForMap(hunt02, "hunt02")
 		end
 
-		-- hunt03: Home return + back to hunt02. 체인의 종점 — 보스전은 레이드 대기실로 간다.
+		-- hunt03: Home return + back to hunt02. 체인의 종점 — 앞으로 나가는 자리에 보스 대기실 포탈이 붙는다.
 		if isvalid(hunt03) then
 			self:SpawnFixedPortal(hunt03, "Portal", 0, -3, "Home", Vector2(-3, 0))
 			self:SpawnFixedPortal(hunt03, "PortalToHunt02", -10, 0, "hunt02", Vector2(8, 0))
 			self:SpawnTreasureChestsForMap(hunt03, "hunt03")
 		end
 
+		self:EnsureBossLobbyPortals()
 		log("ResourceSpawner: Hunting-ground chain ready (hunt01..hunt03).")
+	end
+
+	@ExecSpace("ServerOnly")
+	method void EnsureBossLobbyPortals()
+		-- 보스별 대기실을 만들고, 그 보스의 선행 사냥터(BossContentsDataSet.RequiredWaypointId)에서
+		-- 걸어 들어갈 수 있도록 전진 포탈을 세운다. 보스를 늘리면 CSV 행만 추가하면 된다(R3).
+		--
+		-- 대기실은 hunt01~03 과 같은 **고정 이름 공유 맵**(raidlobby_<bossId>)이라 포탈 목적지로 쓸 수 있다.
+		-- 배치 좌표는 체인 규약 그대로 (10, 0) — hunt01→02, hunt02→03 의 전진 포탈과 같은 자리다.
+		if _BossRaidLogic == nil then return end
+		local ds = _DataService:GetTable("BossContentsDataSet")
+		if ds == nil then return end
+
+		for i = 1, ds:GetRowCount() do
+			local bossId = ds:GetCell(i, "BossId")
+			local disable = ""
+			local okD, rawD = pcall(function() return ds:GetCell(i, "Disable") end)
+			if okD and rawD ~= nil then disable = tostring(rawD) end
+
+			if bossId ~= nil and bossId ~= "" and disable == "" then
+				local fromMap = ds:GetCell(i, "RequiredWaypointId")
+				if fromMap ~= nil and fromMap ~= "" then
+					local hunt = _EntityService:GetEntityByPath("/maps/" .. fromMap)
+					local lobby = _BossRaidLogic:EnsureLobbyMap(bossId)
+					if isvalid(hunt) and isvalid(lobby) then
+						local arriveX = _BossRaidLogic.LobbyArriveX
+						local arriveY = _BossRaidLogic.LobbyArriveY
+						self:SpawnFixedPortal(hunt, "PortalToRaidLobby", 10, 0, lobby.Name, Vector2(arriveX, arriveY))
+						log("ResourceSpawner: boss lobby portal " .. fromMap .. " -> " .. lobby.Name)
+					end
+				end
+			end
+		end
 	end
 
 	method any ParseHexColor(string hex)

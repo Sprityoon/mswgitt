@@ -77,6 +77,14 @@ script PlayerController extends Component
 	@Sync
 	property number IFrameTimer = 0.0
 
+	-- 피격 후 넉백(강제 밀림)과 HIT 경직을 함께 무시하는 시간. 피해는 그대로 받는다.
+	-- ⚠ IFrameTimer(0.4초)보다 커야 의미가 있다 — 같거나 작으면 두 창이 겹쳐 매 피격마다 밀린다.
+	property number KnockbackImmuneDuration = 1.2
+
+	-- T101: 몬스터 단순 접촉(비비기) 피격 시 피해 및 경직을 무시하는 면역 시간 (초)
+	@Sync
+	property number TouchImmuneDuration = 1.2
+
 	@Sync
 	property boolean IsDead = false
 
@@ -189,6 +197,7 @@ script PlayerController extends Component
 				local stateComp = self.Entity.StateComponent
 				if isvalid(stateComp) then
 					stateComp:ChangeState("IDLE")
+					stateComp:DisconnectHitEvent()
 				end
 			end
 
@@ -199,6 +208,10 @@ script PlayerController extends Component
 			end
 		else
 			log("PlayerController initialized on server for player: " .. self.Entity.Name)
+			local sc = self.Entity.StateComponent
+			if isvalid(sc) then
+				sc:DisconnectHitEvent()
+			end
 			-- 이미 영지 맵에 서 있는 채 박스 밖이면 (구 세이브·클리핑) 한 틱 뒤 스냅.
 			-- LoadPlayerData 워프보다 먼저/나중에 돌아도 양쪽 다 가드하므로 순서는 상관없다.
 			_TimerService:SetTimerOnce(function()
@@ -397,11 +410,15 @@ script PlayerController extends Component
 				end
 			end
 			
-			local movement = self.Entity.MovementComponent
-			if isvalid(movement) then
-				movement:Stop()
+			-- T101: 단순 접촉 피격 밀림일 때는 조작(movement:Stop())을 잠그지 않고 방향키 입력을 허용한다.
+			-- 정식 윈드업 공격/스킬에 의한 넉백일 때만 movement:Stop()으로 조작을 차단.
+			if not self._T.KnockIsTouch then
+				local movement = self.Entity.MovementComponent
+				if isvalid(movement) then
+					movement:Stop()
+				end
+				return
 			end
-			return
 		end
 		
 		local dx = 0
@@ -594,14 +611,15 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("Client")
-	method void ClientApplyKnockback(number startX, number startY, number targetX, number targetY, number duration)
+	method void ClientApplyKnockback(number startX, number startY, number targetX, number targetY, number duration, boolean isTouch)
 		-- Initializes the visual cubic-ease-out knockback interpolation on the client.
 		self._T.KnockStartPos = Vector2(startX, startY)
 		self._T.KnockTargetPos = Vector2(targetX, targetY)
 		self._T.KnockDuration = duration
+		self._T.KnockIsTouch = (isTouch == true)
 		self.KnockTimer = duration
 		
-		log("[KNOCKBACK] ClientApplyKnockback initialized: StartPos=(" .. string.format("%.2f, %.2f", startX, startY) .. "), TargetPos=(" .. string.format("%.2f, %.2f", targetX, targetY) .. "), Duration=" .. duration)
+		log("[KNOCKBACK] ClientApplyKnockback initialized: StartPos=(" .. string.format("%.2f, %.2f", startX, startY) .. "), TargetPos=(" .. string.format("%.2f, %.2f", targetX, targetY) .. "), Duration=" .. duration .. ", isTouch=" .. tostring(isTouch))
 	end
 
 	@ExecSpace("ClientOnly")
@@ -779,6 +797,20 @@ script PlayerController extends Component
 					local c = controller
 					c:Toggle()
 				end
+			end
+		elseif key == KeyboardKey.B then
+			-- R-1 Stage B: 보스 컨텐츠 창 토글 (HUD BtnBossRaid 와 같은 경로)
+			local popup = _EntityService:GetEntityByPath("/ui/PopupGroup/BossContentsPopup")
+			if not isvalid(popup) then
+				log_warning("[RAID-UI] B key: BossContentsPopup missing")
+				return
+			end
+			---@type UIBossContentsController
+			local controller = popup:GetComponent("script.UIBossContentsController")
+			if isvalid(controller) then
+				controller:Toggle()
+			else
+				log_warning("[RAID-UI] B key: UIBossContentsController missing")
 			end
 		elseif key == KeyboardKey.J then
 			-- T22: 도감 팝업 토글 (아이템/몬스터/업적)
@@ -1922,11 +1954,11 @@ script PlayerController extends Component
 			end
 		end
 		
-		-- 레이드 대기실의 보스방 진입 게이트는 "정해진 맵으로 이동"이 아니라 "인스턴스를 새로 연다".
+		-- 레이드 대기실의 보스방 진입 게이트는 "정해진 맵으로 이동"이 아니라 "난이도를 고르고 인스턴스를 연다".
 		-- 같은 엔티티에 PortalGate 도 붙어 있으므로(트리거·색 담당) 반드시 이 분기를 먼저 본다.
 		local raidGate = self.ActivePortal:GetComponent("script.RaidGate")
 		if isvalid(raidGate) and _BossRaidLogic ~= nil then
-			_BossRaidLogic:EnterBossRoom(self.Entity, self.ActivePortal)
+			_BossRaidLogic:OpenDifficultySelect(self.Entity, self.ActivePortal)
 			return
 		end
 
@@ -1943,6 +1975,12 @@ script PlayerController extends Component
 			local safe = self:ResolveHomeWarpPosition(targetMap, targetPos.x, targetPos.y)
 			playerComp:MoveToMapPosition(targetMap, safe)
 			log("PlayerController: Warped player " .. playerComp.UserId .. " to " .. targetMap .. " at " .. tostring(safe))
+
+			-- 보스 대기실에 **직접 도달**한 순간 그 보스를 활성화한다. 보스 컨텐츠 창은 활성화된
+			-- 보스만 보내 주므로, 최초 1회는 반드시 사냥터 포탈로 걸어 들어와야 한다.
+			if _BossRaidLogic ~= nil and string.sub(targetMap, 1, 10) == "raidlobby_" then
+				_BossRaidLogic:NotifyLobbyArrival(self.Entity, targetMap)
+			end
 
 			-- 업적/퀘스트 진행: 포탈 이동 액션 발행
 			if _ActionSignals ~= nil then
@@ -2331,6 +2369,38 @@ script PlayerController extends Component
 	@ExecSpace("Client")
 	method void ClientShowMineFeedback(string message)
 		_ScreenMessageLogic:PrivateMsg(message)
+	end
+
+	@ExecSpace("Client")
+	method void ClientStartRaidReturnCountdown(number seconds)
+		-- 보스 클리어 시 서버가 그 방에 있던 각 클라에 건다. HUD 상단에 "마을 귀환까지 n초" 를 띄운다.
+		-- ⚠ RPC 본문에 `---@type` 사용자 타입 주석 금지 (함정 규칙 53 — LEA-1118).
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		if not isvalid(hud) then return end
+		local controller = hud:GetComponent("script.UIHUDController")
+		if isvalid(controller) then
+			controller:StartRaidCountdown(seconds)
+		end
+	end
+
+	@ExecSpace("Client")
+	method void ClientOpenRaidDifficulty(string bossId)
+		-- 대기실 게이트에서 F 를 누르면 서버(BossRaidLogic:OpenDifficultySelect)가 이 클라만 지목해 부른다.
+		-- 난이도 선택 창은 순수 클라 UI 이므로 서버는 열라고만 하고 값 판정에는 관여하지 않는다.
+		local popup = _EntityService:GetEntityByPath("/ui/PopupGroup/RaidDifficultyPopup")
+		if not isvalid(popup) then
+			log_warning("[RAID-UI] RaidDifficultyPopup missing")
+			return
+		end
+		-- ⚠ 여기에 `---@type UIRaidDifficultyController` 를 달면 LEA-1118 빌드 에러가 난다.
+		--   RPC(@ExecSpace) 메서드 본문의 사용자 스크립트 타입 주석은 이 프로젝트에서 금지다 (T19/T57 선례).
+		--   대신 동적 디스패치로 부른다 — 남는 LIA-1114 Info 는 무해한 크로스 스크립트 노이즈다.
+		local controller = popup:GetComponent("script.UIRaidDifficultyController")
+		if isvalid(controller) then
+			controller:OpenFor(bossId)
+		else
+			log_warning("[RAID-UI] UIRaidDifficultyController missing")
+		end
 	end
 
 	@ExecSpace("Client")
@@ -3380,36 +3450,68 @@ script PlayerController extends Component
 	@ExecSpace("ServerOnly")
 	@EventSender("Self")
 	handler HandlePlayerHit(HitEvent event)
+		-- 피해와 i-frame은 유지하고, 같은 면역 창에서 HIT 경직·넉백만 건너뛴다.
 		if self.IsDead then return end
-		if self.IFrameTimer > 0 then return end
+		if not isvalid(event.AttackerEntity) then return end
+		
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil then return end
+
+		local monsterAttack = event.AttackerEntity:GetComponent("script.MonsterMeleeAttack")
+		local isTouchHit = false
+		if event.Extra == "touch" or (isvalid(monsterAttack) and monsterAttack.LastAttackInfo == "touch") then
+			isTouchHit = true
+		end
+
+		local now = _UtilLogic.ElapsedSeconds
+
+		-- T104: 피격 i-frame 및 접촉 면역 완전 분리
+		-- 1. 단순 접촉(비비기) 피격: 1.2초 접촉 면역 중이면 완전 무시. 정식 피격 i-frame(IFrameTimer)은 건드리지 않음.
+		-- 2. 정식 공격(돌진/스윙/슬램): 접촉 면역과 100% 무관하게 진입. 정식 공격 간 0.4초 i-frame만 적용.
+		-- 결과: 비비기 1.2초 무적 중이어도 몬스터의 돌진/정식 공격은 100% 즉시 피격 적중 보장!
+		if isTouchHit then
+			if now < (self._T.TouchImmuneUntil or 0) then return end
+			self._T.TouchImmuneUntil = now + self.TouchImmuneDuration
+		else
+			if self.IFrameTimer > 0 then return end
+			self.IFrameTimer = 0.4
+			_TimerService:SetTimerOnce(function()
+				if isvalid(self.Entity) then
+					self.IFrameTimer = 0.0
+					log("[IFRAME] Server reset player IFrameTimer to 0.0")
+				end
+			end, 0.4)
+		end
+		self._T.LastHitWasTouch = isTouchHit
 		
 		if self.FishingState ~= "None" then
 			self:ServerRequestCancelFishing()
 		end
-		
-		local playerComp = self.Entity.PlayerComponent
-		if playerComp == nil then return end
-		if not isvalid(event.AttackerEntity) then return end
-		
+
 		-- Check contact damage from attacker
 		local damage = event.TotalDamage
+
 		if damage <= 0 then
-			local monsterAttack = event.AttackerEntity:GetComponent("script.MonsterMeleeAttack")
 			if isvalid(monsterAttack) then
-				damage = math.max(1, math.floor(monsterAttack.ContactDamage - self.Defense * 0.1))
+				if isTouchHit then
+					local tDmg = monsterAttack.TouchDamage
+					if tDmg <= 0 or tDmg == 2 then
+						tDmg = math.max(1, math.floor(monsterAttack.ContactDamage * 0.5))
+					end
+					damage = math.max(1, math.floor(tDmg - self.Defense * 0.1))
+				else
+					damage = math.max(1, math.floor(monsterAttack.ContactDamage - self.Defense * 0.1))
+				end
 			else
 				damage = 5
 			end
 		end
 		
-		local now = _UtilLogic.ElapsedSeconds
 		if now < (self._T.TemperedUntil or 0) then damage = math.max(1, damage - (self._T.TemperedReduction or 0)) end
 		local guardOn = now < (self._T.GuardUntil or 0)
 		if guardOn then damage = math.max(1, math.floor(damage * (1 - (self._T.GuardReduction or 0)))) end
-		-- Apply damage to player HP and start server-side IFrame cooldown
+		-- Apply damage to player HP
 		playerComp.Hp = math.max(0, playerComp.Hp - damage)
-		local iframeDuration = 0.4  -- 0.4 second i-frame (빠르고 즉각적인 피격 반응)
-		self.IFrameTimer = iframeDuration
 		if guardOn then
 			local target = event.AttackerEntity
 			local monster = target:GetComponent("script.Monster")
@@ -3419,26 +3521,38 @@ script PlayerController extends Component
 				combat:DealSkillHit(target, math.max(1, math.floor(damage * (self._T.GuardReflection or 0))), "", "", 1)
 			end
 		end
-		_TimerService:SetTimerOnce(function()
-			if isvalid(self.Entity) then
-				self.IFrameTimer = 0.0
-				log("[IFRAME] Server reset player IFrameTimer to 0.0")
-			end
-		end, iframeDuration)
 		
+		-- HIT 경직과 넉백은 피해와 별도의 면역 창을 공유한다.
+		-- 면역 중 피격은 피해·사망 처리를 유지하며 면역 종료 시각을 연장하지 않는다.
+		-- ⚠ KnockbackImmuneDuration은 i-frame(0.4s)보다 반드시 커야 한다.
+		local nowKb = _UtilLogic.ElapsedSeconds
+		if not isTouchHit and nowKb < (self._T.KnockbackImmuneUntil or 0) then
+			log("Player " .. self.Entity.Name .. " hit for " .. damage .. " damage (HIT/knockback immune). HP remaining: " .. playerComp.Hp)
+			if playerComp.Hp <= 0 then
+				self:ServerDie()
+			end
+			return
+		end
+		if not isTouchHit then
+			self._T.KnockbackImmuneUntil = nowKb + self.KnockbackImmuneDuration
+		end
+
 		-- Trigger hit animation state and schedule IDLE restore on server
-		local sc = self.Entity.StateComponent
-		if isvalid(sc) then
-			sc:ChangeState("HIT")
-			_TimerService:SetTimerOnce(function()
-				if isvalid(self.Entity) and not self.IsDead then
-					local currentSc = self.Entity.StateComponent
-					if isvalid(currentSc) and currentSc.CurrentStateName == "HIT" then
-						currentSc:ChangeState("IDLE")
-						log("[KNOCKBACK] Server restored player state from HIT to IDLE")
+		-- T101: 단순 접촉 피격 시에는 StateComponent를 "HIT"로 굳히지 않는다 (정식 공격만 HIT 전환).
+		if not isTouchHit then
+			local sc = self.Entity.StateComponent
+			if isvalid(sc) then
+				sc:ChangeState("HIT")
+				_TimerService:SetTimerOnce(function()
+					if isvalid(self.Entity) and not self.IsDead then
+						local currentSc = self.Entity.StateComponent
+						if isvalid(currentSc) and currentSc.CurrentStateName == "HIT" then
+							currentSc:ChangeState("IDLE")
+							log("[KNOCKBACK] Server restored player state from HIT to IDLE")
+						end
 					end
-				end
-			end, 0.2)
+				end, 0.2)
+			end
 		end
 		
 		-- Apply Knockback (Server-side teleport push with obstacle checking)
@@ -3452,11 +3566,17 @@ script PlayerController extends Component
 		local dirX = kx / len
 		local dirY = ky / len
 		
-		-- 보스 몬스터일 경우 넉백 거리를 2.2m로 대폭 증가하여 확실하게 밀어냄
+		-- T101: 단순 접촉은 0.5m로 가볍게 밀어내고, 정식 공격은 1.4m, 보스는 2.4m
 		local dist = 1.4
-		local attackerMon = event.AttackerEntity:GetComponent("script.Monster")
-		if isvalid(attackerMon) and (attackerMon.IsBoss or attackerMon.MonsterId == "slime_king") then
-			dist = 2.4
+		if isTouchHit then
+			dist = 0.5
+		else
+			local attackerMon = event.AttackerEntity:GetComponent("script.Monster")
+			if isvalid(attackerMon) and (attackerMon.IsBoss or attackerMon.MonsterId == "slime_king") then
+				dist = 2.4
+			elseif isvalid(attackerMon) and attackerMon.MonsterId == "boar" then
+				dist = 2.0
+			end
 		end
 		local targetPos = Vector3(pp.x + dirX * dist, pp.y + dirY * dist, pp.z)
 		local finalKnockPos = pp  -- Default to no movement
@@ -3474,9 +3594,10 @@ script PlayerController extends Component
 			end
 		end
 		
-		self:ClientApplyKnockback(pp.x, pp.y, finalKnockPos.x, finalKnockPos.y, 0.2)
+		local knockDur = isTouchHit and 0.1 or 0.2
+		self:ClientApplyKnockback(pp.x, pp.y, finalKnockPos.x, finalKnockPos.y, knockDur, isTouchHit)
 		
-		log("Player " .. self.Entity.Name .. " hit for " .. damage .. " damage. HP remaining: " .. playerComp.Hp)
+		log("Player " .. self.Entity.Name .. " hit for " .. damage .. " damage. HP remaining: " .. playerComp.Hp .. " (isTouch=" .. tostring(isTouchHit) .. ")")
 		
 		-- Check Death
 		if playerComp.Hp <= 0 then

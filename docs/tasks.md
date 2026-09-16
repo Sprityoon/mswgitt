@@ -19,6 +19,9 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `MonsterAI.mlua` · `MonsterMeleeAttack.mlua` · `PlayerController.mlua` · `MonsterSpawner.mlua` | **[전투/버그픽스] 몬스터별 접촉 데미지 차등화(ContactDamage 50% 비례 산출) & 공격·돌진 중 접촉 틱 중단(i-frame 씹힘 원천 방지) & 멧돼지 돌진 공격(CHARGE) 충돌 타격 판정 신설** (2026-09-16 ⚖️ 확정) — 아래 참조 |
+| `PlayerController.mlua` · `MonsterMeleeAttack.mlua` · `MonsterAI.mlua` | **[전투/조작감] 몬스터 단순 접촉(비비기) 피격 시 경직 완화 및 일시적 접촉 무시(TouchImmuneDuration 1.2s) 도입 & 접촉 피격 시 플레이어 이동 조작 잠금 해제 & StateComponent 자동 HIT 전이 차단** (2026-09-16 ⚖️ 확정) — 아래 참조 |
+| `BossRaidLogic.mlua` · `RaidGate.mlua` · `ResourceSpawner.mlua` · `PlayerController.mlua` · `TestModeConfig.mlua` · `UIBossContentsController.mlua`(신규) · `UIRaidDifficultyController.mlua`(신규) · `ui/PopupGroup.ui` · `ui/HUDGroup.ui` · `UIHUDController.mlua` | **[레이드/UI] R-1 Stage B — 대기실을 공유 고정 맵으로 전환 & hunt03 대기실 포탈 신설(직접 도달 = 보스 활성화) & 난이도 선택을 대기실 게이트로 이관 & 보스 컨텐츠 창을 대기실 워프 목록으로 재정의** (2026-09-16) — 아래 참조 |
 | `ResourceSpawner.mlua` · `PortalDestinationDataSet.csv` · `SlimeKing.model` · `BossContentsDataSet.csv` · `BGMManager.mlua` · `UIMinimapController.mlua` · `PlayerController.mlua` · `TestModeConfig.mlua` | **[레이드/사냥터] 상시 공유 보스 아레나(hunt04) 철거 & 보스전 경로를 레이드 인스턴스로 일원화 & 레이드 맵명(`raid_*`/`raidlobby_*`) 분기 누락 3곳 정합** (2026-09-15 ⚖️ 확정, 런타임 검증 완료) — 아래 참조 |
 | `SkillDataSet.csv` · `UISkillTreeController.mlua` · `docs/design/skill-tree-plan.md` | **[스킬/직업] 매직 클로를 공용 탭에서 알케미스트로 이관 & 공용 '회복'(HealAura) 신설(선행 없음) & 슬래시 블러스트 선행을 강타로 정리 & 스킬창 헤더 MP 표기 제거** (2026-09-15 ⚖️ 확정, 런타임 검증 완료) — 아래 참조 |
 | `ui/HUDGroup.ui` · `UIMyInfo.mlua` · `UISkillBarController.mlua` | **[UI/HUD] 프로필 상태창 마나/기력 바 분리 — 기력으로 전용되던 파란 바를 실제 마나로 환원하고 노란 기력 바 신설(4바 구성) & 스킬바 MP 표기 철거 & 4바 앵커 단일 좌표계 통일** (2026-09-15 ⚖️ 확정, 런타임 검증 완료) — 아래 참조 |
@@ -120,6 +123,134 @@
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
 
+### 2026-09-16 [전투/버그픽스] 몬스터별 접촉 데미지 차등화(ContactDamage 50% 비례 산출) & 공격·돌진 중 접촉 틱 중단(i-frame 씹힘 원천 방지) & 멧돼지 돌진 공격(CHARGE) 충돌 타격 판정 신설
+
+- **배경**:
+  1. 슬라임, 멧돼지 등 모든 몬스터의 접촉 데미지가 동일(1~2)하게 들어오는 문제 제보.
+  2. 슬라임 및 멧돼지가 접촉 데미지 외에 진짜 공격 데미지가 전혀 들어오지 않는 문제 제보.
+  3. 멧돼지가 '돌진 공격' 시 접촉 판정에 의해 공격 데미지가 무효화되는 현상 제보.
+- **원인 분석**:
+  1. **접촉 데미지 일괄 고정**: 각 몬스터 모델의 `TouchDamage`가 2로 일괄 박혀 있었고, `MonsterSpawner`에서도 `TouchDamage`가 스케일링되지 않아 방어력 계산 후 모든 몬스터가 1~2 피해로 고정됨.
+  2. **i-frame 선소모로 인한 공격 증발 (규칙 44와 동일 메커니즘)**: 슬라임이 공격 윈드업(`ATTACK`, 0.15초)을 할 때 상시 루프인 `TickTouchDamage`가 먼저 발동해 플레이어에게 접촉 피해와 0.4초 i-frame을 부여함. 0.15초 뒤 슬라임의 진짜 타격(`DoAttack()`)이 터지지만 플레이어가 이미 무적 상태여서 공격이 조용히 씹힘.
+  3. **돌진 공격의 타격 판정 부재 및 런타임 LEA-2001 오류**:
+     - `UpdateCharge` 로직에 플레이어를 들이받았을 때의 공격 판정(`DoAttack()`)이 아예 누락되어 있었고, 돌진 중에도 `TickTouchDamage`만 작동하고 있었음.
+     - 추가로 `MonsterAI`에서 `self.AttackBoxSize`를 직접 참조하여 런타임에 `[LEA-2001] AttemptToPerformArithmetic : 'AttackBoxSize'은 산술 연산을 사용할 수 없습니다. 'AttackBoxSize'은 nil입니다.` 에러가 매 프레임 폭주하며 돌진 AI 로직이 크래시되던 결함 발견.
+- **조치 사항**:
+  1. **접촉 데미지 비례 산출 체계 (`ContactDamage * 0.5`)**:
+     - `MonsterMeleeAttack.CalcDamage` 및 `PlayerController.HandlePlayerHit`: 모델의 `TouchDamage`가 2 또는 미설정된 경우, 몬스터 본래 공격력인 `ContactDamage`의 약 50%(`math.max(1, math.floor(ContactDamage * 0.5))`)로 비례 산출.
+     - 슬라임(Contact 5 → Touch 2, 공격 5), 뿔버섯(Contact 6 → Touch 3, 공격 6), 멧돼지(Contact 8 → Touch 4, 돌진 8), 보스(Contact 20 → Touch 10, 공격 20)로 체급별 차등화.
+     - `MonsterSpawner.mlua`에서 난이도/밤 공격력 버프 시 `TouchDamage`도 비례 스케일링되도록 보강.
+  2. **공격 모션 및 돌진 중 접촉 틱 중단**:
+     - `MonsterAI.mlua:TickTouchDamage`: `CurrentAIState == "ATTACK"` 또는 `"CHARGE"` 또는 `IsSlamCommitted()`일 때 접촉 틱 즉시 반환(중단). 몬스터의 진짜 공격 타격이 플레이어의 i-frame에 가로채이지 않고 100% 온전히 적중하도록 보장.
+  3. **멧돼지 돌진 공격(CHARGE) 충돌 타격 신설 및 LEA-2001 런타임 버그 픽스**:
+     - `MonsterAI.mlua:UpdateCharge`: `DASH` 단계에서 `self:GetAttack().AttackBoxSize`를 정상 참조하도록 수정하여 `LEA-2001` nil 산술 연산 크래시 555건 완전 해소.
+     - 돌진 중 최근접 플레이어 충돌 시 `atk:DoAttackWithInfo("attack", attackBoxSize)`를 실행하여 강력한 돌진 공격 피해와 넉백을 가하고 즉시 `DECEL`(감속 정지) 단계로 전환.
+   4. **돌진 판정 정밀화 (실제 몸체 접촉 시에만 트리거) & 공격 박스 정상화 (2.2m)**:
+      - 기존 2.0m 하한선/4.0m 공격 박스로 인해 "닿지도 않았는데 미리 맞는" 과도한 관대함을 교정.
+      - 감지 여유 반경을 `box.halfX + 0.35m` (플레이어 몸체 반폭 수준)로 축소하여, 멧돼지 몸체가 플레이어에게 실제로 닿는 순간에만 정확하게 들이받기 발동.
+      - 공격 박스 크기를 4.0m에서 기본 2.2m(`atk.AttackBoxSize`)로 정상화하고 접촉 중점을 타격하여 시각과 100% 일치하는 피격감 구현.
+   5. **접촉 면역(1.2초)과 정식 공격 i-frame 완전 분리**:
+      - 접촉(비비기) 피격은 전용 `TouchImmuneUntil`(1.2초)만 사용하고, 일반 `IFrameTimer`는 전혀 건드리지 않음.
+      - 정식 공격은 접촉 면역과 무관하게 진입하여 정식 공격 간 0.4초 i-frame만 적용.
+      - 결과: 플레이어가 잡몹과 비비며 1.2초 접촉 무적 상태이더라도, 몬스터의 돌진/정식 공격은 **100% 즉시 피격 적중** 보장.
+- **검증**:
+  - `maker_logs(kind="normal")` 런타임 에러 추적: 555건 발생하던 LEA-2001 산술 연산 에러 원인 규명 및 수정 완료.
+  - `maker_clear_logs`: 기존 에러 로그 2203건 + 682건 전량 소거.
+  - `maker_refresh_workspace` (status: ok)
+  - `maker_logs(kind="build")` 검증 (DateTime: 2026-09-16T18:55:07, Error=0, Warning=0)
+  - 런타임 검증 보류(제작자 수행)
+
+### 2026-09-16 [전투/조작감] 몬스터 단순 접촉(비비기) 피격 시 경직 완화 및 접촉 무시(TouchImmuneDuration 1.2s) 도입 & 접촉 피격 이동 잠금 해제 & StateComponent 자동 HIT 전이 차단
+
+- **배경**: 몬스터와 붙어 비빌 때 플레이어가 일시적으로 전혀 움직이지 못하고 굳어버리는(락) 불쾌한 경험이 지속 발생함.
+- **원인 분석**:
+  1. **잦은 피격 루프**: 몬스터의 접촉 공격 주기(기본 0.35초)와 플레이어 무적시간(0.4초)이 맞물려, 몬스터와 붙어 있으면 0.4초마다 피격이 반복됨.
+  2. **조작 강제 차단 (`movement:Stop()`)**: 피격 시 `ClientApplyKnockback`이 호출되어 0.2초 동안 매 프레임 `movement:Stop()`을 호출하고 방향키 입력을 강제로 무시함 (전체 시간의 50% 이상 조작 불능).
+  3. **공격 타입 미구분**: 정식 윈드업 공격과 단순 몸체 스침(`touch`)이 구분 없이 동일한 강한 넉백과 0.2초 정지 경직을 유발함.
+  4. **엔진 기본 HIT 자동 전환**: 엔진의 `StateComponent`가 `HitEvent`를 받으면 자동으로 `ChangeState("HIT")`를 호출하여 걷기 애니메이션/상태를 막음.
+- **조치 사항**:
+  1. **공격 타입 식별 체계 확립**:
+     - `MonsterMeleeAttack.mlua`에 `@Sync property string LastAttackInfo = ""`를 신설하고 공격 메서드마다 `"attack"`, `"slam"`, `"touch"` 태깅.
+     - `MonsterMeleeAttack.TouchTickInterval` 및 `MonsterAI` 접촉 틱 폴백을 0.5초/0.35초에서 **0.8초**로 상향.
+  2. **플레이어 접촉 피격 면역 창 신설 (`TouchImmuneDuration`, 기본 1.2초)**:
+     - `PlayerController.mlua`에 `TouchImmuneDuration`(@Sync, 1.2s) 프로퍼티 추가.
+     - `HandlePlayerHit`에서 `event.Extra == "touch"` 또는 `monsterAttack.LastAttackInfo == "touch"`일 경우 접촉 피격(`isTouchHit`)으로 판별.
+     - 접촉 피격 시 `now < self._T.TouchImmuneUntil`이면 피해·경직·넉백 전체를 즉시 무시(`return`). 피격 시 1.2초간 접촉 무적 창 갱신.
+  3. **접촉 피격 시 조작 잠금 완전 해제**:
+     - `ClientApplyKnockback`에 `isTouch` 플래그를 전달하고, `OnUpdate`에서 `KnockIsTouch`일 때는 `movement:Stop()`을 호출하지 않고 방향키 입력을 그대로 허용.
+     - 접촉 넉백 거리를 1.4m에서 0.5m로 경량화하여 플레이어가 방향키를 누른 채 몬스터를 뚫고 부드럽게 빠져나올 수 있도록 개선.
+     - 단순 접촉 피격 시에는 `sc:ChangeState("HIT")`를 생략하여 모션 굳음 차단.
+  4. **엔진 자동 HIT 전이 차단**:
+     - `PlayerController:OnBeginPlay`에서 `stateComp:DisconnectHitEvent()`를 호출하여 접촉 피격 시 엔진의 자동 HIT 굳음 현상을 원천 방지.
+- **검증**:
+  - `maker_refresh_workspace` (status: ok)
+  - `maker_logs(kind="build")` 검증 (DateTime: 2026-09-16T18:25:15, Error=0, Warning=0)
+  - 런타임 검증 보류(제작자 수행)
+
+### 2026-09-16 [전투/드롭] 충돌 넉백 면역 신설 & 몬스터 드롭 소유권·기여자별 개별 롤 구조 전환
+
+- **배경**: 제작자 기준 = **"불쾌한 경험의 최소화"**. 두 건을 검증 요청받았다. 둘 다 **우려한 대로 문제가 실재**했다.
+- **검증 ① 충돌 경직 — 확인됨**: 접촉 피격이 공격 피격과 **완전히 같은 경로**(`PlayerController:HandlePlayerHit`)를 타고 있었다.
+  | 항목 | 실측값 |
+  |---|---|
+  | 몬스터 접촉 틱 | 0.5초 (몬스터마다 독립 타이머) |
+  | 플레이어 i-frame | 0.4초 (`IFrameTimer`) |
+  | 피격당 HIT 상태 | 0.2초 |
+  | 피격당 넉백 | 1.4m 강제 이동(`SetWorldPosition`), 보스 2.4m |
+  - 둘러싸이면 타이머가 어긋나 **i-frame이 풀리는 0.4초마다 곧바로 다음 접촉타**가 들어온다 → HIT 애니메이션 듀티 50% + 0.4초마다 강제 텔레포트. 입력을 막는 코드는 없지만 **위치를 서버가 덮어써서** 조작이 무효화되는 것이 체감 경직의 실체였다.
+  - 참고: 공격/접촉 구분은 이미 `attackInfo`(`touch`/`attack`/`slam`)로 태깅돼 있으나 **`HitEvent` 페이로드에 `attackInfo` 가 없어** 피격자 쪽에서는 그대로 구분할 수 없다.
+- **조치 ① 넉백 전용 면역 창** (`PlayerController.KnockbackImmuneDuration`, 기본 **1.2초**): 피해·HIT 모션은 그대로 받고 **밀리는 것만** 그 시간 동안 무시한다.
+  - 🔴 **제작자 제안값 0.4초는 무효라서 1.2초로 잡았다.** `HandlePlayerHit` 최상단의 `if self.IFrameTimer > 0 then return end` 가 이미 피격을 0.4초 간격으로 제한하므로, 같은 0.4초 면역을 같은 시점에 걸면 두 창이 정확히 겹쳐 매 피격마다 그대로 밀린다. **넉백 면역은 i-frame 보다 커야 의미가 생긴다** — 프로퍼티라 한 줄로 조정 가능하고, 주석에도 이 제약을 박아 뒀다.
+- **검증 ② 드롭 소유권 — 확인됨, 세 가지 모두 미구현이었다**:
+  - ⓐ `itemreact` 자석이 **반경 3.2 안의 최근접 플레이어**에게 무조건 끌려갔다. 처치자 확인 없음 → 남이 잡은 몹의 전리품을 지나가다 주울 수 있었고, 타인의 펫도 가져갔다.
+  - ⓑ `DropFromItemDropDataSet` 가 확률을 **딱 한 번** 굴려 공용 엔티티로 떨궜다.
+  - ⓒ 🔴 **우려한 것과 정확히 반대로 동작**: 퀘스트 확정 드롭(`GuaranteeQuestIds`)과 `NaturalLoot` 보너스가 **막타자 1인의 상태로만** 평가돼 드롭 전체를 결정했다. 파티에서 막타자가 퀘스트를 갖고 있으면 그 확정 드롭이 전체 몫으로 한 번 떨어지고, 퀘스트 보유자가 막타를 놓치면 아예 안 떨어진다.
+- **조치 ② 소유권 + 시간 후 공개**: `itemreact` 에 `OwnerUserId`(@Sync) · `OwnerLockUntil` · `SetOwner` · `CanPickup` 신설. 잠금 시간(`TileDurabilityManager.DropOwnerLockSeconds` 기본 **60초**) 동안은 소유자(와 그 소유자의 펫)만 자석·획득이 걸리고, 지나면 전체 공개된다 — 소유자가 줍지 않고 떠났을 때 바닥에 영원히 잠기는 것을 막는 안전장치다.
+  - ⚠️ **`SpawnResourceDrop` 시그니처는 건드리지 않았다** (규칙 46). 호출부가 채집·버리기·가구 등 여러 갈래라 인자를 늘리면 전부 깨진다(같은 턴에 `SpawnLobbyGate` 에서 실제로 `does not have enough arguments` 를 맞았다). 대신 `SpawnResourceDropOwned` 를 덧붙이고 소유자는 `PendingDropOwner*` 프로퍼티로 넘긴다. 두 메서드 사이에 Yield 가 없어 다른 호출과 섞이지 않는다.
+  - 소유권은 **몬스터 처치 드롭에만** 건다. 채집·버리기 드롭은 그 자리에 선 사람이 주인이라 기존 동작을 유지했다.
+- **조치 ③ 기여자별 개별 롤 구조**: `GetDropContributors()` 신설 → `DropFromItemDropDataSet` 이 **기여자 1인마다 따로** 확률을 굴리고 각자 소유의 전리품을 떨군다. `IsQuestGuaranteedDrop` 은 `(Entity player, ...)` 로 바꿔 개인 퀘스트 상태를 본다. 보스 고정 드롭(`GrantBossRewards`)도 같은 규칙.
+  - 현재 `GetDropContributors()` 는 **막타자 1인**만 돌려주므로 체감 동작은 종전과 같다. **R-2 파티가 붙으면 이 함수에 파티원을 채우는 것만으로 파티 개별 드롭이 완성된다.**
+- **남은 갭 (이번 범위 밖, R-2 과제로 이월)**: 퀘스트 킬 카운트(`_ActionSignals` Kill) · 도감 처치 기록(`RecordMonsterKill`) · 웨이포인트 해금은 여전히 **막타자 1인**에게만 발행된다. 드롭과 달리 "기여자 전원" 규칙을 적용할지는 파티 설계와 함께 정해야 한다.
+- **검증**: `mlua-lsp diagnose` 변경 4파일 **errors=0 / warnings=0**(잔여 Info 는 선재 크로스 스크립트 노이즈) · 구 시그니처 호출부 잔여 0건 대조 · `maker_refresh_workspace` **status ok** · `maker_logs(kind="build")` **Error 0 / Warning 0 / Info 710**, 로그 `dateTime 2026-09-16T17:09:47` 이 이번 refresh 시각과 일치(규칙 22 대조 완료).
+- **런타임 검증 보류(제작자 수행)**: ① 몹 여럿에 둘러싸였을 때 밀림이 1.2초에 한 번으로 줄고 그 사이 조작이 유지되는지(피해는 그대로 들어와야 정상) ② 보스 2.4m 넉백이 첫 타에는 그대로 나오는지 ③ 다른 캐릭터로 남이 잡은 몹 드롭에 접근했을 때 자석이 안 걸리는지 ④ 60초 후 공개되는지 ⑤ 퀘스트 확정 드롭(대형 슬라임 젤리)이 여전히 정상 지급되는지 — ③~⑤ 는 2인 접속 검증이 필요하다.
+
+### 2026-09-16 [레이드/UI] R-1 Stage B — 공유 대기실 · hunt03 도달 포탈 · 게이트 난이도 선택 · 보스 창 워프화
+
+- **배경 & 설계 정정**: 1차 구현은 보스 창을 "입장 계약"(보스+난이도를 고르면 곧바로 대기실 인스턴스 생성)으로 만들었다. 제작자 지적으로 **의도한 구조가 정반대**임이 확인됐다 — ⓐ 대기실까지는 **걸어서 쉽게 도달**해야 하고 ⓑ **난이도는 보스방 포탈을 탈 때** 고르며 ⓒ 보스 창은 **이미 직접 도달해 활성화한 보스의 대기실로 보내 주는 워프 목록**이다. 아래는 그 구조로 전면 재작업한 결과다.
+- 🔴 **재설계의 핵심 — 대기실을 고정 이름 공유 맵으로**: 파티 전용 동적 맵(`raidlobby_<boss>_<diff>_<seq>`)은 이름이 매번 달라 **고정 포탈의 목적지가 될 수 없다.** hunt01~03 과 같은 방식(`_DynamicMapService:CreateDynamicMap` + 고정 이름)으로 바꿔 `raidlobby_<bossId>` 한 채를 만들고 유지한다. 파티 전용 인스턴스는 **보스방만** 남는다.
+  - `BossRaidLogic.Lobbies`(bossId → mapName) 신설. **`Instances` 에는 넣지 않는다** — `SweepInstances` 가 빈 방을 파기하므로 등록하면 아무도 없을 때 대기실이 사라져 hunt03 포탈이 끊긴다.
+- **조치 1 — 도달 경로 (`ResourceSpawner:EnsureBossLobbyPortals`)**: `BossContentsDataSet` 을 훑어 각 보스의 `RequiredWaypointId` 구역에 `PortalToRaidLobby` 를 세운다. 슬라임킹은 `hunt03`, 좌표는 체인 규약 그대로 **(10, 0)** — hunt01→02, hunt02→03 전진 포탈과 같은 자리라 대칭이다. 보스를 늘리면 CSV 행 추가로 끝난다(R3).
+- **조치 2 — 도달 = 활성화 (`BossRaidLogic:NotifyLobbyArrival`)**: 포탈로 대기실에 들어온 순간 `PlayerController:UnlockWaypoint("raidlobby_<bossId>")` 로 기록한다. 세이브·동기화는 웨이포인트 배관(`UnlockedWaypointsJson`)을 그대로 재사용했다.
+  - ⚠️ **`PortalDestinationDataSet` 에는 넣지 않았다** — 넣으면 기존 도달-해금 루프가 자동으로 잡아 주지만 **영지 워프 창 목록에도 떠서** "직접 도달해야 한다"는 규약이 깨진다. 그래서 해금 호출만 명시적으로 했다.
+- **조치 3 — 난이도 선택을 게이트로 이관**: 대기실 붉은 게이트 F → `OpenDifficultySelect` → `PlayerController:ClientOpenRaidDifficulty`(Client RPC) → 난이도 창 → `RequestEnterBossRoom(bossId, difficultyId, lp)`.
+  - 🔴 **`RaidGate.DifficultyId` 프로퍼티를 제거**했다. 대기실이 공유 맵이 된 이상 게이트에 난이도를 박아 두면 **먼저 들어온 사람의 선택이 뒤에 온 사람에게 그대로 적용된다.** 선택은 각자의 클라이언트에만 남는다.
+  - 같은 이유로 `OpenBossRoom` 은 **요청자만** 데려간다(기존에는 "그 대기실에 있던 전원"). R-2 파티에서 `party` 배열만 채우면 그대로 확장된다.
+  - 레벨·주간 제한 검증도 대기실 입장이 아니라 **보스방 입장 시점**으로 옮겼다. 대기실은 누구나 쉽게 오는 곳이라는 전제와 맞춘다.
+- **조치 4 — 창 2종**: 둘 다 [design-policy §5](./design-policy.md) **나무 카드** 크롬 그대로.
+  - `BossContentsPopup`(760×732, 2열): 좌 보스 목록(잠금 = `[미발견]`) / 중앙 아트·입장Lv·위치·안내 / 하단 주간 `n/12` + **[대기실로 이동]**. 난이도 칩은 전부 떼어 냈다.
+  - `RaidDifficultyPopup`(560×772, 신규): 보스명 · 주간 카운트 · 난이도 칩 4종(Lv·코인 병기) · 안내문 · **[입장]**.
+  - 저작 규칙은 1차와 동일하게 [규칙 47](./pitfalls.md#47-형제-중-나중에-그려지는-불투명-스프라이트가-앞-형제-텍스트를-덮는다--팝업-제목-5종이-이렇게-사라져-있었다)(생성 순서) · [규칙 49](./pitfalls.md#49-maskcomponent-를-붙이면-그-ui-파일-전체가-런타임에-로드되지-않는다-에러-로그-없음)(Mask 금지·고정 풀) · [규칙 50](./pitfalls.md#50-별도-자식-text-엔티티는-렌더가-불안정하다--글자는-렌더러와-같은-엔티티에-얹는다)(자식 text 0개) · [규칙 52](./pitfalls.md#52-한-부모-밑-자식들의-앵커가-섞여-있으면-pos-는-서로-다른-기준선으로-해석된다--중심-기준-좌표-계산은-조용히-틀린다)(앵커 통일) 준수. 닫기 버튼이 y −100 까지 내려오므로 두 창 모두 본문을 −104 부터 시작해 `L023` 을 피했다.
+- **조치 5 — 진입점**: HUD 우상단 `보스전` 버튼 + `B` 키(도감 J·스킬트리 K와 동일 `Toggle()` 경로). F5 테스트 키는 `TestModeConfig:ServerEnterTestLobby` 로 바꿔 **활성화 검사만 우회**해 공유 대기실로 보낸다 — 정식 경로의 게이트는 그대로다. 난이도 선택이 게이트로 옮겨가 `TestRaidDifficulty` 프로퍼티는 제거했다.
+- 🔴 **실측 함정 — RPC 메서드 본문의 `---@type` 사용자 타입 주석은 `LEA-1118` 빌드 에러**: `ClientOpenRaidDifficulty`(`@ExecSpace("Client")`)에 `---@type UIRaidDifficultyController` 를 달았더니 build **Error 1건**이 떴다(스택: 해당 메서드). 같은 주석이 일반 메서드(B 키 핸들러·`UIHUDController`)에서는 멀쩡하다. T19(`---@type Animal`)·T57 선례와 같은 계열 — 주석을 빼고 동적 디스패치로 두자 Error 0 복귀. 남는 `LIA-1114` Info 는 무해하다.
+- **§7 미학 루브릭 자가 평가** (`msw-ui-system/references/game-ui-ux-theory.md` §7, 실측 좌표 근거 — 규칙 6): 터치 규격 ✅ 전 인터랙티브 ≥88px(슬롯 256×88 / 칩 448×88 / CTA 360·480×88 / 닫기 88×88) · 톤앤매너 ✅ 나무 카드·골드 액센트·크림 제목을 상점/워프/스킬창과 동일 RUID·색값으로 계승 · 다중 채널 ✅ 잠금을 색만이 아니라 `[미발견]` 접두어 + 하단 사유 문장으로 중복 전달 · 정보 계층 ✅ 창(Tier 3)은 능동 개폐만, HUD 상시 노출은 버튼 1칸 증가 · 단일 탈출 ✅ 흰 X + `B` 토글. ⚠️ 클릭 SFX 미배선·`ESC` 전역 스택 부재는 전 팝업 공통 선재 항목이라 이번 범위 밖.
+- **검증**: `mlua-lsp diagnose` 변경 7파일 **errors=0 / warnings=0**(`UIHUDController` 잔여 Info 17건은 선재 크로스 스크립트 노이즈) · `ui_lint` **ERROR 0**, PopupGroup 경고 **540 = HEAD 기준선과 동일**, 신규 두 창 기인 경고 **0건** · `check_ui_text_occlusion` **0건** · `check_ui_dataref` **중첩 0건** · `preview_ui_layout` 신규 엔티티 경고 **0건** · 앵커·피벗 반영 기하 검산 전 엔티티 **부모 안쪽 OK**(겹침은 TopBar↔제목/닫기 3건뿐 — 기존 나무 카드 팝업과 동일한 의도된 적층) · 구 API 잔여 참조 **0건**(`RequestEnterRaid` / `EnterBossRoom` / `DifficultyId` / `TestRaidDifficulty`) · 바인딩 4건 **전부 일치** · `maker_refresh_workspace` **status ok** · 신규 `.codeblock` 2종 **생성 확인** · `maker_logs(kind="build")` **Error 0 / Warning 0 / Info 709**, 로그 `dateTime 2026-09-16T16:16:25` 이 이번 refresh 시각과 일치(규칙 22 대조 완료).
+- **작업 시작 전 점검(규칙 11)**: 워킹 트리의 `ui/*` 전량 재직렬화 diff 는 Maker 저장분이고, 직전 커밋 산출물(프로필 `Sta` 바 실존 · `SkillBar/ManaText` 부재)과 엔티티 경로 집합(증감 0)을 대조해 **원복 없음**을 확인한 뒤 착수했다.
+- **런타임 검증 보류(제작자 수행)**: ① hunt03 (10,0) 대기실 포탈 존재·진입 ② 진입 시 `[활성화] 슬라임킹 대기실` 토스트 ③ 대기실이 공유 맵으로 유지되는지(나갔다 다시 들어와도 살아 있는지) ④ 붉은 게이트 F → 난이도 창 ⑤ 난이도별 보스방 생성·스탯 차등 ⑥ 보스 창에서 미발견 보스는 `[미발견]` 회색 + CTA 잠김, 활성화 후 [대기실로 이동] 동작 ⑦ F5 테스트 진입.
+
+#### 후속 (2026-09-16) — 클리어 후 귀환 카운트다운 & 레이드 맵 표시명
+
+- **배경**: 제작자 지적 — ⓐ "잠시 후 마을로 돌아갑니다"가 **너무 길고 남은 시간을 알 수 없다** ⓑ 우측 상단 미니맵의 맵 이름이 다른 맵과 **이질감**이 있다.
+- **조치 1 — 귀환 대기 45초 → 20초** (`BossRaidLogic.ClearGraceSeconds`). 드롭이 자석으로 빨려 오므로 45초는 길기만 했다. 값은 프로퍼티라 제작자가 바로 조정할 수 있다.
+- **조치 2 — HUD 상단 카운트다운 신설** (`ui/HUDGroup.ui` `RaidReturnTimer` + `UIHUDController:StartRaidCountdown/UpdateRaidCountdown`): 클리어 시 서버가 그 방 인원 각자에게 `PlayerController:ClientStartRaidReturnCountdown`(Client RPC)을 걸고, 클라가 `UpdateHUD`(10Hz)에서 `마을 귀환까지 n초` 를 갱신한다. 5초 이하부터 붉게 강조하되 **초 숫자는 항상 문구에 있다**(색 단독 전달 금지 — XAG).
+  - 토스트를 매초 반복하지 않는 이유: `_ScreenMessageLogic` 은 단발 메시지만 있어 갱신이 불가능하고, 반복 발행은 화면을 덮는다.
+  - 자력 이탈 대비 — 현재 맵이 `raid_` 로 시작하지 않으면 남은 시간과 무관하게 카운트다운을 끈다(대기실은 `raidlobby_` 라 걸리지 않는다).
+  - 배치: 상단 중앙 `(0, −276)` 520×56 — `QuestToast`(y 312~390) · `BuffBar`(284~320)와 겹치지 않는 빈 자리(208~264)를 실측으로 골랐다.
+  - 클리어 토스트 문구도 `"보스 토벌 완료! 전리품을 챙기세요."` 로 바꿨다 — 남은 시간은 카운트다운이 전담한다.
+- **조치 3 — 레이드 맵 표시명** (`UIMinimapController:GetRaidMapDisplayName`): 레이드 맵은 런타임 생성본이라 `PortalDestinationDataSet` 에 행이 없어 `raidlobby_slime_king` 같은 **내부 이름이 그대로 노출**되고 있었다. `raidlobby_<bossId>` → `슬라임킹 대기실`, `raid_<bossId>_<diffId>_<seq>` → `슬라임킹 · NORMAL` 로 해석한다.
+  - ⚠️ `bossId`(`slime_king`)에 `_` 가 들어가 **문자열 분할로는 못 가른다** — 데이터셋의 키로 접두어를 대조하는 방식으로 짰다. 해당 없으면 `""` 를 돌려 기존 폴백을 그대로 탄다.
+- **검증**: `mlua-lsp diagnose` 변경 4파일 **errors=0 / warnings=0**(잔여 Info 는 선재 크로스 스크립트 노이즈) · `ui_lint` HUD **ERROR 0 / 경고 68 = 기준선 동일**, `RaidReturnTimer` 기인 경고 0건 · 가려진 텍스트 0건 · 앵커 반영 기하 검산으로 상단 3요소 겹침 0 확인 · `maker_refresh_workspace` ok · build **Error 0 / Warning 0 / Info 710**, `dateTime 2026-09-16T16:49:13` 이 이번 refresh 시각과 일치(규칙 22 대조 완료).
+- **런타임 검증 보류(제작자 수행)**: ① 보스 처치 후 `마을 귀환까지 20초` 가 상단에 뜨고 1초씩 줄어드는지 ② 5초 이하 붉은 강조 ③ 0초에 마을 이동 & 표시 사라짐 ④ 도중에 포탈로 나가면 카운트다운이 즉시 꺼지는지 ⑤ 미니맵에 `슬라임킹 대기실` / `슬라임킹 · NORMAL` 로 뜨는지.
+
 ### 2026-09-15 [스킬/직업] 매직 클로 알케미스트 이관 & 공용 '회복' 신설 & 슬래시 블러스트 선행 정리 (⚖️ 확정 · 런타임 검증 완료)
 
 - **배경**: 제작자 지적 — 매직 클로가 **모두가 배우는 공용 스킬치고 거창**하고, `DamageModel=Magic` 인데 **초반 마법 공격력이 사실상 0** 이라 체감이 죽는다. 마법사 계열로 빼고 공용 자리는 버프 계열로 교체, 강타를 굳이 선행으로 달지 말 것.
@@ -210,7 +341,7 @@
   - ⚠️ **build 로그 갱신 미확인**(규칙 22, `dateTime 16:32:50` 고착). 이번 라운드는 `.mlua` 무변경이라 영향 없음.
   - ✅ **원인 확정 (2026-09-15 제작자 Maker 확인)**: `displayOrder` 교차 배치 복원으로 `Invalid layer` 해소, 두 맵 모두 레이어 편집 정상 복귀. **`MapleMapLayer` 는 자기 `RectTileMap` 바로 앞에 와야 한다**는 것이 확정된 규칙이다 — 레이어 엔티티가 존재하고 `MapLayerName`/`LayerSortOrder` 가 유일해도, 계층 순서가 떨어지면 에디터가 `Invalid layer` 로 처리한다. 규칙 40 의 "1:1 쌍"은 **존재만이 아니라 `displayOrder` 인접까지** 포함한다.
   - 참고: `LayerSortOrder` 의 Layer3/Layer4 스왑(`template_boss`+`map01` = `3/2`, `town`+`template_field` = `2/3`)은 원인이 아니었다. 손대지 않았고 그대로 둔다.
-- **후속**: 대기실 지형이 아직 **보스 아레나와 같은 타일 페인팅**이다. 전실다운 지형으로 다듬으려면 Maker 타일 편집(빌더 커버리지 갭)이 필요하므로 제작자 작업으로 남긴다.
+- ~~**후속**: 대기실 지형이 아직 **보스 아레나와 같은 타일 페인팅**이다.~~ → ✅ **제작자가 Maker 타일 편집으로 전실 지형을 다듬어 마무리 (2026-09-16 구두 확인)**.
 
 ### 2026-09-14 [레이드] 보스 레이드 R-1 코어 — 인스턴스 보스방 · 난이도 4단 · 주간 제한 (⚖️ 확정)
 
@@ -2565,13 +2696,13 @@ F9 슬롯 (벌목 실루엣, 전투·네온 제외):
 
 > 🗺️ **2026-08-08 제작자 로드맵 5건** — ② 상호작용 가이드는 §1에서 구현 완료(Play 대기), ④ 지형 편집 시각 피드백은 §1 재검증 완료(Play 대기). 나머지 3건은 설계 문서 작성 완료, 구현 미착수.
 
-> 🐉 **보스 레이드 로드맵** — R-1 코어는 §1(2026-09-14)에서 구현 완료(F5 테스트 진입점으로 검증 가능). 아래 3건이 순서대로 남았다. 설계 맥락과 데이터 계약은 [§1 2026-09-14 레이드 항목](#2026-09-14-레이드-보스-레이드-r-1-코어--인스턴스-보스방--난이도-4단--주간-제한-⚖️-확정) 참조.
+> 🐉 **보스 레이드 로드맵** — R-1 코어는 §1(2026-09-14), **Stage B 보스 컨텐츠 창은 §1(2026-09-16)** 에서 구현 완료. 공유 맵 `hunt04` 처리는 2026-09-15 **철거 → 레이드 일원화**로 결론. 아래 2건이 순서대로 남았다. 설계 맥락과 데이터 계약은 [§1 2026-09-14 레이드 항목](#2026-09-14-레이드-보스-레이드-r-1-코어--인스턴스-보스방--난이도-4단--주간-제한-⚖️-확정) 참조.
 
 | 항목 | 선행 조건 |
 |---|---|
-| **⭐ R-1 Stage B — 보스 컨텐츠 창 `.ui` + `UIBossContentsController`** (다음 착수 1순위) | 코어 완료. 구성: 좌측 보스 리스트(잠금 상태는 웨이포인트 해금 플래그 재사용) / 중앙 아트(`BossContentsDataSet.ArtRUID`)·입장 레벨·선행 조건 / 우측 난이도 칩 4종(**T42 도감 카테고리 칩 행 패턴 재사용** — 새 스타일 발명 금지) / 하단 주간 `n/12` + [입장] CTA. 입장은 `_BossRaidLogic:RequestEnterRaid(bossId, difficultyId, localPlayer)` 호출 1줄. 데이터셋 2종은 `serveronly=false`라 클라에서 바로 읽힌다. ⚠️ 저작 시 [규칙 47](./pitfalls.md#47-형제-중-나중에-그려지는-불투명-스프라이트가-앞-형제-텍스트를-덮는다--팝업-제목-5종이-이렇게-사라져-있었다)(배경→헤더바→텍스트 순서) · [규칙 49](./pitfalls.md#49-maskcomponent-를-붙이면-그-ui-파일-전체가-런타임에-로드되지-않는다-에러-로그-없음)(`MaskComponent` 금지 — 목록 스크롤에 쓰지 말 것) · [규칙 50](./pitfalls.md#50-별도-자식-text-엔티티는-렌더가-불안정하다--글자는-렌더러와-같은-엔티티에-얹는다)(자식 text 엔티티 회피) · [규칙 6](./pitfalls.md#규칙-6-ui-작업은-미학-루브릭을-통과해야-끝난다)(나무 카드 아이덴티티 유지) 준수 |
-| **⚖️ 판단 필요 — 공유 맵 `hunt04` 슬라임킹 처리** | Stage B 착수 전에 결정. 현재 상시 공유 맵 `hunt04`에 **항상 부활하는 슬라임킹**이 남아 있어 레이드와 경로가 이중화돼 있다. ⓐ 무제한 솔로 연습용으로 존치 ⓑ 철거하고 레이드로 일원화. 존치 시 전직 시험(302/312/322/332)의 대형 젤리 확정 드롭이 레이드 밖에서도 동작해야 하는지 함께 확인할 것 |
-| **R-2 파티 시스템** | R-1 Stage B 완료 후. `PartyLogic`(`@Logic`, 서버 권위, 리더 권한, 최대 4인). 초대는 기존 타 유저 클릭 메뉴(`UIPlayerInteractController` 영지 초대)에 항목 추가로 재사용. **`BossRaidLogic`은 이미 "그 방에 있던 전원"에게 보상·카운트를 주므로 입장 인원만 1→N으로 열면 된다** — 클리어/정리 로직 변경 불필요. MSWPackages에 파티/매칭 패키지는 **없다**(자체 구현 영역) |
+| ~~**R-1 Stage B — 보스 컨텐츠 창**~~ → ✅ **구현 완료 (2026-09-16, 런타임 검증 보류)** | 대기실을 **공유 고정 맵**(`raidlobby_<bossId>`)으로 전환 · hunt03 (10,0) 도달 포탈 = 활성화 · 난이도 선택은 대기실 게이트(`RaidDifficultyPopup`) · 보스 창은 **활성화된 보스의 대기실 워프 목록**. 상세는 [§1 2026-09-16 항목](#2026-09-16-레이드ui-r-1-stage-b--공유-대기실--hunt03-도달-포탈--게이트-난이도-선택--보스-창-워프화) |
+| ~~**⚖️ 판단 필요 — 공유 맵 `hunt04` 슬라임킹 처리**~~ → ✅ **결정·반영 완료 (2026-09-15)** | ⓑ **철거하고 레이드로 일원화**. 사냥터 체인은 `hunt01~hunt03`에서 끝나고 보스전 경로는 레이드 인스턴스 단일화 |
+| **⭐ R-2 파티 시스템** (다음 착수 1순위) | ⚠️ **드롭 쪽 준비는 2026-09-16 에 끝났다** — `Monster:GetDropContributors()` 에 파티원을 채우면 기여자별 개별 확률 롤 + 개인 소유권 드롭이 그대로 동작한다. 반대로 **퀘스트 킬 카운트 · 도감 처치 기록 · 웨이포인트 해금은 아직 막타자 1인 전용**이라 파티 규칙을 함께 정해야 한다. 이하 원문: R-1 Stage B 완료 후. `PartyLogic`(`@Logic`, 서버 권위, 리더 권한, 최대 4인). 초대는 기존 타 유저 클릭 메뉴(`UIPlayerInteractController` 영지 초대)에 항목 추가로 재사용. **`BossRaidLogic`은 이미 "그 방에 있던 전원"에게 보상·카운트를 주므로 입장 인원만 1→N으로 열면 된다** — 클리어/정리 로직 변경 불필요. MSWPackages에 파티/매칭 패키지는 **없다**(자체 구현 영역) |
 | **R-3 파티 모집 탭** | R-2 완료 + 동접 확보 후. 보스 창 2번째 탭(게시글 목록). 자동 매칭은 그 이후 |
 | **로드맵 ① 스토리·NPC·퀘스트 연동** | 설계 완료 + **챕터1 샘플(Quest 201) 코드 투입**. 톤=코지+미스터리 확정. 추가 챕터는 스토리 에이전트 §5 브리프 |
 | **로드맵 ③ 메인화면 + 슬롯 세이브** | **코드 완료(Play 대기)** — 슬롯5·닉네임 중복금지·캐릭터 단위 낚시왕 |

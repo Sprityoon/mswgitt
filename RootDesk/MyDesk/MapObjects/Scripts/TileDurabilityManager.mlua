@@ -15,6 +15,14 @@ script TileDurabilityManager extends Logic
 	-- 7.0(=1.96x1.68)은 다른 드롭의 약 2배라 과했다.
 	property number CurrencyDropScale = 4.5
 
+	-- 소유자 전용 드롭 잠금 시간(초). 이 시간이 지나면 누구나 주울 수 있어
+	-- 소유자가 줍지 않고 떠난 아이템이 바닥에 영원히 잠기지 않는다.
+	property number DropOwnerLockSeconds = 60
+
+	-- SpawnResourceDropOwned -> SpawnResourceDrop 사이에서만 유효한 전달용 값 (규칙 46).
+	@HideFromInspector property string PendingDropOwnerUserId = ""
+	@HideFromInspector property number PendingDropOwnerLockSeconds = 0
+
 	@ExecSpace("ServerOnly")
 	method void OnBeginPlay()
 		-- Initializes the per-resource damage tracking table on the server.
@@ -654,9 +662,25 @@ script TileDurabilityManager extends Logic
 	end
 
 	@ExecSpace("ServerOnly")
+	method void SpawnResourceDropOwned(Entity mapEntity, Vector3 spawnPos, string itemId, number dropMinCount, number dropMaxCount, number pickupGrace, string ownerUserId, number ownerLockSeconds)
+		-- 소유자 전용 드롭. ownerLockSeconds 동안은 그 유저(와 그 유저의 펫)만 주울 수 있다.
+		-- 몬스터 처치 전리품이 이 경로를 쓴다 — 남이 잡은 몹의 드롭을 지나가다 빨아가지 못하게 한다.
+		--
+		-- 🔴 SpawnResourceDrop 의 시그니처는 건드리지 않는다 (규칙 46) — 호출부가 채집·버리기·가구 등
+		--    여러 갈래라 인자를 늘리면 전부 깨진다. 대신 소유자를 프로퍼티로 넘긴다.
+		--    이 메서드와 SpawnResourceDrop 사이에는 Yield 가 없어 다른 호출과 섞이지 않는다.
+		self.PendingDropOwnerUserId = ownerUserId or ""
+		if ownerLockSeconds == nil or ownerLockSeconds <= 0 then ownerLockSeconds = self.DropOwnerLockSeconds end
+		self.PendingDropOwnerLockSeconds = ownerLockSeconds
+		self:SpawnResourceDrop(mapEntity, spawnPos, itemId, dropMinCount, dropMaxCount, pickupGrace)
+		self.PendingDropOwnerUserId = ""
+		self.PendingDropOwnerLockSeconds = 0
+	end
+
 	method void SpawnResourceDrop(Entity mapEntity, Vector3 spawnPos, string itemId, number dropMinCount, number dropMaxCount, number pickupGrace)
 		-- Spawns dropped item entities for the given itemId, resolved through item_dataset.
 		-- pickupGrace > 0 suppresses magnet pickup for that many seconds (used by discard-drop).
+		-- 소유자를 달려면 SpawnResourceDropOwned 를 쓴다 (PendingDropOwner* 프로퍼티 경유).
 		if itemId == nil or itemId == "" then
 			log_warning("TileDurabilityManager: SpawnResourceDrop called with an empty itemId.")
 			return
@@ -735,6 +759,9 @@ script TileDurabilityManager extends Logic
 					idc:Init(itemName)
 					if pickupGrace and pickupGrace > 0 then
 						idc:SetPickupGrace(pickupGrace)
+					end
+					if self.PendingDropOwnerUserId ~= "" then
+						idc:SetOwner(self.PendingDropOwnerUserId, self.PendingDropOwnerLockSeconds)
 					end
 				else
 					log_error("Failed to attach itemreact component on spawned item model: " .. itemModelId)

@@ -563,7 +563,7 @@ script UIMinimapController extends Component
 		if string.sub(mapName, 1, 5) == "Home_" then
 			return "개인 영지"
 		end
-		
+
 		local ds = _DataService:GetTable("PortalDestinationDataSet")
 		if ds ~= nil then
 			local rowCount = ds:GetRowCount()
@@ -573,7 +573,57 @@ script UIMinimapController extends Component
 				end
 			end
 		end
+
+		-- 레이드 맵은 런타임 생성본이라 PortalDestinationDataSet 에 행이 없다.
+		-- 그대로 두면 `raidlobby_slime_king` 같은 내부 이름이 미니맵에 노출돼 다른 맵과 톤이 어긋난다.
+		local raidName = self:GetRaidMapDisplayName(mapName)
+		if raidName ~= "" then return raidName end
+
 		return mapName
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetRaidMapDisplayName(string mapName)
+		-- `raidlobby_<bossId>` -> "<보스명> 대기실"
+		-- `raid_<bossId>_<difficultyId>_<seq>` -> "<보스명> · <난이도명>"
+		-- bossId / difficultyId 에 `_` 가 들어갈 수 있어(slime_king) 문자열 분할 대신
+		-- 데이터셋 키로 접두어를 대조한다. 해당 없으면 "" 를 돌려 호출부가 폴백하게 둔다.
+		local bossDs = _DataService:GetTable("BossContentsDataSet")
+		if bossDs == nil then return "" end
+
+		for i = 1, bossDs:GetRowCount() do
+			local bossId = bossDs:GetCell(i, "BossId")
+			if bossId ~= nil and bossId ~= "" then
+				local bossName = bossDs:GetCell(i, "DisplayName")
+				if bossName == nil or bossName == "" then bossName = bossId end
+
+				if mapName == "raidlobby_" .. bossId then
+					return bossName .. " 대기실"
+				end
+
+				local prefix = "raid_" .. bossId .. "_"
+				if string.sub(mapName, 1, string.len(prefix)) == prefix then
+					local diffDs = _DataService:GetTable("BossDifficultyDataSet")
+					if diffDs ~= nil then
+						for j = 1, diffDs:GetRowCount() do
+							if diffDs:GetCell(j, "BossId") == bossId then
+								local diffId = diffDs:GetCell(j, "DifficultyId")
+								if diffId ~= nil and diffId ~= "" then
+									local diffPrefix = prefix .. diffId .. "_"
+									if string.sub(mapName, 1, string.len(diffPrefix)) == diffPrefix then
+										local diffName = diffDs:GetCell(j, "DisplayName")
+										if diffName == nil or diffName == "" then diffName = diffId end
+										return bossName .. " · " .. diffName
+									end
+								end
+							end
+						end
+					end
+					return bossName
+				end
+			end
+		end
+		return ""
 	end
 
 end
