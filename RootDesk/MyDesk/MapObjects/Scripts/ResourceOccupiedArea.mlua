@@ -9,6 +9,11 @@ script ResourceOccupiedArea extends Component
 
 	property number OffsetYMax = 0
 
+	-- 스프라이트 피벗이 왼쪽 위 모서리인 자원(Big Stone1/2 등)은 true.
+	-- false(기본) = 중앙 피벗 → 점유 영역 정중앙에 배치(pitfalls 규칙 37) / true = 점유 영역 왼쪽 위 모서리에 배치.
+	-- 중앙 피벗 가정으로 왼쪽 위 피벗 스프라이트를 정중앙에 두면 그림·콜라이더가 점유 칸(타격 판정)에서 반 영역씩 밀린다.
+	property boolean AnchorTopLeft = false
+
 	-- T36: 플레이어 이동 차단 여부. GrownGrass 등 통과 허용 자원은 모델에서 false.
 	property boolean BlocksMovement = true
 

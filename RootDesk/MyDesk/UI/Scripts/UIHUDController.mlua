@@ -55,6 +55,19 @@ script UIHUDController extends Component
 
 	property boolean playHudReady = false
 
+	-- 밤·날씨 비네트 (카메라 Screen › Vignette 머티리얼, 2026-09-17).
+	-- 화면 후처리라 해상도·화면비(모바일 포함)와 무관하게 가장자리까지 덮는다. 구 NightOverlay(UGC 이미지)는 Play에서 렌더되지 않아 폐기.
+	property string VignetteMaterialName = "NightVignette"
+	-- 한밤중 비네트 세기(0~1)와 가장자리 번짐(클수록 중앙까지 부드럽게 퍼짐)
+	-- 실측(2026-09-17 Play): 0.45 는 맑은 밤에 거의 보이지 않았고, 안개 낀 밤(합계 0.80)은 또렷했다 → 0.75.
+	property number NightVignetteIntensity = 0.75
+	property number VignetteSmoothness = 0.4
+	-- 날씨 OverlayColor 알파(비 0.06 · 안개 0.07)에 곱해 비네트 세기로 환산
+	property number WeatherVignetteScale = 5.0
+	-- 밤 + 날씨 합산 세기 상한 (안개 낀 밤이 지나치게 어두워지지 않게)
+	property number MaxVignetteIntensity = 0.9
+	property Color NightVignetteColor = Color(0.04, 0.06, 0.18, 1)
+
 	@ExecSpace("ClientOnly")
 	method void SetPlayHudVisible(boolean on)
 		-- 타이틀이 떠 있는 동안 HUD 크롬을 끈다. 슬롯 확정(Close) 뒤에만 켠다.
@@ -778,26 +791,31 @@ script UIHUDController extends Component
 			oldWeather:Destroy()
 		end
 
-		-- 최하단 환경 레이어(EnvironmentOverlayGroup, GroupOrder 0)의 오버레이 참조 바인딩
-		local overlay = _EntityService:GetEntityByPath("/ui/EnvironmentOverlayGroup/NightOverlay")
-		if isvalid(overlay) then
-			self._T.NightOverlayEntity = overlay
-			local sprite = overlay.SpriteGUIRendererComponent
-			if isvalid(sprite) then
-				sprite.Color = Color(0.06, 0.08, 0.22, 0.0)
-				sprite.RaycastTarget = false
+		-- 구 전체화면 UI 오버레이(NightOverlay/WeatherOverlay)는 끈다 — 밤·날씨 어둠은 카메라 비네트가 전담한다.
+		-- (NightOverlay 의 비네트 이미지는 계정 업로드 스프라이트라 Play 에서 렌더되지 않았다 — pitfalls 규칙 45)
+		for _, overlayName in ipairs({ "NightOverlay", "WeatherOverlay" }) do
+			local ov = _EntityService:GetEntityByPath("/ui/EnvironmentOverlayGroup/" .. overlayName)
+			if isvalid(ov) then
+				local ovSprite = ov.SpriteGUIRendererComponent
+				if isvalid(ovSprite) then
+					ovSprite.Color = Color(0, 0, 0, 0)
+					ovSprite.RaycastTarget = false
+				end
+				ov.Enable = false
 			end
 		end
 
-		-- 날씨 틴트 레이어 바인딩
-		local weatherOverlay = _EntityService:GetEntityByPath("/ui/EnvironmentOverlayGroup/WeatherOverlay")
-		if isvalid(weatherOverlay) then
-			self._T.WeatherOverlayEntity = weatherOverlay
-			local wSprite = weatherOverlay.SpriteGUIRendererComponent
-			if isvalid(wSprite) then
-				wSprite.Color = Color(0, 0, 0, 0)
-				wSprite.RaycastTarget = false
-			end
+		-- 🔴 실측(2026-09-17): GetMaterialIdByName 이 "material://<uuid>" 형태로 반환했다.
+		--    ChangeMaterial / ChangeMaterialProperty 는 접두어 없는 UUID만 받으므로 벗겨낸다(material.md §4.3).
+		local rawMatId = _EntryService:GetMaterialIdByName(self.VignetteMaterialName)
+		if rawMatId ~= nil and string.sub(rawMatId, 1, 11) == "material://" then
+			rawMatId = string.sub(rawMatId, 12)
+		end
+		self._T.VignetteMaterialId = rawMatId
+		if self._T.VignetteMaterialId == nil or self._T.VignetteMaterialId == "" then
+			log_warning("[VIGNETTE] material not found: " .. tostring(self.VignetteMaterialName))
+		else
+			log("[VIGNETTE] material id=" .. tostring(self._T.VignetteMaterialId))
 		end
 
 		-- 동적 시계 텍스트 생성 (HUD 상단 중앙)
@@ -879,52 +897,77 @@ script UIHUDController extends Component
 			end
 		end
 
-		-- 2. 화면 밤낮 톤 오버레이 (옵션 1: 시야 100% 확보형 은은한 달빛 무드, 최대 알파 0.07)
-		local overlay = self._T.NightOverlayEntity
-		if not isvalid(overlay) then
-			overlay = _EntityService:GetEntityByPath("/ui/EnvironmentOverlayGroup/NightOverlay")
-			self._T.NightOverlayEntity = overlay
+		-- 2. 밤 진행도(0~1): 275~325초 일몰, 325~575초 밤, 575~625(=25)초 일출
+		local night = 0.0
+		if curTime >= 275 and curTime <= 325 then
+			night = (curTime - 275) / 50
+		elseif curTime > 325 and curTime < 575 then
+			night = 1.0
+		elseif curTime >= 575 then
+			night = 1.0 - (curTime - 575) / 50
+		elseif curTime <= 25 then
+			night = 1.0 - (curTime + 25) / 50
+		end
+		if night < 0 then night = 0 end
+		if night > 1 then night = 1 end
+
+		-- 3. 날씨 틴트(WeatherDataSet.OverlayColor @Sync)를 비네트 세기·색에 합성
+		local oc = "0|0|0|0"
+		if _WeatherManager ~= nil then
+			oc = _WeatherManager.CurrentOverlayColor or "0|0|0|0"
+		end
+		local wc = self:ParseOverlayColorPipe(oc)
+		self:ApplyEnvironmentVignette(night, wc)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyEnvironmentVignette(number night, Color weather)
+		-- 카메라 비네트: 중앙은 밝게 두고 가장자리만 밤·날씨 색으로 어둡게. 값이 바뀔 때만 머티리얼에 반영한다.
+		local matId = self._T.VignetteMaterialId
+		if matId == nil or matId == "" then return end
+		local cam = _CameraService:GetCurrentCameraComponent()
+		if not isvalid(cam) then return end
+		-- 맵 이동 등으로 활성 카메라가 바뀌면 다시 건다
+		if self._T.VignetteCamera ~= cam then
+			cam:ChangeMaterial(matId)
+			self._T.VignetteCamera = cam
+			self._T.VignetteLastIntensity = -1
+			log("[VIGNETTE] applied to camera of " .. tostring(cam.Entity.Name))
 		end
 
-		if isvalid(overlay) and isvalid(overlay.SpriteGUIRendererComponent) then
-			local alpha = 0.0
-			-- 그룹 정식 비네트 마스크(중앙 투명 0.0 / 외곽 1.0) 기반: 외곽 모서리는 50% 밤하늘 어둠, 중앙은 100% 시야 확보
-			local maxNightAlpha = 0.50
-			-- 275초 ~ 325초: 일몰 (0.0 -> maxNightAlpha)
-			-- 575초 ~ 25초: 일출 (maxNightAlpha -> 0.0)
-			if curTime >= 275 and curTime <= 325 then
-				local t = (curTime - 275) / 50
-				alpha = t * maxNightAlpha
-			elseif curTime >= 575 then
-				local t = (curTime - 575) / 50
-				alpha = maxNightAlpha - (t * maxNightAlpha)
-			elseif curTime <= 25 then
-				local t = (curTime + 25) / 50
-				alpha = maxNightAlpha - (t * maxNightAlpha)
-			elseif curTime > 325 and curTime < 575 then
-				alpha = maxNightAlpha
-			else
-				alpha = 0.0
-			end
-			
-			-- 깊고 아늑한 밤하늘 남청색 비네트 틴트
-			overlay.SpriteGUIRendererComponent.Color = Color(0.04, 0.06, 0.18, alpha)
+		local nightI = night * self.NightVignetteIntensity
+		local weatherI = weather.a * self.WeatherVignetteScale
+		if weatherI > 1 then weatherI = 1 end
+		local intensity = nightI + weatherI
+		local cap = self.MaxVignetteIntensity
+		if cap > 1 then cap = 1 end
+		if intensity > cap then intensity = cap end
+
+		-- 색은 두 기여도의 가중 평균 (둘 다 0이면 밤색 유지 — 세기 0이라 보이지 않음)
+		local nc = self.NightVignetteColor
+		local r, g, b = nc.r, nc.g, nc.b
+		if intensity > 0.0001 then
+			local wn = nightI / (nightI + weatherI)
+			local ww = 1 - wn
+			r = nc.r * wn + weather.r * ww
+			g = nc.g * wn + weather.g * ww
+			b = nc.b * wn + weather.b * ww
 		end
 
-		-- 3. T21 날씨 오버레이 틴트 (OverlayColor @Sync — EffectRUID 파티클은 미바인딩 시 틴트만)
-		local wOverlay = self._T.WeatherOverlayEntity
-		if not isvalid(wOverlay) then
-			wOverlay = _EntityService:GetEntityByPath("/ui/EnvironmentOverlayGroup/WeatherOverlay")
-			self._T.WeatherOverlayEntity = wOverlay
+		local last = self._T.VignetteLastIntensity or -1
+		local lastR = self._T.VignetteLastR or -1
+		if math.abs(intensity - last) < 0.005 and math.abs(r - lastR) < 0.005 then return end
+		-- 0.05 단위로 바뀔 때만 로그 (Play 검증 근거)
+		if math.floor(intensity * 20) ~= math.floor((last < 0 and -1 or last) * 20) then
+			log(string.format("[VIGNETTE] intensity=%.2f night=%.2f weatherA=%.3f color=(%.2f,%.2f,%.2f)", intensity, night, weather.a, r, g, b))
 		end
-
-		if isvalid(wOverlay) and isvalid(wOverlay.SpriteGUIRendererComponent) then
-			local oc = "0|0|0|0"
-			if _WeatherManager ~= nil then
-				oc = _WeatherManager.CurrentOverlayColor or "0|0|0|0"
-			end
-			wOverlay.SpriteGUIRendererComponent.Color = self:ParseOverlayColorPipe(oc)
-		end
+		self._T.VignetteLastIntensity = intensity
+		self._T.VignetteLastR = r
+		_MaterialService:ChangeMaterialProperty(matId, {
+			["Intensity"] = intensity,
+			["Smoothness"] = self.VignetteSmoothness,
+			["VignetteColor"] = Color(r, g, b, 1),
+		})
 	end
 
 end

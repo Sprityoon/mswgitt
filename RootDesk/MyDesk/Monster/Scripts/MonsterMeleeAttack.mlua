@@ -72,6 +72,28 @@ script MonsterMeleeAttack extends AttackComponent
 		self:AttackFast(shape, attackInfo, CollisionGroups.HitBox)
 	end
 
+	@ExecSpace("ServerOnly")
+	method void BeginChargeHits()
+		-- 돌진 1회 시작: 이번 돌진에 이미 맞은 플레이어 목록 초기화(플레이어당 1회 적중).
+		self._T.chargeHitIds = {}
+	end
+
+	@ExecSpace("ServerOnly")
+	method void DoChargeSweep(Vector2 center, Vector2 size)
+		-- 돌진 접촉 판정: 이번 프레임 몸통이 지나간 구간(직전→현재 몸통 박스의 합집합)과
+		-- 겹치는 플레이어 히트박스를 타격. 이미 맞은 플레이어는 IsAttackTarget 에서 제외.
+		self.LastAttackInfo = "charge"
+		local shape = BoxShape(center, size, 0)
+		self:AttackFast(shape, "charge", CollisionGroups.HitBox)
+	end
+
+	method void OnAttack(Entity defender)
+		-- ⚠ AttackComponent 훅에 @ExecSpace 금지.
+		if self.LastAttackInfo == "charge" and self._T.chargeHitIds ~= nil and isvalid(defender) then
+			self._T.chargeHitIds[defender.Id] = true
+		end
+	end
+
 	method integer CalcDamage(Entity attacker, Entity defender, string attackInfo)
 		-- attackInfo 태깅으로 분기 (이름 분기 아님). ⚠ AttackComponent 훅에 @ExecSpace 금지.
 		if attackInfo == "touch" then
@@ -91,6 +113,9 @@ script MonsterMeleeAttack extends AttackComponent
 	method boolean IsAttackTarget(Entity defender, string attackInfo)
 		-- Only player entities take this monster's contact damage.
 		if isvalid(defender.PlayerComponent) == false then return false end
+		if attackInfo == "charge" and self._T.chargeHitIds ~= nil and self._T.chargeHitIds[defender.Id] then
+			return false
+		end
 		return __base:IsAttackTarget(defender, attackInfo)
 	end
 

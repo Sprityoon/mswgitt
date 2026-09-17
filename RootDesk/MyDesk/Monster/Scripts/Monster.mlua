@@ -28,6 +28,10 @@ script Monster extends Component
 	-- Spawner injects after spawn; empty falls back to Entity.Name for hand-placed monsters.
 	property string MonsterId = ""
 
+	-- 바이옴 틴트(BiomeDataSet.MonsterTint) 등 스폰 시 정해진 기본 색. 피격 플래시·공격 예고가 끝나면 흰색이 아니라 이 색으로 복귀한다.
+	-- (구형은 무조건 흰색으로 되돌려 "어둡게 스폰된 몬스터가 맞으면 원래 색으로 돌아오는" 현상이 났다.)
+	@Sync @HideFromInspector property Color BaseTint = Color(1, 1, 1, 1)
+
 	-- 드롭 테이블만 다른 SourceId 로 갈아끼운다 (레이드 난이도별 보상). 공란이면 MonsterId 를 쓴다.
 	-- MonsterId 자체를 바꾸지 않는 이유: 퀘스트 Kill 조건·도감 집계 키가 MonsterId 이기 때문이다.
 	property string DropSourceOverride = ""
@@ -361,7 +365,7 @@ script Monster extends Component
 		sprite.Color = Color(1, 0.4, 0.4, 1)
 		_TimerService:SetTimerOnce(function()
 			local s = self.Entity.SpriteRendererComponent
-			if isvalid(s) then s.Color = Color(1, 1, 1, 1) end
+			if isvalid(s) then s.Color = self.BaseTint end
 		end, 0.1)
 	end
 

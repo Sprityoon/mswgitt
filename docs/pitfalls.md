@@ -65,6 +65,8 @@
 | [51](#51-csv-데이터셋-값에-쉼표가-포함되면-반드시-큰따옴표로-감싸야-한다--컬럼-밀림으로-런타임-오작동) | CSV 값 내 쉼표 = 반드시 큰따옴표 래핑 | 뒷부분 컬럼이 1칸씩 밀려 엉뚱한 값 대입 (에러 0) |
 | [52](#52-한-부모-밑-자식들의-앵커가-섞여-있으면-pos-는-서로-다른-기준선으로-해석된다--중심-기준-좌표-계산은-조용히-틀린다) | 자식 앵커 혼재 시 `pos` 기준선이 제각각 | UI가 패널 밖에 그려지는데 자체 검산은 통과 |
 | [53](#53-rpc-메서드-본문의---type-사용자-타입-주석은-lea-1118-빌드-에러다) | RPC 본문에 `---@type <사용자스크립트>` 금지 | build Error 1건 (같은 주석이 일반 메서드에선 무사) |
+| [54](#54-사냥터-초기화는-맵에-배치된-placeablefurniture를-지운다--가구-모델-기반-고정-엔티티는-예외-처리) | 사냥터 초기화가 배치 가구를 삭제 → 에디터 포탈 소실 | 포탈이 에디터 위치 대신 `(0,-3)`/`(10,0)` 에 생성 (에러 0) |
+| [55](#55-getmaterialidbyname-은-material-접두어를-붙여-돌려줄-수-있다--벗기고-changematerial-에-넘긴다) | `GetMaterialIdByName` 반환값에 `material://` 접두어 | 머티리얼 적용 로그는 정상인데 효과가 안 보임 |
 
 ---
 
@@ -461,6 +463,7 @@ MSW의 `MapComponent`에서 `LeftBottom`과 `RightTop` 프로퍼티로 커스텀
 
 - ✅ 다중 타일 자원의 스폰 좌표 공식: $\text{cx} = \frac{\text{xMin} + \text{xMax} + 1}{2}, \quad \text{cy} = \frac{\text{yMin} + \text{yMax} + 1}{2}$ (점유 영역의 기하학적 정중앙).
 - ✅ 이렇게 배치해야 스프라이트와 콜라이더가 점유 영역의 정중앙에 위치하여 좌우/상하 어디서 도끼질이나 곡괭이질을 해도 대칭적인 타격 거리가 보장된다.
+- 🔴 **단, 위 공식은 스프라이트 피벗이 중앙일 때만 맞다 (2026-09-17 실측).** Big Stone1/2 스프라이트는 **왼쪽 위 피벗**이라 정중앙 배치 시 그림·Trigger·콜라이더가 점유 칸보다 오른쪽 아래로 영역 절반씩 밀려 "바위를 쳤는데 엉뚱한 곳이 맞는" 증상이 났다. 피벗은 리소스 API `get <ruid>` 의 `payload.pivot`(ny≈1 = 위쪽)으로 확인하고, 왼쪽 위 피벗 자원은 모델에 `ResourceOccupiedArea.AnchorTopLeft = true` 를 준다(배치 = `(xMin, yMax+1)`, 헬퍼 `ResourceSpawner:GetOccupiedAnchorPosition`).
 
 ### 38. `.model` 파일의 `Properties` 바인딩과 `Id`/`EntryKey` 일치 필수
 
@@ -660,6 +663,22 @@ CSV 파일의 설명(`Description` 등) 텍스트에 문장 부호 쉼표(`,`)�
 - 🔴 **`mlua-lsp diagnose` 는 이걸 못 잡는다.** 진단은 `errors=0 / warnings=0` 으로 깨끗했고, 오직 **Maker build 로그**에만 떴다. 스택의 `methodName` 이 어느 메서드인지 정확히 지목해 준다.
 - ✅ **해법**: 주석을 빼고 동적 디스패치로 호출한다(`local c = e:GetComponent("script.X")` → `c:Method()`). 남는 `LIA-1114` Info 는 무해한 크로스 스크립트 노이즈다. 타입 힌트가 꼭 필요하면 RPC 는 얇게 두고 **본체를 일반 메서드로 빼서** 거기서 캐스팅한다.
 - **선례**: T19 의 `---@type Animal`, T57 의 패키지 RPC 파라미터 — 같은 계열이 세 번째 재발이라 규칙으로 승격한다.
+
+### 54. 사냥터 초기화는 맵에 배치된 `PlaceableFurniture`를 지운다 — 가구 모델 기반 고정 엔티티는 예외 처리
+
+`ResourceSpawner:ReconstructWorldPlacementsForMap` 2단계는 세이브 복원 전에 **맵에 이미 있는 `PlaceableFurniture` 엔티티를 전부 `Destroy`** 한다(부두·배만 이름으로 예외). 그런데 에디터에 배치한 포탈은 `Furniture_Portal` 모델 인스턴스라 런타임에 `PlaceableFurniture` 가 붙는다 — `.map` 의 `componentNames` 에 없어도 모델 구성이 적용된다.
+
+- **증상**: `SpawnFixedPortal` 이 이름으로 에디터 포탈을 못 찾고 폴백 좌표에 새 포탈을 만든다. 로그 `Portal '...' configured in map hunt01 at (0, -3)` — 에디터 좌표가 아니라 **코드 폴백 좌표**가 찍힌다. 에러 0, 빌드 0. 맵 설계에 따라 포탈이 연못 한가운데에 생긴다.
+- **실측 (2026-09-17)**: 재설계 전 17:02 로그부터 hunt01~03 포탈이 전부 폴백 좌표였다 — 에디터에서 포탈을 옮긴 적이 한 번도 반영되지 않았다. 대기실(`CreateInstanceMap` 경로, 이 초기화 미경유)은 정상.
+- ✅ 2단계에서 `script.PortalGate` 를 가진 엔티티는 보존한다(유저가 설치한 포탈은 1단계 `gridToEntity` 정리가 담당).
+- ✅ 에디터에 가구 모델로 고정 엔티티를 새로 배치했다면, 이 2단계에 지워지지 않는지 먼저 확인한다. **판별**: `SpawnFixedPortal` 류 로그의 좌표가 에디터 좌표와 같은지 본다.
+
+### 55. `GetMaterialIdByName` 은 `material://` 접두어를 붙여 돌려줄 수 있다 — 벗기고 `ChangeMaterial` 에 넘긴다
+
+스킬 문서(material.md §4.3)는 `_EntryService:GetMaterialIdByName(name)` 이 **bare UUID** 를 반환한다고 설명하지만, 실측 반환값은 `material://b0af0605-…` 였다. `ChangeMaterial` / `ChangeMaterialProperty` 는 bare UUID 만 받으므로 그대로 넘기면 **에러 없이 효과가 안 걸린다**(적용 로그는 정상으로 찍힌다).
+
+- ✅ 받은 값이 `material://` 로 시작하면 `string.sub(id, 12)` 로 벗긴다 (`UIHUDController.InitTimeUI` 선례).
+- ✅ 머티리얼 ID 는 반드시 `log()` 로 원문을 남긴다 — 이 함정은 로그 없이는 보이지 않는다.
 
 ## 관련 문서
 

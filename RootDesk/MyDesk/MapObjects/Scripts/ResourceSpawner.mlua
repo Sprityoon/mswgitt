@@ -43,6 +43,9 @@ script ResourceSpawner extends Logic
 	-- 제작자가 포탈을 드래그해 옮겨도 동적 맵 복제 시 이 좌표를 다시 읽으므로 코드 수정이 필요 없다.
 	property number PortalResourceClearRadius = 5.0
 	property table PortalClearZonesMap = {}
+	-- 포탈로 넘어온 플레이어의 도착점 = 도착 맵에 배치된 짝 포탈 위치 + 이 Y 오프셋(포탈 트리거 바로 앞).
+	-- 사냥터 템플릿에서 포탈을 옮기면 도착점도 함께 따라간다(좌표 하드코딩 금지).
+	property number PortalArriveOffsetY = -2.5
 	-- 맵 경계 벽으로부터 자원이 떨어져야 하는 안전 여백(타일).
 	-- MapRadius=30, WallThickness=3(wallInner=28) 기준 Margin=3이면 |x|,|y| <= 25 범위에서만 스폰.
 	-- 2×2, 4×4 대형 자원도 외곽 벽을 침범하지 않고 벽과 자원 사이에 자연스러운 통로 형성.
@@ -1845,25 +1848,28 @@ script ResourceSpawner extends Logic
 		local hunt02 = self:EnsureHuntMap("hunt02", getCol("hunt02", "TemplateMap", "template_field"), getCol("hunt02", "Biome", "earth_field"))
 		local hunt03 = self:EnsureHuntMap("hunt03", getCol("hunt03", "TemplateMap", "template_field"), getCol("hunt03", "Biome", "earth_field"))
 
+		-- 포탈 엔티티 이름 규약 (사냥터 템플릿 공통, 2026-09-17 재설계):
+		--   Portal = 홈 귀환(입구 쪽) / PortalBack = 이전 구역(입구 쪽) / PortalForward = 다음 구역(맵 반대편 끝)
+		-- 도착점은 도착 맵의 짝 포탈 위치에서 계산한다(GetPortalArrivePosition). 폴백 좌표는 에디터 배치가 없을 때만 쓰인다.
 		-- hunt01: Home return + forward to hunt02.
 		if isvalid(hunt01) then
 			self:SpawnFixedPortal(hunt01, "Portal", 0, -3, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(hunt01, "PortalToHunt02", 10, 0, "hunt02", Vector2(0, 0))
+			self:SpawnFixedPortal(hunt01, "PortalForward", 10, 0, "hunt02", self:GetPortalArrivePosition(hunt02, "PortalBack", Vector2(0, 0)))
 			self:SpawnTreasureChestsForMap(hunt01, "hunt01")
 		end
 
 		-- hunt02: Home return + back to hunt01 + forward to hunt03.
 		if isvalid(hunt02) then
 			self:SpawnFixedPortal(hunt02, "Portal", 0, -3, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(hunt02, "PortalToHunt01", -10, 0, "hunt01", Vector2(8, 0))
-			self:SpawnFixedPortal(hunt02, "PortalToHunt03", 10, 0, "hunt03", Vector2(0, 0))
+			self:SpawnFixedPortal(hunt02, "PortalBack", -10, 0, "hunt01", self:GetPortalArrivePosition(hunt01, "PortalForward", Vector2(8, 0)))
+			self:SpawnFixedPortal(hunt02, "PortalForward", 10, 0, "hunt03", self:GetPortalArrivePosition(hunt03, "PortalBack", Vector2(0, 0)))
 			self:SpawnTreasureChestsForMap(hunt02, "hunt02")
 		end
 
-		-- hunt03: Home return + back to hunt02. 체인의 종점 — 앞으로 나가는 자리에 보스 대기실 포탈이 붙는다.
+		-- hunt03: Home return + back to hunt02. 체인의 종점 — PortalForward 자리에 보스 대기실 포탈이 붙는다(EnsureBossLobbyPortals).
 		if isvalid(hunt03) then
 			self:SpawnFixedPortal(hunt03, "Portal", 0, -3, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(hunt03, "PortalToHunt02", -10, 0, "hunt02", Vector2(8, 0))
+			self:SpawnFixedPortal(hunt03, "PortalBack", -10, 0, "hunt02", self:GetPortalArrivePosition(hunt02, "PortalForward", Vector2(8, 0)))
 			self:SpawnTreasureChestsForMap(hunt03, "hunt03")
 		end
 
@@ -1872,12 +1878,22 @@ script ResourceSpawner extends Logic
 	end
 
 	@ExecSpace("ServerOnly")
+	method Vector2 GetPortalArrivePosition(Entity map, string portalName, Vector2 fallback)
+		-- 도착 맵에 배치된 짝 포탈 앞(트리거 밖) 좌표. 맵/포탈이 없으면 폴백.
+		if not isvalid(map) then return fallback end
+		local portal = map:GetChildByName(portalName)
+		if not isvalid(portal) or not isvalid(portal.TransformComponent) then return fallback end
+		local p = portal.TransformComponent.Position
+		return Vector2(p.x, p.y + self.PortalArriveOffsetY)
+	end
+
+	@ExecSpace("ServerOnly")
 	method void EnsureBossLobbyPortals()
 		-- 보스별 대기실을 만들고, 그 보스의 선행 사냥터(BossContentsDataSet.RequiredWaypointId)에서
 		-- 걸어 들어갈 수 있도록 전진 포탈을 세운다. 보스를 늘리면 CSV 행만 추가하면 된다(R3).
 		--
 		-- 대기실은 hunt01~03 과 같은 **고정 이름 공유 맵**(raidlobby_<bossId>)이라 포탈 목적지로 쓸 수 있다.
-		-- 배치 좌표는 체인 규약 그대로 (10, 0) — hunt01→02, hunt02→03 의 전진 포탈과 같은 자리다.
+		-- 사냥터 템플릿의 PortalForward(맵 반대편 끝) 엔티티를 그대로 대기실 포탈로 쓴다. (10, 0)은 배치가 없을 때의 폴백.
 		if _BossRaidLogic == nil then return end
 		local ds = _DataService:GetTable("BossContentsDataSet")
 		if ds == nil then return end
@@ -1896,7 +1912,7 @@ script ResourceSpawner extends Logic
 					if isvalid(hunt) and isvalid(lobby) then
 						local arriveX = _BossRaidLogic.LobbyArriveX
 						local arriveY = _BossRaidLogic.LobbyArriveY
-						self:SpawnFixedPortal(hunt, "PortalToRaidLobby", 10, 0, lobby.Name, Vector2(arriveX, arriveY))
+						self:SpawnFixedPortal(hunt, "PortalForward", 10, 0, lobby.Name, Vector2(arriveX, arriveY))
 						log("ResourceSpawner: boss lobby portal " .. fromMap .. " -> " .. lobby.Name)
 					end
 				end
@@ -2428,6 +2444,16 @@ script ResourceSpawner extends Logic
 	end
 
 	@ExecSpace("ServerOnly")
+	method Vector3 GetOccupiedAnchorPosition(any occ, integer xMin, integer xMax, integer yMin, integer yMax)
+		-- 점유 칸 [xMin..xMax]×[yMin..yMax] 에 스프라이트를 맞추는 월드 위치.
+		-- 중앙 피벗(기본): 영역 정중앙 (pitfalls 규칙 37) / 왼쪽 위 피벗(AnchorTopLeft): 영역의 왼쪽 위 모서리 (xMin, yMax+1).
+		if isvalid(occ) and occ.AnchorTopLeft == true then
+			return Vector3(xMin, yMax + 1.0, 0)
+		end
+		return Vector3((xMin + xMax + 1.0) * 0.5, (yMin + yMax + 1.0) * 0.5, 0)
+	end
+
+	@ExecSpace("ServerOnly")
 	method Entity TrySpawnResourceInChunk(Entity map, string modelId, string name, number x, number y, table chunkEntities)
 		local mapName = map.Name
 		local seedVal = self:GetMapSeed(mapName)
@@ -2497,10 +2523,8 @@ script ResourceSpawner extends Logic
 			xMax = math.floor(x + occupiedArea.OffsetXMax)
 			yMin = math.floor(y + occupiedArea.OffsetYMin)
 			yMax = math.floor(y + occupiedArea.OffsetYMax)
-			-- 다중 타일 점유 자원은 스프라이트와 피벗을 점유 영역의 정중앙에 배치 (좌우 대칭 타격 및 판정 정합)
-			local cx = (xMin + xMax + 1.0) * 0.5
-			local cy = (yMin + yMax + 1.0) * 0.5
-			resEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+			-- 다중 타일 점유 자원 배치: 피벗 종류(AnchorTopLeft)에 맞춰 그림·콜라이더를 점유 칸에 정렬
+			resEntity.TransformComponent.WorldPosition = self:GetOccupiedAnchorPosition(occupiedArea, xMin, xMax, yMin, yMax)
 		end
 	
 		local canPlace = true
@@ -3001,10 +3025,8 @@ script ResourceSpawner extends Logic
 			xMax = math.floor(x + occupiedArea.OffsetXMax)
 			yMin = math.floor(y + occupiedArea.OffsetYMin)
 			yMax = math.floor(y + occupiedArea.OffsetYMax)
-			-- 다중 타일 점유 자원은 스프라이트와 피벗을 점유 영역의 정중앙에 배치 (좌우 대칭 타격 및 판정 정합)
-			local cx = (xMin + xMax + 1.0) * 0.5
-			local cy = (yMin + yMax + 1.0) * 0.5
-			resEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+			-- 다중 타일 점유 자원 배치: 피벗 종류(AnchorTopLeft)에 맞춰 그림·콜라이더를 점유 칸에 정렬
+			resEntity.TransformComponent.WorldPosition = self:GetOccupiedAnchorPosition(occupiedArea, xMin, xMax, yMin, yMax)
 		end
 		
 		local wallInner = self.MapRadius - self.WallThickness + 1
@@ -3105,10 +3127,13 @@ script ResourceSpawner extends Logic
 
 		-- 2. Destroy any existing Maker-placed PlaceableFurniture that are user-placed
 		-- (Keep static world features like Furniture_Pier and Furniture_Boat intact!)
+		-- 🔴 에디터에 배치한 고정 포탈(PortalGate)도 보존한다. Furniture_Portal 모델이 PlaceableFurniture 를 달고 있어
+		--    여기서 지워지면, 뒤이은 SpawnFixedPortal 이 에디터 위치 대신 폴백 좌표((0,-3)/(10,0))에 새 포탈을 만든다
+		--    (2026-09-17 실측: 사냥터 포탈이 맵 중앙·호수 안에 생성). 유저가 설치한 포탈은 위 1단계(gridToEntity)가 정리한다.
 		local placeableComps = map:GetChildComponentsByTypeName("script.PlaceableFurniture", true)
 		if placeableComps then
 			for _, comp in ipairs(placeableComps) do
-				if isvalid(comp.Entity) then
+				if isvalid(comp.Entity) and not isvalid(comp.Entity:GetComponent("script.PortalGate")) then
 					local eName = comp.Entity.Name
 					if eName ~= "Furniture_Pier" and eName ~= "Furniture_Boat" and eName ~= "Pier" and eName ~= "Boat" then
 						comp.Entity:Destroy()
@@ -3184,9 +3209,7 @@ script ResourceSpawner extends Logic
 						local axMax = math.floor(fx + (tonumber(occAlign.OffsetXMax) or 0))
 						local ayMin = math.floor(fy + (tonumber(occAlign.OffsetYMin) or 0))
 						local ayMax = math.floor(fy + (tonumber(occAlign.OffsetYMax) or 0))
-						local cx = (axMin + axMax + 1.0) * 0.5
-						local cy = (ayMin + ayMax + 1.0) * 0.5
-						spawnedEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+						spawnedEntity.TransformComponent.WorldPosition = self:GetOccupiedAnchorPosition(occAlign, axMin, axMax, ayMin, ayMax)
 					end
 
 					-- Check Walkable from dataset or component
@@ -3383,9 +3406,7 @@ script ResourceSpawner extends Logic
 			local axMax = math.floor(fx + (tonumber(occAlign.OffsetXMax) or 0))
 			local ayMin = math.floor(fy + (tonumber(occAlign.OffsetYMin) or 0))
 			local ayMax = math.floor(fy + (tonumber(occAlign.OffsetYMax) or 0))
-			local cx = (axMin + axMax + 1.0) * 0.5
-			local cy = (ayMin + ayMax + 1.0) * 0.5
-			ent.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+			ent.TransformComponent.WorldPosition = self:GetOccupiedAnchorPosition(occAlign, axMin, axMax, ayMin, ayMax)
 		end
 
 		-- Check Walkable from dataset or component
@@ -3485,9 +3506,7 @@ script ResourceSpawner extends Logic
 				xMax = math.floor(x + (tonumber(occ.OffsetXMax) or 0))
 				yMin = math.floor(y + (tonumber(occ.OffsetYMin) or 0))
 				yMax = math.floor(y + (tonumber(occ.OffsetYMax) or 0))
-				local cx = (xMin + xMax + 1.0) * 0.5
-				local cy = (yMin + yMax + 1.0) * 0.5
-				spawnedEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+				spawnedEntity.TransformComponent.WorldPosition = self:GetOccupiedAnchorPosition(occ, xMin, xMax, yMin, yMax)
 			end
 		end
 

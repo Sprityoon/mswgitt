@@ -19,6 +19,9 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `NightVignette.material`(신규) · `UIHUDController.mlua` · `ResourceOccupiedArea.mlua` · `ResourceSpawner.mlua` · `Big Stone 1/2.model` · `TestModeConfig.mlua` · `BiomeDataSet.csv` · `Monster.mlua` | **[환경/버그픽스] 밤·날씨 카메라 비네트(Screen Vignette) 머티리얼 적용(UI 침범 차단) & Big Stone 피벗 정합(좌상단 피벗 오프셋 일치) & 바이옴 틴트 정리 & 테스트 모드 해제** (2026-09-17 ⚖️ 확정) — 아래 참조 |
+| `map/field_earth.map` · `map/template_field.map` · `Deco_*.model`(신규 14) · `ResourceSpawner.mlua` · `TestModeConfig.mlua` · `PortalDestinationDataSet.csv` · `TreasureChestSpawnDataSet.csv` · `scripts/build_hunting_fields.cjs`(신규) · `scripts/check_hunting_fields.cjs`(신규, 구 `check_field_earth.cjs` 대체) | **[사냥터/맵] hunt01(field_earth)·hunt02/03(template_field) 경로 전면 재설계 — 입구·출구 포탈을 대각 반대편 끝으로(직선 27→60칸) & 구 장식 전량 철거 후 공식 object 스프라이트 소품 14종 신설 & 포탈 이름 규약·도착점 자동 계산** (2026-09-17) — 아래 참조 |
+| `MonsterAI.mlua` · `MonsterMeleeAttack.mlua` | **[전투/버그픽스] 멧돼지 돌진(CHARGE) 타격을 '경로 이동 중 몸통 접촉' 방식으로 교체 — DECEL 구간 판정 누락 해소 & 프레임 스윕 박스 & 플레이어당 1회 적중** (2026-09-17) — 아래 참조 |
 | `MonsterAI.mlua` · `MonsterMeleeAttack.mlua` · `PlayerController.mlua` · `MonsterSpawner.mlua` | **[전투/버그픽스] 몬스터별 접촉 데미지 차등화(ContactDamage 50% 비례 산출) & 공격·돌진 중 접촉 틱 중단(i-frame 씹힘 원천 방지) & 멧돼지 돌진 공격(CHARGE) 충돌 타격 판정 신설** (2026-09-16 ⚖️ 확정) — 아래 참조 |
 | `PlayerController.mlua` · `MonsterMeleeAttack.mlua` · `MonsterAI.mlua` | **[전투/조작감] 몬스터 단순 접촉(비비기) 피격 시 경직 완화 및 일시적 접촉 무시(TouchImmuneDuration 1.2s) 도입 & 접촉 피격 시 플레이어 이동 조작 잠금 해제 & StateComponent 자동 HIT 전이 차단** (2026-09-16 ⚖️ 확정) — 아래 참조 |
 | `BossRaidLogic.mlua` · `RaidGate.mlua` · `ResourceSpawner.mlua` · `PlayerController.mlua` · `TestModeConfig.mlua` · `UIBossContentsController.mlua`(신규) · `UIRaidDifficultyController.mlua`(신규) · `ui/PopupGroup.ui` · `ui/HUDGroup.ui` · `UIHUDController.mlua` | **[레이드/UI] R-1 Stage B — 대기실을 공유 고정 맵으로 전환 & hunt03 대기실 포탈 신설(직접 도달 = 보스 활성화) & 난이도 선택을 대기실 게이트로 이관 & 보스 컨텐츠 창을 대기실 워프 목록으로 재정의** (2026-09-16) — 아래 참조 |
@@ -122,6 +125,79 @@
 | 데이터셋 + `ui/PopupGroup.ui`·`HUDGroup.ui` + UI 컨트롤러 | **한글화 1차** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
+
+### 2026-09-17 [환경/버그픽스] 밤·날씨 어두워짐 소실 원인 규명 & 몬스터 바이옴 틴트가 피격 시 풀리던 결함
+
+- **배경 (제작자 제보)**: ① 날씨·시간 어두워짐이 사라짐(다른 UI까지 어두워지던 문제를 먼저 고친 뒤 비네팅으로 가려던 중) ② 비네팅은 모바일 화면비까지 넓게 덮어야 함 ③ 몇몇 몬스터가 어둡게 스폰됐다가 때리면 원래 색으로 돌아옴.
+- **① 원인**: `EnvironmentOverlayGroup/NightOverlay` 의 `ImageRUID = bc160a11…` 가 **계정 업로드(UGC) 스프라이트** — [pitfalls 규칙 45](./pitfalls.md) 그대로 Play 에서 렌더되지 않아 밤 오버레이가 통째로 안 보인다(알파 계산 코드 `UIHUDController.UpdateTimeUI` 는 정상 동작). 공식 리소스 검색 API 404, 계정 메타데이터로 UGC 확인.
+- **② 방향 (미착수 — 제작자 1회 작업 필요)**: 공식 **Screen › Vignette 셰이더를 카메라(`CameraComponent.MaterialId`)에 적용**하는 방식. 화면 후처리라 화면비·해상도와 무관하게 전체를 덮고, 이미지 에셋이 필요 없다. 공식 문서에 공개된 속성은 `CenterPos` 뿐이라(material.md §3.3) Maker에서 Vignette 머티리얼을 한 번 만들어 속성 이름·기본값을 확보한 뒤 연결한다.
+- **③ 원인·조치**: 어둡게 보인 건 날씨가 아니라 **바이옴 몬스터 틴트**(`BiomeDataSet.MonsterTint` — rocky `#A6A6A6`, desert `#FFE699`, snowfield `#B3E6FF`). `Monster.FlashHit` 가 0.1초 뒤 색을 무조건 흰색으로, `MonsterAI.OnSyncProperty`(공격 예고 종료)도 흰색으로 되돌려 틴트가 풀렸다.
+  - `Monster.BaseTint`(@Sync) 신설 → `MonsterSpawner` 가 스폰 시 틴트를 기록, 피격 플래시·예고 종료 모두 `BaseTint` 로 복귀. 클라이언트 콜백에서는 ServerOnly `GetMonster()` 대신 `GetComponent("script.Monster")` 사용.
+- **검증**: refresh ok · build **Error 0 / Warning 0 / Info 719** (dateTime 18:58:22, 마지막 `.mlua` 수정 18:58:20 직후; +2 는 `BaseTint` 크로스 스크립트 접근 `LIA-1114` 정적 분석 노이즈).
+- **2차 (제작자 결정)**:
+  - ⚖️ **바이옴 몬스터 틴트 폐기** — "나중에 버전별 신규 몬스터를 추가하는 편이 낫다". `BiomeDataSet.MonsterTint` 전 행 공란(컬럼·조회 코드는 유지, 공란 = 흰색). `Monster.BaseTint` 복귀 로직은 그대로 둬 향후 틴트를 다시 쓸 때도 피격 시 풀리지 않는다.
+  - **카메라 비네트 연결** — 제작자가 Maker에서 `RootDesk/MyDesk/NightVignette.material`(Screen › Vignette) 생성 → 속성 실측: `CenterPos`·`Intensity`·`IsRound`·`Smoothness`·`VignetteColor`. 파일 기본값을 `Intensity 0.0`(적용 직후 번쩍임 방지)·`Smoothness 0.4` 로 조정.
+  - `UIHUDController`: `InitTimeUI` 에서 구 `NightOverlay`/`WeatherOverlay` 비활성 + `GetMaterialIdByName` 로 머티리얼 ID 확보. `UpdateTimeUI` 는 밤 진행도(0~1)와 날씨 `OverlayColor` 를 `ApplyEnvironmentVignette` 에 넘기고, 이 메서드가 현재 카메라(`_CameraService:GetCurrentCameraComponent`)에 머티리얼을 걸고(카메라가 바뀌면 재적용) `Intensity = 밤×NightVignetteIntensity(0.45) + 날씨알파×WeatherVignetteScale(5)`, 색 = 밤 남청색·날씨색 가중 평균으로 `ChangeMaterialProperty`(ClientOnly). 값이 바뀔 때만 전송. 튜닝값은 전부 인스펙터 프로퍼티.
+  - 검증(2차): refresh ok · build **Error 0 / Warning 0 / Info 719** (dateTime 19:03:45, `UIHUDController.mlua` 수정 19:03:44 직후) · refresh 후 머티리얼 파일 값 유지 확인.
+- **3차 (제작자 제보: "비네팅이 잘 적용이 안 됨" + "곡괭이로 Big Stone을 칠 때 렌더 위치와 타격 지점이 심하게 어긋남")**:
+  - 비네트 원인: Play 로그 `[VIGNETTE] material id=material://b0af0605-…` — `_EntryService:GetMaterialIdByName` 이 **`material://` 접두어가 붙은 값**을 돌려줬다(material.md 는 bare UUID 반환이라 설명). `ChangeMaterial`/`ChangeMaterialProperty` 는 bare UUID 만 받으므로 적용 로그만 찍히고 실제 머티리얼이 걸리지 않은 것으로 판단 → 접두어를 벗겨 사용. 세기 0.05 단위 변화 시 `[VIGNETTE] intensity=…` 로그 추가.
+  - Big Stone 원인: 다중 타일 자원 스폰 5곳이 전부 **점유 영역 정중앙에 Transform 배치**(규칙 37 — 중앙 피벗 가정). 그러나 Big Stone1(`f6e60819…` pivot (-2,100)/96×100)·Big Stone2(`8d32ca4e…` pivot (0,116)/120×112) 스프라이트는 **왼쪽 위 피벗**이라, 그림·Trigger·PhysicsCollider 가 점유 칸(곡괭이 조준·타격 판정)보다 오른쪽 아래로 영역 절반(Big Stone1 ≈ 2칸)씩 밀렸다.
+  - 조치: `ResourceOccupiedArea.AnchorTopLeft`(bool, 기본 false) 신설 → `ResourceSpawner:GetOccupiedAnchorPosition` 이 false=정중앙 / true=점유 영역 왼쪽 위 모서리 `(xMin, yMax+1)` 반환, 스폰·재구성·설치 5곳 모두 이 헬퍼 사용. Big Stone1/2 모델에 `AnchorTopLeft=true`(ModelBuilder, 스크립트 refresh 후 적용). Big Stone1 은 Trigger 오프셋(0.5,-0.73)×4 가 점유 4×4 하단과 정확히 겹친다. Big Stone2 는 스프라이트(7.2×6.7)가 6×6 점유보다 약간 크다.
+  - 검증(3차): refresh ok(스크립트 → 모델 → refresh 2회) · build **Error 0 / Warning 0 / Info 719** (dateTime 19:09:52, 마지막 `.mlua` 수정 19:09:51 직후) · 모델 값 되읽기 `AnchorTopLeft=true` 확인.
+- **4차 (제작자 확인: "안개에선 잘 되는데 밤엔 제대로 안 된다")**: Play 로그상 비네트는 정상 적용 중이었다 — 맑은 밤 `intensity=0.45`(남청), 안개 낀 밤 `0.80`(회청). **맑은 밤 0.45가 체감되지 않는 세기**였을 뿐. `NightVignetteIntensity` 0.45 → **0.75**, 합산 상한 `MaxVignetteIntensity=0.9` 신설(안개 낀 밤 과암 방지). HUDGroup.ui 에 해당 프로퍼티 직렬화 값이 없어 스크립트 기본값이 그대로 적용됨을 빌더로 확인. build **Error 0 / Warning 0** (dateTime 19:14:42, 수정 19:14:40 직후).
+- **런타임 검증 보류(제작자 수행)**: ⓪ Big Stone1/2 를 바위 그림 한가운데·가장자리에서 곡괭이로 쳤을 때 판정 일치, 바위 둘레 통행 차단 위치 ① 로그 `[VIGNETTE] material id=<bare uuid>` / `applied to camera of …` / 밤에 `intensity=…` ② 밤(게임 275초 이후)에 화면 가장자리만 어두워지고 **HUD·팝업은 어두워지지 않는지** ③ 모바일·울트라와이드 화면비에서 가장자리까지 덮는지 ④ 비·안개일 때 가장자리 색 변화 ⑤ hunt02·03 몬스터가 흰색(원색)으로 스폰되는지.
+
+### 2026-09-17 [사냥터/맵] 사냥터 2종 경로·소품 전면 재설계
+
+- **배경 (제작자 지시)**: 사냥터를 새로 설계. 기존 장식(가로등·표지판·벤치)은 맵과 어울리지 않으니 재활용하지 말고 새로 찾을 것. 포탈 간 거리가 너무 짧음.
+  - 범위 결정: `field_earth`(hunt01) + `template_field`(hunt02·03 공용) 둘 다. 섬 크기(55×55, `MapRadius` 전역값)는 유지하고 동선으로 거리 확보.
+- **선행 발견**:
+  - 구 배치는 두 포탈이 **같은 중앙 광장 안**(field_earth `(-12,0)`↔`(15,0)`, 27칸)에 있었다.
+  - `template_field` 의 에디터 포탈 `PortalToHunt02` 는 TargetMapName=`hunt02` 가 박혀 있어 **hunt02 안에서는 자기 자신으로 가는 포탈**이었고, hunt03 에서는 도착점이 `(0,0)` 고정이었다. `PortalToRaidLobby`(10,0)는 그 포탈과 5칸 거리에 겹쳐 생성됐다.
+  - 포탈 도착 좌표가 `EnsureHuntingGroundMaps` 에 `(0,0)/(8,0)` 하드코딩, 테스트 모드 스폰도 하드코딩.
+- **조치**:
+  1. **지형** — `scripts/build_hunting_fields.cjs` 신설(기본 미리보기·검증, `--write` 시 기록). L0 물·L2 잔디·L6 물가만 재계산, L1 Soil·L3~L5 불변. 타일 문법은 field_earth 실측으로 재확인(잔디 = 빠진 서브셀 마스크, 물 = 물 있는 서브셀 마스크).
+     - **hunt01 흙 벌판**: 남서 입구 광장 → S자 2칸 대로 → 중앙 교차 광장 → 동쪽 굽이 → 북쪽 초원 → 북동 출구. 샛길 2개(서쪽 공터, 남동 보물상자 포켓). 검은 이슬 웅덩이 5곳, 해안 만 6곳.
+     - **hunt02·03 공용**: 북서 입구 → 중앙 호수를 두르는 순환로 → 남동 출구. 북동·남서 포켓, 작은 연못 3곳, 해안 만 6곳.
+     - 자체 검증: 무효 타일 0 · 물 위 흙 0 · 흙↔물 잔디 간격 ≥2칸 · 수역 2×2 이상 · 포탈/도착점 통행 가능 · 입구→출구 연결(BFS). **포탈 직선거리 hunt01 61.5 / 공용 59.4칸, 최단 보행 87 / 84칸.**
+  2. **포탈 이름 규약** — `Portal`(홈 귀환, 입구) / `PortalBack`(이전 구역, 입구) / `PortalForward`(다음 구역, 반대편 끝). `PortalToHunt02` 는 `PortalForward` 로 개명, template_field 에 `PortalBack` 신설(Furniture_Portal, Scale 2). 두 방향 포탈의 에디터 TargetMapName 은 비워 런타임이 인스턴스별로 채운다.
+  3. **`ResourceSpawner`** — `GetPortalArrivePosition(map, portalName, fallback)` + `PortalArriveOffsetY=-2.5` 신설: 도착점 = 도착 맵의 짝 포탈 위치 바로 앞. 체인 연결을 새 이름으로 교체하고, `EnsureBossLobbyPortals` 는 hunt03 의 `PortalForward` 를 대기실 포탈로 사용.
+  4. **`TestModeConfig.GetResolvedSpawnPosition`** — 사냥터 좌표 하드코딩 제거, `PortalDestinationDataSet.ArriveX/Y` 조회.
+  5. **데이터** — 워프 도착점 hunt01 `(-19,-22)`, hunt02·03 `(-21,19)` / 보물상자 hunt01 `(11,-20)` 남동 포켓, hunt02 `(19,17)` 북동 포켓, hunt03 `(-21,-19)` 남서 포켓.
+  6. **소품** — 구 `F1_*` 4종 철거(구 `Prop_*` 모델은 다른 맵이 쓸 수 있어 파일은 존치). 리소스 검색 → 썸네일 육안 확인으로 헤네시스 톤 공식 `object` 스프라이트 14종을 골라 `Deco_*.model` 신설(`Prop_Signpost` 구성 복제: Transform·Sprite·Trigger(passive)·YSortSprite, Scale 2, 통행 비차단). hunt01 = 덤불·버섯·들꽃·그루터기·통나무·부들·연잎(50개), 공용 = 이끼 바위·마른 덤불·마른 풀·그루터기·부들·연잎(48개, 바위/모래 틴트 양쪽에 어울리는 중립 톤). 광장 모서리·연못가·도로변·초원 격자에 규칙 배치.
+- **검증**:
+  - 오프라인 합성 미리보기(실제 타일·스프라이트 썸네일)로 동선·연못·소품 배치 육안 확인.
+  - `node scripts/check_hunting_fields.cjs` PASS (UUID·path·componentNames·jsonString 객체·레이어 교차 순서·타일 type 0·포탈 설정·소품 모델 인스턴스·Deco 모델 ID·CSV 도착 좌표) — refresh 전후 모두 PASS.
+  - `maker_refresh_workspace` ok · build **Error 0 / Warning 0 / Info 717** (dateTime 18:07:42, `.mlua` 수정 18:07:39~40 직후 빌드 — 이후 refresh 에서 신규 빌드 없음, 규칙 22) · `.ui` 변경 0.
+- **2차 수정 (제작자 확인 피드백 3건)**:
+  1. *"포탈이 왼쪽 아래·오른쪽 위가 아니다 / 웨이포인트 포탈이 가운데 연못에 빠졌다"* — 🔴 **기존 버그**: `ReconstructWorldPlacementsForMap` 2단계가 맵에 배치된 `PlaceableFurniture` 를 부두·배 외엔 전부 `Destroy` 하는데, `Furniture_Portal` 모델이 `PlaceableFurniture` 를 달고 있어 **에디터 포탈이 사냥터 초기화 때마다 삭제**됐다. 이어서 `SpawnFixedPortal` 이 이름 탐색에 실패해 폴백 좌표 `(0,-3)`·`(10,0)`·`(-10,0)` 에 새 포탈을 만들었다(17:02 로그부터 `configured ... at (0, -3)` — 재설계 전부터 에디터 위치가 한 번도 적용되지 않았음). hunt02·03 은 `(0,-3)` 이 호수 한가운데라 포탈이 물에 빠졌다. 대기실은 이 초기화를 거치지 않아 정상이었다. → 2단계에서 `script.PortalGate` 를 가진 엔티티는 보존(유저 설치 포탈은 1단계 gridToEntity 가 정리).
+     - 겸사: 공용 맵을 상하 반전해 **두 맵 모두 왼쪽 아래 입구 → 오른쪽 위 출구**로 통일. 포탈 hunt02·03 `Portal (-23,-20)` / `PortalBack (-18,-20)` / `PortalForward (22,23)`, 워프 도착 `(-21,-23)`, 보물상자 hunt02 `(19,-18)` 남동 포켓 · hunt03 `(-21,18)` 북서 포켓.
+  2. *"프린지가 제대로 안 됐고, 물 근처가 흙일 필요 없다"* — 1차 생성기가 구 해안선 방식(물가 육지 셀의 물 쪽 절반을 L2 에서 비움 + 물 셀 밑 L2 없음)을 따라 물 둘레에 흙 띠가 생겼다. 런타임 `RefreshWaterAreaRect` 의 4단 오버레이 체계대로 **L2 잔디는 흙길·광장 마스크로만 결정**하고, 물 프린지 셀 밑에도 잔디를 깔아 투명부로 잔디가 비치게 수정(L0/L6 마스크→타일명은 런타임 `MaskToWaterTileName`/`MaskToWetRimTileName` 과 동일함을 대조 확인).
+  - 검증(2차): 생성기 자체 검증 오류 0 · 합성 미리보기 육안 · `check_hunting_fields.cjs` PASS(입구=왼쪽 아래·출구=오른쪽 위 단언 추가) · refresh ok · build **Error 0 / Warning 0 / Info 717** (dateTime 18:26:55, `ResourceSpawner.mlua` 수정 18:26:54 직후).
+- **3차 수정 (제작자 피드백: "흙과 잔디 사이 프린지도 제대로 안 됐다")**:
+  - 원인: 생성기 `road()` 가 경계 양옆 2셀만 **셀 전체** 흙으로 칠하고 ½셀 마진을 주지 않았다. 광장(`plaza`)은 마진이 있어 이웃 잔디 셀에 `Grass{dir}` 가 붙었지만, 도로는 이웃이 `FullGrass` 로 남아 **흙길 경계가 프린지 없이 직선으로 잘렸다**. (프린지 타일 15종의 빈 방향은 실제 썸네일을 받아 육안 대조 — 이름↔마스크 대응은 정상이었다.)
+  - 조치: 도로 흙 = 2셀 + 바깥 ½셀 마진(광장과 같은 문법). 물은 L2와 독립 레이어가 됐으므로 흙↔물 간격 검사는 "맞닿음 금지(1칸)"로 완화. `check_hunting_fields.cjs` 에 **흙 홀 ↔ `FullGrass` 직접 접촉 0건** 단언 추가(회귀 방지).
+  - 검증(3차): 생성기 오류 0 · 64px 확대 미리보기로 도로 양측·꺾임·교차부 프린지 육안 · checker PASS(refresh 전후) · refresh ok · `.mlua` 변경 없음(build 로그는 2차 18:26:55 결과 유효).
+  - ⚠️ refresh 시 Maker가 `ui/HUDGroup.ui`·`ui/PopupGroup.ui` 를 재직렬화(18:36:59). 규칙 11 절차로 HEAD 대조: 엔티티 수 402/534 동일·추가/삭제 0, 차이는 엔진 계산 `Position`·기본 `Rotation/ZRotation`·실수 정밀도·`displayOrder` 번호 재부여(형제 상대 순서 변경 0)뿐 → **무해** 판정.
+  - **런타임 검증 보류(제작자 수행)**: ① Maker에서 두 맵 지형·소품 육안(`Invalid layer` 없음, 소품 발밑 피벗·크기, 물가·흙길 프린지) ⑦ 로그 `Portal 'PortalForward' -> ... configured in map hunt01 at (21, 22)` 처럼 **에디터 좌표**가 찍히는지(폴백 `(10, 0)` 이면 실패) ② 워프로 hunt01/02/03 진입 시 입구 광장 도착 ③ hunt01 `PortalForward` → hunt02 `PortalBack` 앞 도착, 역방향도 ④ hunt03 `PortalForward` → 보스 대기실 ⑤ 보물상자 위치 ⑥ 자원(나무·돌)이 소품과 겹쳐 생성되는지 — 소품은 자원 금지 구역에 등록되지 않으므로 잔디 위 겹침 가능.
+
+### 2026-09-17 [전투/버그픽스] 멧돼지 돌진(CHARGE) 타격을 '경로 이동 중 몸통 접촉' 방식으로 교체
+
+- **배경**: 돌진 직후 경로 일부에만 판정이 있는 것처럼 동작. 조준 지점보다 뒤쪽(돌진 끝부분)에 서 있으면 몸이 지나가도 데미지가 없음.
+- **원인 분석** (`MonsterAI.mlua:UpdateCharge` 구형):
+  1. 적중 검사가 `DASH` 단계에만 있었음 → 감속(`DECEL`) 구간에서는 몸이 닿아도 판정 자체가 없음.
+  2. 검사가 "최근접 플레이어 1명의 서버 좌표(점)가 멧돼지 박스 안인가"였고, 통과 시 별도 2.2m 박스를 접촉 중점에 쳤음 → 검출 판정과 실제 타격 판정이 분리됨(히트박스 오프셋 불일치 시 누락).
+  3. 매 프레임 현재 위치만 점검(스윕 없음) → 3배속 이동 중 프레임 사이 통과 가능.
+  4. `ChargeHitDone` 1회 플래그가 돌진 전체에 1명만 허용.
+- **조치**:
+  - `MonsterAI.ChargeSweepHit(prev, cur)` 신설: 직전 프레임 몸통 박스 ∪ 현재 몸통 박스(`GetTouchBox` 실제 콜라이더 기반, AABB 합집합)로 `AttackFast`. `DASH`·`DECEL` 전 구간 매 프레임 호출.
+  - `MonsterMeleeAttack`: `BeginChargeHits()`(돌진 시작 시 초기화) · `DoChargeSweep()` · `OnAttack` 훅에서 적중 플레이어 Id 기록 · `IsAttackTarget`에서 `"charge"` 중복 적중 제외 → 플레이어당 돌진 1회 1타.
+  - 구형 점검사/`ChargeHitDone` 로직 제거.
+  - **2차 조정 (닿기 전 반 타일쯤 먼저 부딪힘 제보)**: 스윕 박스가 접촉 틱용 `TouchMargin`(0.35)을 그대로 포함하고 있었고, 서버 멧돼지 위치가 클라 표시보다 앞서는 지연(돌진 속도 3.2×3.5=11.2m/s)이 겹침. 돌진 판정에서 `TouchMargin`을 빼고 `MonsterAI.ChargeHitMargin`(기본 -0.15, 콜라이더 반폭에 가산) 신설. 멧돼지 판정 반폭 1.6×1.225 → 1.1×0.725. build 17:18:53 Error=0 · Warning=0 · Info=717.
+- **검증**:
+  - `maker_refresh_workspace` (status: ok)
+  - `maker_logs(kind="build")` DateTime 2026-09-17T17:06:45 (refresh 직후 갱신 확인), Error=0 · Warning=0 · Info=717
+  - 런타임 검증 보류(제작자 수행): ① 조준 지점보다 뒤쪽 경로(감속 구간 포함)에서 피격 ② 옆으로 회피 시 미피격 ③ 한 번 돌진에 2회 피격 없음 ④ 네트워크 지연으로 서버 측 플레이어 위치가 늦는 체감 여부
 
 ### 2026-09-16 [전투/버그픽스] 몬스터별 접촉 데미지 차등화(ContactDamage 50% 비례 산출) & 공격·돌진 중 접촉 틱 중단(i-frame 씹힘 원천 방지) & 멧돼지 돌진 공격(CHARGE) 충돌 타격 판정 신설
 

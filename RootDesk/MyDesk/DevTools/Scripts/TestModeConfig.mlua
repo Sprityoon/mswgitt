@@ -10,12 +10,12 @@ script TestModeConfig extends Logic
 	-- =========================================================================
 
 	-- [스위치] 테스트 모드 활성화 여부
-	property boolean EnableTestMode = true
+	property boolean EnableTestMode = false
 
 	-- [목표 맵] 진입할 맵 식별자 (대소문자 무관)
 	--   - "town"           : 마을 광장 (기본 좌표 10, -2)
 	--   - "home"           : 유저 개인 영지 (Home_<UserId>, 기본 좌표 -3, 0)
-	--   - "hunt01"         : 사냥터 1구역 (template_field 기반)
+	--   - "hunt01"         : 사냥터 1구역 (field_earth 기반)
 	--   - "hunt02"         : 사냥터 2구역
 	--   - "hunt03"         : 사냥터 3구역 (체인 종점)
 	--   - "template_field" : 사냥터 1구역 ("hunt01"로 자동 매핑)
@@ -281,12 +281,18 @@ script TestModeConfig extends Logic
 			return Vector2(-3.0, 0.0)
 		elseif mapName == "town" then
 			return Vector2(10.0, -2.0)
-		elseif mapName == "hunt01" then
-			return Vector2(-3.0, 0.0)
-		elseif mapName == "hunt02" then
-			return Vector2(0.0, 0.0)
-		elseif mapName == "hunt03" then
-			return Vector2(0.0, 0.0)
+		end
+
+		-- 사냥터는 워프 목록과 같은 도착점(PortalDestinationDataSet.ArriveX/Y)을 쓴다 — 맵 재설계 시 CSV만 고치면 된다.
+		local ds = _DataService:GetTable("PortalDestinationDataSet")
+		if ds ~= nil then
+			for i = 1, ds:GetRowCount() do
+				if ds:GetCell(i, "MapName") == mapName then
+					local ax = tonumber(ds:GetCell(i, "ArriveX")) or 0
+					local ay = tonumber(ds:GetCell(i, "ArriveY")) or 0
+					return Vector2(ax, ay)
+				end
+			end
 		end
 
 		return Vector2(0.0, 0.0)

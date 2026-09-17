@@ -305,6 +305,7 @@ script MonsterSpawner extends Logic
 											end
 										end
 										sprite.Color = tint
+										if isvalid(mComp) then mComp.BaseTint = tint end
 									end
 
 									log("[SPAWN] Spawned variant monster " .. chosenOpt.modelId .. " at cell (" .. rx .. ", " .. ry .. ") in map " .. mapName .. " (HpMul=" .. chosenOpt.hpMul .. ", AtkMul=" .. chosenOpt.atkMul .. ")")

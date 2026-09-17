@@ -41,6 +41,8 @@ script MonsterAI extends Component
 	property number ChargeDecelDuration = 0.4
 	-- 돌진 단계 최대 지속시간 안전장치(벽 충돌 등으로 목표 거리에 못 미쳐도 이 시간이 지나면 강제 종료).
 	property number ChargeMaxDuration = 2.0
+	-- 돌진 타격 판정 여유(m). 실제 콜라이더 반폭에 더한다. 음수면 몸통보다 좁게(닿기 전에 맞는 느낌 완화).
+	property number ChargeHitMargin = -0.15
 
 	-- LEAP 전용 튜닝(AttackType == "LEAP"일 때만 사용). 크기는 고정, 위치 이동만 사용.
 	-- 예고 구간은 2단계다: 앞부분은 장판이 플레이어를 "추적"하고, 마지막 TelegraphLockLead 초에
@@ -225,7 +227,14 @@ script MonsterAI extends Component
 		if newValue == true then
 			sprite.Color = Color(1.0, 0.55, 0.2, 1.0)
 		else
-			sprite.Color = Color(1.0, 1.0, 1.0, 1.0)
+			-- 예고 종료: 흰색이 아니라 스폰 시 기본 틴트(Monster.BaseTint)로 복귀
+			-- GetMonster()는 ServerOnly 라 클라이언트 콜백에서 직접 조회한다
+			local m = self.Entity:GetComponent("script.Monster")
+			if isvalid(m) then
+				sprite.Color = m.BaseTint
+			else
+				sprite.Color = Color(1.0, 1.0, 1.0, 1.0)
+			end
 		end
 	end
 
@@ -718,6 +727,29 @@ script MonsterAI extends Component
 	end
 
 	@ExecSpace("ServerOnly")
+	method void ChargeSweepHit(Vector2 prev, Vector2 cur)
+		-- 직전 프레임 몸통 박스 ∪ 현재 몸통 박스(축정렬 합집합)로 타격 → 빠른 돌진에도 프레임 사이를 건너뛰지 않는다.
+		-- 박스 크기/오프셋은 접촉 틱과 같은 GetTouchBox(실제 콜라이더 기반)를 쓴다.
+		local atk = self:GetAttack()
+		if not isvalid(atk) then return end
+		local box = self:GetTouchBox()
+		-- 접촉 틱용 여유(TouchMargin)는 돌진엔 과해서 "닿기 전에 부딪힘"이 됐다 → 빼고 ChargeHitMargin 으로 따로 조정.
+		local m = self.TouchMargin
+		if m < 0 then m = 0 end
+		local halfX = box.halfX - m + self.ChargeHitMargin
+		local halfY = box.halfY - m + self.ChargeHitMargin
+		if halfX < 0.1 then halfX = 0.1 end
+		if halfY < 0.1 then halfY = 0.1 end
+		local offX = box.cx - cur.x
+		local offY = box.cy - cur.y
+		local minX = math.min(prev.x, cur.x) + offX - halfX
+		local maxX = math.max(prev.x, cur.x) + offX + halfX
+		local minY = math.min(prev.y, cur.y) + offY - halfY
+		local maxY = math.max(prev.y, cur.y) + offY + halfY
+		atk:DoChargeSweep(Vector2((minX + maxX) * 0.5, (minY + maxY) * 0.5), Vector2(maxX - minX, maxY - minY))
+	end
+
+	@ExecSpace("ServerOnly")
 	method void EndCharge()
 		-- 돌진 종료: 완전 정지 + 회복 쿨 시작(다음 CHARGE까지 AttackCooldown 대기).
 		self:StopMovement()
@@ -756,54 +788,30 @@ script MonsterAI extends Component
 				self.ChargePhase = "DASH"
 				self.StateTimer = self.ChargeMaxDuration
 				self.TelegraphOn = false
-				self._T.ChargeHitDone = false
+				local atk = self:GetAttack()
+				if isvalid(atk) then atk:BeginChargeHits() end
 			end
 			return
 		end
 
 		self.StateTimer = self.StateTimer - delta
 		local cur = self:Pos2D()
+		local prev = self.ChargeLastPos
 		-- MoveToDirection은 같은 프레임에 Transform에 즉시 반영되지 않으므로,
 		-- 직전 프레임 이동 결과를 이번 프레임 시작 시점에 측정해 소진 거리에 반영한다.
-		local movedSinceLast = math.sqrt(self:DistSq(self.ChargeLastPos, cur))
+		local movedSinceLast = math.sqrt(self:DistSq(prev, cur))
 		self.ChargeLastPos = cur
+
+		-- 돌진 접촉 타격: DASH·DECEL 전 구간에서 매 프레임 몸통이 지나간 구간을 판정한다.
+		-- (구형은 DASH 구간에서만, 최근접 1명의 서버 좌표 점검사 후 별도 박스를 쳐서
+		--  감속 구간/경로 끝부분에서는 몸이 닿아도 데미지가 없었다.)
+		self:ChargeSweepHit(prev, cur)
 
 		if self.ChargePhase == "DASH" then
 			self.ChargeDistanceRemaining = self.ChargeDistanceRemaining - movedSinceLast
 			if self.StateTimer <= 0 then
 				self:EndCharge()
 				return
-			end
-
-			-- T102/T103: 돌진 중 최근접 플레이어와의 충돌(타격) 판정 (1회 돌진당 1회 적중)
-			if not self._T.ChargeHitDone then
-				local target = self:FindNearestPlayer()
-				if isvalid(target) then
-					local tp = self:EntityPos2D(target)
-					local box = self:GetTouchBox()
-					local dx = tp.x - box.cx
-					local dy = tp.y - box.cy
-					if dx < 0 then dx = -dx end
-					if dy < 0 then dy = -dy end
-					local atk = self:GetAttack()
-					local attackBoxSize = 2.2
-					if isvalid(atk) and atk.AttackBoxSize > 0 then
-						attackBoxSize = atk.AttackBoxSize
-					end
-					-- 멧돼지 몸체(box) + 플레이어 몸체 반폭(0.35m): 실제 몸이 맞닿는 순간에만 정확하게 들이받기 트리거
-					local hitBoxExtentX = box.halfX + 0.35
-					local hitBoxExtentY = box.halfY + 0.35
-					if dx <= hitBoxExtentX and dy <= hitBoxExtentY then
-						if isvalid(atk) then
-							-- 멧돼지와 플레이어의 실제 접촉 지점을 중심으로 정밀 타격
-							local atkCenter = Vector2((box.cx + tp.x) * 0.5, (box.cy + tp.y) * 0.5)
-							atk:DoAttackBoxAt(atkCenter, Vector2(attackBoxSize, attackBoxSize), "charge")
-							log("[MONSTER][CHARGE] Hit player with dash attack! center=(" .. string.format("%.2f,%.2f", atkCenter.x, atkCenter.y) .. ") size=" .. attackBoxSize)
-						end
-						self._T.ChargeHitDone = true
-						-- 플레이어를 들이받은 후에도 멈추지 않고 목표 거리까지 시원하게 질주하여 통과
-					end
-				end
 			end
 
 			if self.ChargeDistanceRemaining <= 0 then

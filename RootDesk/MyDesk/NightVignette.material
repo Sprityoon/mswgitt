@@ -1,0 +1,36 @@
+{
+  "Id": "",
+  "GameId": "",
+  "EntryKey": "material://b0af0605-f83c-4bd4-96a8-f973cb6efc9a",
+  "ContentType": "x-mod/material",
+  "Content": "",
+  "Usage": 0,
+  "UsePublish": 1,
+  "UseService": 0,
+  "CoreVersion": "26.7.0.0",
+  "StudioVersion": "0.1.0.0",
+  "DynamicLoading": 0,
+  "ContentProto": {
+    "Use": "Json",
+    "Json": {
+      "name": "NightVignette",
+      "id": "b0af0605-f83c-4bd4-96a8-f973cb6efc9a",
+      "shadertype": "Vignette",
+      "CenterPos": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "Intensity": 0.0,
+      "IsRound": false,
+      "Smoothness": 0.4,
+      "VignetteColor": {
+        "r": 0.0,
+        "g": 0.0,
+        "b": 0.0,
+        "a": 1.0
+      },
+      "IsUIMaterial": false,
+      "RequiresUIStencilStateChange": false
+    }
+  }
+}
