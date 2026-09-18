@@ -3371,7 +3371,8 @@ script PlayerController extends Component
 					p.SkillId = skillId
 					p.HitEffectScale = hitEffectScale
 					p.LifeTime = self:SkillNumber(row, "ProjectileLife", 2)
-					p.VisualSize = self:SkillNumber(row, "ProjectileSize", 2)
+					-- ProjectileScale: 그림 배율만(판정 HitSize 와 분리). 공란이면 기존처럼 ProjectileSize 를 쓴다.
+					p.VisualSize = self:SkillNumber(row, "ProjectileScale", self:SkillNumber(row, "ProjectileSize", 2))
 					p.HitSize = self:SkillNumber(row, "ProjectileSize", 1.6)
 					p.PierceCount = math.floor(self:SkillNumber(row, "PierceCount", 1))
 					p.SplashSize = self:SkillNumber(row, "SplashSize", 0)

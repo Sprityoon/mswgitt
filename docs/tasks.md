@@ -19,6 +19,7 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `PlayerController.mlua` · `SkillDataSet.csv` · `ResourceSpawner.mlua` | **[전투/드롭] 주먹도끼 던지기 투사체 속도·크기 보정(`ProjectileScale` 컬럼 신설) & 자연 스폰 돌과 채굴 돌 드롭 크기 통일** (2026-09-18) — 아래 참조 |
 | `QuestDataSet.csv` · `QuestConditionDataSet.csv` · `StoryDialogDataSet.csv` · `TestModeConfig.mlua` | **[스토리/퀘스트] 4대 직업(트래퍼/배틀스미스/알케미스트/와일드키퍼) 전직 시험 퀘스트명·조건 설명·NPC 대사 전면 정합(슬라임킹 공통 관문 및 보상 연동) & 테스트 모드 해제** (2026-09-18) — 아래 참조 |
 | `UIHUDController.mlua` · `WeatherDataSet.csv` | **[환경/날씨] 밤+비 과암 해소 — 비네트는 밤 전용(`WeatherVignetteScale` 5→0) & 비·안개는 엔진 AreaParticle 프리셋(Rain / FogCalm)으로 분리 표시** (2026-09-18) — 아래 참조 |
 | `PlayerController.mlua` · `SkillDataSet.csv` | **[스킬/트래퍼] 사냥꾼의 덫 연출·사운드를 파워 스트라이크와 분리(조용한 설치음·먼지 / 발동 시 '타탁' 금속음·올가미 덫 이펙트) & 피해 상향(0.5→2.5배)** (2026-09-18) — 아래 참조 |
@@ -152,6 +153,15 @@
      - `EnableTestMode = false`로 변경하여 정규 타이틀/슬롯 선택 모드로 전환.
 - **검증**: CSV 컬럼 수 무결성 검증 100% 통과 · `maker_refresh_workspace` ok · build **Error 0 / Warning 0 / Info 720** (dateTime 2026-09-18T17:37:11 정합) · 신규 `.mlua` 없음.
 - **런타임 검증 보류(제작자 수행)**: ① 타이틀 화면 정상 노출 및 캐릭터 슬롯 진입 ② 4대 직업 멘토에게 301~333 수주 시 수정된 퀘스트명·대사 출력 ③ 슬라임킹 처치 및 전직 시험 완료 시 전직 전용 무기 정상 수여.
+
+### 2026-09-18 [전투/드롭] 주먹도끼 투사체 속도·크기 & 돌 드롭 크기 통일
+
+- **배경 (제작자 제보)**: ① 주먹도끼 던지기 투사체가 돌 → 주먹도끼 그림으로 바뀐 뒤 체감 속도가 많이 느려졌고 너무 크다 ② 자연 스폰 돌 아이템과 채굴해서 얻는 돌 아이템 크기가 다르다.
+- **① 원인**: 78bacdb(09-09)에서 `ProjectileRUID` 가 20×24px 돌 스프라이트(`14f2ab9e…`) → 아바타 아이템 썸네일(`thumbnail://384de1d5…`)로 바뀌었고, c0a06b2(09-12)에서 `Projectile.VisualSize`(기본 2)가 Scale 로 적용되기 시작했다. 속도 기본값 6 은 이력상 불변 — 큰 그림이 같은 속도로 날아가 상대적으로 느려 보인 것. `ProjectileSize` 하나가 그림(VisualSize)과 판정(HitSize)을 함께 정해 그림만 줄일 수 없었다.
+- **① 조치**: `SkillDataSet.ProjectileScale` 컬럼 신설(그림 배율 전용, 공란이면 기존대로 `ProjectileSize`) — `ExecuteProjectileSkill` 이 `VisualSize` 에만 사용. `hand_axe_throw`: `ProjectileScale` 1.0(기존 2 → 절반), `ProjectileSpeed` 6 → **11**, 사거리 유지 위해 `ProjectileLife` 2 → **1.1**(12 → 12.1 유닛). 판정 크기(HitSize 1.6)는 그대로. 기간틱 락·쇄석 흩뿌리기는 미변경.
+- **② 원인·조치**: 자연 스폰 돌(`ResourceSpawner` AroundItem_Stone)만 `Scale = 3.0` 하드코딩, 채굴 드롭은 `TileDurabilityManager.DropItemScale`(4.0). → 자연 스폰도 `_TileDurabilityManager.DropItemScale` 을 쓰도록 단일 소스화.
+- **검증**: refresh ok · build **Error 0 / Warning 0 / Info 720** (dateTime 19:56:46, 현재 19:57 정합) · mlua 진단 errors=0 · CSV 66열 정합.
+- **런타임 검증 보류(제작자 수행)**: ① 주먹도끼 투사체 크기·속도 체감 ② 사거리가 이전과 비슷한지 ③ 명중 판정이 이전과 같은지 ④ 새로 스폰되는 자연 돌과 채굴 드롭 돌 크기가 같은지(이미 떠 있는 자연 돌은 재스폰 후 반영).
 
 ### 2026-09-18 [환경/날씨] 비네트 밤 전용화 & 비·안개 파티클 분리
 

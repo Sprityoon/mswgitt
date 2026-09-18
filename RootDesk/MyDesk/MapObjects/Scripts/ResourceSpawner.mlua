@@ -2644,7 +2644,11 @@ script ResourceSpawner extends Logic
 								if isvalid(drop) then
 									local dropTransform = drop.TransformComponent
 									if isvalid(dropTransform) then
-										dropTransform.Scale = Vector3(3.0, 3.0, 1)
+										-- 채굴 드롭과 같은 크기여야 한다 — 드롭 배율의 단일 소스는 TileDurabilityManager.DropItemScale
+										-- (2026-09-18: 여기만 3.0 하드코딩이라 자연 스폰 돌이 채굴 돌(4.0)보다 작게 보였다).
+										local s = 4.0
+										if _TileDurabilityManager ~= nil then s = _TileDurabilityManager.DropItemScale end
+										dropTransform.Scale = Vector3(s, s, 1)
 									end
 									
 									local idc = drop:GetComponent("script.itemreact")
