@@ -33,4 +33,9 @@ script ActionConditionData_Gather extends ActionConditionData
 		return self:SnapshotDexItemCount(userEntity, self.Target)
 	end
 
+	method integer GetHeldValue(Entity userEntity, integer condValue)
+		-- CountMode=Have: 현재 인벤토리 보유 수량.
+		return self:HeldItemCount(userEntity, self.Target)
+	end
+
 end

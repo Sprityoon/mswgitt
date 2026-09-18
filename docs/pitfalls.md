@@ -67,6 +67,9 @@
 | [53](#53-rpc-메서드-본문의---type-사용자-타입-주석은-lea-1118-빌드-에러다) | RPC 본문에 `---@type <사용자스크립트>` 금지 | build Error 1건 (같은 주석이 일반 메서드에선 무사) |
 | [54](#54-사냥터-초기화는-맵에-배치된-placeablefurniture를-지운다--가구-모델-기반-고정-엔티티는-예외-처리) | 사냥터 초기화가 배치 가구를 삭제 → 에디터 포탈 소실 | 포탈이 에디터 위치 대신 `(0,-3)`/`(10,0)` 에 생성 (에러 0) |
 | [55](#55-getmaterialidbyname-은-material-접두어를-붙여-돌려줄-수-있다--벗기고-changematerial-에-넘긴다) | `GetMaterialIdByName` 반환값에 `material://` 접두어 | 머티리얼 적용 로그는 정상인데 효과가 안 보임 |
+| [56](#56-퀘스트-진행도와-보고-조건이-서로-다른-소스를-보면-1010-인데-제출-불가-가-된다) | 수집 퀘스트 진행도와 `ConsumeItems` 가 다른 소스 | 10/10 표시인데 NPC 보고 실패 · 사유 미노출 |
+| [57](#57-맵-이동하면-areaparticlecomponent-재생이-멈춘다--설정값은-그대로라-켜져-있는데-안-보인다) | 맵 이동 후 `AreaParticleComponent` `IsEmitting=false` | 날씨 "비"인데 빗줄기 없음 · 첫 입자 적갈색 |
+| [58](#58-월드-시간-로드getandwait-전에-입장한-유저는-틀린-시간을-받는다) | 월드 시간 로드 전 `SyncTimeClient` | 입장 직후 밤 비네트가 한 번 튐 |
 
 ---
 
@@ -679,6 +682,35 @@ CSV 파일의 설명(`Description` 등) 텍스트에 문장 부호 쉼표(`,`)�
 
 - ✅ 받은 값이 `material://` 로 시작하면 `string.sub(id, 12)` 로 벗긴다 (`UIHUDController.InitTimeUI` 선례).
 - ✅ 머티리얼 ID 는 반드시 `log()` 로 원문을 남긴다 — 이 함정은 로그 없이는 보이지 않는다.
+
+### 56. 퀘스트 진행도와 보고 조건이 서로 다른 소스를 보면 "10/10 인데 제출 불가" 가 된다
+
+`QuestConditionDataSet.CountMode` 의 `Action` 은 **수락 이후 행동 횟수**를, `State` 는 **도감 누적**을 센다. 둘 다 *단조 증가* 이며 **현재 인벤 보유량과 무관**하다. 반면 보고는 `QuestDataSet.ConsumeItems` 로 **인벤 실보유**를 회수한다.
+
+수집 퀘스트를 `Action` 으로 두면 채집 후 그 아이템을 제작·요리 등으로 소비하는 순간 두 값이 갈라진다. 진행도는 10/10 으로 굳어 있는데 `TryConsumeItems` 가 실패하고, `VillagerDialog` 는 완료 분기 대신 진행 중 대사로 조용히 되돌아가 **플레이어가 이유를 알 수 없다**.
+
+- ✅ **보고 시 물건을 넘기는(= `ConsumeItems` 가 있는) 수집 조건은 `CountMode=Have`** 로 둔다. 진행도를 `PlayerInventory:GetItemCount` 에서 끌어오므로 보유량이 줄면 진행도도 내려가 표시와 제출 가능 여부가 구조적으로 어긋날 수 없다.
+- ✅ `Have` 조건은 `ActionEvent` 누적(`CheckAndSetValue`)에서 **반드시 제외**한다 — 안 하면 보유량 + 행동 누적으로 이중 집계된다.
+- ✅ 보유량 재평가는 `PlayerInventory.AddItem` / `RemoveItem` **성공 경로 전부**와 `PersistenceManager` 인벤 복원 직후에 걸어야 한다(퀘스트 로드가 인벤 복원보다 먼저 끝나는 순서에서 0 으로 남는다).
+- ⚠️ 재평가 → 자동 완료 → `ConsumeItems` 회수 → 다시 재평가로 **재진입**한다. 가드 플래그로 접고 pending 을 한 번 더 돌려, 같은 아이템을 쓰는 다른 진행 중 퀘스트의 표시도 같은 시점에 내려가게 한다.
+- ⚠️ `Kill` / `Warp` / `LearnSkill` 처럼 보유량 개념이 없는 조건은 `Have` 대상이 아니다 — `GetHeldValue` 가 `nil` 을 돌려주고 재평가에서 건너뛴다.
+
+### 57. 맵 이동하면 `AreaParticleComponent` 재생이 멈춘다 — 설정값은 그대로라 "켜져 있는데 안 보인다"
+
+2026-09-18 Play 실측: 플레이어 자식으로 붙인 날씨 파티클(Rain)이 입장 직후 워프(`MoveToMapPosition`) 뒤에 `ParticleType`·`Color`·`AreaSize`·`Enable` 은 전부 정상인데 **`IsEmitting=false`** 로 멈춰 있었다. 날씨 표시는 "비"인데 빗줄기가 없다. `Play()` 를 다시 부르면 즉시 살아난다.
+
+- ✅ 켜져 있어야 하는 이미터는 주기적으로 `IsEmitting` 을 보고 멈췄으면 `Play()` (`UIHUDController.ResumeWeatherEmitter` 선례).
+- ✅ 맵에 고정한 이미터(안개 격자)는 맵이 바뀌면 전부 새로 만든다.
+- ⚠️ 같은 프레임에 `Color` 를 바꾸고 켜서 `Play()`(+`Prewarm`) 하면 **엔진 기본색 `Color(0.5,0.25,0.25)`(적갈색)** 입자가 먼저 채워진다 — 값은 꺼진 상태에서 넣고 다음 틱에 켠다.
+- ⚠️ 안개 프리셋(`FogCalm`/`FogHeavy`/`FogLively`)은 `AreaSize` 전체가 아니라 **이미터 중심 근처**에서만 생성된다(Rain 은 AreaSize 전체) — 화면을 덮으려면 격자로 여러 개 둔다.
+- ⚠️ MCP 스크린샷에는 카메라 머티리얼(비네트) 후처리가 찍히지 않는다 — 비네트는 로그/`CameraComponent.MaterialId` 로 검증.
+
+### 58. 월드 시간 로드(`GetAndWait`) 전에 입장한 유저는 틀린 시간을 받는다
+
+`PersistenceManager.OnBeginPlay` 가 `UserEnterEvent` 를 먼저 연결하고 `LoadWorldTime`(저장소 `GetAndWait`)을 기다린다. 그 사이 `OnUserEnter` 가 `SyncTimeClient` 를 보내면 저장값이 빠진 `ServerElapsedSeconds` 만의 시간이 가서, 입장 직후 밤 비네트가 한 번 튀었다(실측 night 0.44 → 1.00).
+
+- ✅ `WorldTimeLoaded` 플래그 — 로드 전 입장 유저에게는 보내지 않고, 로드 직후 `SyncTimeBroadcast()` 로 한 번에 보낸다.
+- ✅ 클라는 동기화 전(`ClientAccumulatedTime <= 0`) 밤 비네트를 적용하지 않는다.
 
 ## 관련 문서
 

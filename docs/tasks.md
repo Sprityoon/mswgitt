@@ -19,6 +19,10 @@
 
 ## 1. 진행 중 (워킹 트리 미커밋)
 
+| `QuestDataSet.csv` · `QuestConditionDataSet.csv` · `StoryDialogDataSet.csv` · `TestModeConfig.mlua` | **[스토리/퀘스트] 4대 직업(트래퍼/배틀스미스/알케미스트/와일드키퍼) 전직 시험 퀘스트명·조건 설명·NPC 대사 전면 정합(슬라임킹 공통 관문 및 보상 연동) & 테스트 모드 해제** (2026-09-18) — 아래 참조 |
+| `UIHUDController.mlua` · `WeatherDataSet.csv` | **[환경/날씨] 밤+비 과암 해소 — 비네트는 밤 전용(`WeatherVignetteScale` 5→0) & 비·안개는 엔진 AreaParticle 프리셋(Rain / FogCalm)으로 분리 표시** (2026-09-18) — 아래 참조 |
+| `PlayerController.mlua` · `SkillDataSet.csv` | **[스킬/트래퍼] 사냥꾼의 덫 연출·사운드를 파워 스트라이크와 분리(조용한 설치음·먼지 / 발동 시 '타탁' 금속음·올가미 덫 이펙트) & 피해 상향(0.5→2.5배)** (2026-09-18) — 아래 참조 |
+| `QuestConditionData.mlua` · `ActionConditionData(._Gather/_Craft/_Smelt).mlua` · `UserQuestData.mlua` · `PlayerQuest.mlua` · `PlayerInventory.mlua` · `PersistenceManager.mlua` · `VillagerDialog.mlua` · `QuestConditionDataSet.csv` | **[퀘스트/버그픽스] 수집 퀘스트 진행도를 `CountMode=Have`(현재 보유량 기준)로 처리하는 3번째 집계 모드 신설 — 채집 *행동* 누적과 인벤 실보유가 어긋나 10/10 표시인데 제출 불가였던 결함 해소 & 인벤 변동(Add/Remove/로드 복원) 시 진행도 재평가 & 제출 물품 부족 시 NPC 대사로 부족분 안내** (2026-09-18) — 아래 참조 |
 | `NightVignette.material`(신규) · `UIHUDController.mlua` · `ResourceOccupiedArea.mlua` · `ResourceSpawner.mlua` · `Big Stone 1/2.model` · `TestModeConfig.mlua` · `BiomeDataSet.csv` · `Monster.mlua` | **[환경/버그픽스] 밤·날씨 카메라 비네트(Screen Vignette) 머티리얼 적용(UI 침범 차단) & Big Stone 피벗 정합(좌상단 피벗 오프셋 일치) & 바이옴 틴트 정리 & 테스트 모드 해제** (2026-09-17 ⚖️ 확정) — 아래 참조 |
 | `map/field_earth.map` · `map/template_field.map` · `Deco_*.model`(신규 14) · `ResourceSpawner.mlua` · `TestModeConfig.mlua` · `PortalDestinationDataSet.csv` · `TreasureChestSpawnDataSet.csv` · `scripts/build_hunting_fields.cjs`(신규) · `scripts/check_hunting_fields.cjs`(신규, 구 `check_field_earth.cjs` 대체) | **[사냥터/맵] hunt01(field_earth)·hunt02/03(template_field) 경로 전면 재설계 — 입구·출구 포탈을 대각 반대편 끝으로(직선 27→60칸) & 구 장식 전량 철거 후 공식 object 스프라이트 소품 14종 신설 & 포탈 이름 규약·도착점 자동 계산** (2026-09-17) — 아래 참조 |
 | `MonsterAI.mlua` · `MonsterMeleeAttack.mlua` | **[전투/버그픽스] 멧돼지 돌진(CHARGE) 타격을 '경로 이동 중 몸통 접촉' 방식으로 교체 — DECEL 구간 판정 누락 해소 & 프레임 스윕 박스 & 플레이어당 1회 적중** (2026-09-17) — 아래 참조 |
@@ -125,6 +129,79 @@
 | 데이터셋 + `ui/PopupGroup.ui`·`HUDGroup.ui` + UI 컨트롤러 | **한글화 1차** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
+
+### 2026-09-18 [스토리/퀘스트] 4대 직업 전직 시험 퀘스트명·조건 설명·NPC 대사 전면 정합 & 테스트 모드 해제
+
+- **배경 (제작자 제보)**: 사냥꾼 퀘스트에서 노점상 마리가 실제 조건(멧돼지 사냥 + 슬라임킹 처치)과 무관하게 "주먹도끼를 깎아오라"고 하는 등 문맥이 어색하고, 퀘스트명(`멧돼지의 빈틈`, `풀로 엮는 사냥 준비`)도 어색함. 다른 직업 퀘스트도 전반적인 점검·수정 필요.
+- **원인**:
+  1. 과거 퀘스트 완료 보상 아이템(주먹도끼 20개, 닭 티켓과 당근 씨앗 등)이 대사 작성 시 요구 아이템으로 오인되어 "만들어 와라", "구해와라" 형태로 작성됨.
+  2. 전직 시험 4종 공통 관문인 **슬라임킹 처치 및 대형 슬라임 젤리 1개 제출**이 대사 및 일부 퀘스트 설명에 누락되어 있었음.
+  3. `QuestConditionDataSet.csv`의 조건명(`Description`)에 퀘스트명이 그대로 복붙되어 UI 목표창에 `[ ] 멧돼지의 빈틈 0/3` 등으로 노출됨.
+- **조치**:
+  1. **퀘스트명 및 설명 정비 (`QuestDataSet.csv`)**:
+     - 트래퍼: 301 `올가미를 엮을 질긴 풀`, 302 `사냥꾼의 시험: 거대한 표적`, 303 `트래퍼의 실전: 사냥꾼의 덫`.
+     - 배틀스미스: 311 `화로를 지필 땔감`(모루 달군다는 오류 수정), 312 `배틀스미스의 시험: 단단함을 부수는 힘`, 313 `배틀스미스의 실전: 갑주 파쇄`.
+     - 알케미스트: 321 `비전 촉매가 될 표본`, 322 `알케미스트의 시험: 농축된 마나의 핵`, 323 `알케미스트의 실전: 산성 포션`.
+     - 와일드키퍼: 331 `가축들을 위한 푹신한 보금자리`, 332 `와일드키퍼의 시험: 사나워진 벌판의 안식`, 333 `와일드키퍼의 실전: 야생의 호루라기`.
+     - 상세 설명 및 진행 안내문(조사 오타 포함) 전수 정비.
+  2. **UI 목표 텍스트 정비 (`QuestConditionDataSet.csv`)**:
+     - 301~333 조건 Description을 `멧돼지 3마리 처치`, `슬라임킹 대형 젤리 확보` 등 직관적 행동 지침으로 변경.
+  3. **NPC 대사 전면 수정 (`StoryDialogDataSet.csv`)**:
+     - 마리(트래퍼), 로체(배틀스미스), 엘렌(알케미스트), 토리(와일드키퍼)의 기초/전직시험 수주·진행·완료 대사를 실제 요구 조건(몬스터 처치, 채광, 슬라임킹 대형 젤리) 및 지급 보상에 부합하도록 수정.
+  4. **테스트 모드 해제 (`TestModeConfig.mlua`)**:
+     - `EnableTestMode = false`로 변경하여 정규 타이틀/슬롯 선택 모드로 전환.
+- **검증**: CSV 컬럼 수 무결성 검증 100% 통과 · `maker_refresh_workspace` ok · build **Error 0 / Warning 0 / Info 720** (dateTime 2026-09-18T17:37:11 정합) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 타이틀 화면 정상 노출 및 캐릭터 슬롯 진입 ② 4대 직업 멘토에게 301~333 수주 시 수정된 퀘스트명·대사 출력 ③ 슬라임킹 처치 및 전직 시험 완료 시 전직 전용 무기 정상 수여.
+
+### 2026-09-18 [환경/날씨] 비네트 밤 전용화 & 비·안개 파티클 분리
+
+- **배경 (제작자 제보)**: 밤에 비가 겹치면 너무 어두워진다 → 날씨별 이펙트를 따로 주는 편이 낫다.
+- **원인**: `ApplyEnvironmentVignette` 가 `밤×0.75 + 날씨알파×5`(비 0.30 · 안개 0.35)를 합산해 상한 0.9 까지 가장자리를 덮었다. 날씨 표현 수단이 비네트뿐이라 밤과 겹치면 과암.
+- **조치**:
+  1. `UIHUDController.WeatherVignetteScale` 5 → **0** — 비네트는 밤만 담당(프로퍼티는 유지, HUDGroup.ui 직렬화 값 없음을 UIBuilder 로 확인).
+  2. **날씨 파티클** `UpdateWeatherParticle(weatherId)` 신설 — `UpdateTimeUI`(10Hz) 끝에서 호출. 엔진 내장 모델 `"areaparticle"`(msw-general `AreaParticle.model` 의 model_id)을 클라에서 로컬 플레이어 자식으로 스폰 → `AreaParticleComponent` 에 데이터 적용. 날씨가 바뀌거나 파티클이 사라졌을 때(맵 이동 등)만 재적용. `SortingLayer = _RenderLayers.EntityLayer` · `OrderInLayer = WeatherParticleOrder(30000)` 로 월드 최상단·UI 아래. 영역 `WeatherParticleArea = (24,14)`.
+  3. **`WeatherDataSet.csv` 컬럼 신설**: `ParticleType`(AreaParticleType 이름) · `ParticleColor`(r|g|b|a) · `ParticleCount` · `ParticleSpeed` · `ParticleSize`. clear=None, rain=`Rain`(0.75|0.85|1.0|0.6), fog=`FogCalm`(0.85|0.88|0.9|0.45), 배율 전부 1.
+  4. 로그: `[WEATHER-FX] spawned under …` / `on weather=… type=…` / `off weather=…` / 실패 시 `[WEATHER-FX] areaparticle spawn failed`(1회).
+- **검증**: refresh ok · build **Error 0 / Warning 0 / Info 720** (dateTime 18:10:57, 현재 18:11 정합) · 신규 `.mlua` 없음.
+- **미확정 가정 (Play 로 확인 필요)**: 내장 model id `"areaparticle"` 로 클라 스폰이 되는지(`"uitext"`/`"uisprite"` 선례 기반) — 실패 로그가 뜨면 `Models/Particles/WeatherParticle.model` 을 ModelBuilder 로 만들어 교체. 플레이어 자식으로 붙인 파티클이 맵 이동 후에도 유지·재생성되는지.
+- **후속 (2026-09-18) — 테스트 모드 확인 키**: `TestModeConfig` 에 **F10 날씨 순환**(WeatherDataSet 행 순서, `WeatherManager.ApplyWeatherFromRow` 정식 경로 · 정식 추첨 타이머를 멈추고 `TestWeatherHoldSeconds`=600초 뒤 재추첨) / **F11 낮↔밤 전환**(`PersistenceManager.AccumulatedTime` 을 하루 내 400초(한밤) 또는 100초(한낮)로 옮기고 `SyncTimeBroadcast`) 추가. 키 목록 HUD·로그 문구 갱신. ⚠️ **`EnableTestMode = true` 로 켜 둠** — 출시 전 false 로 되돌릴 것. F11 은 공유 월드 시간을 옮기고 30초 뒤 저장된다. 검증: refresh ok · build Error 0 / Warning 0 / Info 720 (dateTime 18:15:53, 현재 18:15 정합).
+- **후속 (2026-09-18) — 안개 프리셋 교체 (에이전트 Play 검증, 제작자 지시)**: 제작자 확인 "비는 괜찮은데 안개는 가운데만 살짝 뿌옇다". Play 에서 `maker_execute_script` 로 AreaParticle 값을 직접 바꿔 캡처 비교 — FogCalm(배율 1, 알파 0.45)은 거의 안 보임 / FogLively(3·2·0.8)는 옅고 성김 / **FogHeavy(3·2·0.8)는 화면 전체에 안개 뭉치가 고르게 퍼짐** / FogHeavy(4·2.5·0.85)는 전체가 우윳빛. → `WeatherDataSet.fog` = `FogHeavy`, `0.9|0.92|0.95|0.8`, Count 3, Speed 1, Size 2.5. refresh 후 재Play: F10 두 번 → `[WEATHER-FX] on weather=fog type=FogHeavy`, F11 → `[TESTMODE] time 225 -> 400.0 (night=true)` + `[VIGNETTE] intensity=0.75 night=1.00`(날씨 기여 0 확인) — 캡처상 안개가 화면 전체를 덮고 HUD 는 가리지 않음. 내장 모델 `"areaparticle"` 클라 스폰 성공(`[WEATHER-FX] spawned under …`). ⚠️ **MCP 스크린샷에는 카메라 비네트(머티리얼 후처리)가 찍히지 않았다** — 로그로 0.75 적용은 확인했으나 밤+안개 체감 밝기는 제작자 화면에서 확인 필요.
+- **후속 (2026-09-18) — 전체 안개 막(haze) 신설**: 제작자 확인 "FogHeavy 도 가운데 쪽만 깔려 어색하다 → 전체적으로 뿌옇게". 파티클 영역 `WeatherParticleArea` 24×14 → **40×24**(화면보다 좁아 가운데 몰림 추정). **`ApplyWeatherHaze` 신설** — 공식 순백 단색 스프라이트 `34933a8d…`(100×100, 픽셀 전량 (255,255,255,255) 확인)를 내장 모델 `"mapobject"` 로 클라 스폰해 로컬 플레이어 자식으로 붙이고 Scale `WeatherHazeSize`=60×36 유닛, `OrderInLayer = WeatherParticleOrder-1`(파티클 바로 아래·UI 아래), 색 = `WeatherDataSet.HazeColor`(신규 컬럼, 알파 0 이면 끔). 데이터: fog `HazeColor=0.88|0.9|0.93|0.4`, 안개 파티클은 흐름만 남기게 알파 0.8→0.45·개수 3→2. clear/rain 은 공란(비는 제작자 OK 상태 유지). 로그 `[WEATHER-FX] haze color=…` / 실패 시 `haze spawn failed`. 검증: refresh ok · build Error 0 / Warning 0 / Info 720 (dateTime 18:56:51, 현재 18:57 정합) · mlua 진단 errors=0. **런타임 검증 보류(제작자 수행)** — `"mapobject"` 내장 ID 스폰 여부는 미확인(`"areaparticle"` 은 확인됨).
+- **후속 (2026-09-18) — 안개 파티클 철거 (⚖️ 제작자 결정)**: "안개 파티클이 계속 어색하다 — 없애자". `WeatherDataSet.fog` 의 `ParticleType=None`(Particle* 값 공란), 안개는 전체 막(`HazeColor=0.88|0.9|0.93|0.4`)만으로 표현. 코드 변경 없음(None 이면 파티클 엔티티 Enable=false, 막은 그 전에 적용). 비 파티클은 유지.
+- **후속 (2026-09-18) — 안개 파티클 월드 고정 격자로 재도입**: 제작자 원인 규명 — "Rain 은 AreaSize 전체에 뿌려지지만 Fog 프리셋은 이미터(플레이어) 중심에서만 생성된다. 안개는 비처럼 계속 움직이는 요소가 아니다". 조치: `WeatherDataSet.ParticleLayout` 컬럼 신설 — `Follow`(비, 기존: 플레이어 자식 1개) / `World`(안개). World 는 `MaintainWeatherGrid` 가 **맵 엔티티 자식으로 고정된 격자 이미터**를 플레이어 칸 기준 (2r+1)² 칸에 하나씩 둔다(`WeatherGridCell`=10×8 유닛, `WeatherGridRadius`=2×2 → 25개, 각 AreaSize=칸 크기). 칸이 바뀔 때만 멀어진 칸 제거·새 칸 추가(Prewarm) → 플레이어가 걸어도 안개는 제자리. 맵 이동·날씨 변경 시 격자 전체 재생성. 로직 분리: `ApplyWeatherConfig`(날씨 변경 1회) / `ConfigureWeatherEmitter`(공용 설정) / `MaintainWeatherGrid` / `ClearWeatherGrid`. 데이터: fog = `FogCalm`, `0.9|0.92|0.95|0.6`, Count 1, **Speed 0.3**(느리게), Size 1.5, `HazeColor` 알파 0.4→0.25(격자 안개와 합산). 로그 `[WEATHER-FX] … layout=World` / `grid center=x,y added=n`. 검증: refresh ok · build Error 0 / Warning 0 / Info 720 (dateTime 19:12:32, 현재 19:12 정합). **런타임 검증 보류(제작자 수행)**.
+- **후속 (2026-09-18) — 날씨 전환 시 적갈색 첫 렌더**: 제작자 제보 "비·안개 모두 처음에 적갈색이 렌더됐다가 바뀐다". 추정 원인: `AreaParticleComponent.Color` 엔진 기본값이 `Color(0.5,0.25,0.25,1)`(적갈색, `.d.mlua` 28행)이고, `ConfigureWeatherEmitter` 가 같은 프레임에 값 변경 → Enable → `Play()`(+Prewarm) 하면서 새 색 반영 전 기본색 입자가 먼저 채워진 것. 조치: 값은 꺼진 상태에서 모두 설정 + `PlayOnEnable=false`, **0.1초 뒤 Enable+Play**. 그 사이 날씨가 또 바뀌면 `_T.WeatherCfgGen` 세대 번호로 예약 무효화(`ApplyWeatherConfig` 진입 시 +1). 검증: refresh ok · build Error 0 / Warning 0 / Info 720 (dateTime 19:14:35, 현재 19:14 정합). **런타임 검증 보류(제작자 수행)** — 원인은 기본색 일치로 추정, 실측 미확인.
+- **후속 (2026-09-18) — 입장 직후 날씨·밤 미적용 (에이전트 Play 검증, 제작자 지시)**: 제작자 제보 "처음 입장하자마자 비/안개가 제대로 적용 안 되는 경우". Play 실측: 입장 시 비가 뽑힌 세션에서 설정·재생이 워프(→hunt01) **전**에 끝났고, 워프 뒤 파티클은 설정값 정상·`Enable=true` 인데 **`IsEmitting=false`** → 빗줄기 없음(캡처 확인). `Play()` 재호출로 즉시 복구 확인. 조치 ① `ResumeWeatherEmitter` — Follow 이미터·격자 이미터가 켜져 있는데 멈췄으면 매 틱 `Play()` + 로그 `[WEATHER-FX] re-play … (emitting stopped)` ② 밤: 입장 직후 비네트가 `night 0.44 → 1.00` 으로 튐 — `PersistenceManager` 가 월드 시간 로드(`GetAndWait`) 전에 입장 유저에게 임시 시간을 보냄 → `WorldTimeLoaded` 플래그(로드 전 `OnUserEnter` 는 동기화 생략, 로드 직후 `SyncTimeBroadcast`) + 클라 `ClientAccumulatedTime<=0` 이면 밤 0. **재검증(Play)**: 비+워프(town→hunt01) → `re-play WeatherParticle` 후 `IsEmitting=true`·빗줄기 캡처 확인 / 안개+워프(hunt01→town→hunt01) → 맵마다 격자 25개 재생성·전부 emitting, 막은 새 맵에 따라감 / 재시작 입장(안개 롤) → 비네트 첫 값 `intensity=0.00`(튐 없음), 시간 로드 로그 이후 워프, 격자 재생성 / F11 밤+안개 → 격자 25 emitting·막 유지·비네트 0.75. 참고: town 에서 안개 막(흰색 알파 0.25)은 밝은 베이지 바닥 위라 캡처상 거의 구분 안 됨(빨강 테스트로 전체 덮음은 확인) — 필요 시 `HazeColor` 를 약간 회청색·알파↑로. pitfalls 규칙 57·58 추가. 빌드: refresh ok · build Error 0 / Warning 0 / Info 720 (dateTime 19:23:57, 현재 19:23 정합).
+- **런타임 검증 보류(제작자 수행)**: ① 비 오는 밤이 맑은 밤과 같은 밝기인지 ② 비=빗줄기, 안개=옅은 안개가 화면 전체를 덮는지(24×14 영역이 화면보다 작으면 가장자리 공백) ③ 파티클이 HUD·팝업 위로 올라오지 않는지 ④ 세기·색은 `WeatherDataSet` 의 Particle* 컬럼으로 조정.
+
+### 2026-09-18 [스킬/트래퍼] 사냥꾼의 덫 연출·사운드 분리 & 피해 상향
+
+- **배경 (제작자 제보)**: 덫 설치의 사운드·이펙트가 강타(파워 스트라이크)와 똑같아 어색함. 조용한 설치음 + 작동 시 '타탁' 소리 필요, 이펙트 재선정, 피해가 너무 약함.
+- **원인**: `hunter_trap` 행이 `power_strike` 의 `EffectRUID`/`SoundRUID` 를 그대로 복사해 쓰고 있었고, 덫 발동 시점에는 전용 사운드 경로 자체가 없었다(`TickSkillAreas` 는 Trap 의 EffectRUID 반복 재생만 막음).
+- **조치**:
+  1. **`SkillDataSet.csv` 에 `TriggerSoundRUID` 컬럼 신설**(맨 끝, 전 행 공란 추가 — 64열 정합 확인). 덫 외 스킬은 영향 없음.
+  2. **`PlayerController.TickSkillAreas`** — Trap 이 1마리 이상 적중해 소멸하는 순간 `TriggerSoundRUID` 를 `MulticastPlaySkillSound` 로 1회 재생 + `[SKILL-AREA] trap trigger` 로그.
+  3. **`hunter_trap` 데이터**: 설치 이펙트 `EffectRUID` = `38250e8b…`(작은 흙먼지, skill/1100 11001226) · 설치음 `SoundRUID` = `3c7daab8…`(0.57s 짧은 기계 클릭) · 발동음 `TriggerSoundRUID` = `10c64d94…`(금속 두 번 타격음) · 적중 이펙트 `HitEffectRUID` = `025ace4d…`(mobskill 128 나무 올가미 덫 affected, 배율 1.5) · `EffectOffset` 1.5→2.0(덫 위치 `AreaReach`=2 와 일치) · **`DamageMultiplier` 0.5→2.5, `DamagePerLevel` 0.15→0.35**.
+- **검증**: `maker_refresh_workspace` ok · build **Error 0 / Warning 0 / Info 720** (dateTime 2026-09-18T17:37:11, refresh 직후 — 현재 시각 17:37 과 정합) · 신규 `.mlua` 없음.
+- **후속 (2026-09-18) — 설치 직후 즉발 방지 (ArmDelay)**: 제작자 Play 확인(연출·피해 OK, 발동음은 "때리는 소리 같다"는 아쉬움 잔존) 중 *깔자마자 닿으면 바로 터진다* 제보. `SkillDataSet.csv` 에 `ArmDelay` 컬럼 신설(`hunter_trap`=0.5, 나머지 공란=0) → `CreateSkillArea` 의 첫 `nextTick` 을 `now + ArmDelay` 로 지연. 검증: refresh ok · build Error 0 / Warning 0 / Info 720 (dateTime 17:47:49, 현재 17:48 정합). 런타임 검증 보류(제작자 수행): 설치 후 약 0.5초 동안 밟아도 발동하지 않는지.
+- **런타임 검증 보류(제작자 수행)**: ① 덫 설치 시 강타 이펙트 대신 흙먼지+조용한 클릭음 ② 몬스터가 밟으면 '타탁' 소리 + 몬스터 위 올가미 덫 이펙트 ③ 설치음(0.57s)이 충분히 조용한지 — 크면 후보 교체 ④ 피해 2.5배가 투척기와 비교해 적정한지.
+
+### 2026-09-18 [퀘스트/버그픽스] 수집 퀘스트를 현재 보유량 기준(CountMode=Have)으로 집계
+
+- **배경 (제작자 제보)**: 직업 퀘스트 301 `풀로 엮는 사냥 준비`가 **10/10 으로 표시되는데 제출이 안 된다**. 실제 인벤의 풀은 10개 미만.
+- **원인**: 조건 집계(`CountMode`)가 `Action`(수락 이후 행동 누적) / `State`(도감 누적 스냅샷) 두 가지뿐이라, **둘 다 "지금 몇 개 들고 있나"를 보지 않는다.**
+  - 301 조건은 `Gather Grass ×10 / Action` — 채집 *행동* 이 10번이면 10/10 으로 고정된다(단조 증가).
+  - 반면 보고는 `QuestDataSet.ConsumeItems = Grass:10` — `UserQuestData.TryConsumeItems` 가 **인벤 실보유**를 회수한다.
+  - 채집 후 풀을 제작·요리 등으로 소비하면 두 값이 갈라지고, `VillagerDialog.TryProgressOrCompletePages` 의 `HasConsumeItems` 게이트에 걸려 **완료 분기 대신 진행 중 대사로 조용히 되돌아갔다**(실패 사유 미노출).
+- **조치**:
+  1. **3번째 집계 모드 `Have` 신설** — `QuestConditionData.CountMode` 에 `Have`(현재 보유량) 추가. 보유량이 줄면 진행도도 함께 내려간다 ⇒ 표시와 제출 가능 여부가 구조적으로 어긋날 수 없다.
+  2. **`ActionConditionData:GetHeldValue` / `HeldItemCount` 신설** — 기본 `nil`(Kill/Warp/LearnSkill 등은 보유량 개념 없음), `_Gather`/`_Craft`/`_Smelt` 만 `PlayerInventory:GetItemCount(Target)` 로 오버라이드.
+  3. **`UserQuestData`** — `UpdateValues` 가 `Have` 면 `GetHeldValue`, `State` 면 기존 `GetUpdatedValue` 를 쓴다. `CheckAndSetValue` 는 `Have` 조건을 건너뛴다(ActionEvent 누적 + 보유량 이중 집계 방지).
+  4. **재평가 지점 (`PlayerQuest:RefreshHeldConditions`)** — 진행 중 퀘스트의 Have/State 조건을 다시 채우고 변경분만 `SyncValuesChanged`. 완료 처리가 `ConsumeItems` 를 회수하며 재진입하므로 `IsRefreshingHeld`/`IsHeldRefreshPending` 로 접고 최대 4회 반복(동시 진행 중인 다른 Have 퀘스트 표시도 같은 프레임에 내려간다).
+  5. **호출 배선** — `PlayerInventory.NotifyQuestInventoryChanged()` 를 `AddItem` 과 `RemoveItem` 의 **성공 경로 4곳 전부**(통화/고유키/스택/다중키)에 연결. `PersistenceManager` 인벤 복원 직후에도 1회 호출 — 인벤 복원이 퀘스트 로드보다 늦는 순서에서 진행도가 0 으로 남는 것을 막는다.
+  6. **데이터 (`QuestConditionDataSet.csv` 13행)** — 보고 시 물건을 넘기는 수집 조건을 `Action` → `Have` 로 전환: 201·203·204·212·213·301·311·321·331 + 대형 슬라임 젤리 302·312·322·332. Kill/Warp/LearnSkill 및 제련·제작 진행형 조건(205·211·214·216, 303/313/323/333 등)은 `Action`/`State` 유지.
+  7. **실패 사유 노출 (`VillagerDialog`)** — 조건은 찼는데 물건이 모자라면 `BuildMissingConsumeText` 로 `넘길 물건이 모자라네. (풀 4/10)` 형태의 부족분을 대사로 보여 준다(기존엔 진행 중 대사로 조용히 회귀).
+- **검증**: `maker_refresh_workspace` ok · build **Error 0 / Warning 0 / Info 720** (dateTime 2026-09-18T16:05:46, refresh 직후 — 현재 시각 16:06 과 정합) · mlua LSP 진단 errors=0 / warnings=0(잔여 Info 는 기존 크로스 스크립트 `LIA-1114` 노이즈) · 신규 `.mlua` 없음(기존 파일 수정만 — `.codeblock` 신규 생성 대상 없음).
+- **런타임 검증 보류(제작자 수행)**: ① 301 수락 상태에서 풀을 10개 이상 들고 있으면 10/10 → 멘토 보고 성공 ② 풀을 제작 등으로 소비하면 퀘스트 로그 진행도가 즉시 내려가는지 ③ 물건이 모자란 상태로 멘토에게 말 걸면 부족분 대사가 뜨는지 ④ 201·203·204·212·213 등 기존 수집 퀘스트가 보유량 기준으로 정상 완료되는지 ⑤ 로그인 직후(인벤 복원 순서 무관) 진행도가 보유량과 일치하는지.
 
 ### 2026-09-17 [환경/버그픽스] 밤·날씨 어두워짐 소실 원인 규명 & 몬스터 바이옴 틴트가 피격 시 풀리던 결함
 

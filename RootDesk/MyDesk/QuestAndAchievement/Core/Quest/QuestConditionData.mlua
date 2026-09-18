@@ -10,6 +10,7 @@ script QuestConditionData
 	property integer Value = 0
 
 	-- Action = 수락 이후 행동만 집계. State = 이미 한 일을 수락·로그인 때 스냅샷.
+	-- Have = 현재 보유량 기준(인벤토리가 줄면 진행도도 줄어든다). 보고 시 ConsumeItems로 회수하는 조건은 Have를 쓴다.
 	property string CountMode = "Action"
 
 	method boolean Load(any dataRow)
@@ -39,6 +40,8 @@ script QuestConditionData
 		end
 		if cmStr == "State" or cmStr == "state" then
 			self.CountMode = "State"
+		elseif cmStr == "Have" or cmStr == "have" then
+			self.CountMode = "Have"
 		elseif cmStr == "Action" or cmStr == "action" then
 			self.CountMode = "Action"
 		else

@@ -420,6 +420,10 @@ script VillagerDialog extends Component
 				lp.PlayerQuest:RequestCompleteQuests({ id })
 				return pages
 			end
+			if userData.State == _QuestStateEnum.InProgress and userData:IsCompletable(data) then
+				-- 조건은 찼는데 넘길 물건이 부족한 경우 (조용히 실패하지 않도록 무엇이 모자란지 알려 준다).
+				return { self:BuildMissingConsumeText(data, lp) }
+			end
 			if userData.State == _QuestStateEnum.InProgress then
 				local pages = self:LoadStoryPages(id, "progress")
 				if #pages == 0 then
@@ -429,6 +433,33 @@ script VillagerDialog extends Component
 			end
 		end
 		return nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method string BuildMissingConsumeText(any data, Entity player)
+		-- 보고에 필요한 ConsumeItems 중 부족한 항목을 "이름 보유/필요"로 나열한다.
+		local items = data.ConsumeItems
+		local inv = player:GetComponent("script.PlayerInventory")
+		if items == nil or #items == 0 or not isvalid(inv) then
+			return "아직 준비가 안 된 것 같군."
+		end
+		---@type PlayerInventory
+		local p = inv
+		local parts = {}
+		for i = 1, #items do
+			local itemName = items[i][1]
+			local need = items[i][2]
+			if itemName ~= nil and itemName ~= "" and need ~= nil and need > 0 then
+				local owned = p:GetItemCount(itemName)
+				if owned < need then
+					parts[#parts + 1] = string.format("%s %d/%d", p:GetItemDisplayName(itemName), owned, need)
+				end
+			end
+		end
+		if #parts == 0 then
+			return "아직 준비가 안 된 것 같군."
+		end
+		return "넘길 물건이 모자라네. (" .. table.concat(parts, ", ") .. ")"
 	end
 
 	method boolean HasNearbyPlayer(number range)

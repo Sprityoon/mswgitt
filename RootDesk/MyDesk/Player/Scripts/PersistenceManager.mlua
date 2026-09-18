@@ -30,6 +30,7 @@ script PersistenceManager extends Logic
 	-- 월드 밤낮 시간 영속화 관련 속성
 	@HideFromInspector property number AccumulatedTime = 0
 	@HideFromInspector property number ClientAccumulatedTime = 0
+	@HideFromInspector property boolean WorldTimeLoaded = false
 	property any TimeSaveTimerId = nil
 	property any TimeSyncTimerId = nil
 
@@ -55,6 +56,10 @@ script PersistenceManager extends Logic
 		-- 월드 절대 시각 시스템 기동
 		log("PersistenceManager: Starting world time system on server...")
 		self:LoadWorldTime()
+		-- LoadWorldTime 은 GetAndWait 로 대기한다 — 그동안 들어온 유저는 저장값이 빠진 임시 시간을 받아
+		-- 입장 직후 밤 비네트가 잠깐 틀린 세기로 떴다(2026-09-18 실측 night 0.44→1.00). 불러온 뒤 즉시 한 번 보낸다.
+		self.WorldTimeLoaded = true
+		self:SyncTimeBroadcast()
 
 		-- 30초 주기 시간 저장
 		self.TimeSaveTimerId = _TimerService:SetTimerRepeat(function()
@@ -111,9 +116,11 @@ script PersistenceManager extends Logic
 		self.DirtyGenerations[userId] = 0
 		log("PersistenceManager: Player entered: " .. userId .. ". Initializing home map...")
 		
-		-- 신규 접속 유저 시간 즉시 동기화
-		local curTime = self:GetServerAccumulatedTime()
-		self:SyncTimeClient(curTime)
+		-- 신규 접속 유저 시간 즉시 동기화 (월드 시간을 아직 불러오는 중이면 불러온 직후 브로드캐스트가 대신한다)
+		if self.WorldTimeLoaded then
+			local curTime = self:GetServerAccumulatedTime()
+			self:SyncTimeClient(curTime)
+		end
 		
 		-- Create dynamic home map if not exists
 		local mapName = "Home_" .. userId
@@ -914,6 +921,9 @@ script PersistenceManager extends Logic
 				inv:TryCompleteActiveResearch()
 				-- T20: 일 변경 시 완료 목록 리셋
 				inv:EnsureDailyRequestState()
+				-- 보유량 기준(CountMode=Have) 퀘스트 조건 재평가.
+				-- 인벤 복원이 퀘스트 로드보다 늦는 순서에서도 진행도가 0으로 남지 않게 한다.
+				inv:NotifyQuestInventoryChanged()
 				log("PersistenceManager: Inventory restored. Coin=" .. tostring(inv.Coin))
 			end
 

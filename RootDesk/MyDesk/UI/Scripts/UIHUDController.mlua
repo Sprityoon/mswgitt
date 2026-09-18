@@ -62,8 +62,20 @@ script UIHUDController extends Component
 	-- 실측(2026-09-17 Play): 0.45 는 맑은 밤에 거의 보이지 않았고, 안개 낀 밤(합계 0.80)은 또렷했다 → 0.75.
 	property number NightVignetteIntensity = 0.75
 	property number VignetteSmoothness = 0.4
-	-- 날씨 OverlayColor 알파(비 0.06 · 안개 0.07)에 곱해 비네트 세기로 환산
-	property number WeatherVignetteScale = 5.0
+	-- 날씨 OverlayColor 알파(비 0.06 · 안개 0.07)에 곱해 비네트 세기로 환산.
+	-- 2026-09-18: 밤+비가 겹쳐 과하게 어두워져 0 으로 — 날씨는 비네트 대신 날씨 파티클(WeatherDataSet.ParticleType)이 전담.
+	property number WeatherVignetteScale = 0
+	-- 날씨 파티클(AreaParticle 프리셋)을 로컬 플레이어에 붙여 화면을 덮는다. 월드 엔티티 레이어 최상단, UI 아래.
+	-- 2026-09-18: 24×14 는 화면보다 좁아 안개가 가운데에만 몰렸다 → 40×24
+	property Vector2 WeatherParticleArea = Vector2(40, 24)
+	property integer WeatherParticleOrder = 30000
+	-- World 레이아웃(안개) 격자: 칸 크기(유닛)와 플레이어 칸 기준 반경(칸 수). 기본 5×5칸 = 50×40 유닛.
+	property Vector2 WeatherGridCell = Vector2(10, 8)
+	property Vector2 WeatherGridRadius = Vector2(2, 2)
+	-- 날씨 막(haze): 순백 단색 스프라이트(공식 100×100 = 1유닛)를 화면보다 크게 늘려 WeatherDataSet.HazeColor 로 칠한다.
+	-- 파티클과 달리 화면 전체가 균일하게 뿌예진다. 파티클 바로 아래 순서.
+	property string WeatherHazeRUID = "34933a8d498b481e840ee60438145b72"
+	property Vector2 WeatherHazeSize = Vector2(60, 36)
 	-- 밤 + 날씨 합산 세기 상한 (안개 낀 밤이 지나치게 어두워지지 않게)
 	property number MaxVignetteIntensity = 0.9
 	property Color NightVignetteColor = Color(0.04, 0.06, 0.18, 1)
@@ -910,6 +922,9 @@ script UIHUDController extends Component
 		end
 		if night < 0 then night = 0 end
 		if night > 1 then night = 1 end
+		-- 입장 직후 서버 시간 동기화(SyncTimeClient) 전에는 클라 시간이 0 이라 night≈0.5 로 잠깐 어두워졌다(2026-09-18 실측).
+		-- 동기화 전에는 밤 비네트를 적용하지 않는다.
+		if (_PersistenceManager.ClientAccumulatedTime or 0) <= 0 then night = 0 end
 
 		-- 3. 날씨 틴트(WeatherDataSet.OverlayColor @Sync)를 비네트 세기·색에 합성
 		local oc = "0|0|0|0"
@@ -918,6 +933,230 @@ script UIHUDController extends Component
 		end
 		local wc = self:ParseOverlayColorPipe(oc)
 		self:ApplyEnvironmentVignette(night, wc)
+
+		-- 4. 날씨 파티클 (비·안개)
+		local weatherId = "clear"
+		if _WeatherManager ~= nil then
+			weatherId = _WeatherManager.CurrentWeatherId or "clear"
+		end
+		self:UpdateWeatherParticle(weatherId)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateWeatherParticle(string weatherId)
+		-- 날씨 파티클 두 방식 (WeatherDataSet.ParticleLayout):
+		--   Follow(기본·비) : 로컬 플레이어에 붙은 AreaParticle 1개. 비 프리셋은 AreaSize 전체에 뿌려져 화면을 덮는다.
+		--   World(안개)     : 안개 프리셋은 이미터 중심 근처에서만 생성되고, 플레이어에 붙이면 안개가 같이 움직인다(2026-09-18 제작자 실측).
+		--                     → 맵에 고정한 격자 이미터를 플레이어 주변 칸마다 하나씩 두고, 칸을 넘으면 멀어진 칸만 교체한다.
+		local player = _UserService.LocalPlayer
+		if not isvalid(player) then return end
+		local fx = self._T.WeatherParticle
+		if not isvalid(fx) or self._T.WeatherParticleOwner ~= player then
+			if isvalid(fx) then fx:Destroy() end
+			fx = _SpawnService:SpawnByModelId("areaparticle", "WeatherParticle", player.TransformComponent.WorldPosition, player)
+			self._T.WeatherParticle = fx
+			self._T.WeatherParticleOwner = player
+			self._T.WeatherParticleApplied = nil
+			if not isvalid(fx) or not isvalid(fx.AreaParticleComponent) then
+				if not self._T.WeatherParticleWarned then
+					log_warning("[WEATHER-FX] areaparticle spawn failed")
+					self._T.WeatherParticleWarned = true
+				end
+				return
+			end
+			fx.TransformComponent.Position = Vector3(0, 0, 0)
+			fx.Enable = false
+			log("[WEATHER-FX] spawned under " .. tostring(player.Name))
+		end
+		if self._T.WeatherParticleApplied ~= weatherId then
+			self._T.WeatherParticleApplied = weatherId
+			self:ApplyWeatherConfig(weatherId, player, fx)
+		end
+		-- 🔴 실측(2026-09-18 Play): 맵 이동(입장 직후 워프 포함) 뒤 설정값은 그대로인데 IsEmitting=false 로 재생이 멈춰
+		--    "비인데 빗줄기가 없다". 켜져 있어야 하는데 멈춘 이미터는 다시 재생한다.
+		self:ResumeWeatherEmitter(fx)
+		self:MaintainWeatherGrid(player)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyWeatherConfig(string weatherId, Entity player, Entity fx)
+		-- 날씨가 바뀔 때 1회: 막(haze) · Follow 파티클 · World 격자 설정을 데이터로 갱신한다.
+		local row = nil
+		local ds = _DataService:GetTable("WeatherDataSet")
+		if ds ~= nil then row = ds:FindRow("WeatherId", weatherId) end
+		local function cell(key)
+			if row == nil then return "" end
+			local ok, v = pcall(function() return row:GetItem(key) end)
+			if not ok or v == nil then return "" end
+			return tostring(v)
+		end
+
+		self:ApplyWeatherHaze(player, cell("HazeColor"))
+
+		-- 이전 설정으로 예약된 지연 재생(ConfigureWeatherEmitter)을 무효화
+		self._T.WeatherCfgGen = (self._T.WeatherCfgGen or 0) + 1
+		-- 격자는 설정이 바뀌면 전부 새로 만든다
+		self:ClearWeatherGrid()
+		self._T.WeatherGridCfg = nil
+		fx.Enable = false
+
+		local typeName = cell("ParticleType")
+		local okType, particleType = pcall(function() return AreaParticleType.CastFrom(typeName) end)
+		if typeName == "" or typeName == "None" or not okType or particleType == nil then
+			log("[WEATHER-FX] off weather=" .. tostring(weatherId))
+			return
+		end
+		local cfg = {
+			type = particleType,
+			color = self:ParseOverlayColorPipe(cell("ParticleColor")),
+			count = tonumber(cell("ParticleCount")) or 1,
+			speed = tonumber(cell("ParticleSpeed")) or 1,
+			size = tonumber(cell("ParticleSize")) or 1,
+		}
+		local layout = cell("ParticleLayout")
+		if layout == "World" then
+			self._T.WeatherGridCfg = cfg
+			log("[WEATHER-FX] on weather=" .. tostring(weatherId) .. " type=" .. typeName .. " layout=World")
+			return
+		end
+		self:ConfigureWeatherEmitter(fx, cfg, self.WeatherParticleArea)
+		log("[WEATHER-FX] on weather=" .. tostring(weatherId) .. " type=" .. typeName .. " layout=Follow")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ConfigureWeatherEmitter(Entity e, any cfg, Vector2 area)
+		local apc = e.AreaParticleComponent
+		e.Enable = false
+		apc.ParticleType = cfg.type
+		apc.AreaSize = area
+		apc.Color = cfg.color
+		apc.ParticleCount = cfg.count
+		apc.ParticleSpeed = cfg.speed
+		apc.ParticleSize = cfg.size
+		apc.Loop = true
+		apc.Prewarm = true
+		apc.IgnoreMapLayerCheck = true
+		apc.SortingLayer = _RenderLayers.EntityLayer
+		apc.OrderInLayer = self.WeatherParticleOrder
+		apc.PlayOnEnable = false
+		-- 🔴 같은 프레임에 켜고 Play 하면 Color 가 반영되기 전 엔진 기본색 Color(0.5,0.25,0.25)(적갈색)으로
+		--    Prewarm 입자가 먼저 채워졌다가 수명이 다해야 설정 색으로 바뀌었다(2026-09-18 제작자 제보).
+		--    값을 꺼진 상태에서 모두 넣고 다음 틱에 켠다. 그 사이 날씨가 또 바뀌면 세대 번호로 무시한다.
+		local gen = self._T.WeatherCfgGen or 0
+		_TimerService:SetTimerOnce(function()
+			if not isvalid(e) then return end
+			if (self._T.WeatherCfgGen or 0) ~= gen then return end
+			e.Enable = true
+			apc:Play()
+		end, 0.1)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ResumeWeatherEmitter(Entity e)
+		-- Enable 된(=지연 재생까지 끝난) 이미터가 멈춰 있으면 다시 재생
+		if not isvalid(e) or e.Enable ~= true then return end
+		local apc = e.AreaParticleComponent
+		if not isvalid(apc) or apc.IsEmitting then return end
+		apc:Play()
+		log("[WEATHER-FX] re-play " .. tostring(e.Name) .. " (emitting stopped)")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void MaintainWeatherGrid(Entity player)
+		-- World 레이아웃: 플레이어가 있는 칸을 중심으로 (2r+1)×(2r+1) 칸에 이미터를 둔다.
+		-- 이미터는 맵에 고정 — 플레이어가 걸어도 안개는 제자리에 있다. 칸이 바뀔 때만 차집합을 교체한다.
+		local cfg = self._T.WeatherGridCfg
+		local map = player.CurrentMap
+		if cfg == nil or not isvalid(map) then
+			self:ClearWeatherGrid()
+			return
+		end
+		if self._T.WeatherGridMap ~= map then
+			self:ClearWeatherGrid()
+			self._T.WeatherGridMap = map
+		end
+		local cs = self.WeatherGridCell
+		local pos = player.TransformComponent.WorldPosition
+		local cx = math.floor(pos.x / cs.x)
+		local cy = math.floor(pos.y / cs.y)
+		local centerKey = tostring(cx) .. "," .. tostring(cy)
+		if self._T.WeatherGridCenter == centerKey then
+			for _, e in pairs(self._T.WeatherGridCells or {}) do
+				self:ResumeWeatherEmitter(e)
+			end
+			return
+		end
+		self._T.WeatherGridCenter = centerKey
+
+		local rx = math.floor(self.WeatherGridRadius.x)
+		local ry = math.floor(self.WeatherGridRadius.y)
+		local cells = self._T.WeatherGridCells or {}
+		local want = {}
+		for i = -rx, rx do
+			for j = -ry, ry do
+				want[tostring(cx + i) .. "," .. tostring(cy + j)] = Vector2(cx + i, cy + j)
+			end
+		end
+		for key, e in pairs(cells) do
+			if want[key] == nil then
+				if isvalid(e) then e:Destroy() end
+				cells[key] = nil
+			end
+		end
+		local added = 0
+		for key, c in pairs(want) do
+			if not isvalid(cells[key]) then
+				local wp = Vector3((c.x + 0.5) * cs.x, (c.y + 0.5) * cs.y, 0)
+				local e = _SpawnService:SpawnByModelId("areaparticle", "WeatherGrid_" .. key, wp, map)
+				if isvalid(e) and isvalid(e.AreaParticleComponent) then
+					self:ConfigureWeatherEmitter(e, cfg, cs)
+					cells[key] = e
+					added = added + 1
+				end
+			end
+		end
+		self._T.WeatherGridCells = cells
+		log("[WEATHER-FX] grid center=" .. centerKey .. " added=" .. tostring(added))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ClearWeatherGrid()
+		for _, e in pairs(self._T.WeatherGridCells or {}) do
+			if isvalid(e) then e:Destroy() end
+		end
+		self._T.WeatherGridCells = {}
+		self._T.WeatherGridCenter = nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyWeatherHaze(Entity player, string hazeColor)
+		-- 화면 전체를 균일하게 뿌옇게 덮는 막. HazeColor 알파가 0 이면 끈다.
+		local color = self:ParseOverlayColorPipe(hazeColor)
+		local haze = self._T.WeatherHaze
+		if color.a <= 0.001 then
+			if isvalid(haze) then haze.Enable = false end
+			return
+		end
+		if not isvalid(haze) or self._T.WeatherHazeOwner ~= player then
+			if isvalid(haze) then haze:Destroy() end
+			haze = _SpawnService:SpawnByModelId("mapobject", "WeatherHaze", player.TransformComponent.WorldPosition, player)
+			self._T.WeatherHaze = haze
+			self._T.WeatherHazeOwner = player
+			if not isvalid(haze) or not isvalid(haze.SpriteRendererComponent) then
+				log_warning("[WEATHER-FX] haze spawn failed")
+				return
+			end
+			haze.TransformComponent.Position = Vector3(0, 0, 0)
+			haze.TransformComponent.Scale = Vector3(self.WeatherHazeSize.x, self.WeatherHazeSize.y, 1)
+			local sr = haze.SpriteRendererComponent
+			sr.SpriteRUID = self.WeatherHazeRUID
+			sr.IgnoreMapLayerCheck = true
+			sr.SortingLayer = _RenderLayers.EntityLayer
+			sr.OrderInLayer = self.WeatherParticleOrder - 1
+		end
+		haze.SpriteRendererComponent.Color = color
+		haze.Enable = true
+		log(string.format("[WEATHER-FX] haze color=(%.2f,%.2f,%.2f,%.2f)", color.r, color.g, color.b, color.a))
 	end
 
 	@ExecSpace("ClientOnly")

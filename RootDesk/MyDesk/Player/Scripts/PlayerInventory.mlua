@@ -804,10 +804,25 @@ script PlayerInventory extends Component
 		-- T22: 도감 누적 획득 기록 (통화는 위에서 early-return되어 제외됨).
 		self:RecordItemAcquired(itemName, count)
 
+		self:NotifyQuestInventoryChanged()
+
 		if _PersistenceManager and self.Entity.PlayerComponent then
 			_PersistenceManager:MarkPlayerDirty(self.Entity.PlayerComponent.UserId)
 		end
 		return addedKey
+	end
+
+	@ExecSpace("ServerOnly")
+	method void NotifyQuestInventoryChanged()
+		-- 보유량 기준(CountMode=Have) 퀘스트 조건을 현재 인벤토리로 재평가한다.
+		-- AddItem / RemoveItem 성공 경로 전부가 여기를 통과해야 표시와 제출 가능 여부가 어긋나지 않는다.
+		local pq = self.Entity:GetComponent("script.PlayerQuest")
+		if not isvalid(pq) then
+			return
+		end
+		---@type PlayerQuest
+		local playerQuest = pq
+		playerQuest:RefreshHeldConditions()
 	end
 
 	@ExecSpace("ServerOnly")
@@ -964,12 +979,13 @@ script PlayerInventory extends Component
 		if self:IsCurrencyItem(itemName) then
 			if self.Coin < count then return false end
 			self.Coin = self.Coin - count
+			self:NotifyQuestInventoryChanged()
 			if _PersistenceManager and self.Entity.PlayerComponent then
 				_PersistenceManager:MarkPlayerDirty(self.Entity.PlayerComponent.UserId)
 			end
 			return true
 		end
-		
+
 		local entry = self.Items[itemName]
 		if entry ~= nil then
 			if type(entry) == "table" then
@@ -979,6 +995,7 @@ script PlayerInventory extends Component
 					self:ApplyHeldToolCostume()
 				end
 				self.InventoryDataJson = self:SafeEncodeJson(self.Items, "{}")
+				self:NotifyQuestInventoryChanged()
 				if _PersistenceManager and self.Entity.PlayerComponent then
 					_PersistenceManager:MarkPlayerDirty(self.Entity.PlayerComponent.UserId)
 				end
@@ -994,6 +1011,7 @@ script PlayerInventory extends Component
 					end
 				end
 				self.InventoryDataJson = self:SafeEncodeJson(self.Items, "{}")
+				self:NotifyQuestInventoryChanged()
 				if _PersistenceManager and self.Entity.PlayerComponent then
 					_PersistenceManager:MarkPlayerDirty(self.Entity.PlayerComponent.UserId)
 				end
@@ -1025,6 +1043,7 @@ script PlayerInventory extends Component
 		end
 		
 		self.InventoryDataJson = self:SafeEncodeJson(self.Items, "{}")
+		self:NotifyQuestInventoryChanged()
 		if _PersistenceManager and self.Entity.PlayerComponent then
 			_PersistenceManager:MarkPlayerDirty(self.Entity.PlayerComponent.UserId)
 		end

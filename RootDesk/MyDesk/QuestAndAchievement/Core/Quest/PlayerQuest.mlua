@@ -10,6 +10,10 @@ script PlayerQuest extends Component
 	property boolean IsSaveDB = false
 	property integer SaveGeneration = 0
 
+	-- RefreshHeldConditions 재진입 방지 (완료 시 ConsumeItems 회수가 다시 인벤 변동을 일으킨다).
+	property boolean IsRefreshingHeld = false
+	property boolean IsHeldRefreshPending = false
+
 	@ExecSpace("ServerOnly")
 	method void MarkSaveDirty()
 		self.SaveGeneration = self.SaveGeneration + 1
@@ -530,6 +534,55 @@ script PlayerQuest extends Component
 		
 		if dirty then
 			self:MarkSaveDirty()
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RefreshHeldConditions()
+		-- 인벤토리 변동 시 CountMode=Have 조건을 현재 보유량으로 재평가한다.
+		-- 표시(Values)와 제출 가능 여부(ConsumeItems)가 어긋나는 것을 막는 유일한 갱신 지점.
+		-- 완료 처리가 ConsumeItems를 회수하며 재진입하므로, 재진입은 pending으로 접고 한 번 더 돈다.
+		if self.IsRefreshingHeld then
+			self.IsHeldRefreshPending = true
+			return
+		end
+
+		self.IsRefreshingHeld = true
+		local guard = 0
+		repeat
+			self.IsHeldRefreshPending = false
+			self:RefreshHeldConditionsOnce()
+			guard = guard + 1
+		until not self.IsHeldRefreshPending or guard >= 4
+		self.IsRefreshingHeld = false
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RefreshHeldConditionsOnce()
+		-- 진행 중 퀘스트의 보유량/스냅샷 조건을 한 번 재평가하고 변경분만 동기화한다.
+		local userEntity = self.Entity
+		local idValuesTable = {}
+
+		for id, _ in pairs(self.ProgressingIdTable) do
+			local data = _QuestDataSetLogic:GetData(id)
+			if data == nil then
+				continue
+			end
+
+			local userData = self.UserDataTable[id]
+			if userData == nil then
+				continue
+			end
+
+			if userData:UpdateValues(userEntity, data) then
+				idValuesTable[id] = userData.Values
+			end
+		end
+
+		if _Util:TableLen(idValuesTable) ~= 0 then
+			self:MarkSaveDirty()
+			self:SyncValuesChanged(idValuesTable, userEntity.PlayerComponent.UserId)
+			self:TryCompleteReadyQuests()
 		end
 	end
 

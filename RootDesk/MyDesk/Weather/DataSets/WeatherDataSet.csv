@@ -1,4 +1,4 @@
-WeatherId,DisplayName,Weight,DurationMin,DurationMax,OverlayColor,EffectRUID,CropBoostPerMin,FishBiteMult,AmbienceSoundRUID
-clear,맑음,50,120,240,0|0|0|0,,0,1.0,
-rain,비,30,90,180,0.10|0.15|0.25|0.06,,30,0.7,70995490e4a04f4bad76bcf8e3b6ad1a
-fog,안개,20,90,150,0.45|0.50|0.55|0.07,,0,1.0,
+WeatherId,DisplayName,Weight,DurationMin,DurationMax,OverlayColor,EffectRUID,CropBoostPerMin,FishBiteMult,AmbienceSoundRUID,ParticleType,ParticleColor,ParticleCount,ParticleSpeed,ParticleSize,HazeColor,ParticleLayout
+clear,맑음,50,120,240,0|0|0|0,,0,1.0,,None,,,,,,
+rain,비,30,90,180,0.10|0.15|0.25|0.06,,30,0.7,70995490e4a04f4bad76bcf8e3b6ad1a,Rain,0.75|0.85|1.0|0.6,1,1,1,,Follow
+fog,안개,20,90,150,0.45|0.50|0.55|0.07,,0,1.0,,FogCalm,0.9|0.92|0.95|0.6,1,0.3,1.5,0.88|0.9|0.93|0.25,World

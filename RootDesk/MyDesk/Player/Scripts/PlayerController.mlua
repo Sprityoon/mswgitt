@@ -4161,7 +4161,7 @@ script PlayerController extends Component
 			end
 		end
 		local now = _UtilLogic.ElapsedSeconds
-		self._T.SkillAreas[skillId] = { row = row, map = map, center = center, size = size, marker = marker, expires = now + self:SkillNumber(row, "Duration", 6), nextTick = now, kind = row:GetItem("Type") }
+		self._T.SkillAreas[skillId] = { row = row, map = map, center = center, size = size, marker = marker, expires = now + self:SkillNumber(row, "Duration", 6), nextTick = now + self:SkillNumber(row, "ArmDelay", 0), kind = row:GetItem("Type") }
 		log("[SKILL-AREA] create " .. skillId)
 	end
 
@@ -4188,7 +4188,13 @@ script PlayerController extends Component
 					end
 				else
 					local hits = self:DamageSkillArea(skillId, area.center, area.size, 1)
-					if area.kind == "Trap" and hits > 0 then area.expires = now end
+					if area.kind == "Trap" and hits > 0 then
+						area.expires = now
+						-- 덫 발동음: 시전음(SoundRUID)과 분리된 TriggerSoundRUID (데이터 주도)
+						local triggerSound = self:SkillText(area.row, "TriggerSoundRUID")
+						if triggerSound ~= "" then self:MulticastPlaySkillSound(triggerSound) end
+						log("[SKILL-AREA] trap trigger " .. skillId .. " hits=" .. tostring(hits))
+					end
 				end
 				local fx = self:SkillText(area.row, "EffectRUID")
 				if fx ~= "" and area.kind ~= "Trap" then self:MulticastPlayEffectEx(fx, area.center, false, self:SkillNumber(area.row, "EffectScale", 1)) end

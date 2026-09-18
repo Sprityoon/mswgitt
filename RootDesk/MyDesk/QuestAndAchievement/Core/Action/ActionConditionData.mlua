@@ -33,6 +33,25 @@ script ActionConditionData
 		return nil
 	end
 
+	method integer GetHeldValue(Entity userEntity, integer condValue)
+		-- CountMode=Have 전용. nil을 반환하면 해당 조건은 보유량 재평가 대상이 아니다(Kill/Warp/LearnSkill 등).
+		return nil
+	end
+
+	method integer HeldItemCount(Entity userEntity, string itemName)
+		-- 현재 인벤토리 보유 수량. CountMode=Have 인 Gather/Craft/Smelt 재평가용.
+		if not isvalid(userEntity) or _Util:IsNilorEmptyString(itemName) then
+			return nil
+		end
+		local inv = userEntity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then
+			return nil
+		end
+		---@type PlayerInventory
+		local p = inv
+		return math.floor(p:GetItemCount(itemName) or 0)
+	end
+
 	method integer SnapshotDexItemCount(Entity userEntity, string itemName)
 		-- 도감 누적 획득 수. CountMode=State 인 Craft/Gather/Smelt 스냅샷용.
 		if not isvalid(userEntity) or _Util:IsNilorEmptyString(itemName) then
