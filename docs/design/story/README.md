@@ -24,6 +24,7 @@
 | [npc-cast.md](./npc-cast.md) | NPC 성격·말투 카드 (모든 대사 집필의 기준) + 신규 NPC 제안 | 콘텐츠 원안 |
 | [map-concepts.md](./map-concepts.md) | 공간별 컨셉·디자인 · 스토리 픽스처 · 미래 맵 로드맵 (🔴 §0.1/§0.3 폐기) | 콘텐츠 원안 |
 | [hunting-grounds-plan.md](./hunting-grounds-plan.md) | **사냥터 전면 재설계 — 전용 맵 4종 + 보스 5종 + 퀘스트 연결** (2026-09-10 ⚖️) | 현행 설계 |
+| [hunting-grounds-ecosystem-plan.md](./hunting-grounds-ecosystem-plan.md) | **사냥터별 메이플 몬스터 생태계 & 퀘스트·연구소 연계 상세 기획서** (2026-09-22 ⚖️) | **몬스터·퀘스트 상세 설계** |
 | [quest-design.md](./quest-design.md) | 하드 제약 · 챕터별 퀘스트 라인 · CSV 반영 절차 · 키 목록 부록 | 콘텐츠 원안 + 반영 절차 |
 | [story-npc-quest-plan.md](./story-npc-quest-plan.md) | 시스템 연동 설계 (스키마 · 재생기 · 조건 11종 실측) | **시스템 측 단일 소스** |
 | [magic-skills-and-rare-equipment.md](../magic-skills-and-rare-equipment.md) | **푸른 빛 마법 스킬 해금 체계 & 몬스터 희귀 장비(고유 옵션)** | **시스템·성장 설계 원안** |
@@ -39,11 +40,11 @@
 |---|---|---|
 | 튜토리얼 101~108 | ✅ 반영 (108 CountMode=State, Play 확인 대기) | `QuestDataSet` 101~108. 108=`왠지 던질 수 있을것 같습니다..` (LearnSkill `hand_axe_throw`, 이미 배웠으면 자동 완료, 보상 Hand Axe:20) |
 | 챕터 1 「마을의 푸른 빛」 | ✅ 반영 (2026-08-15, Play 확인 대기) | `QuestDataSet` 201~205. fisher/blacksmith/researcher 대면 수주 첫 투입 |
-| 챕터 2 「검은 이슬」 | ✅ 반영 (2026-08-15, Play 확인 대기) | 211~216. `Slime Jelly` 드롭·연구 `research_gloom_sample`. `template_field` 공용 이정표 |
-| 챕터 3 「바위 메아리」 | 구상 + 퀘스트 골격 | — |
-| 챕터 4 「모래에 잠든 길」 | 구상 + 퀘스트 골격 | — |
-| 챕터 5 「첫 정원의 뜰지기」 | 구상 + 퀘스트 골격 | — |
-| 설원 아크 (미래) | 씨앗만 — **그늘(빌런) 추적 아크로 승격 제안** | `BiomeDataSet.snowfield` + 설원 몬스터 스폰 행 ✅ 존재 |
+| 챕터 2 「검은 이슬」 | ✅ 반영 + 몬스터/보스 기획 완료 | 211~217. `Slime Jelly` 드롭·연구. 신규 몬스터(리본돼지, 주황버섯) 및 보스(이슬 삼킨 것) 기획 수립 |
+| 챕터 3 「바위 메아리」 | 몬스터/보스/퀘스트 기획 완료 (2026-09-22 ⚖️) | 스텀프·아이언호그·뿔버섯 / 보스: 스톤골렘 / 퀘스트 221~227 기획 수립 |
+| 챕터 4 「모래에 잠든 길」 | 몬스터/보스/퀘스트 기획 완료 (2026-09-22 ⚖️) | 모래두지·카투스·스콜피온 / 보스: 데우 / 퀘스트 231~236 기획 수립 |
+| 챕터 5 「첫 정원의 뜰지기」 | 구상 + 퀘스트 골격 | 최종 보스: 슬라임킹 (뜰지기) |
+| 설원 아크 (미래) | 몬스터 라인업 기획 완료 (2026-09-22 ⚖️) | 주니어 예티·페페·화이트팽 / 보스: 스노우맨 |
 
 ### ⚖️ 제작자 판정 로그 (톤·서사 방향)
 
@@ -58,6 +59,7 @@
 | 2026-08-14 | **주민 4인 전문 직업 확정** (연구원 엘렌, 노점상 마리, 대장장이 로체, 헛간지기 토리) | [npc-cast.md](./npc-cast.md) §2 |
 | 2026-08-15 | **푸른 빛 발견 기반 마법 스킬 해금** + **몬스터 사냥 희귀 장비 드롭 (고유 특수 효과)** 확정 | [magic-skills-and-rare-equipment.md](../magic-skills-and-rare-equipment.md) |
 | 2026-08-19 | **타이틀 확정 (`메이플크래프트: 마지막 모험가`) + 은퇴 모험가의 귀농/맨땅 개척 서사 확정** | [story-bible.md](./story-bible.md) §1 · [world_metadata.md](../../world_metadata.md) |
+| 2026-09-22 | **사냥터별 공식 메이플 몬스터 생태계 & 챕터 2~4 퀘스트 라인 및 연구소 연계 상세 기획 확정** | [hunting-grounds-ecosystem-plan.md](./hunting-grounds-ecosystem-plan.md) |
 
 ## 3. 협업 규약 (모든 에이전트 공통)
 

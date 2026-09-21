@@ -34,6 +34,7 @@ Branch to sub-references based on request keywords.
 | Runtime mlua patterns (popup open/close, toast fade, HP bar, GridView, drag, tab, cooldown), Runtime UI Caveats (client-only, server-side nil, etc.) | [`references/runtime-patterns.md`](references/runtime-patterns.md) |
 | **`.ui` builder invocation methods** (UIBuilder API, anchor presets, write auto-lint, component add/patch/remove) | [`../msw-general/references/builder-protocol-ui.md`](../msw-general/references/builder-protocol-ui.md) §3 UIBuilder (unified entry point — load with the [`builder-protocol.md`](../msw-general/references/builder-protocol.md) core; `.map` MapBuilder / `.model` ModelBuilder live in sibling per-builder files) |
 | "sound", "sfx", "click sound", "hover sound", "button audio", "PlaySound" | [`references/ui-sound.md`](references/ui-sound.md) |
+| "UI theory", "UX framework", "Diegetic", "Non-Diegetic", "Spatial", "Meta", "Cognitive Load", "Celia Hodent", "Contextual HUD", "XAG", "Accessibility", "Information Hierarchy" | [`references/game-ui-ux-theory.md`](references/game-ui-ux-theory.md) |
 
 ---
 
@@ -84,6 +85,7 @@ Branch to sub-references based on request keywords.
 - [`references/layout-recipes.md`](references/layout-recipes.md) — Layout template collection
 - [`references/runtime-patterns.md`](references/runtime-patterns.md) — `.mlua` runtime patterns (popup/toast/HP/grid/drag…) + Runtime UI Caveats
 - [`references/ui-sound.md`](references/ui-sound.md) — UI sound integration (`_SoundService:PlaySound`, click/hover hook, default UI SFX RUIDs)
+- [`references/game-ui-ux-theory.md`](references/game-ui-ux-theory.md) — **Game UI/UX Core Theory & Framework** (Fagerholt & Lorentzon 4분면 모델, Celia Hodent 인지신경과학 게임 UX, 인지부하 제어, 정보 역피라미드, Contextual HUD, XAG 접근성 표준, 10대 자체 점검 체크리스트)
 - [`../msw-general/references/builder-protocol-ui.md`](../msw-general/references/builder-protocol-ui.md) §3 — **`.ui` CJS builder call protocol (unified entry point — load with the [`builder-protocol.md`](../msw-general/references/builder-protocol.md) core)** — `.map` MapBuilder / `.model` ModelBuilder live in sibling per-builder files. panel / text / sprite / button / slider / scroll / script / group / mask / grid / avatar / touchReceive / skeleton / areaParticle / basicParticle, component CRUD, anchor presets, write auto-lint, and `.mlua` property UUID auto-binding all live in §3 + §3.6.
 - [`references/templates/templates.md`](references/templates/templates.md) — Pre-built style bundle index (`style-N-*` `.ui`, [`ruid-map.md`](references/templates/style-1-black/ruid-map.md), `Popupbutton.mlua`)
 

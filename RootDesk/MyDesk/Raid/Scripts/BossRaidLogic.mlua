@@ -105,7 +105,7 @@ script BossRaidLogic extends Logic
 	end
 
 	method string RowStr(any row, string col, string fallback)
-		-- UserDataRow 는 GetItem 만 있고 없는 컬럼은 LEA-3011 이라 pcall 가드가 필수다 (규칙 7).
+		-- UserDataRow 는 GetItem 만 제공한다. pcall은 예외만 삼킬 뿐 LEA-3011 로그는 그대로 남는다 — 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
 		if row == nil then return fallback end
 		local ok, v = pcall(function() return row:GetItem(col) end)
 		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end

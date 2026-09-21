@@ -1,7 +1,8 @@
 @Component
 script UIQuestNavigationController extends Component
 
-	-- 마을 및 퀘스트 맵에서 미수락 퀘스트(!)를 가진 주민의 방향과 거리를 안내하는 네비게이션 컨트롤러.
+	-- 마을 및 퀘스트 맵에서 보고 가능(초록 !) 또는 미수락 퀘스트(금색 !)를 가진 주민의 방향과 거리를 안내하는 네비게이션 컨트롤러.
+	-- 보고 가능한 주민이 있으면 그쪽을 먼저 안내한다 (VillagerDialog:GetQuestPingKind "done" > "!").
 	-- 1) 화면 밖(Off-screen) 시 화면 테두리에 골드 뱃지([!] NPC이름 거리m ➔) 표시
 	-- 2) 플레이어 캐릭터 주변 궤도에 실시간 방향 가이드 화살표 표시
 	-- 3) 상호작용 거리(2.5m 이내) 도달 시 또는 미수락 퀘스트 부재 시 자동 숨김
@@ -10,6 +11,7 @@ script UIQuestNavigationController extends Component
 	property any updateTimer = nil
 
 	property any targetNpc = nil
+	property string targetKind = ""
 	property string targetNpcName = ""
 	property Vector2 targetNpcPos = Vector2(0, 0)
 	property boolean hasTarget = false
@@ -253,17 +255,23 @@ script UIQuestNavigationController extends Component
 
 		local playerPos = player.TransformComponent.WorldPosition
 		local bestDist = 999999
+		local bestRank = 0
+		local bestKind = ""
 		local bestDialog = nil
 		local bestPos = Vector2(0, 0)
 
 		for _, dialog in ipairs(dialogs) do
 			if isvalid(dialog) and isvalid(dialog.Entity) and isvalid(dialog.Entity.TransformComponent) then
-				-- 수락 가능한 퀘스트(!)가 있는 주민만 필터
+				-- 보고 가능(done, 순위 2) > 수락 가능(!, 순위 1). 같은 순위끼리는 가까운 주민.
 				local kind = dialog:GetQuestPingKind(player)
-				if kind == "!" then
+				local rank = 0
+				if kind == "done" then rank = 2 elseif kind == "!" then rank = 1 end
+				if rank > 0 then
 					local np = dialog.Entity.TransformComponent.WorldPosition
 					local d = Vector2.Distance(Vector2(playerPos.x, playerPos.y), Vector2(np.x, np.y))
-					if d < bestDist then
+					if rank > bestRank or (rank == bestRank and d < bestDist) then
+						bestRank = rank
+						bestKind = kind
 						bestDist = d
 						bestDialog = dialog
 						bestPos = Vector2(np.x, np.y)
@@ -277,9 +285,28 @@ script UIQuestNavigationController extends Component
 			self.targetNpcName = bestDialog:GetSpeakerName()
 			self.targetNpcPos = bestPos
 			self.hasTarget = true
+			if bestKind ~= self.targetKind then
+				self.targetKind = bestKind
+				self:ApplyKindColor(bestKind)
+				log("[QNAV] target npc=" .. tostring(bestDialog.NpcId) .. " kind=" .. bestKind)
+			end
 		else
 			self.hasTarget = false
 			self.targetNpc = nil
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyKindColor(string kind)
+		-- 보고 가능은 초록, 수락 가능은 금색 — NPC 머리 위 마크와 같은 색으로 뱃지·나침반을 칠한다.
+		local col = Color(1.0, 0.86, 0.12, 1.0)
+		if kind == "done" then col = Color(0.42, 1.0, 0.36, 1.0) end
+		local targets = { self.badgeIcon, self.badgeDist, self.badgeArrow, self.playerCompass }
+		for _, ent in ipairs(targets) do
+			if isvalid(ent) and isvalid(ent.TextComponent) then
+				local a = ent.TextComponent.FontColor.a
+				ent.TextComponent.FontColor = Color(col.r, col.g, col.b, a)
+			end
 		end
 	end
 

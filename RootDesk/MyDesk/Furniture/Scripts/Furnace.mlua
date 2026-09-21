@@ -77,6 +77,33 @@ script Furnace extends Component
 		return ds:FindRow("InputItem", itemName)
 	end
 
+	method string ResolveDurationColumn()
+		-- 존재하지 않는 열을 GetItem으로 찔러보면 pcall로 감싸도 LEA-3011이 로그에 남는다.
+		-- UserDataSet.Columns로 실재하는 열을 먼저 고르고 결과를 캐시한다.
+		if self._T.durCol ~= nil then return self._T.durCol end
+		local tableName = self.RecipeTableName
+		if tableName == nil or tableName == "" then tableName = "SmeltingRecipeDataSet" end
+		local ds = _DataService:GetTable(tableName)
+		local found = ""
+		if ds ~= nil then
+			local cols = ds.Columns
+			if cols ~= nil then
+				local candidates = { self.DurationColumn, "SmeltDuration", "CookDuration" }
+				for _, col in ipairs(candidates) do
+					if col ~= nil and col ~= "" and cols:Contains(col) then
+						found = col
+						break
+					end
+				end
+			end
+		end
+		if found == "" then
+			log_warning("Furnace: 레시피 테이블 " .. tableName .. " 에 소요시간 열이 없습니다.")
+		end
+		self._T.durCol = found
+		return found
+	end
+
 	@ExecSpace("ServerOnly")
 	method number GetFuelBurnTime(string itemName)
 		-- Returns the burn time per unit for the given fuel item, or 0 if it is not a fuel.
@@ -100,17 +127,10 @@ script Furnace extends Component
 			requiredInput = math.floor(tonumber(recipe:GetItem("InputCount")) or 0)
 			if requiredInput > 0 and self.InputItemCount >= requiredInput then
 				targetBar = recipe:GetItem("OutputItem")
-				local durCol = self.DurationColumn
-				if durCol == nil or durCol == "" then durCol = "SmeltDuration" end
-				-- 없는 컬럼 GetItem은 LEA-3011 — pcall로 안전 조회
-				local function readDur(col)
-					local ok, v = pcall(function() return recipe:GetItem(col) end)
-					if ok and v ~= nil and v ~= "" then return tonumber(v) or 0.0 end
-					return 0.0
+				local durCol = self:ResolveDurationColumn()
+				if durCol ~= "" then
+					smeltDuration = tonumber(recipe:GetItem(durCol)) or 0.0
 				end
-				smeltDuration = readDur(durCol)
-				if smeltDuration <= 0 then smeltDuration = readDur("CookDuration") end
-				if smeltDuration <= 0 then smeltDuration = readDur("SmeltDuration") end
 			end
 		end
 		

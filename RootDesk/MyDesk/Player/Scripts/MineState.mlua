@@ -23,7 +23,7 @@ script MineState extends StateType
 				local row = ds:FindRow("Name", baseName)
 				if row ~= nil then
 					-- 1순위: item_dataset의 SwingAction 컬럼 (행 추가/수정만으로 모션 교체 가능).
-					-- pcall 가드: 데이터셋이 아직 리프레시되지 않아 컬럼이 없어도 폴백으로 동작.
+					-- 데이터셋 리프레시 전이라 컬럼이 없을 수 있어 pcall 폴백을 둔다. 컬럼이 실제로 없으면 LEA-3011 로그는 남는다.
 					local swingAction = ""
 					local ok, v = pcall(function() return row:GetItem("SwingAction") end)
 					if ok and v ~= nil then swingAction = v end

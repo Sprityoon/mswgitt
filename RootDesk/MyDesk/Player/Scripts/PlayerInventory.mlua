@@ -2134,7 +2134,7 @@ script PlayerInventory extends Component
 		local row = ds:FindRow("Name", baseName)
 		if row == nil then return end
 		local action = ""
-		-- pcall 가드: 데이터셋 미리프레시로 TerrainEditAction 컬럼이 없어도 조용히 무동작.
+		-- 데이터셋 리프레시 전이라 컬럼이 없을 수 있어 pcall 폴백을 둔다. 컬럼이 실제로 없으면 LEA-3011 로그는 남는다.
 		local ok, v = pcall(function() return row:GetItem("TerrainEditAction") end)
 		if ok and v ~= nil then action = v end
 		if action == "" then return end   -- 편집 도구/아이템이 아님

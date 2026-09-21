@@ -93,6 +93,7 @@ script UIQuestController extends Component
 		self:SetChromeVisible(true)
 		self:SetText("QuestName", "진행 중인 퀘스트 없음")
 		self:SetText("Guide", "클릭하면 목록을 엽니다")
+		self:SetGuideColor(nil)
 		self:SetText("Progress", "")
 	end
 
@@ -158,13 +159,21 @@ script UIQuestController extends Component
 			end
 		end
 
+		local lp = _UserService.LocalPlayer
 		if activeId == nil then
+			-- 자동 선택: 보고 가능한 퀘스트를 먼저, 같은 부류 안에서는 우선순위 최소.
+			local activeReady = false
 			for id, userData in pairs(userDataTable) do
 				if userData.State == _QuestStateEnum.InProgress then
 					local data = _QuestDataSetLogic:GetData(id)
 					if data ~= nil then
-						if activePriority == nil or data.Priority < activePriority then
+						local ready = userData:IsReadyToTurnIn(data, lp)
+						local better = activePriority == nil
+							or (ready and not activeReady)
+							or (ready == activeReady and data.Priority < activePriority)
+						if better then
 							activePriority = data.Priority
+							activeReady = ready
 							activeId = id
 							activeData = data
 						end
@@ -181,8 +190,59 @@ script UIQuestController extends Component
 		self:SetChromeVisible(true)
 		local userData = userDataTable[activeId]
 		self:SetText("QuestName", activeData.Name or "")
-		self:SetText("Guide", activeData.ProgressingDesc or "")
 		self:SetText("Progress", self:BuildProgressText(activeData, userData))
+
+		-- 안내 줄: 보고 가능(초록) / 자격 미달(주황, 사유) / 평소 진행 안내(원래 색).
+		local guide = activeData.ProgressingDesc or ""
+		local guideColor = nil
+		if userData:IsReadyToTurnIn(activeData, lp) then
+			guide = "[보고 가능] " .. self:GetTurnInNpcName(activeData) .. "에게 돌아가 보고하세요."
+			guideColor = Color(0.42, 1.0, 0.36, 1.0)
+		else
+			local block = activeData:GetEligibilityBlockText(lp, true)
+			if block ~= "" then
+				guide = "[보고 불가] " .. block
+				guideColor = Color(1.0, 0.62, 0.30, 1.0)
+			end
+		end
+		self:SetText("Guide", guide)
+		self:SetGuideColor(guideColor)
+
+		local state = "normal"
+		if guideColor ~= nil then state = guide end
+		if state ~= self._T.LastGuideState then
+			self._T.LastGuideState = state
+			log("[QUEST] tracker id=" .. tostring(activeId) .. " guide=" .. state)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetTurnInNpcName(any data)
+		-- 보고처 NPC 표시명. 현재 맵에서 찾지 못하면(사냥터 등) 일반 문구로 대신한다.
+		local npcId = data.TurnInNpcId or ""
+		if npcId == "" then npcId = data.GiverNpcId or "" end
+		local lp = _UserService.LocalPlayer
+		if npcId ~= "" and isvalid(lp) and isvalid(lp.CurrentMap) then
+			local dialogs = lp.CurrentMap:GetChildComponentsByTypeName("script.VillagerDialog", true)
+			for _, dialog in ipairs(dialogs or {}) do
+				if isvalid(dialog) and dialog.NpcId == npcId then
+					return dialog:GetSpeakerName()
+				end
+			end
+		end
+		return "퀘스트를 준 주민"
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetGuideColor(any col)
+		-- nil이면 .ui 원래 글자색으로 되돌린다 (첫 호출 때 원래 색을 기억).
+		local ent = self.Entity:GetChildByName("Guide", true)
+		if not isvalid(ent) or not isvalid(ent.TextComponent) then return end
+		if self._T.GuideBaseColor == nil then
+			self._T.GuideBaseColor = ent.TextComponent.FontColor
+		end
+		if col == nil then col = self._T.GuideBaseColor end
+		ent.TextComponent.FontColor = col
 	end
 
 	method string BuildProgressText(any data, any userData)

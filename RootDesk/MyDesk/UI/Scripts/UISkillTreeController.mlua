@@ -106,7 +106,7 @@ script UISkillTreeController extends Component
 	end
 
 	method integer GetParentRequiredLevelFromRow(any row)
-		-- ParentRequiredLevel 컬럼 (공란/누락=1). pcall 가드 — 규칙 7.
+		-- ParentRequiredLevel 컬럼 (공란/누락=1). pcall은 예외만 삼킬 뿐 LEA-3011 로그는 그대로 남는다 — 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
 		if row == nil then return 1 end
 		local ok, raw = pcall(function() return row:GetItem("ParentRequiredLevel") end)
 		if not ok or raw == nil or tostring(raw) == "" then return 1 end

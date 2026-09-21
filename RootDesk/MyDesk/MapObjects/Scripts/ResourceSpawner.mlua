@@ -1943,7 +1943,7 @@ script ResourceSpawner extends Logic
 		if ds == nil then return "" end
 		local row = ds:FindRow("BiomeId", biomeId)
 		if row == nil then return "" end
-		-- 없는 컬럼 GetItem은 LEA-3011 — pcall 가드 (Furnace readDur 선례)
+		-- 없는 컬럼 GetItem은 LEA-3011. pcall은 예외만 삼킬 뿐 LEA-3011 로그는 그대로 남는다 — 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
 		local ok, hex = pcall(function() return row:GetItem("MonsterTint") end)
 		if not ok or hex == nil or hex == "" then return "" end
 		return tostring(hex)

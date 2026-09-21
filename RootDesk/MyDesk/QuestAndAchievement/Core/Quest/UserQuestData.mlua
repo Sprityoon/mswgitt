@@ -336,6 +336,15 @@ script UserQuestData
 		return true
 	end
 
+	method boolean IsReadyToTurnIn(QuestData data, Entity userEntity)
+		-- 보고 NPC가 있는 진행 중 퀘스트를 지금 바로 제출할 수 있는지. 서버 Complete와 같은 게이트(조건·자격·넘길 물건).
+		-- 머리 위 마크 / 네비 / HUD 트래커가 이 한 곳만 보고 "보고 가능"을 판정한다.
+		if not data:RequiresNpcTurnIn() then return false end
+		if not self:IsCompletable(data) then return false end
+		if not data:IsPlayerEligible(userEntity, true) then return false end
+		return self:HasConsumeItems(data, userEntity)
+	end
+
 	method boolean TryConsumeItems(Entity userEntity, QuestData data)
 		if not self:HasConsumeItems(data, userEntity) then
 			return false

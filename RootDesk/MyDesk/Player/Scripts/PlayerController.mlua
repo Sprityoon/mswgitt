@@ -1210,6 +1210,7 @@ script PlayerController extends Component
 		local iconRuid = ""
 		local placedTileName = ""
 		local previewRuid = ""
+		local previewScaleRaw = ""
 		
 		if activeItem ~= "" then
 			local baseName = inv:GetBaseItemName(activeItem)
@@ -1221,6 +1222,7 @@ script PlayerController extends Component
 					iconRuid = row:GetItem("IconRUID") or ""
 					placedTileName = row:GetItem("PlacedTileName") or ""
 					previewRuid = row:GetItem("PreviewRUID") or ""
+					previewScaleRaw = row:GetItem("PreviewScale") or ""
 				end
 			end
 		end
@@ -1236,6 +1238,11 @@ script PlayerController extends Component
 				local is2x2 = (placedTileName == "")
 				local cellWorldPos = is2x2 and Vector3(targetCell.x + 1.0, targetCell.y + 1.0, 0) or Vector3(targetCell.x + 0.5, targetCell.y + 0.5, 0)
 				local previewScale = is2x2 and Vector3(2.0, 2.0, 1.0) or Vector3(1.0, 1.0, 1.0)
+				-- item_dataset.PreviewScale 이 있으면 그 값을 쓴다. 모델 Scale 과 어긋나면 미리보기만 딴 크기로 보인다.
+				local previewScaleNum = tonumber(previewScaleRaw)
+				if previewScaleNum ~= nil and previewScaleNum > 0 then
+					previewScale = Vector3(previewScaleNum, previewScaleNum, 1.0)
+				end
 				
 				local preview = self._T.PlacementPreviewEntity
 				if not isvalid(preview) then
@@ -1430,7 +1437,7 @@ script PlayerController extends Component
 		if ds == nil then return false end
 		local row = ds:FindRow("Name", inv:GetBaseItemName(activeItem))
 		if row == nil then return false end
-		-- pcall 가드: 데이터셋 미리프레시로 컬럼이 없어도 조용히 false.
+		-- 데이터셋 리프레시 전이라 컬럼이 없을 수 있어 pcall 폴백을 둔다. 컬럼이 실제로 없으면 LEA-3011 로그는 남는다.
 		local ok, v = pcall(function() return row:GetItem("TerrainEditAction") end)
 		if not ok or v == nil then return false end
 		return v ~= ""

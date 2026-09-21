@@ -123,14 +123,14 @@ script QuestData
 		local priority = math.tointeger(tonumber(row:GetItem("Priority")))
 		self.Priority = priority or math.maxinteger
 
-		-- T27: RewardUnlockId (없는 컬럼 GetItem은 LEA-3011 — pcall)
+		-- T27: RewardUnlockId. pcall은 예외만 삼킬 뿐 LEA-3011 로그는 그대로 남는다 — 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
 		self.RewardUnlockId = ""
 		local okRu, ru = pcall(function() return row:GetItem("RewardUnlockId") end)
 		if okRu and ru ~= nil and not _Util:IsNilorEmptyString(ru) then
 			self.RewardUnlockId = ru
 		end
 
-		-- 영지 포탈 개통 보상 (없는 컬럼 GetItem은 LEA-3011 — pcall)
+		-- 영지 포탈 개통 보상. pcall은 예외만 삼킬 뿐 LEA-3011 로그는 그대로 남는다 — 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
 		self.RewardPortalId = ""
 		local okRp, rp = pcall(function() return row:GetItem("RewardPortalId") end)
 		if okRp and rp ~= nil and not _Util:IsNilorEmptyString(rp) then
@@ -204,6 +204,22 @@ script QuestData
 		end
 		if self.RewardJobId ~= "" and pc:GetJobName(self.RewardJobId) == "" then return false end
 		return true
+	end
+
+	method string GetEligibilityBlockText(Entity player, boolean completing)
+		-- IsPlayerEligible이 거절한 사유를 짧은 한 줄로 돌려준다. 통과면 "".
+		if self:IsPlayerEligible(player, completing) then return "" end
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return "" end
+		if pc.Level < self.RequiredLevel then
+			return string.format("Lv.%d 이상 필요", self.RequiredLevel)
+		end
+		if self.RequiredJobId == "novice" then
+			if pc.JobId ~= "" then return "직업이 없는 모험가 전용" end
+		elseif self.RequiredJobId ~= "" and self.RequiredJobId ~= pc.JobId then
+			return pc:GetJobName(self.RequiredJobId) .. " 전용"
+		end
+		return "지금은 진행할 수 없음"
 	end
 
 end

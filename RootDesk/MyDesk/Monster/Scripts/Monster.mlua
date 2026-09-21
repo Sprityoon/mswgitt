@@ -74,7 +74,7 @@ script Monster extends Component
 				local row = dropDs:FindRow("MonsterId", mid)
 				if row ~= nil then
 					-- UserDataRow: GetItem only (no RowIndex) — §1.2 rule 7 / T35.
-					-- 없는 컬럼 GetItem은 LEA-3011 — pcall 가드 (Furnace readDur 선례)
+					-- 없는 컬럼 GetItem은 LEA-3011. pcall은 예외만 삼킬 뿐 LEA-3011 로그는 그대로 남는다 — 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
 					local function rowNum(col, defaultVal)
 						local ok, v = pcall(function() return row:GetItem(col) end)
 						if ok and v ~= nil and v ~= "" then

@@ -123,7 +123,7 @@ script UIBossContentsController extends Component
 	end
 
 	method string Cell(any ds, integer row, string col, string fallback)
-		-- UserDataSet 셀 조회. 없는 컬럼은 LEA-3011 이라 pcall 가드가 필수다 (함정 규칙 7).
+		-- UserDataSet 셀 조회. pcall은 예외만 삼킬 뿐 LEA-3011 로그는 그대로 남는다 — 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
 		if ds == nil then return fallback end
 		local ok, v = pcall(function() return ds:GetCell(row, col) end)
 		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end

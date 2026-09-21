@@ -104,7 +104,11 @@ script VillagerDialog extends Component
 		end
 
 		local speaker = self:GetSpeakerName()
-		local offer = self:FindOfferQuest(localPlayer)
+		-- 머리 위 초록 "!"(보고 가능)와 같은 우선순위: 제출 가능한 퀘스트가 있으면 새 제안보다 보고가 먼저다.
+		local offer = nil
+		if self:GetQuestPingKind(localPlayer) ~= "done" then
+			offer = self:FindOfferQuest(localPlayer)
+		end
 		local questId = 0
 		local offerPages = nil
 		if offer ~= nil then
@@ -163,14 +167,29 @@ script VillagerDialog extends Component
 
 	@ExecSpace("ClientOnly")
 	method string GetQuestPingKind(Entity player)
-		-- "" 없음 / "!" 수락 가능 / "?" 진행·보고. 완료 요청은 하지 않는다.
+		-- "" 없음 / "done" 보고 가능 / "!" 수락 가능 / "?" 진행 중. 우선순위 done > ! > ?. 완료 요청은 하지 않는다.
+		-- 자격(레벨·직업) 미달인 진행 중 퀘스트는 표시하지 않는다 — 구 게이트에서 수락돼 보고가 막힌 퀘스트에 ?가 뜨던 결함.
 		if not isvalid(player) or player.PlayerQuest == nil then return "" end
-		local offer = self:FindOfferQuest(player)
-		if offer ~= nil then return "!" end
+		local hasProgress = false
+		for _, e in ipairs(self:CollectInProgressTurnIns(player)) do
+			if e.userData:IsReadyToTurnIn(e.data, player) then return "done" end
+			if e.data:IsPlayerEligible(player, true) then hasProgress = true end
+		end
+		if self:FindOfferQuest(player) ~= nil then return "!" end
+		if hasProgress then return "?" end
+		return ""
+	end
+
+	@ExecSpace("ClientOnly")
+	method table CollectInProgressTurnIns(Entity player)
+		-- 이 NPC가 보고처(TurnInNpcId, 공란이면 GiverNpcId)인 진행 중 퀘스트를 CSV 순서로 모은다.
+		-- 반환: { { id=integer, data=QuestData, userData=UserQuestData }, ... }
+		local list = {}
+		if not isvalid(player) or player.PlayerQuest == nil or _QuestDataSetLogic == nil then return list end
 		local ds = _DataService:GetTable("QuestDataSet")
-		if ds == nil then return "" end
+		if ds == nil then return list end
 		local rows = ds:GetAllRow()
-		if rows == nil then return "" end
+		if rows == nil then return list end
 		local npcId = self.NpcId or ""
 		for _, row in ipairs(rows) do
 			local turnIn = ""
@@ -184,12 +203,12 @@ script VillagerDialog extends Component
 			local id = math.floor(tonumber(row:GetItem("Id")) or 0)
 			if id <= 0 then continue end
 			local userData = player.PlayerQuest.UserDataTable[id]
-			if userData == nil then continue end
-			if userData.State == _QuestStateEnum.InProgress then
-				return "?"
-			end
+			if userData == nil or userData.State ~= _QuestStateEnum.InProgress then continue end
+			local data = _QuestDataSetLogic:GetData(id)
+			if data == nil then continue end
+			table.insert(list, { id = id, data = data, userData = userData })
 		end
-		return ""
+		return list
 	end
 
 	@ExecSpace("ClientOnly")
@@ -228,9 +247,18 @@ script VillagerDialog extends Component
 			if not isvalid(label) then return end
 		end
 		label.Enable = true
+		-- 보고 가능(done)은 초록 "!", 수락 가능은 금색 "!", 진행 중은 금색 "?".
+		local glyph = kind
+		local glyphColor = Color(1.0, 0.86, 0.12, 1.0)
+		if kind == "done" then
+			glyph = "!"
+			glyphColor = Color(0.42, 1.0, 0.36, 1.0)
+		end
 		local textComp = label.TextComponent
-		if isvalid(textComp) and textComp.Text ~= kind then
-			textComp.Text = kind
+		if isvalid(textComp) and (textComp.Text ~= glyph or self._T.QuestMarkShownKind ~= kind) then
+			textComp.Text = glyph
+			textComp.FontColor = glyphColor
+			self._T.QuestMarkShownKind = kind
 		end
 		local ax = 0
 		local ay = 0
@@ -390,47 +418,38 @@ script VillagerDialog extends Component
 		-- 진행 중/완료 보고 대사 (TurnInNpcId).
 		local lp = _UserService.LocalPlayer
 		if not isvalid(lp) or lp.PlayerQuest == nil then return nil end
-		local ds = _DataService:GetTable("QuestDataSet")
-		if ds == nil then return nil end
-		local rows = ds:GetAllRow()
-		if rows == nil then return nil end
-		local npcId = self.NpcId or ""
+		local entries = self:CollectInProgressTurnIns(lp)
 
-		for _, row in ipairs(rows) do
-			local turnIn = ""
-			local okT, rawT = pcall(function() return row:GetItem("TurnInNpcId") end)
-			if okT and rawT ~= nil then turnIn = tostring(rawT) end
-			if turnIn == "" then
-				local okG, rawG = pcall(function() return row:GetItem("GiverNpcId") end)
-				if okG and rawG ~= nil then turnIn = tostring(rawG) end
-			end
-			if turnIn ~= npcId then continue end
-			local id = math.floor(tonumber(row:GetItem("Id")) or 0)
-			if id <= 0 then continue end
-			local userData = lp.PlayerQuest.UserDataTable[id]
-			if userData == nil then continue end
-			local data = _QuestDataSetLogic ~= nil and _QuestDataSetLogic:GetData(id) or nil
-			if data == nil then continue end
-
-			if userData.State == _QuestStateEnum.InProgress and userData:IsCompletable(data) and userData:HasConsumeItems(data, lp) then
-				local pages = self:LoadStoryPages(id, "complete")
+		-- 1) 지금 제출 가능한 퀘스트가 있으면 그것부터 보고한다 (서버 Complete와 같은 게이트).
+		for _, e in ipairs(entries) do
+			if e.userData:IsReadyToTurnIn(e.data, lp) then
+				local pages = self:LoadStoryPages(e.id, "complete")
 				if #pages == 0 then
-					pages = { "수고했네. 보상을 받지.", tostring(data.Name or "") .. " 완료!" }
+					pages = { "수고했네. 보상을 받지.", tostring(e.data.Name or "") .. " 완료!" }
 				end
-				lp.PlayerQuest:RequestCompleteQuests({ id })
+				lp.PlayerQuest:RequestCompleteQuests({ e.id })
+				log("[DIALOG] turn-in npc=" .. tostring(self.NpcId) .. " quest=" .. tostring(e.id))
 				return pages
 			end
-			if userData.State == _QuestStateEnum.InProgress and userData:IsCompletable(data) then
+		end
+
+		-- 2) 없으면 첫 진행 중 퀘스트의 사유를 알려 준다 (자격 미달 → 물건 부족 → 진행 대사).
+		for _, e in ipairs(entries) do
+			local block = e.data:GetEligibilityBlockText(lp, true)
+			if block ~= "" then
+				-- 구 게이트에서 수락된 퀘스트 등: 완료 요청을 보내 봐야 서버가 조용히 거절하므로 사유만 안내한다.
+				log("[DIALOG] turn-in blocked npc=" .. tostring(self.NpcId) .. " quest=" .. tostring(e.id) .. " reason=" .. block)
+				return { "아직은 이 일을 마무리할 수 없겠군. (" .. block .. ")" }
+			end
+			if e.userData:IsCompletable(e.data) then
 				-- 조건은 찼는데 넘길 물건이 부족한 경우 (조용히 실패하지 않도록 무엇이 모자란지 알려 준다).
-				return { self:BuildMissingConsumeText(data, lp) }
+				return { self:BuildMissingConsumeText(e.data, lp) }
 			end
-			if userData.State == _QuestStateEnum.InProgress then
-				local pages = self:LoadStoryPages(id, "progress")
-				if #pages == 0 then
-					pages = { tostring(data.ProgressingDesc or "아직 끝나지 않은 것 같군.") }
-				end
-				return pages
+			local pages = self:LoadStoryPages(e.id, "progress")
+			if #pages == 0 then
+				pages = { tostring(e.data.ProgressingDesc or "아직 끝나지 않은 것 같군.") }
 			end
+			return pages
 		end
 		return nil
 	end

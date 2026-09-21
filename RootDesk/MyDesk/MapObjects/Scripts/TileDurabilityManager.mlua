@@ -76,6 +76,25 @@ script TileDurabilityManager extends Logic
 		
 		local gridToEntity = resourceSpawner:GetGridToEntity(mapName)
 		local gridData = gridToEntity[pivotKey]
+		-- pivotKey 가 가리키는 칸이 정말 그 가구의 것인지 확인한다.
+		-- 2x2 점유가 겹치면(1x1 시절에 설치된 레거시 배치) 한 칸을 다른 가구가 가져가,
+		-- 엉뚱한 가구가 철거되거나 원래 가구가 영구히 타격 불가가 된다. 함정 규칙 60.
+		if gridData ~= nil then
+			local ownerKey = math.floor(gridData.pivotX) .. "_" .. math.floor(gridData.pivotY)
+			if ownerKey ~= pivotKey then
+				log_warning("TileDurabilityManager: cell " .. pivotKey .. " is owned by " .. ownerKey .. " (겹친 점유). 피벗 재탐색.")
+				gridData = nil
+			end
+		end
+		if gridData == nil then
+			-- 피벗 칸을 뺏겼거나 지워진 경우: 그 피벗을 가리키는 다른 점유 칸에서 복구한다.
+			for gKey, d in pairs(gridToEntity) do
+				if d ~= nil and (math.floor(d.pivotX) .. "_" .. math.floor(d.pivotY)) == pivotKey then
+					gridData = d
+					break
+				end
+			end
+		end
 		if gridData == nil then
 			log("TileDurabilityManager: No entity or tile registered at " .. pivotKey .. " in map " .. mapName)
 			return
@@ -705,7 +724,7 @@ script TileDurabilityManager extends Logic
 		local modelName = row:GetItem("ModelName")
 		local entryId = row:GetItem("EntryId")
 
-		-- 화폐 여부에 따라 드롭 스케일을 고른다. 없는 컬럼 GetItem은 LEA-3011이라 pcall 가드(규칙 7).
+		-- 화폐 여부에 따라 드롭 스케일을 고른다. pcall은 예외만 삼킬 뿐 LEA-3011 로그는 그대로 남는다 — 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
 		local dropScale = self.DropItemScale
 		local okCur, curVal = pcall(function() return row:GetItem("IsCurrency") end)
 		if okCur and tostring(curVal) == "true" then
