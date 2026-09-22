@@ -1,7 +1,7 @@
 {
   "Id": "",
   "GameId": "",
-  "EntryKey": "model://slime_king",
+  "EntryKey": "model://snowman",
   "ContentType": "x-mod/model",
   "Content": "",
   "Usage": 0,
@@ -14,9 +14,9 @@
     "Use": "Json",
     "Json": {
       "Version": 1,
-      "Name": "SlimeKing",
+      "Name": "Snowman",
       "BaseModelId": null,
-      "Id": "slime_king",
+      "Id": "snowman",
       "Components": [
         "MOD.Core.TransformComponent",
         "MOD.Core.SpriteRendererComponent",
@@ -39,7 +39,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "6401ef4c5ccb4269a5c97831fa8fd329"
+          "Value": "bf93196a2da842eaaf93c944453416d8"
         },
         {
           "TargetType": "MOD.Core.SpriteRendererComponent",
@@ -77,8 +77,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 2.19,
-            "y": 1.39
+            "x": 2.5,
+            "y": 2.4
           }
         },
         {
@@ -90,8 +90,8 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": -0.007672991,
-            "y": 0.594308
+            "x": 0,
+            "y": 1.1
           }
         },
         {
@@ -101,7 +101,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 2.8
+          "Value": 2.2
         },
         {
           "TargetType": "script.Monster",
@@ -110,7 +110,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 800
+          "Value": 5200
         },
         {
           "TargetType": "script.Monster",
@@ -128,7 +128,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "6401ef4c5ccb4269a5c97831fa8fd329"
+          "Value": "bf93196a2da842eaaf93c944453416d8"
         },
         {
           "TargetType": "script.MonsterAI",
@@ -137,7 +137,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "297ad7bed08046e8a4a0bb47fed0f7d1"
+          "Value": "881ed191bfad4861b63aa94d2a9a2bb8"
         },
         {
           "TargetType": "script.MonsterAI",
@@ -146,7 +146,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "763ee1a40786483f9671435c1a8e8537"
+          "Value": "022330aea10449ac970a86ee17db8709"
         },
         {
           "TargetType": "script.MonsterAI",
@@ -155,7 +155,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "193c446258954f9cb7dfddab7b498bd8"
+          "Value": "23d06abe8f804666beaee7246a586f05"
         },
         {
           "TargetType": "script.MonsterMeleeAttack",
@@ -164,7 +164,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 6.5
+          "Value": 3.2
         },
         {
           "TargetType": "script.MonsterAI",
@@ -182,7 +182,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 14
+          "Value": 12
         },
         {
           "TargetType": "script.MonsterAI",
@@ -218,7 +218,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 0.75
+          "Value": 0.9
         },
         {
           "TargetType": "script.MonsterAI",
@@ -227,7 +227,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 3.5
+          "Value": 3.2
         },
         {
           "TargetType": "script.MonsterAI",
@@ -308,16 +308,16 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "slime"
+          "Value": "jr_yeti"
         },
         {
           "TargetType": "script.MonsterAI",
           "Name": "MinionSummonCount",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Int64, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 4
+          "Value": 2
         },
         {
           "TargetType": "script.MonsterAI",
@@ -344,7 +344,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 30
+          "Value": 48
         },
         {
           "TargetType": "script.Monster",
@@ -371,25 +371,25 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "iron_ore"
+          "Value": "snow_crystal"
         },
         {
           "TargetType": "script.Monster",
           "Name": "BossDropMin",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 5
+          "Value": 8
         },
         {
           "TargetType": "script.Monster",
           "Name": "BossDropMax",
           "ValueType": {
             "$type": "MODNativeType",
-            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+            "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 10
+          "Value": 16
         },
         {
           "TargetType": "script.Monster",
@@ -398,7 +398,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "rocky01"
+          "Value": ""
         },
         {
           "TargetType": "script.Monster",
@@ -407,7 +407,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "바위 고원"
+          "Value": ""
         },
         {
           "TargetType": "MOD.Core.TransformComponent",
@@ -418,9 +418,9 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 2.8,
-            "y": 2.8,
-            "z": 2
+            "x": 2.5,
+            "y": 2.5,
+            "z": 2.5
           }
         },
         {
@@ -430,7 +430,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "slime_king"
+          "Value": "snowman"
         },
         {
           "TargetType": "script.MonsterMeleeAttack",
@@ -439,7 +439,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 2
+          "Value": 12
         },
         {
           "TargetType": "script.MonsterMeleeAttack",
@@ -919,7 +919,7 @@
             "$type": "MODNativeType",
             "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": false
+          "Value": true
         },
         {
           "TargetType": "script.MonsterAI",
@@ -1245,6 +1245,24 @@
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
           "Value": 0.7
+        },
+        {
+          "TargetType": "script.Monster",
+          "Name": "Defense",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 34
+        },
+        {
+          "TargetType": "script.MonsterAI",
+          "Name": "SlamDamage",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 48
         }
       ],
       "EventLinks": [],

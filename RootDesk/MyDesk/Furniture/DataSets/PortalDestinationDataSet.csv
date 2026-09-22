@@ -1,5 +1,8 @@
 DestinationId,MapName,DisplayName,ArriveX,ArriveY,UnlockType,Group,TemplateMap,Biome,IsDefault
 town,town,마을,10,-2,always,town,,,true
-hunt01,hunt01,사냥터 1구역,-19,-22,always,rookie,field_earth,earth_field,false
-hunt02,hunt02,사냥터 2구역,-21,-23,waypoint,rookie,template_field,rocky,false
-hunt03,hunt03,사냥터 3구역,-21,-23,waypoint,rookie,template_field,desert,false
+hunt01,hunt01,흙 벌판 1구역,-19,-22,always,rookie,field_earth,earth_field,false
+hunt02,hunt02,흙 벌판 2구역,-21,-23,waypoint,rookie,template_field,earth_field,false
+hunt03,hunt03,흙 벌판 3구역,-21,-23,waypoint,rookie,template_field,earth_field,false
+rocky01,rocky01,바위 고원 (바위 메아리),-21,-23,waypoint,rookie,template_rocky,rocky,false
+desert01,desert01,모래 언덕 (모래에 잠든 길),-21,-23,waypoint,rookie,template_desert,desert,false
+snow01,snow01,만년 설원 (눈밭의 대답),-21,-23,waypoint,rookie,template_snow,snowfield,false

@@ -1844,7 +1844,8 @@ script ResourceSpawner extends Logic
 			return fallback
 		end
 
-		local hunt01 = self:EnsureHuntMap("hunt01", getCol("hunt01", "TemplateMap", "template_field"), getCol("hunt01", "Biome", "earth_field"))
+		-- 초보 사냥터 3단계 체인: hunt01 -> hunt02 -> hunt03 -> (끝에 슬라임킹 로비 포탈)
+		local hunt01 = self:EnsureHuntMap("hunt01", getCol("hunt01", "TemplateMap", "field_earth"), getCol("hunt01", "Biome", "earth_field"))
 		local hunt02 = self:EnsureHuntMap("hunt02", getCol("hunt02", "TemplateMap", "template_field"), getCol("hunt02", "Biome", "earth_field"))
 		local hunt03 = self:EnsureHuntMap("hunt03", getCol("hunt03", "TemplateMap", "template_field"), getCol("hunt03", "Biome", "earth_field"))
 
@@ -1866,15 +1867,39 @@ script ResourceSpawner extends Logic
 			self:SpawnTreasureChestsForMap(hunt02, "hunt02")
 		end
 
-		-- hunt03: Home return + back to hunt02. 체인의 종점 — PortalForward 자리에 보스 대기실 포탈이 붙는다(EnsureBossLobbyPortals).
+		-- hunt03: Home return + back to hunt02. 체인의 종점 — 슬라임킹 대기실 포탈(EnsureBossLobbyPortals)이 PortalForward 에 붙는다.
 		if isvalid(hunt03) then
 			self:SpawnFixedPortal(hunt03, "Portal", 0, -3, "Home", Vector2(-3, 0))
 			self:SpawnFixedPortal(hunt03, "PortalBack", -10, 0, "hunt02", self:GetPortalArrivePosition(hunt02, "PortalForward", Vector2(8, 0)))
 			self:SpawnTreasureChestsForMap(hunt03, "hunt03")
 		end
 
+		-- 상위 테마 사냥터 인스턴스 (슬라임킹 클리어 후 해금되는 바위 고원 등)
+		local rocky01 = self:EnsureHuntMap("rocky01", getCol("rocky01", "TemplateMap", "template_rocky"), getCol("rocky01", "Biome", "rocky"))
+		local desert01 = self:EnsureHuntMap("desert01", getCol("desert01", "TemplateMap", "template_desert"), getCol("desert01", "Biome", "desert"))
+		local snow01 = self:EnsureHuntMap("snow01", getCol("snow01", "TemplateMap", "template_snow"), getCol("snow01", "Biome", "snowfield"))
+
+		if isvalid(rocky01) then
+			self:SpawnFixedPortal(rocky01, "Portal", 0, -3, "Home", Vector2(-3, 0))
+			self:SpawnFixedPortal(rocky01, "PortalForward", 10, 0, "desert01", self:GetPortalArrivePosition(desert01, "PortalBack", Vector2(0, 0)))
+			self:SpawnTreasureChestsForMap(rocky01, "rocky01")
+		end
+
+		if isvalid(desert01) then
+			self:SpawnFixedPortal(desert01, "Portal", 0, -3, "Home", Vector2(-3, 0))
+			self:SpawnFixedPortal(desert01, "PortalBack", -10, 0, "rocky01", self:GetPortalArrivePosition(rocky01, "PortalForward", Vector2(8, 0)))
+			self:SpawnFixedPortal(desert01, "PortalForward", 10, 0, "snow01", self:GetPortalArrivePosition(snow01, "PortalBack", Vector2(0, 0)))
+			self:SpawnTreasureChestsForMap(desert01, "desert01")
+		end
+
+		if isvalid(snow01) then
+			self:SpawnFixedPortal(snow01, "Portal", 0, -3, "Home", Vector2(-3, 0))
+			self:SpawnFixedPortal(snow01, "PortalBack", -10, 0, "desert01", self:GetPortalArrivePosition(desert01, "PortalForward", Vector2(8, 0)))
+			self:SpawnTreasureChestsForMap(snow01, "snow01")
+		end
+
 		self:EnsureBossLobbyPortals()
-		log("ResourceSpawner: Hunting-ground chain ready (hunt01..hunt03).")
+		log("ResourceSpawner: Hunting-ground chain ready (hunt01..hunt03 + rocky01, desert01, snow01).")
 	end
 
 	@ExecSpace("ServerOnly")

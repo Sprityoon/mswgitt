@@ -46,11 +46,14 @@
 - 보상 문법(✅): `RewardItems="Name:수량|Name:수량"` · `RewardUnlockId`(레시피 해금) · `RewardPortalId`(포탈 개통 — 106→town 가동).
 - 보고 넘김(✅ 2026-08-16): `ConsumeItems` 같은 문법. 201 Grass:5 · 203 Wood:10 · 204 Stone:10 · 212 Slime Jelly:3 · 213 Copper Ore:10. 202/214/215는 공란(도구·주괴는 들고 감).
 
-### 2.3 구역 개방 정책 (❓ Q7 — 제작자 결정)
+### 2.3 구역 개방 및 이동 시스템 정책 (⚖️ 2026-09-22 확정)
 
-- **A안 (스토리 개방)**: 챕터 3·4 마지막 퀘스트의 `RewardPortalId`로 hunt02/hunt04 웨이포인트를 개통. 이야기가 문을 여는 구조 — 단, `RewardPortalId`가 waypoint형 목적지에도 유효한지 ❓ 실측 필요 (`GrantEstatePortal` 경로).
-- **B안 (도보 개방 유지)**: game_design §2.2 ③의 D2식 "최초 도달 개방"만 두고, 퀘스트는 도달을 안내만 한다 (`Warp` 조건).
-- 절충안: 필드(hunt02·03)는 B, 보스(hunt04)만 A — "정원의 위치는 이야기로만 알 수 있다"는 서사와 정합.
+- **정규 사냥터 (중앙 단일 포탈 — 디아블로식 웨이포인트 UI)**:
+  - 영지에는 단 하나의 차원 관문(`WarpPopup`)만 존재한다.
+  - 초보 흙 벌판(`hunt01`~`hunt03`)은 도보 전진 포탈(`PortalForward`)로도 연결되며 웨이포인트로도 이동 가능.
+  - 상위 바이옴 사냥터(`rocky01`, `desert01`, `snow01`)는 각 막의 **관문 보스를 격파할 때 웨이포인트가 해금**된다 (`SlimeKing` ➔ `rocky01`, `StoneGolem` ➔ `desert01`, `Deu` ➔ `snow01`).
+- **히든 사냥터 독립 원칙**:
+  - 중앙 단일 포탈(`WarpPopup`) 목록에 절대 노출되지 않으며, 전용 퀘스트 설치물(가구)이나 비밀 통로로만 진입한다.
 
 ## 3. 챕터 1 「마을의 푸른 빛」 — 상세 초안 (town)
 
@@ -66,52 +69,31 @@
 
 - 앰비언트 ✅ (2026-08-15): vendor 벌판 소문 · barnkeeper 가축 불안 · fisher 물밑 수상.
 
-## 4. 챕터 2~5 — 퀘스트 골격 (집필 전 단계)
+## 4. 챕터 2~5 — 퀘스트 골격 (상세 연계안: hunting-grounds-ecosystem-plan.md 참조)
 
-### 4.1 챕터 2 「검은 이슬」 (hunt01) — 잠식의 물증 + 구리 테크 + 드롭→연구 개시
+### 4.1 챕터 2 「검은 이슬」 (1막: 흙 벌판 `hunt01`~`hunt03`)
+- **주요 테크**: 구리 채광 및 제련, 몬스터 전리품(슬라임 젤리) 첫 연구
+- **핵심 동선**: `hunt01` (슬라임·표본) ➔ `hunt02` (구리 채광·제련) ➔ `hunt03` (멧돼지·심층부) ➔ 관문 보스전
+- **1막 관문 보스 퀘스트**: **217 「이슬을 머금은 왕」** (`Kill,slime_king,1`)
+  - 격파 시 2막 바위 고원(`rocky01`) 웨이포인트 해금
 
-| Id | 이름(안) | Giver→TurnIn | 조건 | 비고 |
-|---|---|---|---|---|
-| 211 ✅ | 잠식된 이웃 퇴치 | elder | Kill,slime,5 Action | 촌장의 원정 부탁. Play 대기 |
-| 212 ✅ | 검은 이슬 표본 | researcher | Gather,Slime Jelly,3 Action | 잠식 표본. 드롭 줍기=Gather (코드 실측) |
-| 213 ✅ | 구리 한 줌 | blacksmith | Gather,Copper Ore,10 Action | 광석 채집 |
-| 214 ✅ | 화로의 첫 쇳물 | blacksmith | Smelt,Copper Bar,2 Action | 화로 Smelt emit (코드 실측) |
-| 215 ✅ | 구리 손맛 | blacksmith | Craft,Copper Pickaxe,1 State | 구리 도구 해금은 기존 연구/두루마리 |
-| 216 ✅ | 이정표 아래에서 | elder | Kill,boar,3 Action | 이정표 문양=두루마리 (빛) + 검은 이슬 (그늘) |
+### 4.2 챕터 3 「바위 메아리」 (2막: 바위 고원 `rocky01`)
+- **주요 테크**: 철 채광 및 상위 도구 제작, 푸른 불씨 마법 스킬 해금
+- **핵심 동선**: 바위 고원 진입 (`Warp,rocky01,1`) ➔ 스텀프 표본 ➔ 아이언호그 돌진 저지 ➔ 울림돌 조사 (빛과 소리 약점)
+- **2막 관문 보스 퀘스트**: **227 「울림돌의 파수꾼」** (`Kill,stone_golem,1`)
+  - 격파 시 3막 모래 언덕(`desert01`) 웨이포인트 해금
 
-### 4.2 챕터 3 「바위 메아리」 (hunt02) — 철 테크와 심지
+### 4.3 챕터 4 「모래에 잠든 길」 (3막: 모래 언덕 `desert01`)
+- **주요 테크**: 고대 유적 파편 발굴, 선인장 가시 수집, 상위 장신구 제작
+- **핵심 동선**: 모래 언덕 진입 (`Warp,desert01,1`) ➔ 모래두지·카투스·스콜피온 상대 ➔ 마른 우물 기록 조사
+- **3막 관문 보스 퀘스트**: **236 「마른 우물의 지킴이」** (`Kill,deu,1`)
+  - 격파 시 4막 만년 설원(`snow01`) 웨이포인트 해금
 
-| Id | 이름(안) | Giver→TurnIn | 조건 | 비고 |
-|---|---|---|---|---|
-| 221 | 메아리를 따라 | elder | Warp ❓ 또는 §2.3 개방 정책 | hunt02 진입 |
-| 222 | 뿔버섯의 사정 | barnkeeper | Kill,horn_mushroom,5 ❓ | 헛간 주인 `barnkeeper`가 야생 생물의 고통(잠식)을 안타까워하며 진정 의뢰 |
-| 223 | 철 한 줌 | blacksmith | Gather,Iron Ore,10 | 대장장이 `blacksmith`의 상위 철 광석 채광 의뢰 |
-| 224 | 단단한 해독 | blacksmith | Craft,Iron Pickaxe,1 | `research_iron_tools` 선행 |
-| 225 | 웅웅거리는 조각 | researcher | Gather,Stone,15 | 캔 돌 중 울림돌 조각 발견 → 연구원 `researcher`와 대장장이 `blacksmith`가 심지 가공 착수 |
-
-### 4.3 챕터 4 「모래에 잠든 길」 (hunt03) — 기록과 위치
-
-| Id | 이름(안) | 조건 | 비고 |
-|---|---|---|---|
-| 231 | 모래 길 | Warp ❓ / 개방 정책 | hunt03 진입 |
-| 232 | 사막의 이웃들 | Kill,horn_mushroom,7 ❓ | 사막 주력 스폰(✅ 가중 80) |
-| 233 | 여정의 채비 | Craft,Roasted Grass,3 | 요리로 완급 조절 — 코지 리듬 유지 |
-| 234 | 마른 우물가의 기록 | Gather,Grass,5 | **201과 같은 조건 — 수미상관.** 기록 틈 풀에 불씨가 반응(단서 4). 보상 `RewardPortalId=hunt04` ❓(§2.3 A안) |
-
-- ❓ 사막 바이옴의 풀·나무 자원 분포는 `BiomeResourceDataSet` 확인 후 조건 확정.
-
-### 4.4 챕터 5 「첫 정원의 뜰지기」 (hunt04) — 퇴치와 정화
-
-| Id | 이름(안) | 조건 | 비고 |
-|---|---|---|---|
-| 241 | 정원에 들기 전에 | Craft,Monster Ward,1 | 와드 = "그늘이 꺼리는 물건"(잠식 세계관과 정합 — ✅ 레시피 T1 존재) · 보스맵 유틸 온보딩 겸용 |
-| 242 | 잠식을 걷어내다 | Kill,(슬라임 킹),1 ❓ | 보스 Id 표기 실측 (`SlimeKing.model`) · **퇴치 = 정화** — 뜰지기에게서 그늘 조각이 빠져나가 눈밭 쪽으로 달아나는 연출(에필로그 훅) · T1 보스 = 구리 빌드 게이트(✅)와 정합 |
-| 243 | 등불을 다시 걸다 | Gather,Grass,10 ❓ | 정원의 풀로 심지 갈무리 — 보스맵 자원 스폰 여부 실측. 보상 = §4.5 |
-
-### 4.5 완주 보상 (❓ Q6 — 제작자)
-
-- **A안**: 신규 가구 「정원의 등불」 (`item_dataset` 1행 + `Prop_LampPost` 리스킨 모델) — 영지에 남는 이야기의 기념품. 비용: 아이템 행+모델+아이콘.
-- **B안 (비용 0)**: 기존 보상 조합 `Feast Dish:3|Coin:300` + town 연구소 창가 점등 연출([map-concepts.md](./map-concepts.md) §1.2).
+### 4.4 챕터 5 「눈밭의 대답」 (4막: 만년 설원 `snow01`)
+- **주요 테크**: 혹한의 설원 탐험, 설원 모피 및 빙하 결정 테크
+- **핵심 동선**: 만년 설원 진입 (`Warp,snow01,1`) ➔ 주니어 예티·페페·화이트팽 조사 ➔ 도망친 그늘의 본체 추적
+- **4막 관문 보스 퀘스트**: **246 「설원의 거인」** (`Kill,snowman,1`)
+  - 격파 시 설원 평정 및 첫 정원의 꺼진 등불 재점화 (에필로그 완주)
 
 ### 4.6 몬스터 드롭 → 연구·발전 축 (⚖️ 방향 확정 2026-08-14 · 🧭 라인업 = ❓ Q9)
 
@@ -179,6 +161,6 @@
 - **도구**: `Hand Axe` `Stone Pickaxe` `Stone Axe` `Copper Pickaxe` `Copper Axe` `Iron Pickaxe` `Iron Axe` `Shovel` `Hoe` `Water Spade` `Fishing Rod`
 - **가구**: `Wooden Chest` `Furnace` `Cooking Pot` `Bed` `Wood Floor` `Portal` `Animal Pen` `Monster Ward`
 - **소모품**: `Roasted Grass` `Carrot Soup` `Veggie Stir Fry` `Feast Dish` `Roasted Meat` `Egg Omelette` `Grass Seed` `Carrot Seed` `Chicken Ticket` `Sheep Ticket` `Dog Whistle` `Recipe Scroll: Copper Tools` `Recipe Scroll: Iron Tools` `Purified Jelly`
-- **몬스터**: `slime` `boar` `horn_mushroom` · 보스 Kill 인자 `slime_king` (`SlimeKing.model` MonsterId ✅ 코드 실측 2026-08-15)
-- **포탈 목적지**: `town` `hunt01` `hunt02` `hunt03` `hunt04`
+- **몬스터**: `slime` `ribbon_pig` `orange_mushroom` `boar` `stump` `iron_hog` `horn_mushroom` `moredji` `catus` `scorpion` `jr_yeti` `pepe` `white_fang` `yeti` · 관문 보스 `slime_king` `stone_golem` `deu` `snowman`
+- **포탈 목적지 (`PortalDestinationDataSet`)**: `town` `hunt01` `hunt02` `hunt03` `rocky01` `desert01` `snow01`
 - **연구/해금 Id**: `research_copper_tools` `research_iron_tools` `research_gloom_sample` · 퀘스트 해금 전례 `quest_cooking_pot`(✅ 107)
