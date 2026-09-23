@@ -11,7 +11,8 @@ script UIWarpController extends Component
 	property Entity btnClose = "23f03517-14f6-4f18-9265-ce78e9df7f71"
 
 	-- UI pool sizes (must match the Header1..N / Slot1..N entities under /ui/PopupGroup/WarpPopup/Bg).
-	property integer SlotCount = 10
+	-- 마을 1 + 사냥터 4컨셉 × 3구역 = 13 (2026-09-23).
+	property integer SlotCount = 13
 	property integer HeaderCount = 3
 
 	-- Layout metrics (UI pixels; rows are stacked top-down at runtime via anchoredPosition).

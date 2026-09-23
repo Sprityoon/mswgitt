@@ -7,7 +7,7 @@
   "Usage": 0,
   "UsePublish": 1,
   "UseService": 0,
-  "CoreVersion": "26.5.0.0",
+  "CoreVersion": "26.7.0.0",
   "StudioVersion": "0.1.0.0",
   "DynamicLoading": 0,
   "ContentProto": {
@@ -77,7 +77,7 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 1,
+            "x": 1.0,
             "y": 0.82
           }
         },
@@ -90,7 +90,7 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector2, MOD.Core",
-            "x": 0,
+            "x": 0.0,
             "y": 0.36
           }
         },
@@ -110,7 +110,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 70
+          "Value": 70.0
         },
         {
           "TargetType": "script.Monster",
@@ -200,7 +200,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 2
+          "Value": 2.0
         },
         {
           "TargetType": "MOD.Core.TransformComponent",
@@ -211,9 +211,9 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 2,
-            "y": 2,
-            "z": 2
+            "x": 2.0,
+            "y": 2.0,
+            "z": 2.0
           }
         },
         {
@@ -223,7 +223,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 3
+          "Value": 3.0
         },
         {
           "TargetType": "script.Monster",
@@ -232,7 +232,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 14
+          "Value": 14.0
         },
         {
           "TargetType": "script.MonsterAI",
@@ -250,7 +250,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 5
+          "Value": 5.0
         },
         {
           "TargetType": "script.MonsterAI",
@@ -277,7 +277,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 12
+          "Value": 12.0
         },
         {
           "TargetType": "script.MonsterMeleeAttack",
@@ -286,7 +286,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 8
+          "Value": 8.0
         }
       ],
       "EventLinks": [],

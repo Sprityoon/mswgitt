@@ -13,10 +13,14 @@
 - 이 세 구역을 순차적으로 진행(`hunt01` ➔ `hunt02` ➔ `hunt03`)한 뒤, 3구역 끝자락 관문에서 **초반 관문 보스인 슬라임킹 (`slime_king` / `template_boss`)**으로 넘어간다.
 - `hunt01`~`hunt03`에 바위나 사막 등의 상위 바이옴을 덮어씌우지 않는다.
 
-### ② 슬라임킹 처치 후 상위 바이옴 사냥터 순차 해금
-- 슬라임킹 처치 시 비로소 다음 컨셉인 **바위 고원(`rocky01`)**이 해금된다 (`SlimeKing.UnlockWaypointId = "rocky01"`).
-- 바위 고원 보스(스톤골렘) 처치 시 ➔ **모래 언덕(`desert01`)** 해금
-- 모래 사막 보스(데우) 처치 시 ➔ **만년 설원(`snow01`)** 해금
+### ② 슬라임킹 처치 후 상위 바이옴 사냥터 순차 해금 (⚖️ 2026-09-23: 모든 컨셉 3구역)
+- 모든 컨셉은 흙 벌판과 같이 **3구역 도보 체인**이다: `rocky01→02→03` · `desert01→02→03` · `snow01→02→03`.
+- 각 컨셉 **3구역 끝 전진 포탈 = 그 컨셉 관문 보스의 레이드 대기실**이다 (`hunt03` → 슬라임킹과 같은 구조).
+- 슬라임킹 처치 시 비로소 다음 컨셉인 **바위 고원 1구역(`rocky01`)**이 해금된다 (`SlimeKing.UnlockWaypointId = "rocky01"`).
+- 바위 고원 보스(스톤골렘) 처치 시 ➔ **모래 언덕 1구역(`desert01`)** 해금
+- 모래 사막 보스(데우) 처치 시 ➔ **만년 설원 1구역(`snow01`)** 해금
+- 🔴 **컨셉 사이에는 도보 포탈을 두지 않는다.** 다음 컨셉 1구역은 보스 처치로만 열린다 (2026-09-23 이전엔 `rocky01→desert01→snow01` 도보 연결로 보스 해금이 우회됐다).
+- 해금은 **보스가 죽은 방에 있던 전원**(파티원 포함)에게 적용된다.
 
 ### ③ 프로젝트 맵 템플릿 vs 인게임 맵 인스턴스의 구분
 - **맵 템플릿 (`map/template_*.map`, `map/field_earth.map`)**:
@@ -39,15 +43,17 @@
   │              └─ hunt03 (흙 벌판 3구역)
   │                   └─ 👑 보스: 슬라임킹 (template_boss)
   │
-  ├─ [2막: 바위 고원] (슬라임킹 처치 시 해금)
-  │    └─ rocky01 (바위 고원) ── 👑 보스: 울림돌 파수꾼 (스톤골렘)
+  ├─ [2막: 바위 고원] (슬라임킹 처치 시 rocky01 해금)
+  │    └─ rocky01 → rocky02 → rocky03 ── 👑 보스: 울림돌 파수꾼 (스톤골렘, 레이드)
   │
-  ├─ [3막: 모래 언덕] (스톤골렘 처치 시 해금)
-  │    └─ desert01 (모래 언덕) ── 👑 보스: 마른 우물의 지킴이 (데우)
+  ├─ [3막: 모래 언덕] (스톤골렘 처치 시 desert01 해금)
+  │    └─ desert01 → desert02 → desert03 ── 👑 보스: 마른 우물의 지킴이 (데우, 레이드)
   │
-  └─ [4막: 만년 설원] (데우 처치 시 해금)
-       └─ snow01 (만년 설원) ── 👑 보스: 서리 그늘 (스노우맨)
+  └─ [4막: 만년 설원] (데우 처치 시 snow01 해금)
+       └─ snow01 → snow02 → snow03 ── 👑 보스: 서리 그늘 (스노우맨, 레이드)
 ```
+
+- 모든 관문 보스는 `BossRaidLogic` 대기실(`raidlobby_<bossId>`) → 보스방(`template_boss` 인스턴스) 경로로만 싸운다. 대기실은 각 컨셉 3구역 끝 포탈로 **직접 도달**해야 보스 컨텐츠 창에서 활성화된다.
 
 - **필드 동선**: 각 구역 대각선 반대편 끝에 물리적인 전진 포탈(`PortalForward`)이 존재하며, 동시에 영지 중앙 단일 차원 관문(`WarpPopup`)에서 해금된 구역으로 자유롭게 이동할 수 있다 (방안 B 웨이포인트).
 - **히든 사냥터**: 영지 중앙 단일 포탈(`WarpPopup`) 목록에 절대 노출되지 않으며, 전용 퀘스트 설치물이나 필드 비밀 통로로만 독립 운영된다.
@@ -60,9 +66,10 @@
 | **초보 벌판 2** | `hunt02` | `map/template_field.map` | `earth_field` | 흙 벌판 2구역 (구리 채광 및 벌판 호수) |
 | **초보 벌판 3** | `hunt03` | `map/template_field.map` | `earth_field` | 흙 벌판 3구역 (벌판 심층 ➔ 끝에 슬라임킹 로비 포탈) |
 | **슬라임킹** | `raid_*` / `template_boss` | `map/template_boss.map` | `green_island` | 1막 보스 아레나 |
-| **바위 고원** | `rocky01` | `map/template_rocky.map` | `rocky` | 2막 바위 고원 (Rock 13종 타일셋, 암반과 호수) |
-| **모래 언덕** | `desert01` | `map/template_desert.map` | `desert` | 3막 모래 언덕 (Sand 13종 타일셋, 오아시스와 능선) |
-| **만년 설원** | `snow01` | `map/template_snow.map` | `snowfield` | 4막 만년 설원 (Snow 13종 타일셋, 빙하와 설로) |
+| **바위 고원** | `rocky01`~`rocky03` | `map/template_rocky.map` (3구역 공용) | `rocky` | 2막 바위 고원 (Rock 13종 타일셋, 암반과 호수) |
+| **모래 언덕** | `desert01`~`desert03` | `map/template_desert.map` (3구역 공용) | `desert` | 3막 모래 언덕 (Sand 13종 타일셋, 오아시스와 능선) |
+| **만년 설원** | `snow01`~`snow03` | `map/template_snow.map` (3구역 공용) | `snowfield` | 4막 만년 설원 (Snow 13종 타일셋, 빙하와 설로) |
+| **관문 보스 3종** | `raid_*` / `raidlobby_*` | `map/template_boss.map` / `map/template_raid_lobby.map` | `green_island` | 스톤골렘·데우·스노우맨 레이드 (공용 아레나) |
 
 
 ---
@@ -150,15 +157,20 @@
 
 영지 중앙 단일 포탈(`WarpPopup`)에서 참조하며, `ResourceSpawner.mlua`가 런타임에 맵 인스턴스를 생성할 원본 템플릿(`TemplateMap`)과 바이옴을 정의한다.
 
-| DestinationId | MapName | DisplayName | UnlockType | Group | TemplateMap | Biome | 해금 조건 |
-|---|---|---|---|---|---|---|---|
-| `town` | `town` | 마을 | always | town | | | 기본 개방 |
-| `hunt01` | `hunt01` | 흙 벌판 1구역 | always | rookie | `field_earth` | `earth_field` | 기본 개방 |
-| `hunt02` | `hunt02` | 흙 벌판 2구역 | waypoint | rookie | `template_field` | `earth_field` | 도보 도달 |
-| `hunt03` | `hunt03` | 흙 벌판 3구역 | waypoint | rookie | `template_field` | `earth_field` | 도보 도달 |
-| `rocky01` | `rocky01` | 바위 고원 | waypoint | rookie | `template_rocky` | `rocky` | **1막 관문 슬라임킹 처치** |
-| `desert01` | `desert01` | 모래 언덕 | waypoint | rookie | `template_desert` | `desert` | **2막 관문 스톤골렘 처치** |
-| `snow01` | `snow01` | 만년 설원 | waypoint | rookie | `template_snow` | `snowfield` | **3막 관문 데우 처치** |
+| DestinationId | DisplayName | UnlockType | TemplateMap | Biome | ChainPrevId | 해금 조건 |
+|---|---|---|---|---|---|---|
+| `town` | 마을 | always | | | | 기본 개방 |
+| `hunt01` | 흙 벌판 1구역 | always | `field_earth` | `earth_field` | | 기본 개방 |
+| `hunt02` / `hunt03` | 흙 벌판 2·3구역 | waypoint | `template_field` | `earth_field` | 직전 구역 | 도보 도달 |
+| `rocky01` | 바위 고원 1구역 | waypoint | `template_rocky` | `rocky` | | **1막 관문 슬라임킹 처치** |
+| `rocky02` / `rocky03` | 바위 고원 2·3구역 | waypoint | `template_rocky` | `rocky` | 직전 구역 | 도보 도달 |
+| `desert01` | 모래 언덕 1구역 | waypoint | `template_desert` | `desert` | | **2막 관문 스톤골렘 처치** |
+| `desert02` / `desert03` | 모래 언덕 2·3구역 | waypoint | `template_desert` | `desert` | 직전 구역 | 도보 도달 |
+| `snow01` | 만년 설원 1구역 | waypoint | `template_snow` | `snowfield` | | **3막 관문 데우 처치** |
+| `snow02` / `snow03` | 만년 설원 2·3구역 | waypoint | `template_snow` | `snowfield` | 직전 구역 | 도보 도달 |
+
+- `ChainPrevId` = 도보 체인의 바로 앞 구역. `ResourceSpawner:EnsureHuntingGroundMaps` 가 이 컬럼으로 `PortalBack`/`PortalForward` 를 잇는다 — 구역 추가는 CSV 행만으로 끝난다. 체인 마지막 구역의 `PortalForward` 는 `BossContentsDataSet.RequiredWaypointId` 가 가리키는 보스 대기실로 이어진다.
+- 워프 창 슬롯 풀은 13칸(`UIWarpController.SlotCount`). 목적지를 더 늘리면 `WarpPopup/Bg/SlotN` 엔티티와 함께 늘려야 한다.
 
 > 🔴 **히든 사냥터 절대 격리 원칙**:
 > - 중앙 단일 포탈(`WarpPopup` / `PortalDestinationDataSet`)에 히든 사냥터를 등록하지 않는다.
@@ -194,10 +206,26 @@ snowman,,ice_piece,8,15,1.0
 
 | 챕터 | 주요 무대 | 핵심 퀘스트 | 관문 보스 퀘스트 | 해금 효과 |
 |---|---|---|---|---|
-| 2막 검은 이슬 | 흙 벌판 (`hunt01`~`03`) | 211~216 (슬라임·구리 채광·제련) | **217 「이슬을 머금은 왕」** (`slime_king`) | `rocky01` 웨이포인트 해금 |
-| 3막 바위 메아리 | 바위 고원 (`rocky01`) | 221~226 (스텀프·아이언호그·철 채광) | **227 「울림돌의 파수꾼」** (`stone_golem`) | `desert01` 웨이포인트 해금 |
-| 4막 모래에 잠든 길 | 모래 언덕 (`desert01`) | 231~235 (모래두지·카투스·우물 단서) | **236 「마른 우물의 지킴이」** (`deu`) | `snow01` 웨이포인트 해금 |
-| 5막 만년 설원 | 만년 설원 (`snow01`) | 241~245 (예티·페페·설원 조사) | **246 「설원의 거인」** (`snowman`) | 설원 평정 및 최종 엔드 정원 개방 |
+| 2막 검은 이슬 | 흙 벌판 (`hunt01`~`03`) | 211~216 (슬라임·구리 채광·제련) | **217 「이슬을 삼킨 것」** (`slime_king`) ✅ | `rocky01` 웨이포인트 해금 |
+| 3막 바위 메아리 | 바위 고원 (`rocky01`~`03`) | 221~226 (스텀프·아이언호그·철 채광) ⏳ | **227 「울림돌의 파수꾼」** (`stone_golem`) ✅ | `desert01` 웨이포인트 해금 |
+| 4막 모래에 잠든 길 | 모래 언덕 (`desert01`~`03`) | 231~235 (모래두지·카투스·우물 단서) ⏳ | **236 「마른 우물의 지킴이」** (`deu`) ✅ | `snow01` 웨이포인트 해금 |
+| 5막 만년 설원 | 만년 설원 (`snow01`~`03`) | 241~245 (예티·페페·설원 조사) ⏳ | **246 「설원의 거인」** (`snowman`) ✅ | 설원 평정 및 최종 엔드 정원 개방 |
+
+- ✅ 2026-09-23: 관문 퀘스트 4종 데이터 반영 (`217 → 227 → 236 → 246`, `RequiredId` 직렬). 챕터 퀘스트(⏳)가 들어오면 각 관문 퀘스트의 `RequiredId` 를 그 챕터 마지막 퀘스트로 옮긴다.
+- ✅ 2026-09-23: 보스 처치 시 퀘스트 `Kill` 진행과 웨이포인트 해금 모두 **보스가 죽은 방의 전원**(파티원 포함)에게 적용된다 (`Monster:GetBossCreditPlayers`).
+
+### 4.1 관문 보스 패턴 (⚖️ 2026-09-23 1차 — `BossPatternDataSet`)
+
+순환 순서대로 쓰고, **HP 50% 이하에서 2페이즈 강화 행**으로 바뀐다. 모든 광역 타격은 예고 장판이 다 찬 순간의 플레이어 위치로 판정한다.
+
+| 보스 | 1페이즈 순환 | 2페이즈 변화 |
+|---|---|---|
+| 슬라임킹 | 도약 강타 → 지진(몸통 원 + 충격파 링 2겹) · 30초마다 슬라임 소환 | 지진 링 3겹·간격 단축 |
+| 스톤골렘 | 대지 강타(도약) → 바위 파편 8방향 → 울림 포효(반경 6.5, 2.4초 예고) | 파편 3연사(회차마다 틈 이동) |
+| 데우 | 가시 폭풍(발밑 추적 5연속) → 도약 → 모래 돌진 | 가시 7연속·반경 확대 |
+| 스노우맨 | 눈뭉치 굴리기 → 서리 송곳(일렬 6개) → 도약 | 눈뭉치 3연속 재조준 · 송곳 3줄 부채꼴 |
+
+- 2차 예정(플레이어 상태이상 파이프라인 필요): 스노우맨 **혹한의 눈보라**(둔화·시야), 데우 **메마름의 저주**(스태미나 회복 차단)·**모래 소용돌이**(흡인), 스톤골렘 포효의 **울림돌 엄폐** 판정.
 
 ---
 
@@ -211,8 +239,9 @@ snowman,,ice_piece,8,15,1.0
    - `map/template_rocky.map`: 바위 고원 전용 템플릿
    - `map/template_desert.map`: 모래 언덕 전용 템플릿
    - `map/template_snow.map`: 만년 설원 전용 템플릿
-3. ✅ **사냥터 인스턴스화 & 포탈 엔진 정합**:
-   - `ResourceSpawner.mlua`에서 `hunt01`~`hunt03` 도보 전진 포탈 체인과 `rocky01`, `desert01`, `snow01` 템플릿 기반 동적 생성 로직 완비.
-   - 보스 모델(`SlimeKing`, `StoneGolem`, `Deu`)에 처치 시 다음 구역 웨이포인트 해금(`UnlockWaypointId`) 바인딩 완료.
+3. ✅ **사냥터 인스턴스화 & 포탈 엔진 정합** (2026-09-23 재정비):
+   - `ResourceSpawner.mlua`가 `PortalDestinationDataSet.ChainPrevId` 로 4컨셉 × 3구역 체인을 데이터 주도 생성.
+   - 보스 모델(`SlimeKing`, `StoneGolem`, `Deu`)에 처치 시 다음 컨셉 1구역 웨이포인트 해금(`UnlockWaypointId`) 바인딩.
+   - 스톤골렘·데우·스노우맨 `BossContentsDataSet`/`BossDifficultyDataSet` 편입 (2026-09-22 시점엔 스폰 경로가 없어 만날 수 없었다).
 4. ✅ **만년 설원 몬스터 모델 및 아이템 완비**:
    - `JrYeti`, `Yeti`, `Pepe`, `WhiteFang`, `Snowman` 모델 5종 및 전리품 5종 구축 완료.

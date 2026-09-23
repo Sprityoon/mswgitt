@@ -7,6 +7,13 @@ script PlayerInventory extends Component
 	@Sync
 	property string EquippedTool = ""
 
+	-- 장비 슬롯(주무기·방어구) → 인벤토리 아이템 키 JSON. 슬롯 id 는 item_dataset.EquipSlot 값
+	-- (weapon / helmet / armor / gloves / shoes / shield). 장착해도 인벤토리에서 빠지지 않는 "참조" 방식이라
+	-- 아이템을 잃으면(버림·판매·소모) 그 슬롯은 자동으로 빈 것으로 취급된다 — 복제·유실 경로가 없다.
+	-- EquippedTool(손에 든 도구)과는 별개다: 손에 든 도구는 채집·기본 공격·던지기용, 장비는 스킬·방어력용.
+	@Sync
+	property string GearJson = "{}"
+
 	@Sync
 	property string QuickSlotsJson = "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]"
 
@@ -1431,6 +1438,182 @@ script PlayerInventory extends Component
 		return info
 	end
 
+	---------------------------------------------------------------------------
+	-- 장비 (주무기·방어구) — 서버/클라 공용 조회. 클라는 동기화된 JSON 스냅샷을 읽는다.
+	---------------------------------------------------------------------------
+
+	method table GetGearSlots()
+		-- GearJson → { slot = itemKey }.
+		local decoded = self:SafeDecodeJson(self.GearJson, {})
+		if type(decoded) ~= "table" then return {} end
+		return decoded
+	end
+
+	method boolean OwnsItemKey(string itemKey)
+		-- 인벤토리에 그 키가 1개 이상 있는가 (도구 고유키·중첩 이름 둘 다).
+		if itemKey == nil or itemKey == "" then return false end
+		local items = self.Items
+		if self:IsClient() then
+			items = self:SafeDecodeJson(self.InventoryDataJson, {})
+		end
+		local entry = items[itemKey]
+		if entry == nil then return false end
+		if type(entry) == "table" then return (entry.count or 1) > 0 end
+		return (tonumber(entry) or 0) > 0
+	end
+
+	method number GetItemNumber(string itemName, string colName)
+		-- item_dataset 숫자 컬럼 (공란/없음 = 0).
+		if itemName == nil or itemName == "" then return 0 end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return 0 end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return 0 end
+		local ok, raw = pcall(function() return row:GetItem(colName) end)
+		if ok and raw ~= nil and tostring(raw) ~= "" then return tonumber(raw) or 0 end
+		return 0
+	end
+
+	method string GetItemEquipSlot(string itemName)
+		-- item_dataset.EquipSlot. 장비가 아니면 "".
+		if itemName == nil or itemName == "" then return "" end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return "" end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return "" end
+		local ok, raw = pcall(function() return row:GetItem("EquipSlot") end)
+		if ok and raw ~= nil then return tostring(raw) end
+		return ""
+	end
+
+	method string FindBestWeaponKey()
+		-- 주무기를 등록하지 않았을 때 쓰는 자동 주무기: 보유 무기 중 (공격력 + 마법 공격력) 최고.
+		local items = self.Items
+		if self:IsClient() then
+			items = self:SafeDecodeJson(self.InventoryDataJson, {})
+		end
+		local bestKey = ""
+		local bestScore = -1
+		for key, entry in pairs(items) do
+			local name = key
+			if type(entry) == "table" and entry.name ~= nil then name = entry.name end
+			if self:OwnsItemKey(key) and self:GetItemEquipSlot(name) == "weapon" then
+				local score = self:GetItemNumber(name, "Attack") + self:GetItemNumber(name, "MagicAttack")
+				if score > bestScore or (score == bestScore and key < bestKey) then
+					bestScore = score
+					bestKey = key
+				end
+			end
+		end
+		return bestKey
+	end
+
+	method string GetGearKey(string slot)
+		-- 그 슬롯에 실제로 적용되는 아이템 키. 등록했지만 잃은 아이템은 "" (주무기는 자동 선택으로 폴백).
+		local key = self:GetGearSlots()[slot]
+		if key ~= nil and key ~= "" and self:OwnsItemKey(tostring(key)) then return tostring(key) end
+		if slot == "weapon" then return self:FindBestWeaponKey() end
+		return ""
+	end
+
+	method boolean IsWeaponAutoSelected()
+		-- 주무기 칸이 "등록"이 아니라 자동 선택으로 채워졌는가 (캐릭터 창 표시용).
+		local key = self:GetGearSlots()["weapon"]
+		return key == nil or key == "" or not self:OwnsItemKey(tostring(key))
+	end
+
+	method number GetGearStat(string colName)
+		-- 모든 장비 슬롯의 item_dataset 수치 합 (Attack / MagicAttack / SkillAttack / Defense ...).
+		local total = 0
+		for _, slot in ipairs(self:GetGearSlotOrder()) do
+			local key = self:GetGearKey(slot)
+			if key ~= "" then
+				total = total + self:GetItemNumber(self:GetBaseItemName(key), colName)
+			end
+		end
+		return total
+	end
+
+	method table GetGearSlotOrder()
+		-- 장비 슬롯 id 목록 (캐릭터 창 배치 순서와 같다).
+		return { "weapon", "helmet", "armor", "gloves", "shoes", "shield" }
+	end
+
+	method string GetGearSlotLabel(string slot)
+		-- 슬롯 id → 한글 표시명.
+		if slot == "weapon" then return "주무기" end
+		if slot == "helmet" then return "투구" end
+		if slot == "armor" then return "갑옷" end
+		if slot == "gloves" then return "장갑" end
+		if slot == "shoes" then return "신발" end
+		if slot == "shield" then return "방패" end
+		return slot
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestEquipGear(string itemKey)
+		-- 장비 장착(같은 아이템을 다시 요청하면 해제). 보유·슬롯·착용 레벨을 서버가 검증한다.
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		local pcComp = self.Entity:GetComponent("script.PlayerController")
+		if not self:OwnsItemKey(itemKey) then return end
+		local baseName = self:GetBaseItemName(itemKey)
+		local slot = self:GetItemEquipSlot(baseName)
+		if slot == "" then return end
+		-- ⚠ 규칙 53: RPC 본문에 ---@type <사용자 스크립트> 주석 금지 (LEA-1118) — 동적 호출로 둔다.
+		local need = math.floor(self:GetItemNumber(baseName, "EquipLevel"))
+		if isvalid(pcComp) and need > 0 and pcComp.Level < need then
+			pcComp:ClientShowMineFeedback("착용 레벨이 부족합니다. (Lv." .. tostring(need) .. " 필요)", playerComp.UserId)
+			return
+		end
+		local slots = self:GetGearSlots()
+		local label = self:GetGearSlotLabel(slot)
+		local disp = self:GetItemDisplayName(baseName)
+		local msg = ""
+		if slots[slot] == itemKey then
+			slots[slot] = nil
+			msg = "[" .. label .. "] " .. disp .. " 해제"
+		else
+			slots[slot] = itemKey
+			msg = "[" .. label .. "] " .. disp .. " 장착"
+		end
+		self.GearJson = self:SafeEncodeJson(slots, "{}")
+		if _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(playerComp.UserId) end
+		if isvalid(pcComp) then
+			pcComp:ClientShowMineFeedback(msg, playerComp.UserId)
+		end
+		self:ClientOnGearChanged(playerComp.UserId)
+		log("[GEAR] " .. playerComp.UserId .. " " .. msg .. " key=" .. itemKey)
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestUnequipGear(string slot)
+		-- 장비 슬롯 해제 (캐릭터 창의 칸 클릭).
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		local slots = self:GetGearSlots()
+		if slots[slot] == nil or slots[slot] == "" then return end
+		slots[slot] = nil
+		self.GearJson = self:SafeEncodeJson(slots, "{}")
+		if _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(playerComp.UserId) end
+		self:ClientOnGearChanged(playerComp.UserId)
+		log("[GEAR] " .. playerComp.UserId .. " unequip slot=" .. slot)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SanitizeGear()
+		-- 로드 직후: 잃은 아이템·슬롯이 바뀐 아이템 등록을 정리한다 (세이브 경로 무변경).
+		local slots = self:GetGearSlots()
+		local clean = {}
+		for slot, key in pairs(slots) do
+			local k = tostring(key)
+			if self:OwnsItemKey(k) and self:GetItemEquipSlot(self:GetBaseItemName(k)) == slot then
+				clean[slot] = k
+			end
+		end
+		self.GearJson = self:SafeEncodeJson(clean, "{}")
+	end
+
 	method string GetToolTypeLabel(string toolType)
 		-- ToolType 컬럼 → 한글 표시. 신규 종류는 여기와 데이터만.
 		if toolType == "axe" then return "도끼" end
@@ -1486,6 +1669,18 @@ script PlayerInventory extends Component
 		if skillAtk > 0 then
 			lines[#lines + 1] = "스킬 공격력 +" .. tostring(math.floor(skillAtk))
 		end
+		-- 장비(방어구·주무기): 슬롯 · 방어력 · 착용 레벨
+		local slot = self:GetItemEquipSlot(itemName)
+		if slot ~= "" and slot ~= "weapon" then
+			local head = self:GetGearSlotLabel(slot)
+			local def = numCol("Defense")
+			if def > 0 then head = head .. " · 방어력 +" .. tostring(math.floor(def)) end
+			lines[#lines + 1] = head
+		end
+		local needLv = numCol("EquipLevel")
+		if needLv > 0 then
+			lines[#lines + 1] = "착용 Lv." .. tostring(math.floor(needLv))
+		end
 		if #lines == 0 then return "" end
 		return table.concat(lines, "\n")
 	end
@@ -1506,6 +1701,26 @@ script PlayerInventory extends Component
 				c:RefreshInventoryData()
 			end
 		end
+	end
+
+	@ExecSpace("Client")
+	method void ClientOnGearChanged()
+		-- 장비 변경 후 인벤토리([장착] 표시)·캐릭터 창(슬롯·능력치)을 다시 그린다.
+		-- GearJson 동기화가 이 RPC 보다 늦게 올 수 있어 한 박자 뒤에 한 번 더 그린다.
+		local refresh = function()
+			local inv = _EntityService:GetEntityByPath("/ui/PopupGroup/InventoryPopup")
+			if isvalid(inv) then
+				local c = inv:GetComponent("script.UIInventoryController")
+				if isvalid(c) then c:RefreshInventoryData() end
+			end
+			local ch = _EntityService:GetEntityByPath("/ui/PopupGroup/CharacterPopup")
+			if isvalid(ch) and ch.Enable then
+				local cc = ch:GetComponent("script.UICharacterController")
+				if isvalid(cc) then cc:RefreshStats() end
+			end
+		end
+		refresh()
+		_TimerService:SetTimerOnce(refresh, 0.2)
 	end
 
 	@ExecSpace("Server")

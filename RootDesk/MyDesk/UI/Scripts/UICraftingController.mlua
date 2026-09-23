@@ -440,6 +440,7 @@ script UICraftingController extends Component
 		if catVal == "all" or catVal == "All" then return "전체" end
 		if catVal == "tool" then return "도구" end
 		if catVal == "furniture" then return "가구" end
+		if catVal == "equipment" then return "장비" end
 		if catVal == "resource" then return "자원" end
 		if catVal == "consumable" then return "소모품" end
 		if catVal == "misc" then return "기타" end

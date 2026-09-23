@@ -28,7 +28,8 @@
         "script.Monster",
         "script.MonsterAI",
         "script.MonsterMeleeAttack",
-        "MOD.Core.DamageSkinComponent"
+        "MOD.Core.DamageSkinComponent",
+        "script.BossPatternController"
       ],
       "Properties": [],
       "Values": [
@@ -407,7 +408,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "만년 설원"
+          "Value": "만년 설원 1구역"
         },
         {
           "TargetType": "MOD.Core.TransformComponent",

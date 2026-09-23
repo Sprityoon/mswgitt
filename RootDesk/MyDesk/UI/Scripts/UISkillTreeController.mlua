@@ -508,6 +508,14 @@ script UISkillTreeController extends Component
 		if equipLine ~= "" then
 			if extra ~= "" then extra = extra .. "\n" .. equipLine else extra = equipLine end
 		end
+		-- 위력 출처 (손에 든 무기 / 장비) — SkillDataSet.WeaponSource
+		local sourceLine = ""
+		if pc ~= nil then
+			pcall(function() sourceLine = pc:GetSkillWeaponSourceLine(row) end)
+		end
+		if sourceLine ~= "" then
+			if extra ~= "" then extra = extra .. "\n" .. sourceLine else extra = sourceLine end
+		end
 		if extra ~= "" then
 			if desc ~= "" then
 				desc = desc .. "\n" .. extra

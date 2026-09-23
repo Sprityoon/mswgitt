@@ -39,6 +39,18 @@ script MonsterMeleeAttack extends AttackComponent
 	end
 
 	@ExecSpace("ServerOnly")
+	method void DoPatternCircle(Vector2 center, number radius, integer damage)
+		-- 보스 패턴(BossPatternController) 예고 원 타격 (attackInfo="pattern").
+		-- 피해량은 패턴 행마다 달라서 호출부가 넘긴다. 다음 패턴 타격이 덮어쓸 때까지 유지한다
+		-- (CalcDamage 호출 시점이 AttackFast 반환 뒤여도 값이 비지 않도록 일부러 지우지 않는다).
+		self.LastAttackInfo = "pattern"
+		self._T.patternDamage = damage
+		local r = radius
+		if r == nil or r <= 0 then r = 1 end
+		self:AttackFast(CircleShape(center, r), "pattern", CollisionGroups.HitBox)
+	end
+
+	@ExecSpace("ServerOnly")
 	method void DoTouchAttack()
 		-- (legacy) 트랜스폼 원점 기준 정사각 접촉 틱. 콜라이더를 못 읽는 폴백 경로 전용.
 		self.LastAttackInfo = "touch"
@@ -103,6 +115,9 @@ script MonsterMeleeAttack extends AttackComponent
 				dmg = math.max(1, math.floor(self.ContactDamage * 0.5))
 			end
 			return math.floor(dmg)
+		end
+		if attackInfo == "pattern" and self._T.patternDamage ~= nil then
+			return math.floor(self._T.patternDamage)
 		end
 		if attackInfo == "slam" and self.SlamDamage > 0 then
 			return math.floor(self.SlamDamage)

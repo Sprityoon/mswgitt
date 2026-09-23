@@ -527,6 +527,16 @@ script BossRaidLogic extends Logic
 			ai.ProjectileDamage = math.floor(ai.ProjectileDamage * dmgScale)
 		end
 
+		-- 보스 패턴(BossPatternController): 예고 시간은 반응 배율, 연속 타격 간격은 스킬 빈도 배율을 따른다.
+		-- 패턴 피해는 SlamDamage/ContactDamage 기반이라 위 DamageScale 이 이미 반영된다.
+		local bpComp = boss:GetComponent("script.BossPatternController")
+		if isvalid(bpComp) then
+			---@type BossPatternController
+			local bp = bpComp
+			bp.WindupScale = reactionScale
+			bp.IntervalScale = intervalScale
+		end
+
 		-- 사냥터 보스와 동일한 렌더 레이어 정합 (바닥 타일 위로 올린다)
 		local sprite = boss.SpriteRendererComponent
 		if isvalid(sprite) then

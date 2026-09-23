@@ -24,6 +24,8 @@ script PlayerController extends Component
 	@Sync property number Mana = 60
 	property number BaseMaxMana = 60
 	property number BaseManaRegen = 2
+	-- 피격하거나 몬스터를 때린 뒤 이 시간(초) 동안은 전투 상태. 비전투 회복 패시브(OutOfCombatHealPct)가 멈춘다.
+	property number CombatHoldSeconds = 4.0
 	property string SkillAreaRUID = "0ac43ac8bf83461692fc56565d048df7"
 
 	@Sync
@@ -244,6 +246,7 @@ script PlayerController extends Component
 						if regen < 1 then regen = 1 end
 						self.Stamina = math.min(self.MaxStamina, self.Stamina + regen)
 					end
+					self:TickOutOfCombatHeal()
 				end
 			end, 1.0)
 			self._T.SkillAreaTimer = _TimerService:SetTimerRepeat(function() self:TickSkillAreas() end, 0.25)
@@ -283,6 +286,41 @@ script PlayerController extends Component
 			self:ClearSkillAreas()
 			log("PlayerController cleaned up on server.")
 		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void MarkCombat()
+		-- 피격(HandleHitEvent 경로)·몬스터 타격(Monster.HandleHitEvent) 시 호출. 전투 상태 시작/연장.
+		self._T.LastCombatAt = _UtilLogic.ElapsedSeconds
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsInCombat()
+		-- 마지막 피격/타격 후 CombatHoldSeconds 가 지나지 않았으면 전투 중.
+		local last = self._T.LastCombatAt
+		if last == nil then return false end
+		return _UtilLogic.ElapsedSeconds - last < self.CombatHoldSeconds
+	end
+
+	@ExecSpace("ServerOnly")
+	method void TickOutOfCombatHeal()
+		-- 비전투 회복 패시브(SkillDataSet PassiveStat=OutOfCombatHealPct): 1초마다 최대 체력 × 비율 회복.
+		-- 기력(스태미나)을 쓰지 않는다. 소수점 회복량은 누적해 정수가 될 때 반영한다.
+		local pct = self:GetPassiveBonus("OutOfCombatHealPct")
+		if pct <= 0 then return end
+		if self:IsInCombat() then
+			self._T.OocHealAccum = 0
+			return
+		end
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or playerComp.Hp <= 0 or playerComp.Hp >= playerComp.MaxHp then return end
+		local accum = (self._T.OocHealAccum or 0.0) + playerComp.MaxHp * pct
+		local add = math.floor(accum)
+		if add > 0 then
+			playerComp.Hp = math.min(playerComp.MaxHp, playerComp.Hp + add)
+			accum = accum - add
+		end
+		self._T.OocHealAccum = accum
 	end
 
 	method boolean IsWallAt(Vector2 checkPos)
@@ -3169,6 +3207,20 @@ script PlayerController extends Component
 		return base + math.floor(self:GetBuffedAttackPower() + 0.5)
 	end
 
+	method integer GetGearStat(string colName)
+		-- 장비 슬롯(주무기·방어구) 수치 합. 주무기 미등록이면 보유 최고 무기를 자동으로 쓴다(PlayerInventory.GetGearKey).
+		local pi = self.Entity:GetComponent("script.PlayerInventory")
+		if not isvalid(pi) then return 0 end
+		---@type PlayerInventory
+		local p = pi
+		return math.floor(p:GetGearStat(colName))
+	end
+
+	method integer GetTotalDefense()
+		-- 방어력 = 기본(Defense) + 장비 방어력.
+		return self.Defense + self:GetGearStat("Defense")
+	end
+
 	method integer GetEquippedAttack()
 		-- item_dataset.Attack. 곡괭이·삽은 0, 전투 무기에만 값을 둔다.
 		return self:GetEquippedStat("attack")
@@ -3219,6 +3271,29 @@ script PlayerController extends Component
 		return "액티브"
 	end
 
+	method string GetSkillWeaponSource(any row)
+		-- 스킬 위력에 쓰는 무기 수치의 출처: "Held"(손에 든 도구) / "Gear"(장비).
+		-- SkillDataSet.WeaponSource 공란이면 투척(Throw)=Held, 그 외=Gear.
+		if row == nil then return "Gear" end
+		local src = self:SkillText(row, "WeaponSource")
+		if src == "Held" or src == "Gear" then return src end
+		if self:SkillText(row, "DamageModel") == "Throw" then return "Held" end
+		return "Gear"
+	end
+
+	method string GetSkillWeaponSourceLine(any row)
+		-- 스킬 상세 패널용 한 줄. 패시브·회복처럼 피해를 주지 않는 스킬은 "".
+		if row == nil then return "" end
+		local ty = self:SkillText(row, "Type")
+		if ty == "Passive" or ty == "HealAura" then return "" end
+		local model = self:SkillText(row, "DamageModel")
+		if model ~= "Physical" and model ~= "Magic" and model ~= "Throw" then return "" end
+		if self:GetSkillWeaponSource(row) == "Held" then
+			return "위력: 손에 든 무기의 공격력 적용"
+		end
+		return "위력: 장비(주무기·방어구) 공격력 적용"
+	end
+
 	@ExecSpace("ServerOnly")
 	method integer ComputeSkillDamage(string skillId, number damageMul)
 		-- Physical: (CharAtk+Attack+SkillAttack)×배율
@@ -3226,10 +3301,12 @@ script PlayerController extends Component
 		-- Throw: (SkillPower+CharAtk+Attack+SkillAttack)×배율
 		local model = "Physical"
 		local skillPower = 0
+		local weaponSource = "Gear"
 		local ds = _DataService:GetTable("SkillDataSet")
 		if ds ~= nil and skillId ~= nil and skillId ~= "" then
 			local row = ds:FindRow("SkillId", skillId)
 			if row ~= nil then
+				weaponSource = self:GetSkillWeaponSource(row)
 				local okM, rawM = pcall(function() return row:GetItem("DamageModel") end)
 				if okM and rawM ~= nil and tostring(rawM) ~= "" then
 					model = tostring(rawM)
@@ -3242,9 +3319,17 @@ script PlayerController extends Component
 		end
 		local charAtk = self:GetCharacterAttack()
 		local magicAtk = self:GetMagicAttack()
-		local weaponAtk = self:GetEquippedAttack()
-		local itemMagic = self:GetEquippedMagicAttack()
-		local skillAtk = self:GetEquippedSkillAttack()
+		-- 무기 수치의 출처 (2026-09-23 ⚖️ 스킬별 SkillDataSet.WeaponSource):
+		--   Gear → 장비(주무기 + 방어구) 합 — 손에 무엇을 들었든 같다 (덫·소환·방벽 등)
+		--   Held → 손에 든 도구 — 휘두르는 근접기·던지기처럼 쥔 물건이 곧 무기인 스킬
+		local weaponAtk = self:GetGearStat("Attack")
+		local itemMagic = self:GetGearStat("MagicAttack")
+		local skillAtk = self:GetGearStat("SkillAttack")
+		if weaponSource == "Held" then
+			weaponAtk = self:GetEquippedAttack()
+			itemMagic = self:GetEquippedMagicAttack()
+			skillAtk = self:GetEquippedSkillAttack()
+		end
 		local core = charAtk + weaponAtk + skillAtk
 		if model == "Magic" then
 			core = skillPower + magicAtk + itemMagic + skillAtk
@@ -3252,7 +3337,7 @@ script PlayerController extends Component
 			core = skillPower + charAtk + weaponAtk + skillAtk
 		end
 		local dmg = math.floor(core * damageMul)
-		log("[DMG] skill=" .. tostring(skillId) .. " model=" .. model
+		log("[DMG] skill=" .. tostring(skillId) .. " model=" .. model .. " src=" .. weaponSource
 			.. " char=" .. tostring(charAtk) .. " mag=" .. tostring(magicAtk)
 			.. " weap=" .. tostring(weaponAtk) .. " sp=" .. tostring(skillPower)
 			.. " mul=" .. string.format("%.2f", damageMul)
@@ -3506,20 +3591,28 @@ script PlayerController extends Component
 					if tDmg <= 0 or tDmg == 2 then
 						tDmg = math.max(1, math.floor(monsterAttack.ContactDamage * 0.5))
 					end
-					damage = math.max(1, math.floor(tDmg - self.Defense * 0.1))
+					damage = math.max(1, math.floor(tDmg))
 				else
-					damage = math.max(1, math.floor(monsterAttack.ContactDamage - self.Defense * 0.1))
+					damage = math.max(1, math.floor(monsterAttack.ContactDamage))
 				end
 			else
 				damage = 5
 			end
 		end
-		
+
+		-- 방어력 감쇠 (2026-09-23 ⚖️ 방어구 시스템): 받는 피해 × 100 / (100 + 방어력).
+		-- 예전엔 몬스터 피해가 0일 때의 폴백에서만 Defense 를 빼서, 실제로는 방어력이 거의 적용되지 않았다.
+		local totalDef = self:GetTotalDefense()
+		if totalDef > 0 then
+			damage = math.max(1, math.floor(damage * 100 / (100 + totalDef) + 0.5))
+		end
+
 		if now < (self._T.TemperedUntil or 0) then damage = math.max(1, damage - (self._T.TemperedReduction or 0)) end
 		local guardOn = now < (self._T.GuardUntil or 0)
 		if guardOn then damage = math.max(1, math.floor(damage * (1 - (self._T.GuardReduction or 0)))) end
 		-- Apply damage to player HP
 		playerComp.Hp = math.max(0, playerComp.Hp - damage)
+		self:MarkCombat()
 		if guardOn then
 			local target = event.AttackerEntity
 			local monster = target:GetComponent("script.Monster")

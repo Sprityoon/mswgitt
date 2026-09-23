@@ -447,7 +447,7 @@ script UIInventoryController extends Component
 			local row = ds:FindRow("Name", itemName)
 			if row ~= nil then
 				local category = row:GetItem("Category") or ""
-				if category == "tool" or category == "furniture" then
+				if category == "tool" or category == "furniture" or category == "equipment" then
 					return "Equipment"
 				end
 			end
@@ -691,7 +691,11 @@ script UIInventoryController extends Component
 		local equippedTool = self:GetEquippedToolName()
 		local countTextEntity = slotEntity:GetChildByName("Count")
 		if isvalid(countTextEntity) and isvalid(countTextEntity.TextComponent) then
-			if data.key == equippedTool then
+			if self:IsGearEquippedKey(data.key) then
+				-- 캐릭터 창 장비 슬롯에 등록된 아이템 (주무기·방어구)
+				countTextEntity.TextComponent.Text = "[장착] x" .. data.count
+				countTextEntity.TextComponent.FontColor = Color(1.0, 0.82, 0.38, 1)
+			elseif data.key == equippedTool then
 				countTextEntity.TextComponent.Text = "[E] x" .. data.count
 				countTextEntity.TextComponent.FontColor = Color(0.4, 1.0, 0.4, 1)
 			else
@@ -755,8 +759,18 @@ script UIInventoryController extends Component
 						if isvalid(player) then
 							local inv = player:GetComponent("script.PlayerInventory")
 							if isvalid(inv) then
-								local activeSlot = inv.SelectedQuickSlotIndex or 1
-								inv:ServerRegisterQuickSlot(activeSlot, data.key)
+								-- 장비 장착: 방어구는 항상, 무기는 캐릭터 창이 열려 있을 때만
+								-- (창이 닫혀 있으면 무기 더블클릭은 기존대로 퀵슬롯 등록 = 손에 들기).
+								local gearSlot = inv:GetItemEquipSlot(data.name)
+								local charPopup = _EntityService:GetEntityByPath("/ui/PopupGroup/CharacterPopup")
+								local charOpen = isvalid(charPopup) and charPopup.Enable
+								if gearSlot ~= "" and (gearSlot ~= "weapon" or charOpen) then
+									inv:ServerRequestEquipGear(data.key)
+									self:FlashSlotEntity(slotEntity, Color(1.0, 0.82, 0.38, 1.0))
+								else
+									local activeSlot = inv.SelectedQuickSlotIndex or 1
+									inv:ServerRegisterQuickSlot(activeSlot, data.key)
+								end
 							end
 						end
 					end
@@ -860,6 +874,19 @@ script UIInventoryController extends Component
 
 			self:ResetInvDragState()
 		end)
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsGearEquippedKey(string itemKey)
+		-- 이 아이템 키가 장비 슬롯에 "등록"돼 있는가 (자동 주무기는 표시하지 않는다).
+		local player = _UserService.LocalPlayer
+		if not isvalid(player) then return false end
+		local inv = player:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return false end
+		for _, key in pairs(inv:GetGearSlots()) do
+			if key == itemKey then return true end
+		end
+		return false
 	end
 
 	@ExecSpace("ClientOnly")

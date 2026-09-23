@@ -1,8 +1,14 @@
-DestinationId,MapName,DisplayName,ArriveX,ArriveY,UnlockType,Group,TemplateMap,Biome,IsDefault
-town,town,마을,10,-2,always,town,,,true
-hunt01,hunt01,흙 벌판 1구역,-19,-22,always,rookie,field_earth,earth_field,false
-hunt02,hunt02,흙 벌판 2구역,-21,-23,waypoint,rookie,template_field,earth_field,false
-hunt03,hunt03,흙 벌판 3구역,-21,-23,waypoint,rookie,template_field,earth_field,false
-rocky01,rocky01,바위 고원 (바위 메아리),-21,-23,waypoint,rookie,template_rocky,rocky,false
-desert01,desert01,모래 언덕 (모래에 잠든 길),-21,-23,waypoint,rookie,template_desert,desert,false
-snow01,snow01,만년 설원 (눈밭의 대답),-21,-23,waypoint,rookie,template_snow,snowfield,false
+DestinationId,MapName,DisplayName,ArriveX,ArriveY,UnlockType,Group,TemplateMap,Biome,IsDefault,ChainPrevId
+town,town,마을,10,-2,always,town,,,true,
+hunt01,hunt01,흙 벌판 1구역,-19,-22,always,rookie,field_earth,earth_field,false,
+hunt02,hunt02,흙 벌판 2구역,-21,-23,waypoint,rookie,template_field,earth_field,false,hunt01
+hunt03,hunt03,흙 벌판 3구역,-21,-23,waypoint,rookie,template_field,earth_field,false,hunt02
+rocky01,rocky01,바위 고원 1구역,-21,-23,waypoint,rookie,template_rocky,rocky,false,
+rocky02,rocky02,바위 고원 2구역,-21,-23,waypoint,rookie,template_rocky,rocky,false,rocky01
+rocky03,rocky03,바위 고원 3구역,-21,-23,waypoint,rookie,template_rocky,rocky,false,rocky02
+desert01,desert01,모래 언덕 1구역,-21,-23,waypoint,rookie,template_desert,desert,false,
+desert02,desert02,모래 언덕 2구역,-21,-23,waypoint,rookie,template_desert,desert,false,desert01
+desert03,desert03,모래 언덕 3구역,-21,-23,waypoint,rookie,template_desert,desert,false,desert02
+snow01,snow01,만년 설원 1구역,-21,-23,waypoint,rookie,template_snow,snowfield,false,
+snow02,snow02,만년 설원 2구역,-21,-23,waypoint,rookie,template_snow,snowfield,false,snow01
+snow03,snow03,만년 설원 3구역,-21,-23,waypoint,rookie,template_snow,snowfield,false,snow02

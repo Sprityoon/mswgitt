@@ -913,6 +913,9 @@ script PersistenceManager extends Logic
 				inv.DexMonstersJson = data.dexMonsters or "{}"
 				inv.ActivePetId = data.activePetId or ""
 				inv:FoldAllStackableToolKeys()
+				-- 장비 슬롯: 키 병합(Fold) 이후에 복원·정리해야 사라진 구 키를 가리키지 않는다.
+				inv.GearJson = data.gear or "{}"
+				inv:SanitizeGear()
 				inv:ApplyHeldToolCostume()
 				inv:MigrateLegacyRecipeUnlocks()
 				-- 통화 스택→Coin 프로퍼티 흡수 (IsCurrency 미기입 사고 복구)
@@ -1208,6 +1211,11 @@ script PersistenceManager extends Logic
 			pc.IsSleeping = false
 			pc.SleepStartTimeTicks = "0"
 		end
+		-- 새 캐릭터는 장비 슬롯도 비운다 (다른 슬롯 캐릭터의 등록이 남지 않게).
+		local inv = player:GetComponent("script.PlayerInventory")
+		if isvalid(inv) then
+			inv.GearJson = "{}"
+		end
 	end
 
 	method string ClassifyMapKind(string mapName)
@@ -1287,6 +1295,8 @@ script PersistenceManager extends Logic
 		local capCoin = tonumber(inv.Coin) or 0
 		local capInvJson = inv.InventoryDataJson or "{}"
 		local capEquipped = inv.EquippedTool or ""
+		-- 장비 슬롯(주무기·방어구) — 선캡처(규칙 9: 추가 Yield 금지)
+		local capGear = inv.GearJson or "{}"
 		local capQuick = inv.QuickSlotsJson or "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]"
 		local capSlot = tonumber(inv.SelectedQuickSlotIndex) or 1
 		local capRecipes = inv.UnlockedRecipesJson or "[]"
@@ -1467,6 +1477,7 @@ script PersistenceManager extends Logic
 			raidClears = capRaidClears,
 			skillLevels = capSkills,
 			equippedSkills = capEquippedSkills,
+			gear = capGear,
 			sp = capSp,
 			jobId = capJobId,
 			mana = capMana,

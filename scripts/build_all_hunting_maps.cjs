@@ -231,8 +231,9 @@ function layoutSnow() {
     prefix: "Snow",
     portals: {
       Portal: { pos: [-23, -20] },
-      PortalBack: { pos: [-18, -20] }, // hunt03 으로 귀환
-      // 종점이므로 PortalForward 없음!
+      PortalBack: { pos: [-18, -20] },
+      // snow01→02→03 체인 전진 / snow03 에서는 스노우맨 대기실 포탈로 쓰인다 (ExitCamp 광장).
+      PortalForward: { pos: [22, 23] },
     },
     arrive: [-21, -23],
     theme: "snow",

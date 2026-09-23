@@ -1820,86 +1820,91 @@ script ResourceSpawner extends Logic
 
 	@ExecSpace("ServerOnly")
 	method void EnsureHuntingGroundMaps()
-		-- Builds the 3-stage hunting-ground chain (game_design.md §2.2 ③ / Phase 12):
-		--   hunt01 (field, easy) -> hunt02 (field, copper) -> hunt03 (field, hard).
-		-- Each zone has an immovable Home-return portal and a forward connection portal.
+		-- Builds every hunting-ground zone listed in PortalDestinationDataSet (rows with a TemplateMap)
+		-- and wires the walking chains between them (game_design.md §2.2 ③ / Phase 12).
+		--   흙 벌판 hunt01→02→03 · 바위 고원 rocky01→02→03 · 모래 언덕 desert01→02→03 · 만년 설원 snow01→02→03
+		-- 체인은 ChainPrevId 컬럼(바로 앞 구역의 DestinationId)이 정한다 — 공란이면 체인의 첫 구역.
+		-- 각 체인의 마지막 구역 PortalForward 는 비워 두고 EnsureBossLobbyPortals 가 관문 보스 대기실로 잇는다.
+		-- 🔴 컨셉 간 도보 연결(rocky → desert 등)은 두지 않는다. 다음 컨셉의 첫 구역은 관문 보스 처치
+		--    (Monster.UnlockWaypointId)로만 열린다 — 걸어서 건너뛰면 보스 해금이 무의미해진다.
 		-- Idempotent — re-entry is a no-op once the maps exist.
 		--
 		-- 🔴 hunt04(상시 공유 보스 아레나)는 2026-09-15 철거됐다. 보스전은 BossRaidLogic 의
 		--    대기실(template_raid_lobby) → 보스방(template_boss) 인스턴스로 일원화된다.
-		--    상시 부활 보스와 레이드로 경로가 이중화돼 있던 문제를 없앤 조치다.
-		-- 템플릿/바이옴은 전부 PortalDestinationDataSet(TemplateMap/Biome 컬럼) 데이터 주도.
 		local ds = _DataService:GetTable("PortalDestinationDataSet")
-		local getCol = function(mapName, colName, fallback)
-			if ds ~= nil then
-				for i = 1, ds:GetRowCount() do
-					if ds:GetCell(i, "MapName") == mapName then
-						local val = ds:GetCell(i, colName)
-						if val ~= nil and val ~= "" then
-							return val
-						end
-					end
+		if ds == nil then
+			log_error("ResourceSpawner: PortalDestinationDataSet missing — hunting grounds not built")
+			return
+		end
+
+		-- 1) 모든 구역 맵을 먼저 만든다 (도착 좌표 계산에 상대 맵이 필요하다).
+		local zones = {}      -- CSV 순서 유지
+		local byDestId = {}
+		for i = 1, ds:GetRowCount() do
+			local templateMap = ds:GetCell(i, "TemplateMap") or ""
+			if templateMap ~= "" then
+				local zone = {
+					destId = ds:GetCell(i, "DestinationId") or "",
+					mapName = ds:GetCell(i, "MapName") or "",
+					prevId = ds:GetCell(i, "ChainPrevId") or "",
+					map = nil
+				}
+				if zone.mapName ~= "" then
+					zone.map = self:EnsureHuntMap(zone.mapName, templateMap, ds:GetCell(i, "Biome") or "")
+					table.insert(zones, zone)
+					byDestId[zone.destId] = zone
 				end
 			end
-			return fallback
 		end
 
-		-- 초보 사냥터 3단계 체인: hunt01 -> hunt02 -> hunt03 -> (끝에 슬라임킹 로비 포탈)
-		local hunt01 = self:EnsureHuntMap("hunt01", getCol("hunt01", "TemplateMap", "field_earth"), getCol("hunt01", "Biome", "earth_field"))
-		local hunt02 = self:EnsureHuntMap("hunt02", getCol("hunt02", "TemplateMap", "template_field"), getCol("hunt02", "Biome", "earth_field"))
-		local hunt03 = self:EnsureHuntMap("hunt03", getCol("hunt03", "TemplateMap", "template_field"), getCol("hunt03", "Biome", "earth_field"))
-
-		-- 포탈 엔티티 이름 규약 (사냥터 템플릿 공통, 2026-09-17 재설계):
+		-- 2) 포탈 배선. 포탈 엔티티 이름 규약 (사냥터 템플릿 공통, 2026-09-17 재설계):
 		--   Portal = 홈 귀환(입구 쪽) / PortalBack = 이전 구역(입구 쪽) / PortalForward = 다음 구역(맵 반대편 끝)
 		-- 도착점은 도착 맵의 짝 포탈 위치에서 계산한다(GetPortalArrivePosition). 폴백 좌표는 에디터 배치가 없을 때만 쓰인다.
-		-- hunt01: Home return + forward to hunt02.
-		if isvalid(hunt01) then
-			self:SpawnFixedPortal(hunt01, "Portal", 0, -3, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(hunt01, "PortalForward", 10, 0, "hunt02", self:GetPortalArrivePosition(hunt02, "PortalBack", Vector2(0, 0)))
-			self:SpawnTreasureChestsForMap(hunt01, "hunt01")
+		for _, zone in ipairs(zones) do
+			if isvalid(zone.map) then
+				self:SpawnFixedPortal(zone.map, "Portal", 0, -3, "Home", Vector2(-3, 0))
+
+				local prev = byDestId[zone.prevId]
+				if prev ~= nil and isvalid(prev.map) then
+					self:SpawnFixedPortal(zone.map, "PortalBack", -10, 0, prev.mapName, self:GetPortalArrivePosition(prev.map, "PortalForward", Vector2(8, 0)))
+				end
+
+				for _, other in ipairs(zones) do
+					if other.prevId == zone.destId and isvalid(other.map) then
+						self:SpawnFixedPortal(zone.map, "PortalForward", 10, 0, other.mapName, self:GetPortalArrivePosition(other.map, "PortalBack", Vector2(0, 0)))
+						break
+					end
+				end
+
+				self:SpawnTreasureChestsForMap(zone.map, zone.mapName)
+			end
 		end
 
-		-- hunt02: Home return + back to hunt01 + forward to hunt03.
-		if isvalid(hunt02) then
-			self:SpawnFixedPortal(hunt02, "Portal", 0, -3, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(hunt02, "PortalBack", -10, 0, "hunt01", self:GetPortalArrivePosition(hunt01, "PortalForward", Vector2(8, 0)))
-			self:SpawnFixedPortal(hunt02, "PortalForward", 10, 0, "hunt03", self:GetPortalArrivePosition(hunt03, "PortalBack", Vector2(0, 0)))
-			self:SpawnTreasureChestsForMap(hunt02, "hunt02")
-		end
-
-		-- hunt03: Home return + back to hunt02. 체인의 종점 — 슬라임킹 대기실 포탈(EnsureBossLobbyPortals)이 PortalForward 에 붙는다.
-		if isvalid(hunt03) then
-			self:SpawnFixedPortal(hunt03, "Portal", 0, -3, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(hunt03, "PortalBack", -10, 0, "hunt02", self:GetPortalArrivePosition(hunt02, "PortalForward", Vector2(8, 0)))
-			self:SpawnTreasureChestsForMap(hunt03, "hunt03")
-		end
-
-		-- 상위 테마 사냥터 인스턴스 (슬라임킹 클리어 후 해금되는 바위 고원 등)
-		local rocky01 = self:EnsureHuntMap("rocky01", getCol("rocky01", "TemplateMap", "template_rocky"), getCol("rocky01", "Biome", "rocky"))
-		local desert01 = self:EnsureHuntMap("desert01", getCol("desert01", "TemplateMap", "template_desert"), getCol("desert01", "Biome", "desert"))
-		local snow01 = self:EnsureHuntMap("snow01", getCol("snow01", "TemplateMap", "template_snow"), getCol("snow01", "Biome", "snowfield"))
-
-		if isvalid(rocky01) then
-			self:SpawnFixedPortal(rocky01, "Portal", 0, -3, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(rocky01, "PortalForward", 10, 0, "desert01", self:GetPortalArrivePosition(desert01, "PortalBack", Vector2(0, 0)))
-			self:SpawnTreasureChestsForMap(rocky01, "rocky01")
-		end
-
-		if isvalid(desert01) then
-			self:SpawnFixedPortal(desert01, "Portal", 0, -3, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(desert01, "PortalBack", -10, 0, "rocky01", self:GetPortalArrivePosition(rocky01, "PortalForward", Vector2(8, 0)))
-			self:SpawnFixedPortal(desert01, "PortalForward", 10, 0, "snow01", self:GetPortalArrivePosition(snow01, "PortalBack", Vector2(0, 0)))
-			self:SpawnTreasureChestsForMap(desert01, "desert01")
-		end
-
-		if isvalid(snow01) then
-			self:SpawnFixedPortal(snow01, "Portal", 0, -3, "Home", Vector2(-3, 0))
-			self:SpawnFixedPortal(snow01, "PortalBack", -10, 0, "desert01", self:GetPortalArrivePosition(desert01, "PortalForward", Vector2(8, 0)))
-			self:SpawnTreasureChestsForMap(snow01, "snow01")
-		end
-
+		-- 3) 체인 종점 → 관문 보스 대기실 (BossContentsDataSet.RequiredWaypointId)
 		self:EnsureBossLobbyPortals()
-		log("ResourceSpawner: Hunting-ground chain ready (hunt01..hunt03 + rocky01, desert01, snow01).")
+
+		-- 4) 끝내 목적지가 정해지지 않은 템플릿 포탈은 끈다 (체인 첫 구역의 PortalBack 등).
+		--    TargetMapName 이 빈 포탈을 타면 빈 맵 이름으로 이동을 시도한다.
+		for _, zone in ipairs(zones) do
+			self:DisableUnlinkedPortal(zone.map, "PortalBack")
+			self:DisableUnlinkedPortal(zone.map, "PortalForward")
+		end
+
+		log("ResourceSpawner: Hunting-ground chains ready (" .. tostring(#zones) .. " zones).")
+	end
+
+	@ExecSpace("ServerOnly")
+	method void DisableUnlinkedPortal(Entity map, string portalName)
+		-- 템플릿에 배치돼 있지만 이 구역에서 연결할 곳이 없는 포탈을 숨긴다.
+		if not isvalid(map) then return end
+		local portal = map:GetChildByName(portalName)
+		if not isvalid(portal) then return end
+		local pg = portal:GetComponent("script.PortalGate")
+		if not isvalid(pg) then return end
+		if pg.TargetMapName ~= nil and pg.TargetMapName ~= "" then return end
+		portal:SetVisible(false)
+		portal:SetEnable(false)
+		log("ResourceSpawner: Portal '" .. portalName .. "' unlinked in " .. map.Name .. " — disabled")
 	end
 
 	@ExecSpace("ServerOnly")

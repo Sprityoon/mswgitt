@@ -252,12 +252,15 @@ script MonsterAI extends Component
 				self:StopMovement()
 				-- 예고 중 사망하면 장판이 지면에 남는다 — 반드시 같이 정리한다.
 				self:ClearTelegraphMarker()
+				-- 보스 패턴의 남은 타격·장판도 회수한다 (죽은 보스가 때리지 않게).
+				local bp = self:GetBossPatterns()
+				if isvalid(bp) then bp:Abort() end
 			end
 			return
 		end
 		if self.DeathPlayed then self.DeathPlayed = false end
 		-- Boss phases remain uninterrupted; boss hard control is converted to a brief slow.
-		if isvalid(monster) and monster:GetSkillStatus("Stun") ~= nil and self.CurrentAIState ~= "LEAP" then
+		if isvalid(monster) and monster:GetSkillStatus("Stun") ~= nil and self.CurrentAIState ~= "LEAP" and self.CurrentAIState ~= "PATTERN" then
 			self:StopMovement()
 			self.AttackStrikePending = false
 			self.TelegraphOn = false
@@ -341,6 +344,18 @@ script MonsterAI extends Component
 			self:UpdateLeap(delta)
 			return
 		end
+		-- 보스 패턴(BossPatternController): 제자리에서 타임라인 진행, 끝나면 후딜 후 STAND.
+		if self.CurrentAIState == "PATTERN" then
+			self:StopMovement()
+			local bp = self:GetBossPatterns()
+			if not isvalid(bp) or bp:Tick(delta) then
+				local cd = self.AttackCooldown
+				if isvalid(bp) then cd = bp:GetCooldown(self.AttackCooldown) end
+				self.AttackCooldownTimer = cd
+				self:EnterState("STAND")
+			end
+			return
+		end
 
 		local myPos = self:Pos2D()
 
@@ -396,10 +411,22 @@ script MonsterAI extends Component
 			if dSq <= atkRangeSq then
 				self:Face(tp.x - myPos.x)
 				if self.AttackCooldownTimer <= 0 and self.SpawnGraceTimer <= 0 then
-					if self.AttackType == "CHARGE" then
+					-- 보스 패턴 행이 있으면 순환 순서의 다음 패턴이 공격 종류를 정한다.
+					-- LEAP/CHARGE 는 기존 상태로 위임, 나머지는 PATTERN 상태에서 컨트롤러가 진행한다.
+					local kind = self.AttackType
+					local patternRow = nil
+					local bp = self:GetBossPatterns()
+					if isvalid(bp) and bp:HasPatterns() then
+						patternRow = bp:PickNext()
+						if patternRow ~= nil then kind = patternRow.pattern end
+					end
+					if kind == "CHARGE" then
 						self:EnterState("CHARGE")
-					elseif self.AttackType == "LEAP" then
+					elseif kind == "LEAP" then
 						self:EnterState("LEAP")
+					elseif patternRow ~= nil then
+						self:EnterState("PATTERN")
+						bp:Begin(patternRow)
 					else
 						self:EnterState("ATTACK")
 					end
@@ -462,7 +489,8 @@ script MonsterAI extends Component
 		--   조용히 씹힌다. 예고 앞부분(추적 구간)과 그 외 지상 구간에서는 그대로 돌기 때문에
 		-- T102: 공격 준비/타격 중(ATTACK)이나 돌진 중(CHARGE), 착지 확정(LEAP) 중에는 접촉 틱을 중단한다.
 		-- 플레이어 i-frame(0.4초)이 얄팍한 접촉 틱에 먼저 소모되어 정작 강력한 공격 데미지가 씹히는 현상을 방어.
-		if self.CurrentAIState == "ATTACK" or self.CurrentAIState == "CHARGE" or self:IsSlamCommitted() then return end
+		-- PATTERN(보스 패턴) 중에도 멈춘다 — 예고 원 타격이 접촉 틱의 i-frame 에 씹히지 않게.
+		if self.CurrentAIState == "ATTACK" or self.CurrentAIState == "CHARGE" or self.CurrentAIState == "PATTERN" or self:IsSlamCommitted() then return end
 		local atk = self:GetAttack()
 		if not isvalid(atk) then return end
 		if self.TouchCooldownTimer > 0 then
@@ -589,6 +617,11 @@ script MonsterAI extends Component
 		if newState ~= "LEAP" then
 			self:ClearTelegraphMarker()
 		end
+		-- PATTERN 을 떠나는 모든 경로(종료·리쉬·스턴 등)에서 남은 패턴 타격·장판을 회수한다.
+		if self.CurrentAIState == "PATTERN" and newState ~= "PATTERN" then
+			local bp = self:GetBossPatterns()
+			if isvalid(bp) then bp:Abort() end
+		end
 		self.CurrentAIState = newState
 		if newState == "STAND" then
 			self.TelegraphOn = false
@@ -612,6 +645,10 @@ script MonsterAI extends Component
 			self.AttackStrikePending = true
 			self.TelegraphOn = true
 			self:SetSprite(self.AttackRUID)
+			self:StopMovement()
+		elseif newState == "PATTERN" then
+			-- 보스 패턴: 제자리 고정. 스프라이트·예고 틴트는 BossPatternController:Begin 이 행 데이터로 정한다.
+			self.AttackStrikePending = false
 			self:StopMovement()
 		elseif newState == "CHARGE" then
 			-- 정지 텔레그래프(PAUSE) → 유저 거리만큼 DASH → DECEL 감속 정지
@@ -1126,7 +1163,7 @@ script MonsterAI extends Component
 		end
 		if self.MinionSummonTimer > 0 then return end
 		if self.SpawnGraceTimer > 0 then return end
-		if self.CurrentAIState == "LEAP" or self.CurrentAIState == "CHARGE" or self.CurrentAIState == "ATTACK" then
+		if self.CurrentAIState == "LEAP" or self.CurrentAIState == "CHARGE" or self.CurrentAIState == "ATTACK" or self.CurrentAIState == "PATTERN" then
 			return
 		end
 		-- 주변에 플레이어가 있을 때만(감지/어그로)
@@ -1196,7 +1233,8 @@ script MonsterAI extends Component
 		-- ⚠ 도약(LEAP)은 한번 시작하면 넉백으로 밀리지도, 취소되지도 않는다(슈퍼아머).
 		--   예전에는 도약 중 한 대만 맞아도 CHASE 로 강제 전환되어 착지 광역타가 통째로 사라졌다.
 		--   피해·어그로는 그대로 들어가고, 회피는 넉백이 아니라 장판 밖으로 나가서 한다.
-		if self.CurrentAIState == "LEAP" then
+		-- 보스 패턴(PATTERN) 시전 중에도 같은 슈퍼아머 — 밀리면 예고 원 중심이 보스와 어긋난다.
+		if self.CurrentAIState == "LEAP" or self.CurrentAIState == "PATTERN" then
 			self.AggroGraceTimer = self.AggroGraceDuration
 			self:BeginEngagement()
 			return
@@ -1634,6 +1672,14 @@ script MonsterAI extends Component
 		---@type Monster
 		local m = self.Entity:GetComponent("script.Monster")
 		return m
+	end
+
+	@ExecSpace("ServerOnly")
+	method BossPatternController GetBossPatterns()
+		-- 보스 다중 패턴 컴포넌트(보스 모델에만 있음). 일반 몬스터는 nil.
+		---@type BossPatternController
+		local bp = self.Entity:GetComponent("script.BossPatternController")
+		return bp
 	end
 
 	@ExecSpace("ServerOnly")

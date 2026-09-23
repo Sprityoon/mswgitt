@@ -28,7 +28,8 @@
         "script.Monster",
         "script.MonsterAI",
         "script.MonsterMeleeAttack",
-        "MOD.Core.DamageSkinComponent"
+        "MOD.Core.DamageSkinComponent",
+        "script.BossPatternController"
       ],
       "Properties": [],
       "Values": [
@@ -371,7 +372,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "iron_ore"
+          "Value": "copper ore"
         },
         {
           "TargetType": "script.Monster",
@@ -407,7 +408,7 @@
             "$type": "MODNativeType",
             "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": "바위 고원"
+          "Value": "바위 고원 1구역"
         },
         {
           "TargetType": "MOD.Core.TransformComponent",

@@ -1,50 +1,64 @@
 @Component
 script UICharacterController extends Component
+	-- 캐릭터 정보창 (2026-09-23 메이플식 재구성).
+	--   좌: 프로필 카드(아바타·레벨·직업·이름·SP) + 장비 6칸(주무기·투구·갑옷·장갑·신발·방패)
+	--   우: 전투력 → 핵심 능력치 2×2 → HP/MP/기력/EXP 게이지 → 세부 능력치 → 영지 권한 버튼
+	-- 장비 칸 클릭 = 해제. 장착은 인벤토리에서 장비 더블클릭(무기는 이 창이 열려 있을 때).
+	-- 모든 수치는 서버와 같은 계산식(PlayerController / PlayerInventory 공용 메서드)에서 읽는다.
 
 	property Entity characterPopup = "d069e6fa-bcb5-4bd0-b1a9-accf919aafb3"
-
 	property ButtonComponent btnClose = "1fbacf8c-7528-4613-9ec6-a00269c0fdbe"
-	property Entity btnPermission = "c1473594-13dc-472b-b585-f8884284fe14"
+	property Entity btnPermission = "ad431a65-e9d4-4d55-9f66-d15c63103c59"
 
-	property TextComponent charName = "339fef99-6df2-40cf-b8a1-f775a76519ef"
+	-- 프로필 카드
+	property TextGUIRendererComponent levelText = "5eba9ecc-9a4f-4f37-84ad-9cd35e7955f8"
+	property TextGUIRendererComponent jobText = "1c79842d-92ad-4fa3-8c0c-4371619932ff"
+	property TextGUIRendererComponent nameText = "7a882dc5-ea84-4019-b14d-ea6e2d2226dd"
+	property TextGUIRendererComponent spText = "e2b03a91-8b79-43e5-8243-35525b61d375"
 
-	property SpriteGUIRendererComponent hpFill = "6b43b473-b55e-43d3-b431-8c7e40446021"
+	-- 전투력 · 핵심 능력치
+	property TextGUIRendererComponent powerVal = "6d0668e6-2658-4a64-94d8-b39d173f5b8a"
+	property TextGUIRendererComponent atkVal = "156eeb18-e3b4-412d-8b4b-4c8bac9fc414"
+	property TextGUIRendererComponent magVal = "f1cadcaa-ba28-4aa9-bee4-22d2083f94e5"
+	property TextGUIRendererComponent skillAtkVal = "a9fa9a3d-c924-419a-b76d-f0faed5bb31a"
+	property TextGUIRendererComponent defVal = "e3b1a7fe-ba4e-4f03-bc80-94a73109f19b"
 
-	property TextComponent hpValText = "b0da5b8a-17ff-4911-95c1-734e111d861f"
+	-- 게이지 (색은 프로필 위젯과 같은 의미 고정: HP 빨강 · MP 파랑 · 기력 노랑 · EXP 초록)
+	property SpriteGUIRendererComponent hpFill = "4c582344-9836-43aa-85f6-669dd3c2afee"
+	property TextGUIRendererComponent hpVal = "092f75ca-38bc-478c-97c1-c786497c2ded"
+	property SpriteGUIRendererComponent mpFill = "012dce81-caac-497e-9c20-6b113a00a2da"
+	property TextGUIRendererComponent mpVal = "1ef0444b-501e-48dc-bff6-510ee7096f49"
+	property SpriteGUIRendererComponent staFill = "0322cf8b-5251-4010-b823-c19dc3a15fe3"
+	property TextGUIRendererComponent staVal = "5508a248-6c21-4fe2-947a-974aa2b97f02"
+	property SpriteGUIRendererComponent xpFill = "5077a1e1-1383-4aea-b735-f76e0849f628"
+	property TextGUIRendererComponent xpVal = "0c217a36-90fa-4839-92bf-43d41f0c15de"
 
-	property SpriteGUIRendererComponent staFill = "c88da1f0-bbda-417c-81a5-607c29601848"
+	-- 세부 능력치
+	property TextGUIRendererComponent dmgRedVal = "3288883f-58fc-4ea0-9473-e8cdd7f93069"
+	property TextGUIRendererComponent moveVal = "505f5a4b-67b5-4d1a-9bcc-00e0ebb5e269"
+	property TextGUIRendererComponent gatherVal = "25695922-0bfb-4f35-a681-7d0c15fa1d62"
+	property TextGUIRendererComponent fishVal = "820730e2-978d-4162-8c16-c8f8abe3eac5"
+	property TextGUIRendererComponent weaponVal = "e8e3d955-34ff-4d9d-b9ff-08625a07c04f"
 
-	property TextComponent staValText = "32902774-1860-484a-bd65-2db3179e40f5"
-
-	property SpriteGUIRendererComponent xpFill = "60e5616c-1cad-4faf-b606-1de580b89326"
-
-	property TextComponent xpValText = "f33261f3-c6b4-4fd1-8d40-ccf4fca953f8"
-
-	property TextComponent atkVal = "34854a38-0424-4767-84a3-b5883c4bf74e"
-
-	property TextComponent defVal = "66ae439f-1ce4-4b45-8cd5-87399add8a00"
-
-	property TextComponent gatherVal = "bd427cca-754e-4607-b268-6ea5f6cfb025"
-
-	property TextComponent moveVal = "4da3bd83-450d-4206-b066-d89a4849b055"
-
-	property SpriteGUIRendererComponent weaponIcon = "b70c04a0-3a94-49be-9baf-fa10d6359665"
+	-- 장비 칸 엔티티 경로 접두어 (칸 이름 = Slot_<EquipSlot>)
+	property string GearSlotPathPrefix = "/ui/PopupGroup/CharacterPopup/Gear/Slot_"
+	-- 창이 열려 있는 동안 수치를 다시 그리는 주기(초)
+	property number LiveRefreshInterval = 0.5
 
 	property number CurrentScale = 1.0
-
 	property number TargetScale = 1.0
-
 	property any ScaleTimer = nil
-
 	property any closeHandler = nil
-
+	property any liveTimer = nil
+	property table slotHandlers = {}
 	property number LastToggleTime = 0
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
+		-- 닫힌 상태로 시작, 닫기·권한·장비 칸 클릭을 배선한다.
 		self.characterPopup.Enable = false
 		self.closeHandler = self.btnClose.Entity:ConnectEvent(ButtonClickEvent, function() self:Close() end)
-		
+
 		if isvalid(self.btnPermission) then
 			self.btnPermission:ConnectEvent(ButtonClickEvent, function()
 				self:Close()
@@ -57,15 +71,39 @@ script UICharacterController extends Component
 				end
 			end)
 		end
-		
+
+		for _, slot in ipairs(self:GearSlots()) do
+			local ent = _EntityService:GetEntityByPath(self.GearSlotPathPrefix .. slot)
+			if isvalid(ent) then
+				local s = slot
+				local h = ent:ConnectEvent(ButtonClickEvent, function() self:OnGearSlotClicked(s) end)
+				self.slotHandlers[slot] = { entity = ent, eventHandler = h }
+			end
+		end
+
 		self:UpdateDimmer()
 	end
 
 	@ExecSpace("ClientOnly")
 	method void OnEndPlay()
+		-- 연결한 이벤트·타이머 해제.
 		if isvalid(self.btnClose) then
 			self.btnClose.Entity:DisconnectEvent(ButtonClickEvent, self.closeHandler)
 		end
+		for _, rec in pairs(self.slotHandlers) do
+			if rec ~= nil and isvalid(rec.entity) then
+				rec.entity:DisconnectEvent(ButtonClickEvent, rec.eventHandler)
+			end
+		end
+		self:StopLiveRefresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method table GearSlots()
+		-- 장비 슬롯 id 순서 — PlayerInventory:GetGearSlotOrder 와 같다(서버 단일 정의를 그대로 쓴다).
+		local inv = self:GetInventory()
+		if inv ~= nil then return inv:GetGearSlotOrder() end
+		return { "weapon", "helmet", "armor", "gloves", "shoes", "shield" }
 	end
 
 	@ExecSpace("ClientOnly")
@@ -74,7 +112,7 @@ script UICharacterController extends Component
 		local now = _UtilLogic.ElapsedSeconds
 		if now - self.LastToggleTime < 0.15 then return end
 		self.LastToggleTime = now
-		
+
 		if self.TargetScale > 0.9 and self.characterPopup.Enable then
 			self:Close()
 		else
@@ -84,6 +122,7 @@ script UICharacterController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void Open()
+		-- 팝 인 + 즉시 갱신 + 열려 있는 동안 주기 갱신(HP·기력 변화 반영).
 		self.characterPopup.Enable = true
 		local transform = self.characterPopup.UITransformComponent
 		if isvalid(transform) then
@@ -91,28 +130,43 @@ script UICharacterController extends Component
 			transform.Scale = Vector3(0.8, 0.8, 1.0)
 		end
 		self:ApplyScaleTween(1.0)
-		
+
 		self:RefreshStats()
 		self:UpdateDimmer()
+		self:StopLiveRefresh()
+		local iv = self.LiveRefreshInterval
+		if iv < 0.1 then iv = 0.5 end
+		self.liveTimer = _TimerService:SetTimerRepeat(function()
+			if self.characterPopup.Enable then self:RefreshStats() end
+		end, iv)
 	end
 
 	@ExecSpace("ClientOnly")
 	method void Close()
+		self:StopLiveRefresh()
 		self:ApplyScaleTween(0.8)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void StopLiveRefresh()
+		if self.liveTimer ~= nil then
+			_TimerService:ClearTimer(self.liveTimer)
+			self.liveTimer = nil
+		end
 	end
 
 	@ExecSpace("ClientOnly")
 	method void ApplyScaleTween(number targetScale)
 		self.TargetScale = targetScale
-		
+
 		if self.ScaleTimer then
 			_TimerService:ClearTimer(self.ScaleTimer)
 			self.ScaleTimer = nil
 		end
-		
+
 		local transform = self.characterPopup.UITransformComponent
 		if not isvalid(transform) then return end
-		
+
 		self.ScaleTimer = _TimerService:SetTimerRepeat(function()
 			if not isvalid(transform) then
 				if self.ScaleTimer then
@@ -121,15 +175,15 @@ script UICharacterController extends Component
 				end
 				return
 			end
-			
+
 			local diff = self.TargetScale - self.CurrentScale
 			if math.abs(diff) < 0.01 then
 				self.CurrentScale = self.TargetScale
 				transform.Scale = Vector3(self.CurrentScale, self.CurrentScale, 1.0)
-				
+
 				_TimerService:ClearTimer(self.ScaleTimer)
 				self.ScaleTimer = nil
-				
+
 				if self.TargetScale < 0.9 then
 					self.characterPopup.Enable = false
 					self:UpdateDimmer()
@@ -141,15 +195,20 @@ script UICharacterController extends Component
 		end, 1/60)
 	end
 
+	---------------------------------------------------------------------------
+	-- 갱신
+	---------------------------------------------------------------------------
+
 	@ExecSpace("ClientOnly")
 	method void RefreshStats()
+		-- 창 전체를 현재 값으로 다시 그린다.
 		local player = _UserService.LocalPlayer
 		if not isvalid(player) then return end
-		
-		-- Update HP
 		local playerComp = player.PlayerComponent
-		
-		-- Show/hide permissions button based on whether we are the owner of the current home map
+		local controller = player:GetComponent("script.PlayerController")
+		local inv = self:GetInventory()
+
+		-- 영지 주인에게만 권한 버튼
 		if isvalid(self.btnPermission) then
 			local currentMap = player.CurrentMap
 			local isOwnerOfHome = false
@@ -161,183 +220,198 @@ script UICharacterController extends Component
 			end
 			self.btnPermission.Enable = isOwnerOfHome
 		end
-		
+
+		local maxHp = 1
 		if isvalid(playerComp) then
-			local hp = playerComp.Hp
-			local maxHp = playerComp.MaxHp
-			if isvalid(self.hpFill) then
-				self.hpFill.FillAmount = math.max(0, math.min(1, hp / maxHp))
-			end
-			if isvalid(self.hpValText) then
-				self.hpValText.Text = hp .. " / " .. maxHp
+			maxHp = math.max(1, playerComp.MaxHp)
+			self:SetGauge(self.hpFill, self.hpVal, playerComp.Hp, maxHp, "")
+		end
+
+		if not isvalid(controller) then return end
+
+		-- 프로필
+		local lvl = controller.Level or 1
+		self:SetText(self.levelText, "Lv. " .. tostring(lvl))
+		local jobTitle = "모험가"
+		local okJ, jName = pcall(function() return controller:GetJobName(controller.JobId or "") end)
+		if okJ and jName ~= nil and jName ~= "" then jobTitle = jName end
+		self:SetText(self.jobText, jobTitle)
+		self:SetText(self.nameText, controller.PlayerName or player.Name)
+		self:SetText(self.spText, "보유 SP  " .. tostring(controller.SP or 0))
+
+		-- 핵심 능력치 (서버 스킬 피해식과 같은 출처: 캐릭터 공격력 + 장비)
+		local charAtk = self:SafeNumber(function() return controller:GetCharacterAttack() end, 8)
+		local magBase = self:SafeNumber(function() return controller:GetMagicAttack() end, 0)
+		local gearAtk = 0
+		local gearMag = 0
+		local gearSkill = 0
+		if inv ~= nil then
+			gearAtk = math.floor(inv:GetGearStat("Attack"))
+			gearMag = math.floor(inv:GetGearStat("MagicAttack"))
+			gearSkill = math.floor(inv:GetGearStat("SkillAttack"))
+		end
+		local physical = charAtk + gearAtk
+		local magical = magBase + gearMag
+		local totalDef = self:SafeNumber(function() return controller:GetTotalDefense() end, controller.Defense or 0)
+		self:SetText(self.atkVal, tostring(physical))
+		self:SetText(self.magVal, tostring(magical))
+		self:SetText(self.skillAtkVal, "+" .. tostring(gearSkill))
+		self:SetText(self.defVal, tostring(math.floor(totalDef)))
+
+		-- 전투력 = (물리 + 마법 + 스킬 공격력) × 10 + 방어력 × 4 + 최대 HP × 0.5  (표시용 합산 지표)
+		local power = math.floor((physical + magical + gearSkill) * 10 + totalDef * 4 + maxHp * 0.5)
+		self:SetText(self.powerVal, self:FormatThousands(power))
+
+		-- 게이지
+		local maxMana = self:SafeNumber(function() return controller:GetMaxMana() end, 60)
+		self:SetGauge(self.mpFill, self.mpVal, math.floor(controller.Mana or 0), maxMana, "")
+		self:SetGauge(self.staFill, self.staVal, controller.Stamina or 0, controller.MaxStamina or 100, "")
+		local xp = controller.XP or 0
+		local maxXP = math.max(1, controller.MaxXP or 100)
+		local pct = math.floor((xp / maxXP) * 1000) / 10
+		self:SetGauge(self.xpFill, self.xpVal, xp, maxXP, " (" .. tostring(pct) .. "%)")
+
+		-- 세부 능력치
+		local reduction = 0
+		if totalDef > 0 then reduction = (1 - 100 / (100 + totalDef)) * 100 end
+		self:SetText(self.dmgRedVal, string.format("%.1f%%", reduction))
+		local move = self:SafeNumber(function() return controller:GetBuffedMoveSpeed() end, 7.2)
+		self:SetText(self.moveVal, tostring(math.floor(move / 7.2 * 100 + 0.5)) .. "%")
+		self:SetText(self.gatherVal, tostring(math.floor((controller.GatheringSpeed or 1) * 100 + 0.5)) .. "%")
+		self:SetText(self.fishVal, "Lv. " .. tostring(controller.FishingLevel or 1))
+
+		-- 장비 칸 + 주무기 줄
+		self:RefreshGear(inv)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshGear(any inv)
+		-- 장비 칸 아이콘·라벨. 비었으면 칸 이름, 차 있으면 아이템 표시명(자동 주무기는 "(자동)").
+		local weaponLine = "없음"
+		for _, slot in ipairs(self:GearSlots()) do
+			local ent = _EntityService:GetEntityByPath(self.GearSlotPathPrefix .. slot)
+			if isvalid(ent) then
+				local key = ""
+				local label = slot
+				if inv ~= nil then
+					key = inv:GetGearKey(slot)
+					label = inv:GetGearSlotLabel(slot)
+				end
+				local icon = ent:GetChildByName("Icon")
+				local text = ent.TextGUIRendererComponent
+				if key ~= "" then
+					local baseName = inv:GetBaseItemName(key)
+					local disp = inv:GetItemDisplayName(baseName)
+					local auto = slot == "weapon" and inv:IsWeaponAutoSelected()
+					if isvalid(icon) and isvalid(icon.SpriteGUIRendererComponent) then
+						icon.SpriteGUIRendererComponent.ImageRUID = self:GetItemIcon(baseName)
+						icon.SpriteGUIRendererComponent.Color = Color(1, 1, 1, 1)
+						icon.Enable = true
+					end
+					if isvalid(text) then
+						text.Text = disp
+						text.FontColor = Color(1.0, 0.9, 0.7, 1)
+					end
+					if slot == "weapon" then
+						weaponLine = disp
+						if auto then weaponLine = weaponLine .. "  (자동)" end
+					end
+				else
+					if isvalid(icon) then icon.Enable = false end
+					if isvalid(text) then
+						text.Text = label
+						text.FontColor = Color(0.72, 0.64, 0.52, 1)
+					end
+				end
 			end
 		end
-		
-		-- Update level, name, stamina, XP, and stats from PlayerController
-		local controller = player:GetComponent("script.PlayerController")
-		if isvalid(controller) then
-			local name = controller.PlayerName or player.Name
-			local lvl = controller.Level or 1
-			if isvalid(self.charName) then
-				local jobTitle = "모험가"
-				if controller.GetJobName ~= nil then
-					local jName = controller:GetJobName(controller.JobId or "")
-					if jName ~= nil and jName ~= "" then jobTitle = jName end
-				end
-				self.charName.Text = "Lv. " .. lvl .. " " .. jobTitle .. " " .. name
-			end
-		
-			local sta = controller.Stamina or 60
-			local maxSta = controller.MaxStamina or 100
-			if isvalid(self.staFill) then
-				self.staFill.FillAmount = math.max(0, math.min(1, sta / maxSta))
-			end
-			if isvalid(self.staValText) then
-				self.staValText.Text = sta .. " / " .. maxSta
-			end
-		
-			local xp = controller.XP or 450
-			local maxXP = controller.MaxXP or 1200
-			if isvalid(self.xpFill) then
-				self.xpFill.FillAmount = math.max(0, math.min(1, xp / maxXP))
-			end
-			if isvalid(self.xpValText) then
-				local pct = math.floor((xp / maxXP) * 1000) / 10
-				self.xpValText.Text = xp .. " / " .. maxXP .. " (" .. pct .. "%)"
-			end
-		
-			-- Attributes (reflect the equipped tool)
-			local equippedTool = ""
-			local inv = player:GetComponent("script.PlayerInventory")
-			if isvalid(inv) then
-				equippedTool = inv.EquippedTool or ""
-			end
-		
-			-- Update weapon slot icon
-			if isvalid(self.weaponIcon) then
-				if equippedTool ~= "" then
-					self.weaponIcon.ImageRUID = self:GetItemIcon(equippedTool)
-					if isvalid(self.weaponIcon.Entity.TextComponent) then
-						self.weaponIcon.Entity.TextComponent.Text = ""
-					end
-				else
-					self.weaponIcon.ImageRUID = ""
-					if isvalid(self.weaponIcon.Entity.TextComponent) then
-						self.weaponIcon.Entity.TextComponent.Text = "없음"
-					end
-				end
-			end
-		
-			if isvalid(self.atkVal) then
-				local charAtk = 8
-				pcall(function() charAtk = controller:GetCharacterAttack() end)
-				local weapAtk = 0
-				if equippedTool ~= "" then
-					local stats = self:GetToolStats(equippedTool)
-					weapAtk = stats.Attack or 0
-				end
-				local shown = charAtk + weapAtk
-				if equippedTool ~= "" then
-					self.atkVal.Text = tostring(shown) .. " (" .. self:GetItemDisplayName(equippedTool) .. ")"
-				else
-					self.atkVal.Text = tostring(shown) .. " (맨손)"
-				end
-			end
-			if isvalid(self.defVal) then
-				self.defVal.Text = tostring(controller.Defense or 10)
-			end
-			if isvalid(self.gatherVal) then
-				if equippedTool ~= "" then
-					local playerInv = player:GetComponent("script.PlayerInventory")
-					local statLine = ""
-					if isvalid(playerInv) then
-						statLine = playerInv:FormatItemStatLines(playerInv:GetBaseItemName(equippedTool))
-					end
-					if statLine ~= nil and statLine ~= "" then
-						local nl, _ = string.find(statLine, "\n", 1, true)
-						if nl ~= nil then
-							self.gatherVal.Text = string.sub(statLine, 1, nl - 1)
-						else
-							self.gatherVal.Text = statLine
-						end
-					else
-						self.gatherVal.Text = self:GetItemDisplayName(equippedTool)
-					end
-				else
-					self.gatherVal.Text = "+" .. tostring(controller.GatheringSpeed or 10) .. "%"
-				end
-			end
-			if isvalid(self.moveVal) then
-				self.moveVal.Text = tostring(controller.MovementSpeed or 100) .. "%"
-			end
+		self:SetText(self.weaponVal, weaponLine)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnGearSlotClicked(string slot)
+		-- 칸 클릭 = 등록 해제 (자동 주무기는 등록된 게 아니라 해제할 것이 없다).
+		local inv = self:GetInventory()
+		if inv == nil then return end
+		local registered = inv:GetGearSlots()[slot]
+		if registered == nil or registered == "" then return end
+		inv:ServerRequestUnequipGear(slot)
+	end
+
+	---------------------------------------------------------------------------
+	-- 헬퍼
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ClientOnly")
+	method any GetInventory()
+		local player = _UserService.LocalPlayer
+		if not isvalid(player) then return nil end
+		local inv = player:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return nil end
+		return inv
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetText(any comp, string value)
+		if isvalid(comp) then comp.Text = value end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetGauge(any fill, any valText, number cur, number maxVal, string suffix)
+		-- Filled 스프라이트 게이지 + "현재 / 최대" 문구.
+		local m = maxVal
+		if m == nil or m <= 0 then m = 1 end
+		if isvalid(fill) then
+			fill.FillAmount = math.max(0, math.min(1, cur / m))
+		end
+		if isvalid(valText) then
+			valText.Text = tostring(math.floor(cur)) .. " / " .. tostring(math.floor(m)) .. suffix
 		end
 	end
 
 	@ExecSpace("ClientOnly")
-	method table GetToolStats(string itemName)
-		-- Looks up ToolType/ToolPower/Attack from item_dataset.
-		local empty = {Type = "", Power = 0, Attack = 0}
-		local ds = _DataService:GetTable("item_dataset")
-		if ds == nil then return empty end
-		local row = ds:FindRow("Name", itemName)
-		if row == nil then return empty end
-		local toolType = row:GetItem("ToolType") or ""
-		local toolPower = tonumber(row:GetItem("ToolPower")) or 0
-		local attack = 0
-		local okA, rawA = pcall(function() return row:GetItem("Attack") end)
-		if okA and rawA ~= nil and tostring(rawA) ~= "" then
-			attack = tonumber(rawA) or 0
+	method number SafeNumber(any fn, number fallback)
+		-- 서버 전용 컴포넌트가 아직 동기화 전이어도 창이 깨지지 않게 한다.
+		local ok, v = pcall(fn)
+		if ok and v ~= nil then return tonumber(v) or fallback end
+		return fallback
+	end
+
+	@ExecSpace("ClientOnly")
+	method string FormatThousands(integer n)
+		-- 1234567 → "1,234,567"
+		local s = tostring(math.floor(n))
+		local out = ""
+		local len = string.len(s)
+		for i = 1, len do
+			out = out .. string.sub(s, i, i)
+			local remain = len - i
+			if remain > 0 and remain % 3 == 0 then out = out .. "," end
 		end
-		return {Type = toolType, Power = toolPower, Attack = attack}
+		return out
 	end
 
 	@ExecSpace("ClientOnly")
 	method string GetItemIcon(string itemName)
-		-- Looks up the item's IconRUID (item model sprite) from item_dataset.
+		-- item_dataset.IconRUID
 		local ds = _DataService:GetTable("item_dataset")
 		if ds == nil then return "" end
-		local rowCount = ds:GetRowCount()
-		for i = 1, rowCount do
-			if ds:GetCell(i, "Name") == itemName then
-				return ds:GetCell(i, "IconRUID") or ""
-			end
-		end
-		return ""
-	end
-
-	@ExecSpace("ClientOnly")
-	method string GetItemDisplayName(string itemName)
-		if itemName == nil or itemName == "" then return "" end
-		local ds = _DataService:GetTable("item_dataset")
-		if ds == nil then return itemName end
 		local row = ds:FindRow("Name", itemName)
-		if row == nil then return itemName end
-		local ok, v = pcall(function() return row:GetItem("DisplayName") end)
-		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
-		return itemName
-	end
-
-	@ExecSpace("ClientOnly")
-	method string GetToolTypeLabel(string toolType)
-		if toolType == "axe" then return "도끼" end
-		if toolType == "pickaxe" then return "곡괭이" end
-		if toolType == "shovel" then return "삽" end
-		if toolType == "hoe" then return "호미" end
-		if toolType == "rod" then return "낚싯대" end
-		if toolType == "water_spade" then return "물삽" end
-		if toolType == "weapon" then return "무기" end
-		return toolType
+		if row == nil then return "" end
+		local ok, v = pcall(function() return row:GetItem("IconRUID") end)
+		if ok and v ~= nil then return tostring(v) end
+		return ""
 	end
 
 	@ExecSpace("ClientOnly")
 	method void UpdateDimmer()
 		local dimmer = _EntityService:GetEntityByPath("/ui/PopupGroup/Dimmer")
 		if not isvalid(dimmer) then return end
-		
+
 		local inv = _EntityService:GetEntityByPath("/ui/PopupGroup/InventoryPopup")
 		local craft = _EntityService:GetEntityByPath("/ui/PopupGroup/CraftingPopup")
 		local char = _EntityService:GetEntityByPath("/ui/PopupGroup/CharacterPopup")
-		
+
 		local anyOpen = (isvalid(inv) and inv.Enable) or (isvalid(craft) and craft.Enable) or (isvalid(char) and char.Enable)
 		dimmer.Enable = anyOpen
 	end

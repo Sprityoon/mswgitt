@@ -1,0 +1,555 @@
+@Component
+script BossPatternController extends Component
+	-- 보스 다중 패턴 엔진 (2026-09-23). 보스 모델에 MonsterAI 와 함께 붙는다.
+	-- 패턴 목록·수치는 전부 BossPatternDataSet 행(MonsterId 키)에서 온다 — 보스를 늘리거나 패턴을 조정할 때 코드 수정 없음.
+	--
+	-- 선택 방식: Order 오름차순 순환 + HP 페이즈. HP 비율이 Phase2HpRatio 이하가 되면 2페이즈 —
+	--   행의 MinPhase~MaxPhase 가 현재 페이즈를 포함하는 행만 순환에 들어간다(강화 버전 행으로 교체).
+	-- 역할 분담:
+	--   LEAP / CHARGE  → MonsterAI 의 기존 상태로 위임 (이 컴포넌트는 "다음은 LEAP" 만 알려 준다)
+	--   그 외 패턴     → MonsterAI 가 PATTERN 상태로 들어가고, 매 프레임 Tick 으로 이 컴포넌트가 진행한다.
+	-- 모든 타격은 "예고 장판(AttackTelegraph) → 채움 완료 시점에 그 자리 재판정" 이다 —
+	-- 판정 순간의 플레이어 위치로 맞으므로 예고를 보고 벗어나면 피할 수 있다.
+
+	property string PatternDataSetName = "BossPatternDataSet"
+	-- HP 비율이 이 값 이하가 되면 2페이즈 패턴 행으로 교체된다.
+	property number Phase2HpRatio = 0.5
+	-- 예고/간격 배율. 레이드 난이도(BossRaidLogic)가 스폰 직후 주입한다 — 1 보다 작을수록 빠듯해진다.
+	@HideFromInspector property number WindupScale = 1.0
+	@HideFromInspector property number IntervalScale = 1.0
+	-- 이 반지름 이상의 예고 원이 터질 때만 카메라를 흔든다.
+	property number ShakeMinRadius = 4.0
+
+	@HideFromInspector property integer CurrentPhase = 1
+	@HideFromInspector property integer LastOrder = 0
+	@HideFromInspector property boolean Running = false
+	@HideFromInspector property number Elapsed = 0
+	@HideFromInspector property number EndTime = 0
+	@HideFromInspector property number RowCooldown = 0
+	@HideFromInspector property string RunningPattern = ""
+
+	---------------------------------------------------------------------------
+	-- 데이터
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ServerOnly")
+	method boolean HasPatterns()
+		-- 이 보스의 패턴 행이 있는지. MonsterId 는 스폰 직후 주입되므로 첫 사용 시점에 지연 로드한다.
+		self:EnsureLoaded()
+		local rows = self._T.rows
+		return rows ~= nil and #rows > 0
+	end
+
+	@ExecSpace("ServerOnly")
+	method void EnsureLoaded()
+		-- BossPatternDataSet 에서 MonsterId 행만 읽어 캐시한다. 공란 숫자는 행 기본값으로 채운다.
+		if self._T.rows ~= nil then return end
+		self._T.rows = {}
+		local mon = self.Entity:GetComponent("script.Monster")
+		if not isvalid(mon) then return end
+		---@type Monster
+		local m = mon
+		local mid = m:GetMonsterId()
+		if mid == "" then return end
+		local ds = _DataService:GetTable(self.PatternDataSetName)
+		if ds == nil then
+			log_warning("[BOSS][PATTERN] dataset missing: " .. self.PatternDataSetName)
+			return
+		end
+		local function num(i, col, fallback)
+			local v = tonumber(ds:GetCell(i, col))
+			if v == nil then return fallback end
+			return v
+		end
+		local function str(i, col)
+			local v = ds:GetCell(i, col)
+			if v == nil then return "" end
+			return tostring(v)
+		end
+		for i = 1, ds:GetRowCount() do
+			if str(i, "MonsterId") == mid and str(i, "Disable") == "" then
+				table.insert(self._T.rows, {
+					order = math.floor(num(i, "Order", i)),
+					pattern = str(i, "Pattern"),
+					minPhase = math.floor(num(i, "MinPhase", 1)),
+					maxPhase = math.floor(num(i, "MaxPhase", 2)),
+					clip = str(i, "ClipRUID"),
+					windup = num(i, "Windup", 1.0),
+					waves = math.floor(num(i, "Waves", 1)),
+					count = math.floor(num(i, "Count", 1)),
+					radius = num(i, "Radius", 1.5),
+					range = num(i, "Range", 0),
+					spacing = num(i, "Spacing", 1.5),
+					interval = num(i, "Interval", 0.5),
+					spread = num(i, "Spread", 0),
+					speed = num(i, "Speed", 5),
+					damageMul = num(i, "DamageMul", 1.0),
+					projectileModel = str(i, "ProjectileModel"),
+					fx = str(i, "FxType"),
+					cooldown = num(i, "Cooldown", 0)
+				})
+			end
+		end
+		table.sort(self._T.rows, function(a, b) return a.order < b.order end)
+		log("[BOSS][PATTERN] " .. mid .. " loaded " .. tostring(#self._T.rows) .. " pattern row(s)")
+	end
+
+	@ExecSpace("ServerOnly")
+	method integer ResolvePhase()
+		-- 현재 HP 비율로 페이즈를 정한다. 한 번 2페이즈가 되면 (회복해도) 되돌아가지 않는다.
+		local mon = self.Entity:GetComponent("script.Monster")
+		if not isvalid(mon) then return self.CurrentPhase end
+		---@type Monster
+		local m = mon
+		if self.CurrentPhase < 2 and m.MaxHp > 0 and m.Hp / m.MaxHp <= self.Phase2HpRatio then
+			self.CurrentPhase = 2
+			self.LastOrder = 0
+			log("[BOSS][PATTERN] " .. m:GetMonsterId() .. " phase 2 (hp " .. tostring(math.floor(m.Hp)) .. "/" .. tostring(math.floor(m.MaxHp)) .. ")")
+			local p = self.Entity.TransformComponent.WorldPosition
+			self:MulticastPatternFX(Vector3(p.x, p.y, 0), 3.0, "Buff", 0.4)
+		end
+		return self.CurrentPhase
+	end
+
+	@ExecSpace("ServerOnly")
+	method table PickNext()
+		-- 현재 페이즈에 해당하는 행 중 LastOrder 다음 행 (끝이면 처음으로). 없으면 nil.
+		self:EnsureLoaded()
+		local phase = self:ResolvePhase()
+		local first = nil
+		local nextRow = nil
+		for _, row in ipairs(self._T.rows) do
+			if phase >= row.minPhase and phase <= row.maxPhase then
+				if first == nil then first = row end
+				if nextRow == nil and row.order > self.LastOrder then nextRow = row end
+			end
+		end
+		if nextRow == nil then nextRow = first end
+		if nextRow ~= nil then self.LastOrder = nextRow.order end
+		return nextRow
+	end
+
+	@ExecSpace("ServerOnly")
+	method number GetCooldown(number fallback)
+		-- 방금 끝난 패턴의 후딜. 행에 Cooldown 이 없으면 모델 AttackCooldown(레이드 배율 적용값)을 쓴다.
+		if self.RowCooldown > 0 then return self.RowCooldown end
+		return fallback
+	end
+
+	---------------------------------------------------------------------------
+	-- 실행 (MonsterAI 의 PATTERN 상태가 호출)
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ServerOnly")
+	method void Begin(table row)
+		-- 패턴 1회 시작: 이벤트 타임라인을 짠다. 이후 Tick 이 시간순으로 소진한다.
+		self:Abort()
+		self.Running = true
+		self.Elapsed = 0
+		self.EndTime = 0
+		self.RowCooldown = row.cooldown
+		self.RunningPattern = row.pattern
+		self._T.events = {}
+		self._T.markers = {}
+
+		local ai = self:GetAI()
+		if isvalid(ai) then
+			if row.clip ~= "" then ai:SetSprite(row.clip) else ai:SetSprite(ai.AttackRUID) end
+			ai.TelegraphOn = true
+		end
+		local windup = row.windup * self.WindupScale
+		if windup < 0.2 then windup = 0.2 end
+		self:Schedule(windup, function()
+			local a = self:GetAI()
+			if isvalid(a) then a.TelegraphOn = false end
+		end)
+
+		local p = row.pattern
+		if p == "QUAKE" then
+			self:BuildQuake(row, windup)
+		elseif p == "RADIAL" then
+			self:BuildRadial(row, windup)
+		elseif p == "THORNS" then
+			self:BuildThorns(row, windup)
+		elseif p == "ROAR" then
+			self:BuildRoar(row, windup)
+		elseif p == "FROST" then
+			self:BuildFrost(row, windup)
+		elseif p == "BOULDER" then
+			self:BuildBoulder(row, windup)
+		elseif p == "SUMMON" then
+			self:Schedule(windup, function()
+				local a = self:GetAI()
+				if isvalid(a) then a:SummonMinions() end
+			end)
+		else
+			log_warning("[BOSS][PATTERN] unknown pattern type: " .. p)
+		end
+		-- 마지막 타격 뒤 짧은 여운 후 종료 (다음 행동과 타격이 겹쳐 보이지 않게).
+		self.EndTime = self.EndTime + 0.3
+		log("[BOSS][PATTERN] begin " .. p .. " phase=" .. tostring(self.CurrentPhase) .. " end=" .. tostring(self.EndTime))
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean Tick(number delta)
+		-- 시각이 된 이벤트를 실행한다. 모두 끝나면 true.
+		if not self.Running then return true end
+		if self:IsOwnerDead() then
+			self:Abort()
+			return true
+		end
+		self.Elapsed = self.Elapsed + delta
+		local list = self._T.events
+		if list ~= nil then
+			local i = 1
+			while i <= #list do
+				local ev = list[i]
+				if ev.t <= self.Elapsed then
+					table.remove(list, i)
+					ev.fn()
+					if not self.Running then return true end
+				else
+					i = i + 1
+				end
+			end
+		end
+		if self.Elapsed >= self.EndTime and (list == nil or #list == 0) then
+			self.Running = false
+			self:ClearMarkers()
+			return true
+		end
+		return false
+	end
+
+	@ExecSpace("ServerOnly")
+	method void Abort()
+		-- 사망·상태 이탈 시 남은 타격과 장판을 모두 회수한다 (죽은 보스가 때리지 않게).
+		self.Running = false
+		self._T.events = {}
+		self:ClearMarkers()
+		local ai = self:GetAI()
+		if isvalid(ai) then ai.TelegraphOn = false end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void Schedule(number t, any fn)
+		-- 패턴 시작 기준 t 초에 fn 실행. EndTime 은 가장 늦은 이벤트로 늘어난다.
+		if self._T.events == nil then self._T.events = {} end
+		table.insert(self._T.events, { t = t, fn = fn })
+		if t > self.EndTime then self.EndTime = t end
+	end
+
+	---------------------------------------------------------------------------
+	-- 패턴별 타임라인
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ServerOnly")
+	method void BuildQuake(table row, number windup)
+		-- 지진: 보스 몸통 원 + 바깥으로 퍼지는 충격파 링 Waves 개. 링 k 반지름 = Range + (k-1)·Spacing.
+		-- 몸에 붙어 있어도, 멀리 있어도 안전하지 않다 — 링 사이 틈으로 빠지는 게 정답.
+		local center = self:OwnerPos()
+		local interval = row.interval * self.IntervalScale
+		local r = row.radius
+		local dmg = self:PatternDamage(row)
+		self:QueueZone(Vector2(center.x, center.y), row.range, 0, windup, dmg, row.fx)
+		for w = 1, row.waves do
+			local ringR = row.range + (w - 1) * row.spacing + r
+			local n = math.ceil(6.2831853 * ringR / (r * 1.8))
+			if n < 6 then n = 6 end
+			local spawnAt = (w - 1) * interval
+			local phaseOff = (w % 2) * (3.1415927 / n)
+			for i = 1, n do
+				local ang = (i - 1) / n * 6.2831853 + phaseOff
+				local pos = Vector2(center.x + math.cos(ang) * ringR, center.y + math.sin(ang) * ringR)
+				self:QueueZone(pos, r, spawnAt, spawnAt + windup, dmg, row.fx)
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BuildRoar(table row, number windup)
+		-- 울림 포효: 보스 중심 초대형 원 1개, 긴 예고. 반경 밖으로 달아나야 한다.
+		local center = self:OwnerPos()
+		self:QueueZone(Vector2(center.x, center.y), row.radius, 0, windup, self:PatternDamage(row), row.fx)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BuildThorns(table row, number windup)
+		-- 가시 폭풍: Interval 마다 "그 순간" 플레이어 발밑에 예고 원 → windup 뒤 분출. Waves 회.
+		-- 멈춰 서면 연속으로 맞고, 계속 움직이면 뒤에서 터진다.
+		local interval = row.interval * self.IntervalScale
+		local dmg = self:PatternDamage(row)
+		for w = 1, row.waves do
+			local spawnAt = (w - 1) * interval
+			self:Schedule(spawnAt, function()
+				local target = self:FindTarget()
+				if not isvalid(target) then return end
+				local tp = target.TransformComponent.WorldPosition
+				self:QueueZone(Vector2(tp.x, tp.y), row.radius, spawnAt, spawnAt + windup, dmg, row.fx)
+			end)
+			-- 종료 시각이 마지막 분출까지 늘어나도록 미리 잡아 둔다.
+			if spawnAt + windup > self.EndTime then self.EndTime = spawnAt + windup end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BuildFrost(table row, number windup)
+		-- 서리 송곳: 시작 순간 플레이어 방향으로 원 Count 개를 일렬로 깔고, 보스 쪽부터 Interval 간격으로 솟는다.
+		-- Waves 가 2 이상이면 Spread(도) 간격 부채꼴로 여러 줄. 방향은 시작 시 고정 — 옆으로 비키면 피한다.
+		local center = self:OwnerPos()
+		local base = self:AimAngle(center)
+		local interval = row.interval * self.IntervalScale
+		local dmg = self:PatternDamage(row)
+		local spreadRad = row.spread * 3.1415927 / 180
+		for l = 1, row.waves do
+			local ang = base + (l - (row.waves + 1) / 2) * spreadRad
+			local dx = math.cos(ang)
+			local dy = math.sin(ang)
+			for i = 1, row.count do
+				local d = row.range + (i - 1) * row.spacing
+				local pos = Vector2(center.x + dx * d, center.y + dy * d)
+				self:QueueZone(pos, row.radius, 0, windup + (i - 1) * interval, dmg, row.fx)
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BuildRadial(table row, number windup)
+		-- 방사 파편: windup 뒤 Count 발을 360° 균등 발사. Waves 회, 회차마다 반 칸씩 틀어 틈을 옮긴다.
+		local interval = row.interval * self.IntervalScale
+		local dmg = self:PatternDamage(row)
+		for w = 1, row.waves do
+			local fireAt = windup + (w - 1) * interval
+			local rot = (w - 1) * (3.1415927 / row.count)
+			self:Schedule(fireAt, function()
+				local center = self:OwnerPos()
+				local base = self:AimAngle(center) + rot
+				for i = 1, row.count do
+					local ang = base + (i - 1) / row.count * 6.2831853
+					self:FireProjectile(row, Vector2(math.cos(ang), math.sin(ang)), dmg)
+				end
+			end)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BuildBoulder(table row, number windup)
+		-- 눈뭉치 굴리기: 느리고 큰 투사체를 플레이어 쪽으로 Waves 회 (회차마다 다시 조준).
+		local interval = row.interval * self.IntervalScale
+		local dmg = self:PatternDamage(row)
+		for w = 1, row.waves do
+			self:Schedule(windup + (w - 1) * interval, function()
+				local center = self:OwnerPos()
+				local ang = self:AimAngle(center)
+				self:FireProjectile(row, Vector2(math.cos(ang), math.sin(ang)), dmg)
+			end)
+		end
+	end
+
+	---------------------------------------------------------------------------
+	-- 공용 부품
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ServerOnly")
+	method void QueueZone(Vector2 pos, number radius, number spawnAt, number fireAt, integer damage, string fx)
+		-- 예고 원 1개: spawnAt 에 장판을 깔고(채움 시간 = fireAt - spawnAt) fireAt 에 그 원으로 판정한다.
+		-- 판정은 fireAt 순간 플레이어 위치로 새로 계산한다(예고 = 허가일 뿐, 명중 보장이 아니다).
+		if radius <= 0 then return end
+		local slot = {}
+		self:Schedule(spawnAt, function()
+			slot.marker = self:SpawnMarker(pos, radius, fireAt - spawnAt)
+		end)
+		self:Schedule(fireAt, function()
+			if slot.marker ~= nil then
+				self:DestroyMarker(slot.marker)
+				slot.marker = nil
+			end
+			if self:IsOwnerDead() then return end
+			local atk = self.Entity:GetComponent("script.MonsterMeleeAttack")
+			if isvalid(atk) then
+				---@type MonsterMeleeAttack
+				local a = atk
+				a:DoPatternCircle(pos, radius, damage)
+			end
+			-- 대형 원(포효 등)만 화면을 흔든다 — 잔원 수십 개가 매번 흔들면 멀미가 난다.
+			local shake = 0
+			if radius >= self.ShakeMinRadius then shake = 0.5 end
+			self:MulticastPatternFX(Vector3(pos.x, pos.y, 0), radius, fx, shake)
+		end)
+	end
+
+	@ExecSpace("ServerOnly")
+	method Entity SpawnMarker(Vector2 pos, number radius, number fillSeconds)
+		-- MonsterAI.TelegraphModelId(AttackTelegraph) 장판을 radius 크기로 깐다. 모델이 없으면 장판 없이 진행.
+		local ai = self:GetAI()
+		if not isvalid(ai) then return nil end
+		if ai.TelegraphModelId == nil or ai.TelegraphModelId == "" then return nil end
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return nil end
+		local modelId = _EntryService:GetModelIdByName(ai.TelegraphModelId)
+		if modelId == nil or modelId == "" then modelId = ai.TelegraphModelId end
+		local marker = _SpawnService:SpawnByModelId(modelId, "PatternZone_" .. self.Entity.Name, Vector3(pos.x, pos.y, 0), map)
+		if not isvalid(marker) then return nil end
+		local spriteRadius = 1.0
+		local mk = marker:GetComponent("script.MonsterTelegraphMarker")
+		if isvalid(mk) then
+			---@type MonsterTelegraphMarker
+			local m = mk
+			m.FillSeconds = fillSeconds
+			m.Committed = false
+			if m.SpriteRadius > 0 then spriteRadius = m.SpriteRadius end
+		end
+		local t = marker.TransformComponent
+		if isvalid(t) then
+			local s = radius / spriteRadius
+			t.Scale = Vector3(s, s, 1)
+		end
+		self._T.markers[marker] = true
+		return marker
+	end
+
+	@ExecSpace("ServerOnly")
+	method void DestroyMarker(Entity marker)
+		if self._T.markers ~= nil then self._T.markers[marker] = nil end
+		if isvalid(marker) then marker:Destroy() end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ClearMarkers()
+		local set = self._T.markers
+		self._T.markers = {}
+		if set == nil then return end
+		for marker, _ in pairs(set) do
+			if isvalid(marker) then marker:Destroy() end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void FireProjectile(table row, Vector2 dir, integer damage)
+		-- 행의 ProjectileModel 을 보스 위치에서 dir 로 발사. 사거리(Range)/속도로 수명을 정한다.
+		if self:IsOwnerDead() then return end
+		if row.projectileModel == "" then return end
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return end
+		local modelId = _EntryService:GetModelIdByName(row.projectileModel)
+		if modelId == nil or modelId == "" then modelId = row.projectileModel end
+		local p = self:OwnerPos()
+		local proj = _SpawnService:SpawnByModelId(modelId, "PatternShot_" .. self.Entity.Name, Vector3(p.x, p.y, 0), map)
+		if not isvalid(proj) then
+			log_warning("[BOSS][PATTERN] projectile spawn failed: " .. row.projectileModel)
+			return
+		end
+		local pc = proj:GetComponent("script.MonsterProjectile")
+		if not isvalid(pc) then
+			proj:Destroy()
+			return
+		end
+		---@type MonsterProjectile
+		local mp = pc
+		local speed = row.speed
+		if speed <= 0.1 then speed = 5 end
+		local life = 3.0
+		if row.range > 0 then life = row.range / speed end
+		mp:Fire(self.Entity, dir, damage, speed, row.radius, life)
+	end
+
+	@ExecSpace("ServerOnly")
+	method integer PatternDamage(table row)
+		-- 패턴 피해 = 내려찍기 기본 피해(없으면 접촉 피해) × DamageMul.
+		-- 레이드 난이도 DamageScale 은 BossRaidLogic 이 SlamDamage/ContactDamage 에 이미 곱해 두므로 자동 반영된다.
+		local base = 10
+		local atk = self.Entity:GetComponent("script.MonsterMeleeAttack")
+		if isvalid(atk) then
+			---@type MonsterMeleeAttack
+			local a = atk
+			if a.SlamDamage > 0 then base = a.SlamDamage else base = a.ContactDamage end
+		end
+		local d = math.floor(base * row.damageMul)
+		if d < 1 then d = 1 end
+		return d
+	end
+
+	@ExecSpace("ServerOnly")
+	method number AimAngle(Vector2 from)
+		-- 가장 가까운 플레이어 방향 각도(라디안). 없으면 보스가 보는 방향.
+		local target = self:FindTarget()
+		if isvalid(target) then
+			local tp = target.TransformComponent.WorldPosition
+			local dx = tp.x - from.x
+			local dy = tp.y - from.y
+			if dx * dx + dy * dy > 0.0001 then
+				-- math.atan2 는 mlua 에서 nil (함정 규칙 32) → Vector2.SignedAngle 로 x축 기준 각도를 구한다.
+				return Vector2.SignedAngle(Vector2(1, 0), Vector2(dx, dy)) * 3.1415927 / 180
+			end
+		end
+		local sprite = self.Entity.SpriteRendererComponent
+		if isvalid(sprite) and sprite.FlipX then return 0 end
+		return 3.1415927
+	end
+
+	@ExecSpace("ServerOnly")
+	method Entity FindTarget()
+		local ai = self:GetAI()
+		if not isvalid(ai) then return nil end
+		return ai:FindNearestPlayer()
+	end
+
+	@ExecSpace("ServerOnly")
+	method Vector2 OwnerPos()
+		local p = self.Entity.TransformComponent.WorldPosition
+		return Vector2(p.x, p.y)
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsOwnerDead()
+		-- 치명타 판정 즉시(Monster.Dead 가 IsDead 를 먼저 세운다) 이후의 모든 타격을 막는다.
+		local mon = self.Entity:GetComponent("script.Monster")
+		if not isvalid(mon) then return true end
+		---@type Monster
+		local m = mon
+		return m.IsDead
+	end
+
+	@ExecSpace("ServerOnly")
+	method MonsterAI GetAI()
+		---@type MonsterAI
+		local ai = self.Entity:GetComponent("script.MonsterAI")
+		return ai
+	end
+
+	---------------------------------------------------------------------------
+	-- 연출 (클라)
+	---------------------------------------------------------------------------
+
+	@ExecSpace("Multicast")
+	method void MulticastPatternFX(Vector3 pos, number scale, string fxKey, number shake)
+		-- 타격 지점 파티클 + (선택) 카메라 흔들림. 같은 맵 클라만 재생한다.
+		-- ⚠ 규칙 12 — instigator 에 nil 금지. enum 은 RPC 로 못 넘기므로 문자열 키로 받아 여기서 매핑한다.
+		if not self:IsClient() then return end
+		local localPlayer = _UserService.LocalPlayer
+		local myMap = self.Entity.CurrentMap
+		if isvalid(localPlayer) and isvalid(myMap) and localPlayer.CurrentMap ~= myMap then return end
+		local types = {
+			Dust = BasicParticleType.DustExplosion,
+			Burst = BasicParticleType.CircleBurst,
+			Spark = BasicParticleType.SparkRadialExplosion,
+			Small = BasicParticleType.SmallExplosion,
+			Big = BasicParticleType.BigExplosion,
+			Energy = BasicParticleType.EnergyExplosion,
+			Nova = BasicParticleType.Nova,
+			Pillar = BasicParticleType.UpperCylinder,
+			Steam = BasicParticleType.RisingSteam,
+			Buff = BasicParticleType.Buff
+		}
+		local pt = types[fxKey]
+		if pt == nil then pt = BasicParticleType.DustExplosion end
+		local s = scale
+		if s <= 0 then s = 1 end
+		_ParticleService:PlayBasicParticle(pt, self.Entity, pos, 0.0, Vector3(s, s, s), false, nil)
+		if shake > 0 then
+			local cam = _CameraService:GetCurrentCameraComponent()
+			if isvalid(cam) then cam:ShakeCamera(shake, 0.25) end
+		end
+	end
+
+end
