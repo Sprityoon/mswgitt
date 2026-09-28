@@ -305,6 +305,14 @@ script UISkillBarController extends Component
 							else
 								cd = controller:GetEffectiveCooldown(skillId, level)
 							end
+							-- 직업 변형 아이콘·이름 (예: 맨주먹 파이터의 파워 스트라이크 → 묵직한 정권 지르기)
+							local variantIcon = controller:GetSkillIconRUID(skillId)
+							if variantIcon ~= "" then iconRuid = variantIcon end
+							local variantRow = controller:GetJobVariantRow(skillId)
+							if variantRow ~= nil then
+								local vn = controller:SkillText(variantRow, "Name")
+								if vn ~= "" then displayName = vn end
+							end
 						end
 					else
 						displayName = skillId

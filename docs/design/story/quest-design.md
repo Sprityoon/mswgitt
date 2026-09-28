@@ -36,7 +36,7 @@
 |---|---|---|
 | 101~1xx | 튜토리얼 (AutoAccept 직렬 + 102 분기 108) | ✅ 가동 (108 Play 확인 대기) |
 | 2 0 1~209 | 챕터 1 | 201 ✅ |
-| 211~219 / 221~229 / 231~239 / 241~249 | 챕터 2 / 3 / 4 / 5 | 초안 |
+| 211~219 / 221~229 / 231~239 / 241~249 | 챕터 2 / 3 / 4 / 5 | ✅ 반영 — 211~217 · 221~227 · 231~236 · 241~247 (247 = 에필로그) |
 | 3xx | 설원 이후 차기 아크 예약 | — |
 
 ### 2.2 공통 값
@@ -77,23 +77,65 @@
 - **1막 관문 보스 퀘스트**: **217 「이슬을 머금은 왕」** (`Kill,slime_king,1`)
   - 격파 시 2막 바위 고원(`rocky01`) 웨이포인트 해금
 
-### 4.2 챕터 3 「바위 메아리」 (2막: 바위 고원 `rocky01`)
-- **주요 테크**: 철 채광 및 상위 도구 제작, 푸른 불씨 마법 스킬 해금
-- **핵심 동선**: 바위 고원 진입 (`Warp,rocky01,1`) ➔ 스텀프 표본 ➔ 아이언호그 돌진 저지 ➔ 울림돌 조사 (빛과 소리 약점)
-- **2막 관문 보스 퀘스트**: **227 「울림돌의 파수꾼」** (`Kill,stone_golem,1`)
-  - 격파 시 3막 모래 언덕(`desert01`) 웨이포인트 해금
+### 4.2~4.5 챕터 3~5 — ✅ 반영 (2026-09-26, Play 확인 대기)
 
-### 4.3 챕터 4 「모래에 잠든 길」 (3막: 모래 언덕 `desert01`)
-- **주요 테크**: 고대 유적 파편 발굴, 선인장 가시 수집, 상위 장신구 제작
-- **핵심 동선**: 모래 언덕 진입 (`Warp,desert01,1`) ➔ 모래두지·카투스·스콜피온 상대 ➔ 마른 우물 기록 조사
-- **3막 관문 보스 퀘스트**: **236 「마른 우물의 지킴이」** (`Kill,deu,1`)
-  - 격파 시 4막 만년 설원(`snow01`) 웨이포인트 해금
+> 원안은 [hunting-grounds-ecosystem-plan.md](./hunting-grounds-ecosystem-plan.md) §3. 아래가 **실제 CSV에 들어간 값**이다(원안 대비 변경은 비고). 공통 값: `Main` · `CannotAbandon=O` · 대면 수주/보고 · `Priority` = 챕터별 27/28/29.
+> ⚖️ 반영 전제 (2026-09-26 제작자): 메인 빌런 이름 **「먹그늘」**(Q8) · 완주 보상 가구 **「정원의 등불」 신설**(Q6).
+> 다조건(같은 Id 복수 행)·`Have` 모드는 직업 연계 퀘스트(304~346)에서 이미 쓰는 방식이다 — §1-6 의 "한 퀘스트 = 조건 1행"은 그 뒤로 완화됐다.
 
-### 4.4 챕터 5 「눈밭의 대답」 (4막: 만년 설원 `snow01`)
-- **주요 테크**: 혹한의 설원 탐험, 설원 모피 및 빙하 결정 테크
-- **핵심 동선**: 만년 설원 진입 (`Warp,snow01,1`) ➔ 주니어 예티·페페·화이트팽 조사 ➔ 도망친 그늘의 본체 추적
-- **4막 관문 보스 퀘스트**: **246 「설원의 거인」** (`Kill,snowman,1`)
-  - 격파 시 설원 평정 및 첫 정원의 꺼진 등불 재점화 (에필로그 완주)
+**서사 사슬**: 3장 — 나이테로 "잠식은 불씨가 깨어난 무렵 시작됐다"(222) → 개척단식 쇠(223) → 울림돌 가루가 푸르게 울림 = 등불 심지 복선(225) → 울림 속 속삭임(227). 4장 — 개척단 수레 못(232) → "모래에도 물길"(233) → 우물가 기록에서 **먹그늘 이름 첫 공개**(235) → "먹그늘은 추위 속으로 숨는다"(236). 5장 — 먹빛 하늘·검은 발자국(241) → 눈의 결정이 불씨를 머금음(243) → 로체가 등불 틀·울림돌 심지(245) → 먹그늘의 핵 격파 + 등불 수령(246) → 영지에 등불 설치(247, 에필로그).
+
+#### 챕터 3 「바위 메아리」 (`rocky01`~`03`)
+
+| Id | 이름 | Giver→TurnIn | 조건 | 넘김 | 보상 | 게이트 |
+|---|---|---|---|---|---|---|
+| 221 | 메아리치는 고원으로 | elder→elder | Warp,rocky01,1 Action | — | Coin:50 | 217 |
+| 222 | 딱딱한 나무 밑동 | researcher→researcher | Kill,stump,5 Action + Gather,Hardwood Log,3 Have | Hardwood Log:3 | Roasted Meat:3\|Coin:40 | 221 |
+| 223 | 철갑을 두른 위협 | blacksmith→blacksmith | Kill,iron_hog,4 Action + Gather,Iron Fragment,3 Have | Iron Fragment:3 | Iron Bar:2 | 222 |
+| 224 | 깊은 곳의 철맥 | blacksmith→blacksmith | Gather,Iron Ore,10 Have | — (보여 주기만. 연구소 철 도구 연구 비용 10개로 이어짐) | Coin:60 | 223 |
+| 225 | 강철의 손맛 | blacksmith→blacksmith | Craft,Iron Pickaxe,1 State | — | Coin:80 | 224 |
+| 226 | 바위 틈의 포자 | barnkeeper→barnkeeper | Kill,horn_mushroom,5 Action | — | Egg Omelette:3 | 225 |
+| 227 ✅ | 울림돌의 파수꾼 (보스) | researcher→elder | Kill,stone_golem,1 | — | Coin:150 | **226** (기존 217) |
+
+- 스텀프의 전리품 `Name`은 `Hardwood Log`(표시명 단단한 장작)다 — 원안의 `stump_wood`는 id.
+
+#### 챕터 4 「모래에 잠든 길」 (`desert01`~`03`)
+
+| Id | 이름 | Giver→TurnIn | 조건 | 넘김 | 보상 | 게이트 |
+|---|---|---|---|---|---|---|
+| 231 | 침묵의 모래 언덕 | elder→elder | Warp,desert01,1 Action | — | Coin:60 | 227 |
+| 232 | 모래 속의 그림자 | researcher→researcher | Kill,moredji,5 Action + Gather,Soft Sand,5 Have | Soft Sand:5 | Roasted Meat:3\|Coin:50 | 231 |
+| 233 | 메마른 땅의 가시 | fisher→fisher | Gather,Cactus Thorn,6 Have | Cactus Thorn:6 | Tuna:2\|Coin:40 | 232 |
+| 234 | 독침의 위협 | blacksmith→blacksmith | Kill,scorpion,4 Action | — | Iron Bar:3 | 233 |
+| 235 | 마른 우물가의 단서 | elder→elder | Gather,Pioneer Record,1 Have | Pioneer Record:1 | Coin:120 | 234 |
+| 236 ✅ | 마른 우물의 지킴이 (보스) | elder→elder | Kill,deu,1 | — | Coin:200 | **235** (기존 227) |
+
+- 원안 235 `Gather,Stone,10` → **열쇠 아이템 `Pioneer Record`(개척단의 빛바랜 기록, 거래 불가)** 로 교체. 드롭 = `ItemDropDataSet` `moredji` 행 `Probability=0.0` + `GuaranteeQuestIds=235` → 235 진행 중 첫 1개만 확정, 평소엔 떨어지지 않는다(기존 보장 드롭 장치 재사용).
+
+#### 챕터 5 「눈밭의 대답」 (`snow01`~`03`) + 에필로그
+
+| Id | 이름 | Giver→TurnIn | 조건 | 넘김 | 보상 | 게이트 |
+|---|---|---|---|---|---|---|
+| 241 | 눈밭의 발자국 | elder→elder | Warp,snow01,1 Action | — | Coin:80 | 236 |
+| 242 | 겁먹은 페페 떼 | barnkeeper→barnkeeper | Kill,pepe,6 Action | — | Feast Dish:1 | 241 |
+| 243 | 얼음 속의 푸른 빛 | researcher→researcher | Gather,Snow Crystal,4 Have | Snow Crystal:4 | Purified Jelly:2 | 242 |
+| 244 | 설원 길목의 사냥꾼 | vendor→vendor | Kill,white_fang,5 Action | — | Coin:150 | 243 |
+| 245 | 등불의 심지 | blacksmith→blacksmith | Gather,Iron Bar,3 Have | Iron Bar:3 | Coin:100 | 244 |
+| 246 ✅ | 설원의 거인 (보스) | elder→elder | Kill,snowman,1 | — | Coin:300\|**Garden Lantern:1** | **245** (기존 236) |
+| 247 | 다시 켜진 등불 (에필로그) | elder→elder | Place,Garden Lantern,1 State | — | Feast Dish:3\|Coin:300 | 246 |
+
+- 노점상 마리(vendor)의 첫 메인 퀘스트가 244다.
+- 보스 퀘스트 227/236/246 은 게이트만 바꾸고 이름·조건·보상 코인은 유지. 대사는 먹그늘 서사에 맞춰 다시 썼다(연구원 227 대사를 카드 말투인 반말로 정정).
+
+### 4.5 챕터 완주 보상 가구 「정원의 등불」 (⚖️ Q6 2026-09-26 · ✅ 반영)
+
+| 항목 | 값 |
+|---|---|
+| 아이템 | `garden_lantern` / `Name=Garden Lantern` / 정원의 등불 · furniture · Epic · 거래 불가 · `HomeOnly=true`(영지 전용) |
+| 모델 | `Furniture/Models/Furniture_GardenLantern` (ModelBuilder — 몬스터 와드 모델에서 와드 기능만 빼고 복제). 설치 코드가 `"Furniture_" .. Name(공백 제거)` 로 찾는다 |
+| 외형 | 스프라이트 `4fda636b86be4259b0bc1ca9a0ddc748` — 나무 틀 안에 푸른 불빛, 발치에 풀 (120×216px, 중앙 기준점 → 스케일 1 로 2×2 칸) · 아이콘·미리보기도 같은 RUID(가축우리 전례) |
+| 입수 | 246 보상 1회 → 247 에서 영지에 설치하면 완주 |
+| 기능 | 장식 전용 (효과 없음) |
 
 ### 4.6 몬스터 드롭 → 연구·발전 축 (⚖️ 방향 확정 2026-08-14 · 🧭 라인업 = ❓ Q9)
 
@@ -161,6 +203,7 @@
 - **도구**: `Hand Axe` `Stone Pickaxe` `Stone Axe` `Copper Pickaxe` `Copper Axe` `Iron Pickaxe` `Iron Axe` `Shovel` `Hoe` `Water Spade` `Fishing Rod`
 - **가구**: `Wooden Chest` `Furnace` `Cooking Pot` `Bed` `Wood Floor` `Portal` `Animal Pen` `Monster Ward`
 - **소모품**: `Roasted Grass` `Carrot Soup` `Veggie Stir Fry` `Feast Dish` `Roasted Meat` `Egg Omelette` `Grass Seed` `Carrot Seed` `Chicken Ticket` `Sheep Ticket` `Dog Whistle` `Recipe Scroll: Copper Tools` `Recipe Scroll: Iron Tools` `Purified Jelly`
-- **몬스터**: `slime` `ribbon_pig` `orange_mushroom` `boar` `stump` `iron_hog` `horn_mushroom` `moredji` `catus` `scorpion` `jr_yeti` `pepe` `white_fang` `yeti` · 관문 보스 `slime_king` `stone_golem` `deu` `snowman`
-- **포탈 목적지 (`PortalDestinationDataSet`)**: `town` `hunt01` `hunt02` `hunt03` `rocky01` `desert01` `snow01`
+- **몬스터**: `slime` `ribbon_pig` `orange_mushroom` `boar` `stump` `iron_hog` `horn_mushroom` `moredji` `catus` `scorpion` `bellamoa` `jr_yeti` `pepe` `white_fang` `yeti` · 관문 보스 `slime_king` `stone_golem` `deu` `snowman`
+- **포탈 목적지 (`PortalDestinationDataSet`)**: `town` `hunt01`~`hunt03` `rocky01`~`rocky03` `desert01`~`desert03` `snow01`~`snow03` (2026-09-26 갱신)
+- **추가 (2026-09-26)**: 전리품 `Hardwood Log` `Stump Leaf` `Iron Fragment` `Horn Fragment` `Soft Sand` `Mole Claw` `Cactus Thorn` `Cactus Flower` `Scorpion Stinger` `Chitin Shell` `Snake Scale` `Yeti Horn` `Pepe Beak` `White Fang Tail` `Ice Piece` `Snow Crystal` · 열쇠 `Pioneer Record` · 가구 `Garden Lantern`
 - **연구/해금 Id**: `research_copper_tools` `research_iron_tools` `research_gloom_sample` · 퀘스트 해금 전례 `quest_cooking_pot`(✅ 107)

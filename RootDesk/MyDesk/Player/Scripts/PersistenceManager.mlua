@@ -17,6 +17,12 @@ script PersistenceManager extends Logic
 	-- 그 상태로 SavePlayerData가 돌면 lastMapKind="town"이 박혀 LoadPlayerData가 영지 대신
 	-- 마을로 워프시킨다. 홈 워프가 끝날 때까지 이 표식으로 "home"을 강제한다.
 	property table PendingHomeWarp = {}
+	-- 영지 수명 (2026-09-25): 소유자 접속 중엔 떠나도 파괴하지 않고, 로그아웃 때만 파괴한다.
+	-- 접속마다 증가하는 세션 번호 — 로그아웃 파괴 재시도가 재접속한 유저의 영지를 지우지 않게 한다.
+	property table HomeSessionEpoch = {}
+	-- 파괴 실패 시(유저가 아직 맵에 남아 있다고 판정되는 순간) 재시도 간격·횟수.
+	property number HomeDestroyRetrySeconds = 1.0
+	property integer HomeDestroyMaxRetries = 5
 	property integer MaxSaveSlots = 5
 	property string DefaultPantsRuid = "e6ff0ea602e043f48a7e231ed4f95daf"
 	-- 닉네임 길이 규약. UIMainMenuController(nickMinLen/nickMaxLen)와
@@ -44,6 +50,7 @@ script PersistenceManager extends Logic
 		self.CharacterNameByUser = {}
 		self.CharacterCostumeByUser = {}
 		self.PendingHomeWarp = {}
+		self.HomeSessionEpoch = {}
 
 		_UserService:ConnectEvent(UserEnterEvent, self.OnUserEnter)
 		_UserService:ConnectEvent(UserLeaveEvent, self.OnUserLeave)
@@ -114,6 +121,7 @@ script PersistenceManager extends Logic
 		local userId = event.UserId
 		self.DirtyPlayers[userId] = false
 		self.DirtyGenerations[userId] = 0
+		self.HomeSessionEpoch[userId] = (tonumber(self.HomeSessionEpoch[userId]) or 0) + 1
 		log("PersistenceManager: Player entered: " .. userId .. ". Initializing home map...")
 		
 		-- 신규 접속 유저 시간 즉시 동기화 (월드 시간을 아직 불러오는 중이면 불러온 직후 브로드캐스트가 대신한다)
@@ -207,24 +215,19 @@ script PersistenceManager extends Logic
 			self.DirtyGenerations[userId] = nil
 		end
 		
-		-- Cleanup dynamic map if no players are left in the map player was in
-		if isvalid(currentMap) and string.sub(currentMap.Name, 1, 5) == "Home_" then
-			local mapComp = currentMap.MapComponent
-			if isvalid(mapComp) then
-				local users = _UserService:GetUsersByMapComponent(mapComp)
-				local count = 0
-				if users then
-					for _, u in ipairs(users) do
-						if isvalid(u) and u.PlayerComponent and u.PlayerComponent.UserId ~= userId then
-							count = count + 1
-						end
-					end
-				end
-				if count == 0 then
-					log("PersistenceManager: Destroying empty dynamic map " .. currentMap.Name .. " on player disconnect")
-					_DynamicMapService:DestroyDynamicMap(currentMap.Name)
+		-- 로그아웃 = 영지 파괴 시점. 본인 영지(+하위 영지)는 여기서만 파괴한다(맵 이동 중에는 정지 상태로 유지).
+		-- 저장(SaveToDB/SavePlayerData)이 끝난 뒤라 파괴가 세이브를 방해하지 않는다.
+		local mapNames = _DynamicMapService:GetDynamicMapNameList()
+		if mapNames ~= nil then
+			for _, name in ipairs(mapNames) do
+				if self:GetHomeOwnerId(name) == userId then
+					self:TryDestroyHomeMap(name, userId, 0)
 				end
 			end
+		end
+		-- 오프라인 소유자의 영지에 방문자로 있다가 나간 경우 — 그 영지도 비었으면 정리한다.
+		if isvalid(currentMap) and self:GetHomeOwnerId(currentMap.Name) ~= "" and self:GetHomeOwnerId(currentMap.Name) ~= userId then
+			self:TryDestroyHomeMap(currentMap.Name, userId, 0)
 		end
 
 		-- 세션 캐시는 퇴장 시 모두 해제한다. 소유자 퇴장 뒤 남은 방문객의 편집 권한도 만료된다.
@@ -236,6 +239,82 @@ script PersistenceManager extends Logic
 		self.CharacterNameByUser[userId] = nil
 		self.CharacterCostumeByUser[userId] = nil
 		self.PendingHomeWarp[userId] = nil
+	end
+
+	method string GetHomeOwnerId(string mapName)
+		-- "Home_<uid>" / "Home_<uid>_Sub_<n>" → uid. 영지 맵이 아니면 "".
+		if mapName == nil or string.sub(mapName, 1, 5) ~= "Home_" then return "" end
+		local rest = string.sub(mapName, 6)
+		local p, _ = string.find(rest, "_Sub_", 1, true)
+		if p then rest = string.sub(rest, 1, p - 1) end
+		return rest
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsUserOnline(string userId)
+		-- 해당 유저가 현재 월드 인스턴스에 접속해 있는지.
+		if userId == nil or userId == "" then return false end
+		return isvalid(_UserService:GetUserEntityByUserId(userId))
+	end
+
+	@ExecSpace("ServerOnly")
+	method integer CountUsersInMap(Entity map, string excludeUserId)
+		-- 맵에 있는 유저 수(excludeUserId 제외 — 떠나는 당사자는 이벤트 시점에 아직 잡힐 수 있다).
+		if not isvalid(map) or not isvalid(map.MapComponent) then return 0 end
+		local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+		local count = 0
+		if users then
+			for _, u in ipairs(users) do
+				if isvalid(u) and u.PlayerComponent and u.PlayerComponent.UserId ~= excludeUserId then
+					count = count + 1
+				end
+			end
+		end
+		return count
+	end
+
+	@ExecSpace("ServerOnly")
+	method void TryDestroyHomeMap(string mapName, string leavingUserId, integer attempt)
+		-- 영지 맵 파괴 진입점(로그아웃 / 오프라인 소유자 영지의 마지막 방문자 퇴장 전용).
+		-- 소유자의 현재 세션 번호를 잡아 재시도에 넘긴다 — 그 사이 재접속하면 재시도가 중단된다.
+		local ownerId = self:GetHomeOwnerId(mapName)
+		if ownerId == "" then return end
+		local epoch = math.floor(tonumber(self.HomeSessionEpoch[ownerId]) or 0)
+		self:DestroyHomeMapWithRetry(mapName, leavingUserId, epoch, attempt)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void DestroyHomeMapWithRetry(string mapName, string leavingUserId, integer epoch, integer attempt)
+		-- DestroyDynamicMap 은 유저가 맵에 남아 있다고 판정되면 실패한다(.d.mlua). 퇴장/이동 이벤트 시점엔
+		-- 당사자가 아직 잡힐 수 있어 반환값을 보고 짧게 재시도한다. 🔴 저장 경로가 아니다 — 저장은 호출 전에 끝난다(규칙 9).
+		local ownerId = self:GetHomeOwnerId(mapName)
+		if ownerId == "" then return end
+		if math.floor(tonumber(self.HomeSessionEpoch[ownerId]) or 0) ~= epoch then
+			log("PersistenceManager: Home destroy cancelled (owner reconnected) " .. mapName)
+			return
+		end
+		if ownerId ~= leavingUserId and self:IsUserOnline(ownerId) then return end
+
+		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
+		if not isvalid(map) then return end
+		if self:CountUsersInMap(map, leavingUserId) > 0 then
+			log("PersistenceManager: Home kept (visitors remain) " .. mapName)
+			return
+		end
+
+		local ec = _DynamicMapService:DestroyDynamicMap(mapName)
+		if ec == DynamicMapResultCode.Success then
+			log("PersistenceManager: Destroyed home map " .. mapName .. " (attempt " .. tostring(attempt) .. ")")
+			return
+		end
+		if attempt < self.HomeDestroyMaxRetries then
+			log_warning("PersistenceManager: Home destroy failed " .. mapName .. " ec=" .. tostring(ec) .. " — retry " .. tostring(attempt + 1))
+			_TimerService:SetTimerOnce(function()
+				self:DestroyHomeMapWithRetry(mapName, leavingUserId, epoch, attempt + 1)
+			end, self.HomeDestroyRetrySeconds)
+		else
+			log_error("PersistenceManager: Home destroy gave up " .. mapName .. " ec=" .. tostring(ec))
+		end
 	end
 
 	@ExecSpace("ServerOnly")
@@ -833,6 +912,19 @@ script PersistenceManager extends Logic
 				pc.SP = data.sp or 0
 				pc.JobId = data.jobId or ""
 				pc:RecoverJobFromQuests()
+				-- 능력치(2026-09-25). 도입 전 세이브(ap 필드 없음)는 지난 레벨업분 AP 를 소급 지급한다.
+				pc.StatStr = tonumber(data.statStr) or 0
+				pc.StatDex = tonumber(data.statDex) or 0
+				pc.StatInt = tonumber(data.statInt) or 0
+				pc.StatSpi = tonumber(data.statSpi) or 0
+				pc.StatVit = tonumber(data.statVit) or 0
+				if data.ap ~= nil then
+					pc.AP = tonumber(data.ap) or 0
+				else
+					pc.AP = math.max(0, (pc.Level - 1) * pc.APPerLevelUp)
+				end
+				pc:ApplyDerivedStats()
+				player.PlayerComponent.Hp = player.PlayerComponent.MaxHp
 				pc.Mana = math.max(0, math.min(pc:GetMaxMana(), tonumber(data.mana) or pc:GetMaxMana()))
 				-- T69: QWER 장착 영속 — SkillLevels 복원 후 · Sanitize 전에 복원 (sanitize가 해금 레벨을 읽음)
 				pc.EquippedSkillsJson = data.equippedSkills or "[]"
@@ -843,7 +935,7 @@ script PersistenceManager extends Logic
 				pc:SanitizeEquippedSkills()
 				log("[T69][SAVE] load equippedSkills=" .. tostring(pc.EquippedSkillsJson))
 				
-				-- Offline sleeping recovery (T8): 10분(600s) 비례 회복. ≥600s면 풀충전.
+				-- Offline sleeping recovery (T8): 수면 회복 속도(SleepRestorePerSecond)에 비례. 풀충전 시간 이상이면 풀충전.
 				local savedIsSleeping = data.isSleeping or false
 				local savedSleepStartTimeTicks = data.sleepStartTimeTicks or "0"
 				if savedIsSleeping and savedSleepStartTimeTicks ~= "0" then
@@ -855,12 +947,14 @@ script PersistenceManager extends Logic
 						if elapsedSeconds > 0 then
 							local maxHp = player.PlayerComponent.MaxHp
 							local maxSt = pc.MaxStamina
-							if elapsedSeconds >= 600.0 then
+							local fullSeconds = 600.0
+							if pc.SleepRestorePerSecond > 0 then fullSeconds = 1.0 / pc.SleepRestorePerSecond end
+							if elapsedSeconds >= fullSeconds then
 								player.PlayerComponent.Hp = maxHp
 								pc.Stamina = maxSt
 								log("PersistenceManager: Offline sleep full restore (≥600s). Elapsed=" .. tostring(elapsedSeconds))
 							else
-								local ratio = elapsedSeconds / 600.0
+								local ratio = elapsedSeconds / fullSeconds
 								local hpRecovery = ratio * maxHp
 								local staminaRecovery = ratio * maxSt
 								player.PlayerComponent.Hp = math.min(maxHp, player.PlayerComponent.Hp + math.floor(hpRecovery))
@@ -916,6 +1010,9 @@ script PersistenceManager extends Logic
 				-- 장비 슬롯: 키 병합(Fold) 이후에 복원·정리해야 사라진 구 키를 가리키지 않는다.
 				inv.GearJson = data.gear or "{}"
 				inv:SanitizeGear()
+				-- 대장간 강화·주문 부여 기록 (구세이브 = 없음 → "{}"). 잃은 아이템 키는 정리.
+				inv.EnhanceJson = data.enhance or "{}"
+				inv:SanitizeEnhance()
 				inv:ApplyHeldToolCostume()
 				inv:MigrateLegacyRecipeUnlocks()
 				-- 통화 스택→Coin 프로퍼티 흡수 (IsCurrency 미기입 사고 복구)
@@ -1203,6 +1300,14 @@ script PersistenceManager extends Logic
 			pc.SkillLevelsJson = "{}"
 			pc.SP = 0
 			pc.JobId = ""
+			pc.StatStr = 0
+			pc.StatDex = 0
+			pc.StatInt = 0
+			pc.StatSpi = 0
+			pc.StatVit = 0
+			pc.AP = 0
+			pc:ApplyDerivedStats()
+			player.PlayerComponent.Hp = player.PlayerComponent.MaxHp
 			pc.Mana = pc:GetMaxMana()
 			pc.FishingLevel = 1
 			pc.FishingXp = 0
@@ -1215,6 +1320,7 @@ script PersistenceManager extends Logic
 		local inv = player:GetComponent("script.PlayerInventory")
 		if isvalid(inv) then
 			inv.GearJson = "{}"
+			inv.EnhanceJson = "{}"
 		end
 	end
 
@@ -1286,6 +1392,13 @@ script PersistenceManager extends Logic
 		-- T69: QWER 장착 — 선캡처(규칙 9: 추가 Yield 금지, 기존 캡처 블록과 동일 위치)
 		local capEquippedSkills = pc.EquippedSkillsJson or "[]"
 		local capSp = tonumber(pc.SP) or 0
+		-- 능력치·AP — 선캡처(규칙 9: 추가 Yield 금지)
+		local capStatStr = tonumber(pc.StatStr) or 0
+		local capStatDex = tonumber(pc.StatDex) or 0
+		local capStatInt = tonumber(pc.StatInt) or 0
+		local capStatSpi = tonumber(pc.StatSpi) or 0
+		local capStatVit = tonumber(pc.StatVit) or 0
+		local capAp = tonumber(pc.AP) or 0
 		local capJobId = pc.JobId
 		local capMana = pc.Mana
 		local capFishingLevel = tonumber(pc.FishingLevel) or 1
@@ -1297,6 +1410,8 @@ script PersistenceManager extends Logic
 		local capEquipped = inv.EquippedTool or ""
 		-- 장비 슬롯(주무기·방어구) — 선캡처(규칙 9: 추가 Yield 금지)
 		local capGear = inv.GearJson or "{}"
+		-- 대장간 강화·주문 부여 — 선캡처(규칙 9)
+		local capEnhance = inv.EnhanceJson or "{}"
 		local capQuick = inv.QuickSlotsJson or "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]"
 		local capSlot = tonumber(inv.SelectedQuickSlotIndex) or 1
 		local capRecipes = inv.UnlockedRecipesJson or "[]"
@@ -1478,7 +1593,14 @@ script PersistenceManager extends Logic
 			skillLevels = capSkills,
 			equippedSkills = capEquippedSkills,
 			gear = capGear,
+			enhance = capEnhance,
 			sp = capSp,
+			statStr = capStatStr,
+			statDex = capStatDex,
+			statInt = capStatInt,
+			statSpi = capStatSpi,
+			statVit = capStatVit,
+			ap = capAp,
 			jobId = capJobId,
 			mana = capMana,
 			fishingLevel = capFishingLevel,
@@ -1750,23 +1872,12 @@ script PersistenceManager extends Logic
 		local newMap = event.NewMap
 		local userId = player.PlayerComponent.UserId
 
-		-- 1. GC empty map if visitor left it
-		if isvalid(oldMap) and string.sub(oldMap.Name, 1, 5) == "Home_" then
-			local mapComp = oldMap.MapComponent
-			if isvalid(mapComp) then
-				local users = _UserService:GetUsersByMapComponent(mapComp)
-				local count = 0
-				if users then
-					for _, u in ipairs(users) do
-						if isvalid(u) and u.PlayerComponent and u.PlayerComponent.UserId ~= userId then
-							count = count + 1
-						end
-					end
-				end
-				if count == 0 then
-					log("PersistenceManager: Destroying empty dynamic map " .. oldMap.Name .. " after visitor warped out")
-					_DynamicMapService:DestroyDynamicMap(oldMap.Name)
-				end
+		-- 1. 영지를 떠날 때: 소유자가 접속 중이면 파괴하지 않고 정지 상태로 둔다(재입장 시 재생성 비용 제거).
+		--    소유자가 이미 로그아웃한 영지(방문자만 남아 있던 경우)만 비는 즉시 정리한다.
+		if isvalid(oldMap) then
+			local ownerId = self:GetHomeOwnerId(oldMap.Name)
+			if ownerId ~= "" and not self:IsUserOnline(ownerId) then
+				self:TryDestroyHomeMap(oldMap.Name, userId, 0)
 			end
 		end
 

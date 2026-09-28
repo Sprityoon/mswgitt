@@ -212,6 +212,11 @@ const THEMES = {
   },
 };
 
+// 2026-09-25 제작자 결정: 스폰 자원(돌·나무·풀)과 겹쳐 보이는 데코는 사냥터에 배치하지 않는다(꽃·덤불류는 유지).
+// 기존 맵에서도 같은 날 MapBuilder 로 제거했다. 테마 순환은 그대로 두고 해당 자리만 비운다 —
+// 목록에서 빼 버리면 빈 자리를 남은 데코가 메워 오히려 개수가 늘어난다.
+const RETIRED_DECOS = new Set(["Deco_GrassTuft", "Deco_DryGrass", "Deco_MossRocks", "Deco_FlowerRock", "Deco_Stump", "Deco_LogPile"]);
+
 function planDecos(design, tiles) {
   const out = [];
   const portalPts = Object.values(design.portals).map(p => p.pos);
@@ -226,7 +231,7 @@ function planDecos(design, tiles) {
     if (out.some(d => Math.hypot(d.x - x, d.y - y) < 3)) return false;
     return true;
   };
-  const add = (name, x, y, allowWater) => { if (ok(x, y, allowWater)) { out.push({ name, x, y }); return true; } return false; };
+  const add = (name, x, y, allowWater) => { if (!name || RETIRED_DECOS.has(name)) return false; if (ok(x, y, allowWater)) { out.push({ name, x, y }); return true; } return false; };
   let k = 0;
   const pick = arr => arr[(k++) % arr.length];
   // 광장 네 모서리 바깥 대각(잔디 쪽) — 광장 윤곽을 살린다.

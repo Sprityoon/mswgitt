@@ -218,6 +218,10 @@ Maker 에디터는 저장 시 **에디터 메모리 상태로 워크스페이스
 - **필수 절차**: 재직렬화 diff를 봤을 때 무해 판정 전에 반드시 **"그 커밋이 만든 핵심 산출물이 지금도 실존하는가"를 빌더로 1건씩 대조**한다. **엔티티 수 일치는 근거가 아니다.**
 - **`refresh` 호출 자체가 Maker의 스테일 상태를 디스크로 밀어낼 수 있다** — 빌더로 파일을 바꾼 세션에서는 refresh 전후로 `git status`를 확인한다.
 
+🔴 **5차 사고 (2026-09-25) — CSV 도 덮인다**: AI 가 `BossPatternDataSet.csv` 를 고쳐 쓴 직후 Maker 저장이 메모리의 이전 데이터로 `.csv`+`.userdataset` 을 재직렬화(두 파일 수정 시각 동일)해 수정이 통째로 사라졌고, 같은 저장으로 손대지 않은 `ui/PopupGroup.ui` 의 displayOrder·UseOutLine 9건도 되돌려졌다. Play 로그의 **행 수(`loaded N pattern row(s)`)** 가 기대와 달라 발견.
+- **판별**: 데이터 수정 뒤 이상하면 ① 디스크 파일이 내가 쓴 내용인지 먼저 확인 ② 짝 `.userdataset`/`.csv` 수정 시각이 같으면 Maker 저장 흔적 ③ `git status` 에 안 건드린 `.ui` 가 뜨면 UIBuilder 로 HEAD 와 의미 비교(엔진 캐시 Position/Rotation 은 무시).
+- **예방**: 파일을 쓴 턴 안에서 곧바로 `refresh` — 쓰기와 refresh 사이에 Maker 저장이 끼면 덮인다.
+
 > ⚠️ 3·4차 사고는 사후에 **규칙 15**(프리팹 타입)가 진짜 원인으로 재분류됐다. `.ui` 컴포넌트가 되살아나는 증상은 규칙 15부터 의심할 것.
 
 ### 규칙 13. `ModelBuilder.read()`가 빈 모델을 반환하는 갭

@@ -43,6 +43,9 @@ script QuestData
 	property string GiverNpcId = ""
 	property string TurnInNpcId = ""
 
+	-- 히든 퀘스트: 이 물건을 지니고 있을 때만 제안·수락된다 (Name:count|..., 공란=게이트 없음). 보고 게이트와는 무관.
+	property table RequiredHaveItems = nil
+
 	property table ConditionDatas = nil
 
 	property integer ConditionCount = 0
@@ -147,7 +150,39 @@ script QuestData
 		if okT and t ~= nil and not _Util:IsNilorEmptyString(t) then
 			self.TurnInNpcId = tostring(t)
 		end
-		
+
+		-- 히든 퀘스트 지참 게이트. 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
+		self.RequiredHaveItems = nil
+		local haveItems = {}
+		if not self:ParseItems(tostring(optional("RequiredHaveItems") or ""), haveItems) then
+			log_error(string.format("RequiredHaveItems name or count is nil. Id : %d", id))
+			return false
+		end
+		if not _Util:IsNilorEmptyTable(haveItems) then
+			self.RequiredHaveItems = haveItems
+		end
+
+		return true
+	end
+
+	method boolean IsHidden()
+		-- 지참 게이트가 있는 퀘스트 = 히든 퀘스트 (머리 위 마크 색을 달리한다).
+		return self.RequiredHaveItems ~= nil and #self.RequiredHaveItems > 0
+	end
+
+	method boolean HasRequiredHaveItems(Entity player)
+		-- RequiredHaveItems 를 모두 지녔는가. 클라에서는 동기화된 인벤 스냅샷을 읽는다(PlayerInventory.GetItemCount).
+		local items = self.RequiredHaveItems
+		if items == nil or #items == 0 then return true end
+		local inv = player:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return false end
+		for i = 1, #items do
+			local itemName = items[i][1]
+			local need = items[i][2]
+			if itemName ~= nil and itemName ~= "" and need ~= nil and need > 0 then
+				if inv:GetItemCount(itemName) < need then return false end
+			end
+		end
 		return true
 	end
 
@@ -203,6 +238,8 @@ script QuestData
 			return false
 		end
 		if self.RewardJobId ~= "" and pc:GetJobName(self.RewardJobId) == "" then return false end
+		-- 히든 퀘스트는 물건을 지닌 채여야 제안·수락된다. 수락 뒤 보고 자격에는 쓰지 않는다(조건 Have 가 따로 지킨다).
+		if not completing and not self:HasRequiredHaveItems(player) then return false end
 		return true
 	end
 

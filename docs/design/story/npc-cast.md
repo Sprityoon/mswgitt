@@ -9,12 +9,14 @@
 
 | NpcId | 모델 | 위치 | 상호작용 | 앰비언트 대사 | 스토리 대사 |
 |---|---|---|---|---|---|
-| `elder` | Villager_Elder | town | `VillagerDialog` (대화창) | ✅ 6줄 | ✅ 퀘스트 201 |
-| `fisher` | Villager_Fisher | town 연못가 | `VillagerDialog` | ✅ 6줄 | — |
-| `researcher` | Villager_ResidentA | town 광장·연구소 | `VillagerDialog` | ✅ 3줄 | 204, 212 |
-| `vendor` | Villager_ResidentB | town 시장 거리 | `VillagerDialog` | ✅ 3줄 | 205 |
-| `blacksmith` | Villager_ResidentC | town 대장간 | `VillagerDialog` | ✅ 3줄 | 203, 213~215, 223~224 |
-| `barnkeeper` | Villager_ResidentD | town 헛간·목장 | `VillagerDialog` | ✅ 3줄 | 222 |
+| `elder` | Villager_Elder | town | `VillagerDialog` (대화창) | ✅ 6줄 | ✅ 201, 205, 211, 216~217, 221, 227(보고), 231, 235~236, 241, 246~247 |
+| `fisher` | Villager_Fisher | town 연못가 | `VillagerDialog` | ✅ 6줄 | 202, 233 |
+| `researcher` | Villager_ResidentA | town 광장·연구소 | `VillagerDialog` | ✅ 3줄 | 204, 212, 222, 227(수주), 232, 243 |
+| `vendor` | Villager_ResidentB | town 시장 거리 | `VillagerDialog` | ✅ 3줄 | 244 (메인 첫 수주) · 직업 301~306 |
+| `blacksmith` | Villager_ResidentC | town 대장간 | `VillagerDialog` | ✅ 3줄 | 203, 213~215, 223~225, 234, 245 |
+| `barnkeeper` | Villager_ResidentD | town 헛간·목장 | `VillagerDialog` | ✅ 3줄 | 226, 242 |
+
+> 2026-09-26 갱신: 챕터 3~5 반영으로 위 목록을 CSV 기준으로 다시 맞췄다. 말투는 기존 CSV 역산 그대로 — 엘렌·로체·토리·마리는 플레이어에게 **반말**, 촌장·낚시꾼은 하게체.
 | `merchant` | Merchant | town 상점 | `MerchantInteract` (상점 UI 직결) | — | — |
 | (시설) 연구소 | Building_ResearchLab | town | `ResearchLab` UI | — | — |
 | (시설) 게시판 | BulletinBoard | town | 의뢰 보드 UI | — | — |

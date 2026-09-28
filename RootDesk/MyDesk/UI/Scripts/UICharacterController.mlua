@@ -40,6 +40,11 @@ script UICharacterController extends Component
 	property TextGUIRendererComponent fishVal = "820730e2-978d-4162-8c16-c8f8abe3eac5"
 	property TextGUIRendererComponent weaponVal = "e8e3d955-34ff-4d9d-b9ff-08625a07c04f"
 
+	-- 능력치 분배 (3열): 보유 AP + 행(Row_<STR|DEX|INT|SPI|VIT>)마다 Value·Desc·BtnPlus
+	property TextGUIRendererComponent apVal = "870d6198-45a3-4a74-9df5-6f7da4602f56"
+	property string AbilityRowPathPrefix = "/ui/PopupGroup/CharacterPopup/Ability/Row_"
+	property table abilityHandlers = {}
+
 	-- 장비 칸 엔티티 경로 접두어 (칸 이름 = Slot_<EquipSlot>)
 	property string GearSlotPathPrefix = "/ui/PopupGroup/CharacterPopup/Gear/Slot_"
 	-- 창이 열려 있는 동안 수치를 다시 그리는 주기(초)
@@ -81,6 +86,15 @@ script UICharacterController extends Component
 			end
 		end
 
+		for _, key in ipairs(self:AbilityKeys()) do
+			local btn = _EntityService:GetEntityByPath(self.AbilityRowPathPrefix .. key .. "/BtnPlus")
+			if isvalid(btn) then
+				local k = key
+				local h = btn:ConnectEvent(ButtonClickEvent, function() self:OnAllocateClicked(k) end)
+				self.abilityHandlers[key] = { entity = btn, eventHandler = h }
+			end
+		end
+
 		self:UpdateDimmer()
 	end
 
@@ -89,6 +103,11 @@ script UICharacterController extends Component
 		-- 연결한 이벤트·타이머 해제.
 		if isvalid(self.btnClose) then
 			self.btnClose.Entity:DisconnectEvent(ButtonClickEvent, self.closeHandler)
+		end
+		for _, rec in pairs(self.abilityHandlers) do
+			if rec ~= nil and isvalid(rec.entity) then
+				rec.entity:DisconnectEvent(ButtonClickEvent, rec.eventHandler)
+			end
 		end
 		for _, rec in pairs(self.slotHandlers) do
 			if rec ~= nil and isvalid(rec.entity) then
@@ -239,19 +258,14 @@ script UICharacterController extends Component
 		self:SetText(self.nameText, controller.PlayerName or player.Name)
 		self:SetText(self.spText, "보유 SP  " .. tostring(controller.SP or 0))
 
-		-- 핵심 능력치 (서버 스킬 피해식과 같은 출처: 캐릭터 공격력 + 장비)
-		local charAtk = self:SafeNumber(function() return controller:GetCharacterAttack() end, 8)
-		local magBase = self:SafeNumber(function() return controller:GetMagicAttack() end, 0)
-		local gearAtk = 0
-		local gearMag = 0
+		-- 핵심 능력치 (서버 피해식과 같은 출처: 계열 공격력 = 레벨·능력치·버프 + 장비 무기)
+		-- 물리 공격력 = 직업 평타 계열(기본 STR, 맨주먹 파이터는 삼위일체 TRI)
+		local physical = self:SafeNumber(function() return controller:GetStatAttackTotal(controller:GetBasicAttackStat()) end, 8)
+		local magical = self:SafeNumber(function() return controller:GetStatAttackTotal("INT") end, 8)
 		local gearSkill = 0
 		if inv ~= nil then
-			gearAtk = math.floor(inv:GetGearStat("Attack"))
-			gearMag = math.floor(inv:GetGearStat("MagicAttack"))
 			gearSkill = math.floor(inv:GetGearStat("SkillAttack"))
 		end
-		local physical = charAtk + gearAtk
-		local magical = magBase + gearMag
 		local totalDef = self:SafeNumber(function() return controller:GetTotalDefense() end, controller.Defense or 0)
 		self:SetText(self.atkVal, tostring(physical))
 		self:SetText(self.magVal, tostring(magical))
@@ -282,6 +296,77 @@ script UICharacterController extends Component
 
 		-- 장비 칸 + 주무기 줄
 		self:RefreshGear(inv)
+		-- 능력치 분배 열
+		self:RefreshAbility(controller)
+	end
+
+	@ExecSpace("ClientOnly")
+	method table AbilityKeys()
+		return { "STR", "DEX", "INT", "SPI", "VIT" }
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshAbility(any controller)
+		-- 보유 AP, 능력치별 포인트와 현재 효과. AP 가 없으면 + 버튼을 숨긴다.
+		local ap = controller.AP or 0
+		self:SetText(self.apVal, "AP " .. tostring(ap))
+		for _, key in ipairs(self:AbilityKeys()) do
+			local row = _EntityService:GetEntityByPath(self.AbilityRowPathPrefix .. key)
+			if isvalid(row) then
+				local pts = self:SafeNumber(function() return controller:GetStatPoints(key) end, 0)
+				local valEnt = row:GetChildByName("Value")
+				if isvalid(valEnt) and isvalid(valEnt.TextGUIRendererComponent) then
+					valEnt.TextGUIRendererComponent.Text = tostring(math.floor(pts))
+				end
+				local descEnt = row:GetChildByName("Desc")
+				if isvalid(descEnt) and isvalid(descEnt.TextGUIRendererComponent) then
+					descEnt.TextGUIRendererComponent.Text = self:AbilityDesc(controller, key, pts)
+				end
+				local btn = row:GetChildByName("BtnPlus")
+				if isvalid(btn) then btn.Enable = ap > 0 end
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method string AbilityDesc(any controller, string key, number pts)
+		-- 능력치 행 두 번째 줄: 지금 그 능력치가 주는 효과(계열 공격력은 레벨·무기 포함 합계).
+		if key == "VIT" then
+			local hp = math.floor(pts * (controller.VitHpPerPoint or 10))
+			local def = math.floor(pts * (controller.VitDefPerPoint or 0.25))
+			return "최대 HP +" .. tostring(hp) .. " · 방어력 +" .. tostring(def)
+		end
+		local atk = self:SafeNumber(function() return controller:GetStatAttackTotal(key) end, 0)
+		local okB, basic = pcall(function() return controller:GetBasicAttackStat() end)
+		if key == "STR" and okB and basic == "TRI" then
+			-- 맨주먹 파이터: 힘·솜씨·체력이 고를수록 강해지는 삼위일체 공격력
+			local tri = self:SafeNumber(function() return controller:GetStatAttackTotal("TRI") end, 0)
+			local bal = self:SafeNumber(function() return controller:GetTrinityBalance() end, 1)
+			return "삼위일체 공격력 " .. tostring(math.floor(tri)) .. " · 균형 " .. tostring(math.floor(bal * 100 + 0.5)) .. "%"
+		end
+		if key == "STR" then
+			return "물리·투척 공격력 " .. tostring(math.floor(atk))
+		elseif key == "DEX" then
+			local g = pts * (controller.DexGatherPerPoint or 0.005) * 100
+			return "기교 공격력 " .. tostring(math.floor(atk)) .. " · 채집 +" .. string.format("%.1f", g) .. "%"
+		elseif key == "INT" then
+			local mp = math.floor(pts * (controller.IntManaPerPoint or 1))
+			return "마법 공격력 " .. tostring(math.floor(atk)) .. " · 최대 MP +" .. tostring(mp)
+		elseif key == "SPI" then
+			local h = math.floor(pts * (controller.SpiHealPerPoint or 0.01) * 100 + 0.5)
+			return "자연 공격력 " .. tostring(math.floor(atk)) .. " · 회복 +" .. tostring(h) .. "%"
+		end
+		return ""
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnAllocateClicked(string key)
+		-- + 버튼: 서버가 AP 를 검증·차감한다. 값은 @Sync 로 돌아오고 주기 갱신이 다시 그린다.
+		local player = _UserService.LocalPlayer
+		if not isvalid(player) then return end
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		pc:ServerRequestAllocateStat(key)
 	end
 
 	@ExecSpace("ClientOnly")

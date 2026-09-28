@@ -17,6 +17,11 @@
 
 ---
 
+| `docs/design/equipment-enhancement-and-enchant-plan.md` · `EquipmentEnhanceDataSet.csv` · `EnchantPartDataSet.csv` · `EnchantWeightDataSet.csv` · `Building_Blacksmith.model` · `BlacksmithAnvil.mlua` · `UIAnvilController.mlua` · `ui/AnvilGroup.ui` · `PlayerInventory.mlua` · `PlayerController.mlua` · `Monster.mlua` · `ResearchDataSet.csv` · `RecipeDataSet.csv` · `ItemDropDataSet.csv` | **[장비/대장간] 대장간 모루 신설 & 장비 기본 강화(+1~+5) 및 연구소 연계 주문 부여(Enchant D~S급) 시스템** (2026-09-26 ⚖️ 사양 §7 확정) — 아래 참조 |
+| `StoryDialogDataSet.csv` · `QuestDataSet.csv` · `QuestConditionDataSet.csv` · `ItemDropDataSet.csv` · `item_dataset.csv` · `Furniture_GardenLantern.model` · `docs/design/story/` | **[스토리/퀘스트] 메인 스토리 챕터 3~5 확장(중간 퀘 16개 + 에필로그) & 메인 빌런 「먹그늘」 서사 & 완주 보상 영지 가구 「정원의 등불」** (2026-09-26) — 아래 참조 |
+| `SkillDataSet.csv` · `item_dataset.csv` · `QuestDataSet.csv` · `QuestConditionDataSet.csv` · `StoryDialogDataSet.csv` · `ItemDropDataSet.csv` · `PlayerController.mlua` · `PlayerInventory.mlua` · `Monster.mlua` | **[직업/콘텐츠] 직업 콘텐츠 대형 업데이트 2단계 — 3티어 기술 5종(자연 시너지) · 연계 퀘스트 15종 · 상위 무기 15종 · 장비 고유 효과(Perk)** (2026-09-26) — 아래 참조 |
+| `SkillDataSet.csv` · `item_dataset.csv` · `BuffDataSet.csv` · `QuestDataSet.csv` · `PlayerController.mlua` · `PlayerCombat.mlua` · `PlayerBuffs.mlua` · `UICharacterController.mlua` · `UISkillTreeController.mlua` | **[직업/히든] 히든 직업 「맨주먹 파이터」 & 촌장 히든 퀘스트 341~343 & 삼위일체(TRI) 계열 스탯 & 스킬 전용 리소스 22종** (2026-09-26) — 아래 참조 |
+| `MonsterAI.mlua` · `itemreact.mlua` · `ResourceReaction.mlua` · `YSortSprite.mlua` · `WalkBehindFade.mlua` · `BossPatternController.mlua` · `PlayerController.mlua` · `PlayerCombat.mlua` | **[전투/AI/성능] 레벨업 능력치 분배(AP) 시스템 & 보스 밸런스 재조정 & 몬스터 리쉬 3단 경계 진동 해소 & 서버 상시 부하 감축(빈 맵 AI 휴면·드롭 최적화)** (2026-09-25) — 아래 참조 |
 | `SkillDataSet.csv` · `PlayerController.mlua` · `UISkillTreeController.mlua` · `docs/design-policy.md` | **[스킬] 스킬별 위력 출처 `WeaponSource` 신설 — 휘두르는 물리기는 손에 든 도구, 나머지는 장비** (2026-09-23 ⚖️ 제작자 요청 "물리 스킬도 들고 있는 도구에 영향받는 것이 있으면") — `SkillDataSet` 67번째 컬럼 `WeaponSource`(`Held`/`Gear`, 공란 = 투척 Held · 그 외 Gear). `Held` = 파워 스트라이크·슬래시 블러스트·갑주 파쇄타·대지 분쇄타. 덫·가시 넝쿨 방벽·야생의 호루라기·마법은 장비 기준 유지. `PlayerController:GetSkillWeaponSource`/`GetSkillWeaponSourceLine`, `ComputeSkillDamage` 로그에 `src=` 추가, 스킬트리 상세에 위력 출처 한 줄. 검증: CSV 67컬럼 전 행 일치 · `check_dataset_columns` 불일치 0 · refresh ok · build 16:59:19(마지막 `.mlua` 16:59:18 이후) Error 0 / 신규 Warning 0 · 런타임 검증 보류(제작자 Play 수행). |
 | `SkillDataSet.csv` · `PlayerController.mlua` · `Monster.mlua` · `PlayerInventory.mlua` · `PersistenceManager.mlua` · `UIInventoryController.mlua` · `UICraftingController.mlua` · `UICharacterController.mlua`(재작성) · `ui/PopupGroup.ui`(CharacterPopup 재구성) · `item_dataset.csv` · `RecipeDataSet.csv` · `docs/design-policy.md` | **[스킬/장비/UI] 회복 → 비전투 회복 패시브 & 주무기 슬롯·방어구 장비 시스템 신설 & 방어력 실적용 & 메이플식 캐릭터 정보창** (2026-09-23 ⚖️ 제작자 확정: "주무기 슬롯" + "방어구 시스템도 만들기") — ① **회복**: 액티브(`HealAura`, 장착 불가 상태) → `Passive` `OutOfCombatHealPct` 0.02/Lv — 마지막 피격·타격 후 `CombatHoldSeconds`(4초) 지나면 1초마다 최대 HP × Lv×2% 회복, 기력 소모 없음. 전투 상태는 `PlayerController:MarkCombat()`(피격 = `HandlePlayerHit`, 타격 = `Monster.HandleHitEvent`). ② **무기 출처 분리**: Physical/Magic 스킬 = 장비 합(`GetGearStat`), Throw = 손에 든 도구, 평타 = 손에 든 도구 → 덫이 단검/투척무기에 따라 흔들리던 문제 해소. ③ **장비 시스템**: `item_dataset` 에 `EquipSlot`·`Defense`·`EquipLevel` 3컬럼(40컬럼) — 무기 7종 `EquipSlot=weapon`, 방어구 15종(가죽 Lv1 / 구리 Lv8 / 철 Lv14 × 모자·갑옷·장갑·신발·방패, 방어력 합 23/46/80, 아이콘 = 공식 아바타 아이템 `thumbnail://`) + 레시피 15종(`equipment` 카테고리, 구리·철은 기존 도구 연구 해금 공유). `PlayerInventory.GearJson`(@Sync, 슬롯→아이템 키 **참조** — 장착해도 인벤에서 빠지지 않음, 잃으면 자동 해제) + `ServerRequestEquipGear`/`UnequipGear`(보유·슬롯·착용 Lv 서버 검증) + `SanitizeGear`(로드 시 Fold 이후) + 세이브 필드 `gear`(규칙 9 선캡처) + 새 캐릭터 초기화. 주무기 미등록 시 보유 최고 무기 자동. ④ **방어력 실적용**: 기존엔 몬스터 피해가 0일 때의 폴백에서만 `Defense×0.1` 을 빼서 사실상 무효였다 → 모든 피격에 `×100/(100+방어력)`. 기본 10 → 약 9% 감소가 새로 생김. ⑤ **인벤토리**: 장비 탭에 `equipment` 포함, 장비 더블클릭 장착(무기는 캐릭터 창 열림 시), `[장착]` 표시, 툴팁에 `슬롯 · 방어력 +N` / `착용 Lv.N`. ⑥ **캐릭터 창**: 크롬 유지(정책 §5 종이 큰창) + 좌 프로필 카드(아바타·Lv·직업·이름·SP) + 장비 6칸(100×100, 클릭=해제) / 우 전투력 → 물리·마법·스킬 공격력·방어력 → HP/MP/기력/EXP 게이지(색을 정책 의미로 교정: 구 HP 초록·EXP 파랑이었음) → 피해 감소·이동·채집·낚시·주무기 → 영지 권한(88px). 닫기 버튼 58→88px·최상단(정책 규격). 장비 칸 이모지 제거. 열린 동안 0.5초 주기 갱신. 전투력 = (물리+마법+스킬 공격력)×10 + 방어력×4 + 최대HP×0.5 (표시 지표). 검증: 전 수정 `.mlua` LSP errors 0 · CSV 컬럼 전 파일 일치 · `check_dataset_columns` 불일치 0 · `ui_lint` Error 0, Warning 551→547(CharacterPopup 경고 0) · PopupGroup 의미 diff = CharacterPopup·Warp 슬롯 외 변경 0 · 바인딩 23개 주입(UUID 재빌드 후 유지 확인) · refresh ok · build 16:47:27(마지막 `.mlua` 16:47:25 이후) **Error 0 / 신규 Warning 0** · 런타임 검증 보류(제작자 Play 수행). **참고(제작자 16:08~16:19 Play 로그)**: 직전 작업의 사냥터 체인 확인됨 — 대기실 포탈 4개(`hunt03/rocky03/desert03/snow03`) · 1구역 `PortalBack` 3개 비활성 · 12구역 생성. **미해결/주의**: 아바타 미리보기(`AvatarGUIRenderer`)가 로컬 플레이어를 그리는지 Play 확인 필요 · 방어구는 외형(아바타 코스튬)에 반영되지 않음 · 레이드 입장 레벨은 테스트 모드 F7(레벨업) 또는 `GrantLevelCount` 로 우회. |
 | `Monster/Scripts/BossPatternController.mlua`(신규) · `Monster/DataSets/BossPatternDataSet`(신규) · `MonsterAI.mlua` · `MonsterMeleeAttack.mlua` · `Monster.mlua` · `BossRaidLogic.mlua` · `SlimeKing/StoneGolem/Deu/Snowman.model` · `Projectile_RockShard.model`(신규) · `Projectile_Snowball.model`(신규) | **[보스/전투/퀘스트] 관문 보스 다중 패턴 엔진 신설(순환 + HP 50% 페이즈) & 관문 퀘스트 Kill 크레딧 파티 전원화** (2026-09-23 ⚖️ 제작자 확정: "기존 부품 패턴 우선" + "순환 + HP 페이즈") — ① **퀘스트 크레딧**: `Monster:GetBossCreditPlayers()`(보스가 죽은 맵의 전원, 비면 막타자) 신설 → 보스 `Kill` 액션과 웨이포인트 해금이 같은 목록을 쓴다. 일반 몬스터는 막타자 유지. 로그 `[BOSS] <id> kill credit -> N player(s)`. ② **패턴 엔진**: `BossPatternController` 가 `BossPatternDataSet`(MonsterId 키) 행을 Order 순환, HP ≤ `Phase2HpRatio`(0.5)면 2페이즈 행(MinPhase~MaxPhase)으로 교체. `LEAP`/`CHARGE` 는 기존 MonsterAI 상태로 위임, 신규 패턴은 MonsterAI `PATTERN` 상태에서 타임라인 실행. 신규 패턴 6종 — `QUAKE`(몸통 원 + 충격파 링) · `RADIAL`(360° 투사체, 회차마다 틈 이동) · `ROAR`(대형 원, 긴 예고) · `THORNS`(발밑 추적 연속 원) · `FROST`(일렬 원, 보스 쪽부터 순차 분출, 부채꼴 다중 줄) · `BOULDER`(느린 대형 투사체 재조준 연사) + `SUMMON`. 모든 원 타격은 AttackTelegraph 장판 → 채움 완료 순간 **그 시점 플레이어 위치로 재판정**(`MonsterMeleeAttack:DoPatternCircle`, attackInfo `pattern`). 피해 = `SlamDamage`(없으면 `ContactDamage`) × `DamageMul` → 레이드 DamageScale 자동 반영, 예고/간격은 레이드 `ReactionScale`/`SkillIntervalScale` 을 `WindupScale`/`IntervalScale` 로 주입. PATTERN 중 슈퍼아머·접촉 틱 중단(규칙 44)·소환 보류, 사망/상태 이탈 시 남은 타격·장판 전량 회수(`Abort`). ③ **보스별 구성**: 슬라임킹 LEAP→QUAKE(2겹→3겹) + 기존 30초 소환 · 스톤골렘 LEAP→RADIAL(8발→3연사)→ROAR(r6.5) · 데우 THORNS(5→7연속, attack1 클립)→LEAP→CHARGE · 스노우맨 BOULDER(1→3연속, skill1 클립)→FROST(1줄→3줄 28°)→LEAP. ④ **투사체 모델 2종**: `Projectile_Snowball`(스노우맨 팩 `mob/8220001.img` 눈덩이 clip `1325ee6c…`, Scale 6) · `Projectile_RockShard`(돌조각 흩뿌림 sprite `d4f82b52…`, Scale 0.8 — 전용 파편 리소스를 못 찾아 **임시**, 교체 후보). 검증: 전 신규/수정 `.mlua` LSP errors 0 · `BossPatternController.codeblock` 생성 확인 · `check_dataset_columns` 불일치 0 · CSV 20컬럼 16행 일치 · ModelBuilder 재조회로 4모델 컴포넌트 11→12 확인 · refresh ok ×3 · build 로그 16:06:01(마지막 `.mlua` 수정 16:06:00 이후) **Error 0 / 신규 Warning 0** · 모델 변경분은 새 build 로그 미생성(규칙 22 — 15:18:27 스냅샷의 기존 `LWA-4012` 9건만 재반환) · normal 로그 0건 · 런타임 검증 보류(제작자 Play 수행). **2차(미착수)**: 눈보라 둔화·메마름 저주(스태미나)·소용돌이 흡인·울림돌 엄폐 — 플레이어 상태이상/이동 강제 파이프라인 필요. |
@@ -145,6 +150,319 @@
 | 데이터셋 + `ui/PopupGroup.ui`·`HUDGroup.ui` + UI 컨트롤러 | **한글화 1차** (2026-08-14) — 아래 참조 |
 | `ui/MainMenuGroup.ui` · `UIMainMenuController` | **타이틀 호버+SFX+키아트 정리** (2026-08-14) — 아래 참조 |
 | `ui/*.ui` 5파일 | **버튼 호버 ColorTint** (2026-08-14) — 아래 참조 |
+
+### 2026-09-26 [스토리/퀘스트] 스토리 챕터 3~5 확장 · 먹그늘 · 정원의 등불 (3단계 ②)
+
+- **요청**: 미뤄 둔 작업 중 제작자 선택 ② 스토리 챕터 확장. 전제 = ⚖️ Q8 메인 빌런 「먹그늘」 · ⚖️ Q6 완주 보상 가구 「정원의 등불」 만든다 (둘 다 2026-09-26).
+- **퀘스트**: 챕터 3~5 는 보스 퀘스트 227/236/246 만 있고 중간이 비어 있었다 → 중간 퀘스트 16개 + 에필로그 1개 신설 (221~226 · 231~235 · 241~245 · 247). 보스 퀘 게이트를 각 챕터 마지막 중간 퀘로 변경 (227←226 · 236←235 · 246←245). 246 보상에 `Garden Lantern:1` 추가, 설명의 "그늘의 핵" → "먹그늘의 핵". 조건 20행 (Warp 3 · Kill 7 · Gather/Have 8 · Craft/State 1 · Place/State 1).
+- **서사**: 먹그늘 이름은 235 완료 대사(첫 개척단 기록)에서 처음 공개. 3장 울림돌 가루 → 5장 등불 심지 복선, 노점상 마리 첫 메인 퀘(244). 대사 131행 (신규 17퀘 + 227/236/246 재작성) — 전부 45자 이하 · 쉼표·따옴표 없음(규칙 51). 연구원 227 대사를 카드 말투(반말)로 정정.
+- **아이템/드롭**: `pioneer_record`(Pioneer Record / 개척단의 빛바랜 기록, 거래 불가) — `moredji` 드롭 행 `Probability=0.0` + `GuaranteeQuestIds=235` 로 **235 진행 중 첫 1개만 확정**(기존 보장 드롭 장치 재사용, 코드 무변경). `garden_lantern`(Garden Lantern / 정원의 등불, furniture · Epic · 거래 불가 · HomeOnly).
+- **모델**: 신규 `Furniture/Models/Furniture_GardenLantern` — ModelBuilder 로 몬스터 와드 모델을 읽어 `script.MonsterApproachBlocker` 제거 · ItemId/SpriteRUID 교체 · Scale 1 · Trigger 1.2×2.0 (validate 결과 빈 배열). 스프라이트 `4fda636b…` 는 중앙 기준점(0.48, 0.50) 120×216px 라 2×2 설치 칸에 스케일 1 로 맞춘 것 — **육안 미확인**.
+- **코드 변경**: 없음 (CSV 5종 + 모델 1개 + 문서).
+- **검증**: `check_dataset_columns` 불일치 0 · `check_skill_quest_pipeline` 결함 0 (퀘스트 70 · 조건 100 · 아이템 115) · CSV 5종 열 수 불일치 0 · 신규 퀘의 보상/넘김/조건 아이템 `Name`·몬스터 id·RequiredId·대사 3단계(offer/progress/complete) 참조 대조 결함 0 · `maker_refresh_workspace` ok (22:50) · refresh 후 산출물 실존 확인. **build 로그 갱신 미확인** — 최신 build dateTime 이 22:31:58(직전 refresh)로 이번 refresh 와 불일치(스크립트 변경이 없어 재빌드가 안 돈 것으로 추정). 그 로그 기준 Error 0 / Warning 9(기준선 LWA-4012). 일반 로그에 refresh 이후 항목 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 217 완료 → 촌장이 221 제시, 이후 사슬(제시 NPC 는 이전 퀘 완료 대사가 안내) ② 222/223/232 다조건 퀘가 처치 수 + 보유 수 둘 다 채워야 보고 가능 ③ 224 보고 후 철 광석이 **남아 있는지** ④ 235 수락 뒤 모래두지 첫 처치에 기록 1개 확정 드롭, 수락 전·완료 후엔 안 떨어짐 ⑤ 246 완료 시 정원의 등불 지급 → 영지에서만 설치 가능 → 247 자동 충족(State) → 촌장 보고 ⑥ **등불 설치 위치·크기·가림 육안 확인** · 설치물 저장/복원 ⑦ 기존 세이브 — 227 을 이미 받은 캐릭터도 221~226 을 따로 받을 수 있는지(게이트가 217 이라 가능해야 함).
+- **남은 것**: 마법 스킬 해금(quest-design §4.7 — 225/234/243 연동 원안)은 이번 범위 밖, 대사에서도 해금을 약속하지 않았다. README Q1·Q2·Q7 은 bible/quest-design 의 ⚖️ 표기로 사실상 해소돼 있어 🧭 메모만 남김 — 제작자가 닫으면 된다.
+
+### 2026-09-26 [장비/대장간] 대장간 강화 · 주문 부여 (3단계 ①)
+
+- **요청**: 미뤄 둔 작업 중 제작자 선택 ① 대장간 강화/주문 부여. 사양 = [design/equipment-enhancement-and-enchant-plan.md](./design/equipment-enhancement-and-enchant-plan.md) §7 (원안 대비 변경점 포함).
+- **제작자 결정 반영**: 연구 레벨 = 완료한 연구 수 기준(1 + floor(수/2), 최대 5) · 상태이상 대상 추가 피해는 **보스 희귀 파츠 전용**.
+- **데이터**: 신규 `EquipmentEnhanceDataSet`(tier1~3 × +1~+5) · `EnchantPartDataSet`(파츠 7) · `EnchantWeightDataSet`(연구 Lv별 D~S) + `.userdataset` 래퍼 3 · `item_dataset` `EnhanceGroup`/`EnchantSlots` 열(강화 대상 42종 — 주먹도끼 제외) + 파츠 아이템 7 · 파츠 연구 5 · 제작법 5(제작창 분류 "강화 파츠") · 희귀 파츠 보스 드롭 6.
+- **UI**: 신규 `AnvilGroup` UI 파일(AnvilPopup 760×720, 나무 카드 크롬, 평소 Enable=false) — PopupGroup 과 분리(규칙 11·49 위험 격리). 저작 순서 배경→헤더→패널→글자·버튼→닫기(규칙 47), 글자는 렌더러 엔티티에(규칙 50), 아이콘 Simple+None(규칙 29), Mask 없음(규칙 49). 컨트롤러 `UIAnvilController`(자식 이름 해석, 0.25초 갱신, 클릭 SFX).
+- **진입**: 신규 `script.BlacksmithAnvil`(연구소 패턴, F + InteractRequestEvent) → `Building_Blacksmith` 모델에 부착(ModelBuilder). 맵은 무수정(규칙 54 실측: 모델 컴포넌트는 인스턴스에 적용). 조준 가이드 목록 3곳에 등록.
+- **서버/저장**: `PlayerInventory` — `EnhanceJson`(@Sync 평탄 맵) · `ServerRequestEnhance` / `ServerRequestEnchant`(전부 서버 검증) · `GetResearchLevel` · `SanitizeEnhance`. `PersistenceManager` 선캡처 1줄 + 저장 필드 1줄 + 로드 복원·정리 + 새 캐릭터 초기화(추가 Yield 없음 — 규칙 9).
+- **효과 적용**: 강화 = `GetGearStat`(+5/10/16/23/30%) · `GetEquippedToolInfo`(채집력). 주문 = `GetGearPerk` 합산. 새 소비처 `SlowOnHit`·`ControlledDamagePct`·`BossDamagePct`(Monster) · `MoveSpeedPct`·`DamageReductionPct`(PlayerController).
+- **검증**: LSP 신규·수정 8파일 Error 0 (예약어 `handler` 필드 1건 즉시 수정) · `check_dataset_columns` / `check_skill_quest_pipeline` 결함 0 · ui_lint Error 0 (경고 15 = 모두 L007 터치 영역 — 기존 카드 팝업과 같은 밀도, 의도) · 텍스트 가림 0 · DataRef 중첩 0 (저장소 검사 스크립트 2종은 다른 PC 경로 하드코딩이라 경로만 바꾼 사본으로 실행) · refresh ok 22:31:58 → build **dateTime 2026-09-26T22:31:58 일치, Error 0 / 신규 Warning 0 / Info 789** (첫 빌드의 LWA-1111 1건 = `SplitPlain` 의 `string.find` 반환값 수 — 즉시 수정) · refresh 후 산출물 실존 · 신규 `.codeblock` 2종 생성 확인.
+- **런타임 검증 보류(제작자 수행)**: ① 마을 대장간 건물 조준 시 "대장간 모루 쓰기" 라벨 → F 로 창 열림/닫힘 ② 장비 칸 선택 → 강화 비용·확률 표시 → 강화 시 코인·재료 차감, 성공 시 캐릭터 창 공격력/방어력 상승 ③ 연구소에서 파츠 연구 → 제작대 "강화 파츠" 탭에서 제작 → 모루에서 슬롯 선택 후 부여, 등급·수치 한 줄 피드백 ④ 점성 젤리 코어 무기로 때리면 몬스터 둔화, 사슬 파편은 둔화·기절 대상 피해 증가 로그 `[DMG]` ⑤ 재접속 후 강화·주문 유지 ⑥ **창 배치·글자 크기 육안 확인**(규칙 6·52 — 스크린샷 전까지 미완).
+- **후속 후보**: 파츠 전용 아이콘 · 강화 성공/실패 전용 효과음·이펙트 · 인벤토리 툴팁에 강화 단계 표시(현재 툴팁은 아이템 이름 기준이라 개체별 단계를 모름).
+
+### 2026-09-26 [직업/콘텐츠] 직업 콘텐츠 대형 업데이트 2단계 — 자연 시너지 3티어 기술 · 연계 퀘스트 · 상위 무기 · 장비 고유 효과
+
+- **제작자 결정**: 연계는 직업마다 다르게, 상태 소모 공식 대신 **자연스러운 설계상 시너지**(모르가나식). 상태이상 대상 추가 피해는 **희귀 강화 파츠(주문 부여)**로 넘김 · 보스 둔화도 연계 인정 · 무기 = 퀘스트 확정 + 희귀 드롭 · 다음 = 대장간 강화/주문 부여 → 스토리 챕터. 상세 [design/job-content-update.md](./design/job-content-update.md) §2~§5.
+- **3티어 기술 5종** (`SkillDataSet`): 도끼 비 · 모루 낙하 · 불씨 결정 · 덩굴 올가미 · 붉은 너클의 일격. 기존 장판 장치(`Field` + `ArmDelay` 예고 원)만으로 "피하면 안 맞고 붙잡히면 풀히트"를 데이터화. 코드 보완 1곳: 지연 착탄 장판은 시전 순간 이펙트 생략(`ServerRequestCastSkill`). 가시 넝쿨 방벽 아이콘·사용음 분리.
+- **연계 퀘스트 15** (304~306 · 314~316 · 324~326 · 334~336 · 344~346) + 조건 33행 + 대사 69행. x04 = 2티어 무기, x05 = 3티어 기술 해금(`UnlockQuestId`), x06 = 3티어 무기. 몬스터 한글명은 생태계 기획서 기준(`moredji` = 모래두지).
+- **무기 15종** (`item_dataset`): 2티어·3티어 × 5직업 + 희귀 5종. 희귀 드롭 6행(`ItemDropDataSet` — 스톤골렘·데우·슬라임킹 하드/익스트림·스노우맨, 3~6%).
+- **장비 고유 효과**: `item_dataset` `PerkStat`/`PerkValue`/`PerkDesc` 열 신설 → `PlayerController.GetGearPerk`(0.5초 캐시)가 장착 장비 값을 `GetPassiveBonus` 에 합산. 기존 효과 소비처(탄약 보존·전리품·쿨감·MP·가축·회복 등)를 장비가 재사용. 툴팁 = `PlayerInventory.FormatItemStatLines` 에 `PerkDesc` 한 줄.
+- **검증**: LSP `PlayerController`·`PlayerInventory` clean · `check_skill_quest_pipeline` 결함 0(스킬 34·퀘스트 53·조건 80·아이템 106) · `check_dataset_columns` 불일치 0 · refresh ok(14:34:07), refresh 후 CSV 산출물 실존 · 최종 저장(14:33:54) 직후 자동 빌드 2026-09-26T14:33:55 **Error 0 / 신규 Warning 0 / Info 778** (잔여 9건 기존분). refresh 후 신규 build 로그는 갱신 미확인.
+- **스킬 가이드 원장**: DATA = 기존 SkillDataSet 인프라에 행 추가(정적 PASS) · PAP/PAJ/MHP = 기존 Field 시전·판정·몬스터 피격 경로 재사용(코드 변경은 시전 이펙트 생략 1곳) → 런타임 증거 **BLOCKED(제작자 Play)** · 핫바 = 5종 모두 전용 아이콘(정적 PASS).
+- **런타임 검증 보류(제작자 수행)**: ① 각 직업 x04 수주·보고로 2티어 무기 지급 ② x05 보고 후 K창에 3티어 기술 해금 가능 ③ 지연 착탄 기술의 예고 원 → 착탄 타이밍·크기(모루 1초·결정 1.5초·너클 0.5초) — 움직이는 적은 피하고 묶인 적은 맞는지 ④ 덩굴 올가미 안 몬스터가 1초마다 다시 묶이는지 ⑤ 3티어 무기 장착 시 고유 효과(예: 붉은 발톱 단검 → 투척 탄약이 가끔 안 줄어듦) 및 툴팁 한 줄 ⑥ **무기 외형**(아바타 무기는 미리보기 불가로 이름 기준 선정) ⑦ 희귀 드롭 로그.
+
+### 2026-09-26 [직업/리소스] 직업 콘텐츠 대형 업데이트 1단계 — 스킬 전용 리소스 & 전직 파이프라인 누락 보정
+
+- **요청**: 직업 스킬 전용 자원 적용 · 연계/연계 퀘스트/상위 무기 · 미뤄 둔 작업. 로드맵 = [design/job-content-update.md](./design/job-content-update.md) (2단계는 제작자 확인 대기).
+- **리소스 (22스킬)**: 공식 스킬 리소스 팩에서 아이콘·시전/피격 이펙트·사용음을 골라 `SkillDataSet` 값만 교체(로직 무변경). 매핑표·선정 원칙은 로드맵 §1. 원칙: 고전 이벤트 세트 `800016.img` 는 아이콘이 전부 임시 그림이라 이펙트·소리만, 아이콘은 실제 직업 스킬 팩. 썸네일 대조표로 육안 확인 후 원본 크기에 맞춰 `EffectScale` 조정. 맨주먹 버프 8종 HUD 아이콘도 교체.
+- **UI**: 직업 변형 스킬이 스킬창 목록·상세·스킬바에서 변형 아이콘·이름으로 보이게 `PlayerController.GetSkillIconRUID` 신설 + `GetJobVariantRow` 직업별 캐시(스킬바 0.04초 폴링 부하 방지).
+- **누락 보정 (지난 히든 직업 작업분)**: ① `PlayerQuest.AcceptQuests` 전직 시험 수락 시 배타 포기가 하드코딩(302/312/322/332)이라 342 누락 → **`RewardJobId` 있는 퀘스트끼리 배타**로 데이터 기준 판정 ② `ItemDropDataSet` 대형 젤리 확정 드롭 `GuaranteeQuestIds` 4행에 342 추가 ③ `check_skill_quest_pipeline.cjs` 를 지난 작업에서 안 돌렸다 — 돌려 보니 강철 피부 선행(공용 `recovery`) 계보 경고 1건 → 검사기에 "그 직업의 변형 행이 있는 공용 선행은 허용" 규칙 추가(의도된 구조). 이제 결함 0.
+- **검증**: LSP 수정 4파일 Error 0 / Warning 0 · `check_skill_quest_pipeline` 결함 0 · `check_dataset_columns` 불일치 0 · refresh ok(14:10:23), refresh 후 CSV 산출물 실존 · 최종 저장(14:09:59) 직후 자동 빌드 2026-09-26T14:10:00 **Error 0 / 신규 Warning 0 / Info 778** (잔여 9건 = 12:49 Monster·MonsterAI LWA-4012 기존분). refresh 후 신규 build 로그는 갱신 미확인.
+- **스킬 가이드 원장(maplestory-skill-maker)**: DATA-01~04 = 기존 SkillDataSet 인프라·행 유지, 값만 교체(PASS, 정적) · PAP/PAJ/MHP = 시전·판정·피격 코드 무변경, 연출 RUID 만 교체 → 런타임 증거 **BLOCKED(제작자 Play)** · 핫바 아이콘 = 비어 있던 7종 채움(정적 PASS, 표시 확인은 Play).
+- **런타임 검증 보류(제작자 수행)**: 스킬별 이펙트 크기·방향이 캐릭터와 어울리는지(특히 대지 분쇄타 2.5배·자연의 활력 2.5배·산성 포션 안개), 사용음이 너무 크거나 작지 않은지, 맨주먹 파이터 스킬바에 스크류 펀치·대쉬 아이콘이 뜨는지.
+
+### 2026-09-26 [직업/히든] 히든 직업 「맨주먹 파이터」 & 촌장 히든 퀘스트 341~343
+
+- **요청**: [hidden_job_barefist_fighter.md](./design/hidden_job_barefist_fighter.md) 검증 후 구현. 검증 결과·수정 사항은 동 문서 §7.
+- **제작자 결정 반영(작업 중)**: ① 모험가 공격 스킬 3개 + 슬롯 4칸이라 액티브 버프 3개는 못 쓴다 → **기합만 액티브**, 투기 방출은 기합에 딸려 발동(패시브), 강철 피부도 패시브. ② **강철 피부는 강화된 회복(불굴의 투혼)이 발동할 때 연쇄 발동.**
+- **퀘스트**: `QuestDataSet` 341(히든 · `RequiredHaveItems=Large Slime Jelly:1` 신규 열) / 342(전직 · 젤리 소모 · 가죽 장갑 · `barefist_fighter`) / 343(자동 수락 실전) + 조건 4행 + `StoryDialogDataSet` 18행(offer·accept·decline·progress·complete). 촌장 머리 위 **주황 "!"** = 히든 제안. 대화창 수락/거절 직후 `accept`/`decline` 대사(`UIDialogController.OpenPhaseReply`). `UserQuestData` 직업 배타 맵에 341·342 추가.
+- **스킬/데이터 장치 (SkillDataSet 신규 열 3개)**: `JobVariantOf`(직업 변형 — 레벨·쿨·슬롯은 원본, 전투 데이터는 변형 행) · `BuffIds`(시전 시 BuffDataSet 적용) · `Trigger`(OnParentCast / LowHp / OnParentTrigger 슬롯 없는 자동 발동). 신규 타입 `Buff`(보조 탭). 행: 기합·투기 방출·강철 피부·삼위일체의 극의 + 변형 3종(묵직한 정권 지르기·인파이트 스텝·불굴의 투혼). `BuffDataSet` 8행(신규 StatKey `AttackPct`·`FollowUpHit`·`HitStaminaGain`·`SuperArmor`·`NextHitBonus`).
+- **능력치**: 삼위일체 계열 `TRI` = (힘+솜씨+체력) × (0.5 + 0.7×균형도) — ⚖️ 제작자 결정(싸움 특화): 1:1:1 이면 타 직업 몰빵보다 20% 강함, 몰빵은 절반 · 무기 수치 = 장갑 방어력 ×1.5. 파이터 평타(Ctrl)도 TRI(`BasicAttackStatByJob`). 캐릭터 창 물리 공격력·힘 줄에 반영.
+- **코드**: `PlayerController`(변형 해석·Buff·트리거·슈퍼아머·TRI·쿨감 `CooldownPct`·패시브 합산 캐시) · `PlayerCombat`(평타 계열·추가타·기력 흡수·강타 준비) · `PlayerBuffs`(`ApplyBuffFor`·`RemoveBuffsByStat` 신규, `ApplyBuff` 시그니처 유지) · `QuestData` · `UserQuestData` · `VillagerDialog` · `UIDialogController` · `UISkillTreeController`(변형 행 숨김·원본 칸에 변형 이름/설명) · `UICharacterController`.
+- **검증**: LSP 진단 수정 9파일 Error 0 / Warning 0 · `check_dataset_columns.cjs` 불일치 0 · `maker_refresh_workspace` ok, refresh 후 CSV 산출물 실존 확인(규칙 11) · build: 최종 스크립트 저장(13:32:06) 직후 자동 빌드 dateTime **2026-09-26T13:32:07 Error 0 / Warning 0 / Info 778**. 잔여 Warning 9건은 12:49:12 빌드의 Monster·MonsterAI 모델 LWA-4012(직전 항목과 같은 기존 9건, 이번 작업 무관). **refresh(13:32:28 이후) 호출 뒤 새 build 로그는 갱신 미확인.** `_UtilLogic:Split` nil 방어용 `SplitList` 추가. 균형 계수 0.5→0.7 조정 후 재검증: LSP clean · refresh ok · 저장(13:53:51) 직후 자동 빌드 2026-09-26T13:53:53 Error 0 / 신규 Warning 0 / Info 778 (refresh 후 신규 build 로그는 동일하게 갱신 미확인) · 모델 파일에 해당 프로퍼티 덮어쓰기 없음(스크립트 기본값 적용). 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 무직 + 대형 슬라임 젤리 보유 시에만 촌장에 주황 "!" · 젤리를 버리면 사라짐 ② 341 수락 대사 → 보고 → 342 전직(젤리 소모·가죽 장갑·타 직업 시험 포기) → 343 자동 수락 ③ K창 보조 탭 기합→투기 방출, 특성 탭 강철 피부→삼위일체, 공통 탭 파워 스트라이크 칸이 "묵직한 정권 지르기"로 표시 ④ 기합 시 버프 3종(+투기 방출 2종) HUD 표시 · 평타 추가타 로그 `[DMG] follow-up` ⑤ 정권 적중 몬스터 기절 `[SKILL-STATUS] ... Stun` ⑥ HP 30% 이하 피격 시 `[SKILL-TRIGGER] LowHp fist_second_wind` → `OnParentTrigger fist_iron_body` · 넉백 없음 ⑦ 장갑 착용/해제에 따라 캐릭터 창 물리 공격력 변화.
+- **후속 후보**: 격투가 전용 시전/피격 이펙트·타격음 RUID(현재 기존 스킬 RUID 재사용) · 주먹 전용 평타 모션.
+
+### 2026-09-26 [사냥터/UX] 포탈 안전지대 끄기 → 도착 무적(깜빡임 표시)으로 일원화
+
+- **제보**: 포탈 근처 몬스터 접근 차단이 너무 강해 몬스터가 특정 구역에 끼어 있음. 제안 — 포탈 이동 완료 후 렌더 완료 + 짧은 시간 동안 플레이어 무적.
+- **판단**: 제안한 도착 무적은 2026-09-25 에 이미 있었다(맵 진입 시 최대 6초, 클라 전환 커버가 걷히며 통지하면 그 뒤 1.5초에 종료, 보호 중 모든 피격·보스 디버프 무시). 다만 화면에 드러나지 않았고, 같은 목적의 포탈 안전지대(반경 5, T93 접근 차단 레지스트리)가 이중으로 걸려 끼임 부작용을 냈다.
+- **변경**: `ResourceSpawner.PortalSafeRadius` 5.0→**0**(끔, 코드 경로는 유지 — 되살리려면 값만 올림). `PlayerController.ArrivalGraceAfterReveal` 1.5→**2.0**. `@Sync ArrivalProtected` 신설 + `ScheduleArrivalEnd` — 보호 중 캐릭터가 피격 i-frame 과 같은 반투명 깜빡임. 영지 가구 `MonsterApproachBlocker`(T93)는 그대로.
+- **검증**: `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 766** (dateTime 2026-09-26T13:07:15, refresh 직후) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: 사냥터 포탈 도착 후 캐릭터가 깜빡이는 동안 안 맞는지, 깜빡임이 끝나면 정상 피격되는지, 포탈 주변에 몬스터가 더 이상 끼지 않는지.
+
+### 2026-09-26 [보스/스노우맨] 눈더미 지대 표시 교체·지속 연장 · 빙결 명중 둔화 누락 수정
+
+- **제보**: ① 눈더미 둔화 지대가 짧고, 지대가 끝난 뒤에도 이펙트(RisingSteam)가 한참 남음 ② 광역 빙결(FREEZE)을 맞아도 둔화가 안 걸림.
+- **① 지대**: `FieldSeconds` 2.5→**4**. 1회 판정 이펙트 `Snow` 에서 오래 남는 RisingSteam 제거(짧은 Nova 만). 지대 표시는 텔레그래프 마커를 **눈더미 색(`LingerStyle="snow"`)** 으로 남겨 두고 지대 종료 순간 삭제 → 보이는 원 = 둔화 판정 원, 수명 동일. `MonsterTelegraphMarker` 에 `@Sync LingerStyle`(sand/snow) 신설, 데우 모래 늪은 "sand" 명시. 미사용 `SnowFxScale` 제거.
+- **② 빙결 둔화**: 데이터(`HitBuffId=frost_slow`)·버프 적용 경로는 정상. 원인 추정 — 피해는 **플레이어 히트박스가 원에 닿으면** 들어가지만 명중 버프는 **플레이어 중심 거리 ≤ 반지름**으로만 판정해, 범위 밖으로 달아나다 가장자리에 걸려 맞으면 피해만 받고 둔화가 빠짐(넓은 원일수록 흔함). `BossPatternController.HitBuffMargin`(0.6) 만큼 판정 반지름을 넓혀 피해 판정과 맞춤. 대형 원(반지름 ≥ ShakeMinRadius)은 `[BOSS][PATTERN] hit buff <id> r=… applied=N` 진단 로그.
+- **검증**: `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 766** (dateTime 2026-09-26T12:58:13, refresh 직후) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: 빙결 가장자리에 걸려 맞았을 때 "빙결 둔화"가 걸리는지(안 걸리면 Console 의 `hit buff frost_slow … applied=0` 로그를 알려 주면 원인 좁힘) · 눈더미 원 4초 동안 표시·둔화, 사라지는 순간 해제.
+
+### 2026-09-25 [보스/스노우맨] 눈사태 자리 = 밟는 동안만 둔화되는 눈더미 지대
+
+- **요청**: 눈사태 타격 뒤 이펙트가 남는 것은 그대로 두고, 그 영역을 일정 시간 밟으면 둔화(벗어나면 즉시 해제).
+- **엔진 (`BossPatternController`)**: 신규 열 `FieldSeconds`·`FieldBuffId` — 1회 판정 후 그 원을 FieldSeconds 동안 **둔화 지대**로 남긴다(피해 없음). 보스당 타이머 1개(`FieldCheckInterval` 0.2초)가 모든 지대를 돌며 안에 선 플레이어에게 버프 적용(머무는 동안 `FieldRefreshSeconds` 1초마다 갱신), 밖으로 나가거나 지대가 끝나면 즉시 `RemoveBuff`. 도착 보호 중 제외. 보스 소멸 시 `OnEndPlay` 가 타이머 정지·둔화 해제.
+- **`PlayerBuffs.RemoveBuff(buffId)` 신설** — 기존 버프는 `os.time()` 초 단위라 "벗어나면 즉시"를 짧은 지속시간으로 흉내 낼 수 없어서.
+- **데이터**: `BuffDataSet` + `snow_field_slow`(눈더미 둔화, MoveSpeed ×0.6, 2초, 눈송이 아이콘). 스노우맨 눈사태(QUAKE) 행 `FieldSeconds 2.5`·`FieldBuffId snow_field_slow`, 타격 둔화 `HitBuffId frost_slow` 는 제거(벗어나도 3초 남는 둔화와 "즉시 해제" 규칙이 충돌하므로 지대 둔화로 일원화).
+- **검증**: `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 766** (dateTime 2026-09-25T23:53:14, refresh 직후) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 눈사태 원 위에 서 있으면 버프바에 "눈더미 둔화"·이동 느려짐, 원 밖으로 나오면 바로 풀리는지 ② 지대 지속 2.5초가 남는 이펙트 시간과 맞는지(다르면 CSV `FieldSeconds` 조정).
+
+### 2026-09-25 [보스/밸런스 3차] 능력치 도입 후 보스 재조정 · 스노우맨 빙결 확장 · 2페이즈 눈사태
+
+- **배경 (제작자 Play)**: 능력치 분배 후 보스가 너무 쉬움. 원인 — 몬스터 방어는 **정액 차감**(`Monster.ResolveSkillDamage`: 피해 − Defense)이라 플레이어 계열 공격력 약 2배 상승이 실제 피해 3~6배로 증폭.
+- **기준**: 난이도 NORMAL 입장 레벨(6/10/14/18)·주 능력치 올인·구간 무기·평균 스킬 배율 2.0 기준 처치 타수 — 조정 전 13/23/26/58 → 목표 약 33/46/60/88 (후반 보스일수록 김).
+- **모델 (ModelBuilder)**:
+
+| 보스 | MaxHp | Defense | Contact | Slam | Touch | 기타 |
+|---|---|---|---|---|---|---|
+| 슬라임킹 | 800→1800 | 6(기본)→8 | 30→38 | (Contact) | 2(=접촉 50% 자동) 유지 | |
+| 스톤골렘 | 1400→2600 | 22→28 | 24→40 | 30→48 | 6→8 | |
+| 데우 | 2100→4500 | 26→34 | 40→54 | 36→60 | 8→10 | ProjectileDamage 22→30 |
+| 스노우맨 | 5200→7200 | 34→42 | 48→66 | **72 (신규)** | 12→14 | |
+
+  - 패턴 피해 = Slam(없으면 Contact) × DamageMul 이라 스킬 피해도 같이 상승. 스노우맨의 `SlamDamage 48` 은 **MonsterAI 에 들어가 있어 적용되지 않던 값** → 제거하고 `MonsterMeleeAttack.SlamDamage` 로 이관.
+- **스노우맨 패턴 (`BossPatternDataSet`)**: FREEZE 반경 5.5→**7.5**·선딜 1.3→1.5(범위가 넓어진 만큼 탈출 시간). 2페이즈 신규 **눈사태** = QUAKE(Order 5) — 몸통 원 2.0 + 바깥으로 3겹 링(간격 2.6, 0.45초씩 순차), DamageMul 0.7, 맞으면 `frost_slow`, Fx `Snow`(솟는 눈가루 RisingSteam + 냉기 Nova, `BossPatternController.SnowFxScale`/`SnowNovaFxScale`).
+- **검증**: `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 766** (dateTime 2026-09-25T23:45:58, refresh 직후) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 보스별 체감 난이도(수치는 모델 MaxHp/Defense/Contact/Slam 만 만지면 됨) ② 스노우맨 2페이즈 눈사태 링 사이로 피할 수 있는지·눈가루 이펙트 크기 ③ 빙결 7.5 범위 탈출 가능 여부.
+
+### 2026-09-25 [전투/능력치·보스] 레벨업 능력치 분배(AP) · 능력치 기반 스킬 피해·설명 · 데우 원형 모래 Fx·잔존 도트 장판
+
+- **요청**: 데우 모래 이펙트가 1자로 퍼짐 → 원형으로. 1회 판정은 빠른 이펙트, 일부는 잠시 잔존하며 도트. 레벨이 올라도 스탯이 안 오름 → 레벨 성장 + 분배. 스킬 설명에 능력치·배율·실제 피해. 무기 기반 피해 설정(WeaponSource)은 빼도 됨.
+- **능력치 (⚖️ design-policy "능력치 기반 전투 피해")**: `PlayerController` 에 `StatStr/Dex/Int/Spi/Vit`·`AP`(@Sync) + 계수 프로퍼티. 레벨업 AP +3·HP/MP 풀충전. `GetStatPower/GetStatAttackTotal/GetSkillScaleStat/GetSkillCore/GetSkillDamageLine`·`ApplyDerivedStats`(MaxHp 반영)·`ServerRequestAllocateStat` 신설. `GetMaxMana`(레벨·INT)·`GetTotalDefense`(레벨·VIT)·채집 쿨(DEX)·회복 오라(SPI) 반영. `ComputeSkillDamage` 를 계열 공격력 식으로 일원화, `GetSkillWeaponSource*`·`GetEquipped*Attack` 제거. 평타(`PlayerCombat`) = 힘 계열 공격력 합계(장비 무기).
+- **저장**: `PersistenceManager` 로드/저장/신규에 statStr~statVit·ap. ap 필드 없는 구 세이브는 `(레벨-1)×APPerLevelUp` 소급. 오프라인 수면 회복도 `SleepRestorePerSecond` 기준으로 정합.
+- **데이터**: `SkillDataSet` — `WeaponSource` 열 삭제, `ScaleStat` 열 신설(덫=DEX, 가시 방벽·호루라기·자연의 활력=SPI, 마법=INT, 나머지=STR), 마법 스킬 `SkillPower` 8→0(INT 계열 기본 8 로 대체 — Lv1 수치 동일), 설명의 "무기 공격력에 비례" 문구 제거. `BossPatternDataSet` — `LingerSeconds`·`TickInterval` 열 신설. 데우 THORNS=`SandBurst`(1회), LINE=`SandPool` 도트(3초·0.5초 틱·DamageMul 0.22/틱).
+- **보스 엔진**: `BossPatternController.StartLingerZone`(패턴과 분리된 타이머 도트, 보스 사망 시 정지) + 텔레그래프 마커 `LingerMode`(모래색 장판 원 = 판정 원 유지) + `MulticastLingerFX`(RisingSteam 반복). 1회 모래 = CircleBurst 링 + RisingSteam 먼지(모래색 틴트, `SandBurstFxScale` 1.3 — CircleBurst 실측 링 반지름 ≈ Scale×0.76). `MonsterMeleeAttack.DoPatternDot`("dot") · `PlayerController.HandlePlayerHit` dot 분기(피해만, 넉백·경직·i-frame 없음, `DotTickImmuneSeconds` 0.3).
+- **UI (UIBuilder)**: `CharacterPopup` 폭 850→1230, 3열 `Ability`(머리줄 AP · 5행 라벨/값/효과/+버튼 88×88 · 안내). `UICharacterController` 에 `apVal` 바인딩·`RefreshAbility`·`OnAllocateClicked`, 물리/마법 공격력 표시를 계열 공격력 합계로. 스킬 상세 패널 `GetSkillDamageLine`.
+- **정적 검증**: `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 767** (dateTime 2026-09-25T23:13:01 — 마지막 스크립트 수정 이후 refresh. 신규 Info = LIA-1114/1115 동적 디스패치 노이즈) · 이후 `.ui` 만 바꾼 23:16 refresh 는 build 로그 갱신 미확인(빌더 재조회로 반영 확인). UI lint: CharacterPopup 신규 경고 0(버튼 88×88 로 L007 해소).
+- **Play 검증 (제작자 허락, 에이전트 수행)**:
+  - Lv16 기존 캐릭터 로드 → AP 45 소급, MaxHp 1300(=1000+15×20). 클라 + 요청 VIT×3·STR×2 → AP 40, MaxHp 1330, 방어 18. 재접속(Play 재시작) 후에도 STR 2·VIT 3·AP 40 유지.
+  - 피해 로그: `power_strike stat=STR core=31 ×1.5 → 46`, `hunter_trap stat=DEX core=31`, `fireball stat=INT core=15`. 스킬 상세 패널 "피해: 힘 계열 공격력 기준 270% / 현재 1타 약 86 (위력 32 × 270%)" 화면 확인.
+  - 캐릭터 정보창 3열 표시·AP 라벨 닫기 버튼 비겹침 확인(열자마자 첫 프레임은 기본 문구가 잠깐 보였다가 갱신됨).
+  - 데우: LINE 발동 후 `dot tick 6` 가 0.5초 간격, 넉백 없음. 모래색 잔존 원이 예고 원 자리에 표시. THORNS 뒤 모래 먼지 기둥 표시. 런타임 Error 0.
+- **제작자 확인 권장**: ① 성장 계수 체감(AP 3/레벨·포인트당 0.5 — Lv16 올인 시 계열 공격력 약 2배) ② 데우 도트 총량(0.22/틱) ③ 모래 1회 이펙트(CircleBurst 링이 짧아 캡처로 확인 못함) ④ 프로필 아바타 칸이 검게 보이는 것은 이번 변경 전부터인지.
+
+### 2026-09-25 [영지/보스/UX] 침대 고속 회복 · 침대 영지 전용 · 데우 모래 Fx 축소 · 보스 입장 전환 연출
+
+- **침대 수면 회복**: `PlayerController.SleepRestorePerSecond = 0.1` 신설 — 수면 중 초당 최대치의 10%씩 HP·마나·기력 회복(약 10초 풀충전, 구 10분). 수면 시작 안내문 갱신.
+- **침대 영지 전용**: `item_dataset.csv` 마지막 열 `HomeOnly` 신설(Bed 만 `true`) · `PlayerInventory.ServerRequestPlace` 가 `Home_*` 밖에서 HomeOnly 아이템을 거부("영지에서만 설치할 수 있습니다."). 하드코딩 이름 분기 없이 데이터 주도.
+- **데우 모래 Fx**: `BossPatternController.SandFxScale = 0.35` — `Sand` Fx 만 스케일 축소(실제 판정 원보다 이펙트가 과대했던 문제).
+- **보스 입장 전환 연출**: 대기실 입장(보스 컨텐츠 창 `UIBossContentsController`·테스트 F5 `TestModeConfig`)과 보스방 입장(`UIRaidDifficultyController`)을 포탈과 같은 `ClientWarpWithCover` 로 감쌈. 서버 거절 시 커버 즉시 해제: `BossRaidLogic.RejectEntry`(토스트 + `PlayerController.ClientCancelWarpCover`) → `UIHUDController.CancelWarpTransition`(`warpCancelPending`). 서버 강제 이동(클리어 후 마을 추방)은 미적용.
+- **정적 검증**: LSP Error 0 · `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 740** (dateTime 2026-09-25T21:48:51, refresh 직후 — Warning 9 기존 LWA-4012, 신규 Info 1 = `CancelWarpTransition` 동적 디스패치 LIA-1115) · 신규 `.mlua` 없음. ⚠ RPC(`@ExecSpace("Client")`) 본문의 사용자 스크립트 `---@type` 은 LEA-1118 선례가 있어 `ClientCancelWarpCover` 는 동적 디스패치로 작성.
+- **Play 검증 (제작자 허락, 에이전트 수행)**:
+  - F5(데우) → `[WARPFX] begin → covered → arrived raidlobby_deu 0.20s → reveal held=2.15`. 난이도 NORMAL 입장 → 커버("이동 중...") 화면 캡처 확인 · `arrived raid_deu_normal_1 0.69s → reveal held=2.13`.
+  - 거절 경로(Lv16 으로 HARD 직접 요청) → `cancelled by server — reveal`, 커버 0.5초 내 해제(구: 6초 타임아웃).
+  - 보스방에서 `ServerRequestPlace("Bed")` → "영지에서만 설치할 수 있습니다." 로그.
+  - 수면(최대 HP 1000·마나 60·기력 250, 0부터): 기력 +25/초 → 10초 250 · 마나 +8/초(10% 6 + 기본 재생 2) → 8초 만충 · HP +100/초(보스방이라 피격 감산 섞임).
+  - 데우 THORNS·LINE 발동 캡처: 모래 퍼프가 예고 원(반경) 안쪽 크기로 표시. 런타임 Error 0.
+- **제작자 확인 권장**: 실제 침대 상호작용(F)으로 수면 → 이동키 기상 흐름, 모래 크기 체감(`SandFxScale` 조정 가능).
+
+### 2026-09-25 [사고/복구] Maker 스테일 저장이 보스 패턴 CSV·PopupGroup.ui 를 되돌림 (규칙 11)
+
+- **증상 (제작자 Play)**: 골렘 지진이 여전히 나옴. 런타임 로그 `stone_golem loaded 7 pattern row(s)` · `begin QUAKE` · ROAR `end=2.5`(구 선딜 2.2) — 2차 데이터(골렘 5행·지진 없음)가 아니었다.
+- **원인**: 디스크의 `BossPatternDataSet.csv` 가 **1차 내용으로 덮여 있었음**(HitBuffId 열 없음, 지진 행 존재). `.csv`·`.userdataset` 수정 시각이 동일(04:45:37) — 2차 CSV 쓰기 직후 Maker 저장이 메모리의 1차 상태로 재직렬화(규칙 11). 같은 저장으로 손대지 않은 `ui/PopupGroup.ui` 도 +49k/−48k 재직렬화 — UIBuilder 의미 비교 결과 엔티티 567 동일, 엔진 캐시(Position/Rotation) 외 **실제 되돌림 9건**: CharacterPopup `displayOrder` 5곳(BtnClose 20→3 등) · Stat 게이지 Val 4곳 `UseOutLine` 제거. 나머지 2차 수정(BuffDataSet·item_dataset·스크립트·모델)은 유지.
+- **복구**: CSV 2차 내용 재기록(21행, 지진 0) · PopupGroup 9건을 HEAD 값으로 UIBuilder `patch`/`patchComponent` 복원 → 재비교 시 비엔진 차이 0 · 즉시 `maker_refresh_workspace` ok → refresh 후에도 유지 확인.
+- **런타임 검증 보류(제작자 수행)**: 골렘 로그가 `loaded 5 pattern row(s)` 이고 QUAKE 가 나오지 않는지, 캐릭터 창 닫기 버튼이 최상단·게이지 숫자 외곽선 정상인지. ⚠ 파일 수정 후 Maker 에서 저장하기 전에 반드시 refresh 가 먼저 돼 있어야 한다.
+
+### 2026-09-25 [보스/밸런스 2차] 골렘 지진 보류 · 데우 모래·귀찮음 · 스노우맨 7연발·빙결 둔화
+
+- **배경 (제작자 Play 피드백)**: 골렘 지진 과강·포효와 특성 겹침(→ 지진은 후속 보스용으로 보류, 포효 선딜 단축), 바위 파편이 잘 안 보임 / 데우 HP 조금 감소·모래색 이펙트·"귀찮은 적" 느낌 / 스노우맨 초반 약함, 눈덩이 3→7연발, 2페이즈에 주변을 얼리며 플레이어 둔화.
+- **엔진 (`BossPatternController`)**: ① 신규 열 `HitBuffId` — 예고 원 판정 순간 원 안의 플레이어에게 `BuffDataSet` 버프 적용(`ApplyBuffInCircle`, 도착 보호 중 제외 — `PlayerController.IsArrivalProtected()` 신설). ② 패턴 `FREEZE` = ROAR 판정 + HitBuffId(빙결). ③ Fx 키 `Sand`(DustStorm, 모래 폭풍) · `Frost`(Nova). ④ RADIAL 발사 순간 보스 발밑 Fx 추가(가시성).
+- **데이터**:
+  - `item/DataSets/BuffDataSet.csv` + `frost_slow`(빙결 둔화, MoveSpeed ×0.55, 3초, 아이콘 눈송이 결정). 둔화는 기존 `PlayerController.GetBuffedMoveSpeed` 경로로 적용.
+  - `BossPatternDataSet.csv` 21행: 골렘 = LINE → RADIAL(판정 0.8·Spark·2페이즈 10발×3) → LINE 4원 → **ROAR 선딜 2.2→1.4**(반경 6.0), **QUAKE 삭제(보류)**. 데우 = CHARGE(후딜 0.9) → THORNS 6/9회 간격 0.4/0.35 → CHARGE(0.7) → LINE 모래 기둥 → CHARGE — Fx 전부 `Sand`, 후딜 0.7~1.2. 스노우맨 = BOULDER 3/4연(×1.1) → FROST 2/3줄(2페이즈 둔화) → **BOULDER 7연발**(간격 0.2) → **(2페이즈) FREEZE** 반경 5.5 선딜 1.3 + 둔화.
+- **모델 (ModelBuilder)**: `Projectile_RockShard` Scale 0.8→**2.2**. 데우 `MaxHp` 2600→**2100**, `MinionSummonInterval` 30→**18**(모레지 소환 잦게).
+- **검증**: LSP Error 0 · `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 738** (dateTime 2026-09-25T21:16:05 — Maker 재연결 시 전 파일 재빌드, 이번 수정 이후 시각) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 골렘 파편이 눈에 띄는지·포효 선딜 체감 ② 데우 모래색 이펙트·돌진/가시 압박감 ③ 스노우맨 7연발, 2페이즈 빙결 시 이동 둔화(버프바에 "빙결 둔화" 표시) ④ 수치 조정은 CSV `Cooldown`/`DamageMul`/`Waves`, `BuffDataSet.frost_slow` Value/Duration.
+
+### 2026-09-25 [보스/밸런스] 보스별 컨셉 공격 재구성 · 연속 점프 찍기 · 테스트 모드 포탈 전체 해금
+
+- **배경 (제작자 요청)**: 테스트 모드에서 포탈 전부 열기. 슬라임킹 신규 패턴(QUAKE)이 초반 보스치고 과강 / 다른 보스는 약하거나 느림 / 모든 보스가 기본 공격으로 점프 찍기(LEAP)를 쓰는 게 어색 → 컨셉별 공격 재구성, 슬라임킹엔 연속 점프 찍기.
+- **진단(모델 실측)**: 4보스 전부 `AttackType=LEAP` + 패턴 순환 1번이 LEAP. 이동 속도 슬라임킹 2.8(최고) / 골렘 1.7 / 데우 2.0 / 스노우맨 2.2, 후딜 3.2~3.5 동일, 패턴 기준 피해 30/30/36/48 — 입장 Lv 4→16 인데 초반 보스가 가장 빠르고 후반 보스 피해가 초반과 비슷.
+- **엔진 (`Monster/Scripts`)**:
+  - `MonsterAI.PrepareDelegatedPattern` — 보스 패턴 행이 LEAP/CHARGE 를 고를 때 행 `Cooldown`(난이도 배율 적용)과 LEAP `Count`(≥2 = 연속 점프 횟수)·`Interval`(두 번째 점프부터 예고 시간, 반응 배율 적용, 하한 0.25s)을 받아 둔다. `EndLeap` 이 남은 횟수가 있고 표적이 감지 범위 안이면 짧은 예고로 곧바로 재도약(`[BOSS][LEAP] chain hop`). LEAP 이외 상태로 나가면 연쇄 폐기. `EndCharge`/`EndLeap` 후딜 = `ConsumeDelegatedCooldown()`(없으면 모델 `AttackCooldown`).
+  - `BossPatternController`: 행 `Cooldown` 에 `IntervalScale`(레이드 SkillIntervalScale) 곱함 — 기존엔 모델 `AttackCooldown` 만 배율을 받던 구멍. `ScaleCooldown()` 신설. 패턴 `LINE` = `FROST` 와 같은 일렬 타격의 범용 이름(Interval 0 = 동시 타격).
+- **데이터 (`BossPatternDataSet.csv` 22행)**:
+  | 보스 | 1페이즈 순환 | 2페이즈(HP 50%↓) |
+  |---|---|---|
+  | 슬라임킹 | LEAP 1회(후딜 2.8) → **LEAP 연속 2회**(예고 0.55, 후딜 3.2) | 연속 3회(예고 0.5) · QUAKE 삭제 |
+  | 스톤골렘 | **LINE 주먹 내려치기**(전방 3원 동시, ×1.2) → **QUAKE(이관)** 2파 → LINE 4원 → RADIAL 8발 → ROAR | QUAKE 3파 · RADIAL 3연 · LEAP 삭제 |
+  | 데우 | **CHARGE 돌진** → THORNS 5회 → CHARGE(후딜 1.2) → **LINE 모래 기둥** 6원 | THORNS 7회 · 기둥 3줄 부채꼴 · LEAP 삭제 |
+  | 스노우맨 | **BOULDER 눈덩이 2연**(속도 5.5) → FROST → BOULDER 3연발 | BOULDER 3연 · FROST 3줄 · **ROAR 눈보라** 추가 · LEAP 삭제 |
+  - 후딜: 슬라임킹 2.8~3.2 / 골렘 1.6~2.5 / 데우 1.2~1.8 / 스노우맨 1.3~2.2 — 후반일수록 촘촘.
+- **모델 (ModelBuilder, 값 1~2줄 diff)**: `MovementComponent.InputSpeed` 슬라임킹 2.8→**2.2** · 골렘 1.7→**2.4** · 데우 2.0→**2.8** · 스노우맨 2.2→**2.6**. 데우 `MonsterMeleeAttack.ContactDamage` 30→**40**(돌진 피해). `AttackType`(패턴 행이 없을 때만 쓰는 폴백)은 유지.
+- **테스트 모드**: `TestModeConfig.UnlockAllPortals`(기본 true) — `EnableTestMode` 일 때 `PlayerController.IsWaypointUnlocked` 가 항상 true(워프 목록·서버 워프 검증·보스 대기실·보스 컨텐츠 창 전부 이 함수 경유). 세이브 해금 기록은 불변. 보스 입장 레벨 게이트는 유지(F7).
+- **검증**: LSP Error 0 · `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 738** (dateTime 2026-09-25T04:17:44) · 신규 `.mlua` 없음. 직전 턴(포탈 안전지대·아이콘)의 refresh 보류도 이번에 해소.
+- **런타임 검증 보류(제작자 수행)**: ① 테스트 모드 영지 워프 목록 전 구역 활성 ② 슬라임킹 연속 점프(로그 `chain hop`) 난이도 체감 ③ 골렘 주먹 내려치기·지진, 데우 돌진·모래 기둥, 스노우맨 눈덩이 연투·눈보라 ④ 보스별 속도·후딜 체감 → 수치는 CSV `Cooldown`/`DamageMul`/`Windup` 과 모델 `InputSpeed` 로 추가 조정.
+
+### 2026-09-25 [사냥터/드롭] 포탈 안전지대 & 비(非)아이템 아이콘 9종 교체
+
+- **배경 (제작자 Play 3차)**: 전환 연출은 정상(끊김이 잦아든 뒤 걷힘). 그러나 ① 걷힌 직후 바로 피격 ② 일부 드롭이 과하게 거대 — 특히 설원 드롭은 아이템 이미지가 아님.
+- **① 원인·조치**: 도착 보호(해제 1.5초 후 종료) 동안 몬스터가 도착 지점에 몰려 있다가 보호가 끝나자마자 공격. → `ResourceSpawner.SpawnFixedPortal`에서 **사냥터(스트리밍 대상) 포탈을 T93 `MonsterAvoidanceRegistry`에 등록** — 포탈 반경 `PortalSafeRadius`(5.0) 진입 시 몬스터 이탈, `PortalSafeExitRadius`(6.0) 히스테리시스, 추적 목표도 반경 밖으로 클램프(기존 `TryFleeAvoidZone`/`ClampChaseTargetOutsideAvoid`). 도착 지점(포탈 + Y −2.5)이 반경 안. 보스는 기존 규칙대로 제외. 도착 보호(피격 무시)는 원거리 대비로 유지.
+- **② 원인**: 몬스터 드롭은 `Item_Wood` 모델 + 클라에서 `item_dataset.IconRUID`로 스프라이트 교체, 여기에 `DropItemScale` 4배. 리소스 API 배치 조회로 전 아이콘 감사 → 비아이템·대형 리소스 확인:
+  | 아이템 | 기존(정체·원본 크기) | 교체(공식 item 스프라이트, 썸네일 육안 확인) |
+  |---|---|---|
+  | ice_piece | background 1100×408 | 얼음 조각 `82f9fc2e…` 32×24 |
+  | snow_crystal | skill 912×576 | 눈송이 결정 `086cb115…` 32×36 |
+  | pepe_beak | mob(주니어 페페) 36×36 | 페페의 부리 `917b0f15…` 28×20 |
+  | yeti_horn | npc 124×112 | 예티의 뿔 `7e52f685…` 28×28 |
+  | carrot | mob 388×472 | 홍당무 `446c59fb…` 32×32 |
+  | carp | background 296×200 | 잉어 `9e7e33f2…` 32×32 |
+  | shrimp | background 284×132 | 새우 `0e59f630…` 32×32 |
+  | salmon | background 288×128 | 연어 `b2ea8879…` 32×28 |
+  | tuna | mob 448×448 | 냉동된 참치 `452133ae…` 32×32 |
+  - `item_dataset.csv` IconRUID 9칸만 치환(기존 RUID는 워크스페이스 전체에서 해당 칸에만 1회씩 사용 확인, 9줄 diff, BOM 없음 원본 유지). `scripts/check_dataset_columns.cjs` 불일치 없음.
+  - 범위 밖으로 남긴 것: 도구·장비 `thumbnail://`(아바타 썸네일 — 의도된 형식), 가구 아이콘(furnace npc 140×140 · portal/monster_ward animationclip · animal_pen object — 배치 미리보기 용도), 가축 티켓·purified_jelly(mob animationclip 60~90px), pier/boat(리소스 API 미조회 — UGC 가능성, 규칙 45 확인 필요).
+- **검증**: LSP Error 0 · **refresh 검증 보류**(Maker Play 중 — `maker_refresh_workspace` unavailable, 제작자 Stop 후 refresh 필요) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 사냥터 도착 시 포탈 주변 반경 5칸 안에 몬스터가 들어오지 않음(`[T93][AVOID] registry register` 로그) ② 반경 밖으로 나가면 정상 교전 ③ 설원·당근·물고기 드롭이 다른 드롭과 같은 크기의 아이템 아이콘으로 보임(인벤토리 아이콘도 함께 바뀜).
+
+### 2026-09-25 [UX/연출·전투] 전환 연출 재설계(덮기→이동→렌더 안정→해제) & 도착 보호
+
+- **배경 (제작자 Play 2차)**: SpawnFade 커버가 여전히 안 보임 + 사냥터 도착 직후(렌더 전) 피격. 제작자 제안: 커버를 확실히 띄운 뒤 이동 → 렌더 완료 후 해제.
+- **진단 로그 결과**: `[WARPFX] covered/reveal ... enable=true alpha=1.00` 이 2초 이상 유지됐는데 화면엔 안 보임 → **SpawnFade 스프라이트 자체가 렌더되지 않음**(원인 미규명 — HUDGroup displayOrder 8·ImageRUID 4fea64a3 중 무엇인지 미확정). 또 도착 후 ~2.2초 동안 1/60 타이머가 15틱(≈초당 7프레임) — **도착 직후 약 2.5초 클라 끊김이 체감 지연의 실체**. 커버 해제 전에 `hit for 3 damage` 발생.
+- **조치**:
+  - 신규 `ui/TransitionGroup.ui` (UIBuilder): 루트 UIGroup GroupOrder 50·DefaultShow=true / `Cover` 3840×2160 검정(기본 스프라이트 Simple, 규칙 43) + 같은 엔티티에 "이동 중..." 크림(#FFE6B3) fs32(규칙 50) + `CanvasGroupComponent`, RaycastTarget=true, **Enable=false**(규칙 30). ui_lint clean. `UIHUDController.warpCover` 바인딩 주입.
+  - `UIHUDController.BeginWarpTransition(onCovered)` 재작성 — 단계 in(0.15s 페이드) → 완전히 덮인 뒤 `WarpCoverHoldTicks`(3틱) 더 그리고 **onCovered()=워프 RPC** → wait(맵 변경 감지, `WarpTimeoutSeconds` 6s) → settle(도착 후 `WarpMinHoldSeconds` 0.3s 이상 + 연속 `WarpStableTicks` 8틱이 `WarpStableFrameSeconds` 0.05s 이하 = 렌더 안정, 최대 `WarpMaxHoldSeconds` 5s) → out(0.25s) + 서버 통지. `warpTimer` OnEndPlay 정리. SpawnFade 경로 폐기(슬롯 선택 FadeOutSpawn 은 그대로).
+  - `PlayerController`: `ClientWarpWithCover(request)` 신설(TryUsePortal 직행 워프는 커버 후 `ServerRequestWarp`, RaidGate 는 즉시). `ClientBeginWarpFade()`는 시그니처 유지(규칙 46)·내부 위임. `ServerNotifyWarpRevealed()`(Server, senderUserId 검증).
+  - **도착 보호**: `OnMapEnter`(서버)에서 `_T.ArrivalImmuneUntil = now + ArrivalProtectSeconds(6)`, `HandlePlayerHit` 첫머리에서 보호 중이면 피해·넉백·경직 무시. 클라 해제 통지 시 `ArrivalGraceAfterReveal`(1.5s) 뒤 종료. 통지 없는 이동(리스폰·레이드)은 6초 자동 종료.
+  - `UIWarpController`: 목록 워프도 `ClientWarpWithCover(function() ServerRequestWarpTo(target) end)`.
+- **검증**: LSP Error 0 · ui_lint clean · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 739** (dateTime 2026-09-25T03:47:36) · refresh 후 기존 `.ui` 재직렬화 없음 · 신규 `.mlua` 없음(신규 `.ui` 1).
+- **런타임 검증 보류(제작자 수행)**: ① 포탈 F → "이동 중..." 검은 화면이 먼저 뜨고 이동, 끊김이 잦아든 뒤 걷힘(`[WARPFX] covered -> request / arrived after / reveal held=` 로그) ② 영지 워프 목록 동일 ③ 도착 직후 몬스터 접촉해도 피해 없음, 걷힌 뒤 1.5초 후부터 피격(`[ARRIVAL] reveal notified`) ④ 레이드 게이트 즉시 난이도 창.
+
+### 2026-09-25 [UX/연출] 포탈 이동 전환 연출 (검은 커버 페이드) & 동적 맵 영향 확인
+
+- **배경 (제작자 Play 피드백)**: hunt01 타일 37% 감축 후에도 체감 차이 작음. 템플릿 복제(동적 맵) 방식 영향 여부 질문 + "눈속임" 전환 연출 제안.
+- **동적 맵 영향 판단**: 공식 문서(Dynamically create and destroy maps)에 동적 맵 입장이 느리다는 언급 없음 — 오히려 정적 사본 다수 생성보다 동적 생성을 권장. 로그상 정적 맵(town)·동적 맵(hunt/Home) 모두 워프→클라 맵 준비가 같은 초(<1초, Maker 로컬). 동적 맵 방식은 원인으로 보기 어렵다고 판단(확정 아님).
+- **조치**:
+  - `UI/Scripts/UIHUDController.mlua`: `BeginWarpTransition()` 신설 — 기존 `SpawnFade` 검은 커버 재사용(`.ui` 무수정). `WarpFadeInSeconds`(0.15) 동안 덮고, 로컬 플레이어 `CurrentMap` 이름이 바뀐 뒤 `WarpRevealDelaySeconds`(0.5 — 사냥터 청크 스트리밍 주기) 지나면 기존 `FadeOutSpawn`으로 걷음. 도착 없으면 `WarpTimeoutSeconds`(3.0) 후 자동 해제. 커버를 런타임에 `WarpCoverSize`(3840×2160)로 키움(규칙 43). 로그 `[WARPFX] begin/arrived/timeout`.
+  - `Player/Scripts/PlayerController.mlua`: `ClientBeginWarpFade()`(ClientOnly) 신설. `TryUsePortal` 직행 워프 직전에 호출 — `RaidGate`(난이도 창)는 제외.
+  - `UI/Scripts/UIWarpController.mlua`: 영지 목록 워프 `ServerRequestWarpTo` 직전에 호출.
+- **검증**: LSP Error 0 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 738** (dateTime 2026-09-25T03:22:25, refresh 직후) · 신규 `.mlua` 없음.
+- **1차 Play 결과 (제작자)**: "전혀 어두워지지 않음". 로그상 `[WARPFX] begin` → `arrived t=0.31~1.31` 정상 실행(워프 경로 다른 코드가 커버를 끄는 곳 없음 확인). **원인 미확정** — 가설: 맵 로딩 중 클라 렌더가 멈춘 사이 시간만 흘러 재개 즉시 걷힘.
+  - 보강: `WarpRevealMinTicks`(15) — 도착 후 시간(0.5초)과 **실제 타이머 틱 수**를 둘 다 채워야 걷힘. 진단 로그 추가 `[WARPFX] begin(enable/alpha/rect/hudEnable) / covered(t,ticks) / arrived(t,ticks) / reveal(t,ticks,enable,alpha)`. build Error 0 / Warning 9 (dateTime 03:34:19).
+- **런타임 검증 보류(제작자 수행)**: ① 포탈 F → 화면이 빠르게 어두워졌다가 새 맵에서 걷힘(`[WARPFX] arrived ... t=` 로그로 실제 이동 소요 시간 확인 가능) ② 영지 워프 목록 선택도 동일 ③ 레이드 게이트는 연출 없이 난이도 창 ④ 워프 실패 시 3초 뒤 화면 복귀 ⑤ 울트라와이드에서 가장자리 비침 없음.
+
+### 2026-09-25 [사냥터/성능] 포탈 이동 지연 — 바다 밑 L1 흙 제거 실험 (hunt01 한정)
+
+- **배경 (제작자 Play 피드백)**: 청크 스트리밍 이후에도 포탈 이동 체감 시간이 크게 줄지 않음.
+- **분석**: 런타임 로그상 서버 워프(`MoveToMapPosition`) → 클라 새 맵 BGM·미니맵 캐시가 같은 초(<1초, Maker 로컬). 워프 경로에 스크립트 페이드/대기 없음(`spawnFade`는 슬롯 선택 전용, `ActivePortal` @Sync·F→RPC 1회). 스트리밍이 줄인 건 엔티티뿐이고 **타일은 모든 맵 111×111 · 약 2.5만 칸 그대로**. 공식 문서도 "맵 크기·배치 오브젝트 수가 로딩 지연 요인"이라 명시.
+  - 구성(template_field): L1 `RectTileMap`(MapLayer0 최하단) Soil 12,321 전면 / L0 `RectTileMap0`(MapLayer2, L1 위) 9,679 중 **완전 물 `Water`(idx 44) 9,313** / L2 잔디 2,483(±28) / L6 366.
+  - 완전 물 칸 아래 L1 Soil은 화면에 안 보이는 타일 — 제거 후보. 물 프린지 칸(반투명)은 자기 L1이 비쳐야 하므로 유지(규칙 19).
+- **조치 (제작자 선택: hunt01 먼저 실험)**: `map/field_earth.map` L1에서 L0 `Water`(idx 44) 칸 9,201개 제거 — MapBuilder `patchComponent`로 `tileMap` 교체(`type: 0` 유지, 규칙 16 jsonString 객체 확인). **L1 12,321 → 3,120 / 맵 총 타일 24,704 → 15,503(−37%) / 파일 5.3MB → 3.4MB**. HEAD 대비 의미 diff: L1 tileMap 외 변경 0(앞선 데코 철거분 제외). refresh 후 유지 확인.
+- **영향 검토**: L1 판독 코드 — `IsTerrainCellEditable`/배치 미리보기 `hasBase`는 바다 칸을 편집·배치 불가로 판정(의도와 일치, 사냥터는 원래 불가). 낚시 `IsAimTileWater`는 L1 `Water`를 찾는데 L1은 원래 전부 Soil이라 무관. 자원 분류는 L0 우선이라 무관. **미니맵은 L2→L1만 읽어 바다가 흙색 → 어두운 색으로 바뀜**(표시 변화).
+- **검증**: `maker_refresh_workspace` ok · **build 로그 갱신 미확인**(`.mlua` 변경 없음) · 맵 의미 diff 확인.
+- **런타임 검증 보류(제작자 수행)**: ① hunt01 바다 색·물가 프린지가 이전과 동일(Water 타일 불투명 가정 검증 — 로컬에 Water 원본 이미지 없음) ② hunt01 진입 체감 vs hunt02(미적용) 비교 ③ 문제없으면 template_field/rocky/desert/snow(+town 검토)로 확대. 원복: `git checkout -- map/field_earth.map` 후 데코 철거 재적용 필요.
+
+### 2026-09-25 [사냥터/성능] 근접 청크 스트리밍 사냥터 한정 재가동 (유예 3초)
+
+- **배경 (제작자 결정)**: 2026-07-04 잠근 근접 스폰/디스폰을 **사냥터만** 켠다(영지는 Tab 전경 조망 때문에 정적 유지). 유예는 짧게 최대 최적화.
+- **조치 (`MapObjects/Scripts/ResourceSpawner.mlua`)**:
+  - 신규 프로퍼티 `StreamHuntMaps=true` · `ChunkLoadRadius=2`(5×5 청크) · `ChunkUnloadGraceSeconds=3.0` · `ChunkStreamInterval=0.5` · `StreamedMaps`(대상 집합). 전역 `UseChunkStreaming=false` 잠금은 그대로.
+  - `EnsureHuntMap`이 `SpawnInitialResourcesForMap` 전에 맵을 `StreamedMaps`에 등록 → 사냥터는 셋업 시 전 청크 정적 로드를 건너뜀(기존 사냥터당 245청크·자원 205~335 상주 → 플레이어 주변 25청크만).
+  - `CheckProximityLoading` 재작성: 청크별 `lastWanted` 기록, 범위 밖 청크는 유예 경과 후 언로드. 맵이 비면 전 청크 유예 후 언로드(설치물 청크 보존 — 보존 청크는 유예 갱신으로 매 틱 JSON 판정 반복 방지).
+  - `UnloadChunk`: 청크 안의 무효 점유 기록(흡입으로 움직인 자연 드롭·파괴된 자원) 정리 — 재로드 시 스폰 막힘 방지. 타일·가구 기록은 유지.
+  - `TickResourceRespawnForMap`: 스트리밍 맵에서 청크가 내려가 있으면 스폰하지 않고 만료 기록만 삭제(다음 `LoadChunk`가 결정론적으로 재생성) → 고아 엔티티 방지. 로드된 청크에 리스폰한 자원은 청크 목록에 편입해 함께 언로드.
+- **알려진 제한**: ① 사냥터 Tab 전경 조망에서 먼 곳 자원은 안 보임(수용) ② 몬스터가 미로드 청크에 먼저 스폰된 뒤 그 자리에 자원이 로드될 수 있음 — MonsterAI 끼임 탈출 로직에 의존 ③ 입장 직후 최대 0.5초 뒤 주변 자원이 나타남.
+- **검증**: LSP Error 0 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 738** (dateTime 2026-09-25T02:43:44, refresh 직후) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 서버 시작 로그에서 사냥터 `Loaded chunk` 대량 출력이 사라짐 ② 사냥터 입장 시 주변만 `Loaded chunk` ③ 이동 시 멀어진 청크 3초 뒤 `Unloaded chunk`, 퇴장 3초 뒤 전 청크 언로드 ④ 채집한 자원이 쿨다운 동안 재입장·재로드해도 되살아나지 않음 ⑤ 포탈 이동 체감 시간.
+
+### 2026-09-25 [영지/성능] 영지 수명 = 로그인~로그아웃 (이동 시 파괴 → 정지 유지) & 돌 주변 자연 드롭 감축
+
+- **배경 (제작자 요청)**: 영지를 떠날 때 파괴하지 말고 정지 상태로 두며, 로그아웃 시 확실히 파괴. 돌 주변 자연 드롭 감축.
+- **기존 문제**: `OnPlayerMapChanged`가 영지를 떠나는 순간 `DestroyDynamicMap`을 호출했지만 반환값을 안 봤다. API 정의상 "유저가 들어가 있으면 파괴 불가"라 이벤트 시점엔 실패할 수 있고, 실제 로그에서도 파괴 로그 직후 같은 영지로 재생성 없이 워프·리스폰이 이어졌다(실패 정황).
+- **조치**:
+  - `Player/Scripts/PersistenceManager.mlua`: 신규 `GetHomeOwnerId`(Home_<uid>[_Sub_n]→uid) · `IsUserOnline` · `CountUsersInMap` · `TryDestroyHomeMap` · `DestroyHomeMapWithRetry`.
+    - 맵 이동: 소유자가 접속 중이면 **파괴하지 않음**. 소유자가 로그아웃한 영지(방문자만 남았던 경우)만 비면 정리.
+    - 로그아웃(`OnUserLeave`, 저장 완료 후): `GetDynamicMapNameList`로 본인 영지+하위 영지 전부 파괴 시도. 방문자가 남아 있으면 유지 → 마지막 방문자 퇴장 때 정리.
+    - 파괴 실패 시 `HomeDestroyRetrySeconds`(1초) 간격 최대 `HomeDestroyMaxRetries`(5)회 재시도. 접속마다 증가하는 `HomeSessionEpoch`로 **재접속 시 재시도 중단**(재접속자의 영지를 지우지 않음). 로그 `Destroyed home map` / `Home kept (visitors remain)` / `Home destroy cancelled` / `Home destroy gave up`.
+    - 세이브 경로에 Yield 추가 없음(규칙 9) — 파괴는 저장 호출 뒤, 타이머는 저장 루틴 밖.
+  - `MapObjects/Scripts/Animal.mlua`: `IsMapOccupied()` — 0.5초마다 맵 유저 확인, 비면 STAND 전환 후 배회 정지. 생산(타임스탬프)은 계속.
+  - `MapObjects/Scripts/ResourceSpawner.mlua`: 돌 주변 자연 드롭 확률 하드코딩 `0.3` → 프로퍼티 `NaturalStoneDropChance = 0.1`.
+- **청크 스트리밍(근접 스폰/디스폰) 현황 확인**: `ResourceSpawner.UseChunkStreaming=false`로 **2026-07-04 컨셉 변경(사냥터 손디자인 전환) 때 잠김** — 코드(`CheckProximityLoading`/`LoadChunk`/`UnloadChunk`, 0.5초 폴링, 반경 2청크=5×5, 플레이어 설치물 청크 보존)는 그대로 있다. 현재는 맵 셋업 시 전 청크 1회 정적 로드. 재가동 여부는 제작자 결정 대기.
+- **검증**: LSP Error 0 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 738** (dateTime 2026-09-25T02:38:55, refresh 직후 — 중간에 `GetHomeOwnerId`의 `string.find` 단일 수신 LWA-1111 1건 발생 → `local p, _ =`로 수정 후 소거) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 영지→사냥터→영지 왕복 시 `Destroyed home map` 로그 없음·가축 위치 유지 ② 로그아웃 시 `Destroyed home map Home_<uid>` (재시도 로그 확인) ③ 재접속 시 영지 정상 생성·배치물 복원 ④ 새 사냥터 생성 시 돌 주변 자연 드롭 감소.
+
+### 2026-09-25 [사냥터/맵] 자원과 겹치는 데코 6종 철거 & 포탈 이동 지연 원인 분석
+
+- **배경 (제작자 요청)**: 사냥터 데코 과다 — 스폰 자원(돌·나무·풀)과 겹쳐 보이는 데코 제거(꽃은 유지). 포탈 이동이 오래 걸리는 원인 확인.
+- **철거 대상(제작자 선택)**: 풀 계열 `GrassTuft`·`DryGrass` / 바위 계열 `MossRocks`·`FlowerRock` / 나무 잔해 `Stump`·`LogPile`. 유지: PinkFlowers·FlowerBushYellow·BushTwin·BushMushroom·MushroomCluster·Cattail·LilyPads·DryBush·LogFence.
+- **조치**:
+  - MapBuilder `remove()`로 5개 맵에서 134개 제거 — field_earth 75→56 · template_field 73→54 · template_rocky 69→35 · template_desert 67→38 · template_snow 63→30. 전원 맵 직속(자식 0). 쓰기 전 전 엔티티 `jsonString` 객체 확인(규칙 16), HEAD 대비 **의미 diff = 대상 데코 삭제만, 나머지 엔티티·타일·맵 설정 변경 0** 확인. refresh 후에도 유지 확인(규칙 11).
+  - 생성 스크립트 `scripts/build_all_hunting_maps.cjs`·`scripts/build_hunting_fields.cjs`: `RETIRED_DECOS` 신설 — 테마 순환은 유지하고 해당 슬롯만 비운다(목록에서 빼면 남은 데코가 빈 자리를 메워 개수가 늘어남 — 미리보기로 확인 후 방식 변경). 미리보기 실행 정상(파일 쓰기 없음).
+  - `Deco_*.model` 6종 파일은 삭제하지 않고 남겨 둠(미사용).
+- **포탈 이동 지연 분석 (코드 변경 없음)**:
+  - 서버 워프(`MoveToMapPosition`)는 즉시 처리. 로그상 워프→클라 새 맵 BGM/미니맵 캐시까지 Maker 로컬 기준 hunt 약 1초, Home 약 2초.
+  - 모든 맵이 111×111 RectTile 7레이어(맵당 약 2.5만 타일, 5.3MB) — 마을과 동일 규모라 사냥터만의 차이는 아님.
+  - 사냥터 추가 로드: 런타임 스폰 자원 205~335(hunt 275~280 / rocky 335 / desert 210 / snow 205, 청크 245개 전량 상주) + 몬스터 10~20 + 돌 주변 자연 드롭(itemreact) + 데코(이번에 134개 감축).
+  - 부수 발견: `PersistenceManager.OnPlayerMapChanged`가 영지 이탈 시 `DestroyDynamicMap`을 호출하지만 이후에도 같은 영지의 리스폰 로그가 계속 찍혀 **파괴가 실패하고 있는 정황**(반환값 미확인). 이동 지연 원인은 아님 — 별도 확인 필요.
+- **검증**: `maker_refresh_workspace` ok · **build 로그 갱신 미확인**(dateTime 02:13~02:14 그대로 — `.mlua` 변경 없음, 맵 무결성은 위 의미 diff로 확인) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 5개 사냥터 로드 정상(LEA-3015 없음) ② 제거 데코 부재·유지 데코 위치 그대로 ③ 포탈 이동 체감 시간.
+
+### 2026-09-25 [몬스터/AI] 리쉬 경계 제자리 진동 해소 — 반경 3단 구조(평시·전투 추적 한계·강제 귀환)
+
+- **배경 (제작자 제보)**: 스폰에서 멀어지면 귀환하도록 한 설계가 유저 타게팅과 겹쳐 경계에서 몬스터가 제자리 진동. 요구: 평시 반경보다 전투 중엔 더 멀리 따라가고, 그 이상이면 가차없이 원래 반경으로 복귀.
+- **원인**: `LeashRange` 한 선에서 ① 밖이면 `RETURN` ② RETURN 중 한 프레임 안쪽이면 "리쉬 안+감지"로 `CHASE`가 매 프레임 교대. 피격 어그로 유예(4초)도 귀환 중인 몬스터를 다시 추적으로 끌어들였다.
+- **조치 (`Monster/Scripts/MonsterAI.mlua`)**:
+  - ① `LeashRange` = 평시 영역(귀환 중 재교전은 이 안쪽에서만) ② 교전 중(추적 상태에서 타겟 감지 중 또는 어그로 유예) 추적 한계 = `LeashRange × CombatLeashMultiplier`(신규, 기본 1.5) ③ ②를 넘으면 `ForcedReturn` — 감지·어그로 무시, `AggroGraceTimer=0`, `LeashRange × ForcedReturnResumeRatio`(신규, 기본 0.5) 까지 귀환 후 일반 귀환으로 이어감(재교전 가능).
+  - 진행 중인 ATTACK/CHARGE/LEAP/PATTERN·넉백은 끝난 뒤 강제 귀환(기존 조기 return 순서 유지). `STAND` 진입(빈 맵 휴면 포함) 시 `ForcedReturn` 해제. 로그 `[MONSTER] ... forced return` / `forced return released`.
+  - 두 배율은 모델 프로퍼티라 몹별 조정 가능(기존 모델의 `LeashRange` 오버라이드는 그대로 기준값으로 쓰임).
+- **검증**: `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 738** (dateTime 2026-09-25T02:13:43~02:14:01, refresh 직후 — Warning 동일 기존분) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 평시 반경 밖에서 교전 시 경계 진동 없이 계속 추적 ② 전투 한계(×1.5) 초과 시 때려도 반응 없이 귀환, 반경 절반 지점부터 재교전 ③ 보스 LEAP/패턴 도중 한계 초과 시 동작 완료 후 귀환 ④ 배회 중 반경 이탈 시 일반 귀환.
+
+### 2026-09-25 [성능/드롭] 몬스터 처치·채집 드롭 시 렉 — 드롭 자석 탐색 주기화
+
+- **배경 (제작자 제보)**: 최근 업데이트(사냥터 12구역 상주화 `cc8d477`·드롭 소유권 `63edccf`) 이후 몬스터 처치/자원 채집으로 아이템이 떨어질 때 렉.
+- **원인 규명**:
+  1. **파티 드롭은 원인 아님** — `Monster.GetDropContributors()`는 여전히 막타자 1명만 반환 → 드롭 개수 불변. 보스 크레딧(`GetBossCreditPlayers`)은 처치 시 1회 `GetUsersByMapComponent`뿐.
+  2. **진범: `itemreact.OnUpdate`(서버)** — 바닥의 드롭 **하나하나가 매 프레임** `CurrentMap:GetChildComponentsByTypeName("script.Pet", true)`로 **맵 전체를 재귀 순회**했다. 비용 = 드롭 수 × 맵 엔티티 수 × 프레임. 사냥터가 12구역 상주로 늘고 템플릿 맵 배치 엔티티(63~75)+스폰 자원·몬스터가 커지면서 드롭 순간 서버 프레임이 밀림.
+- **조치 (`item/Scripts/itemreact.mlua`)**:
+  - 줍기 대상 탐색을 `FindMagnetTarget()`로 분리해 `ScanInterval`(0.1초) 주기로만 실행, 결과는 `_T.magnetPlayer`/`_T.magnetSource`에 보관하고 흡입 이동·획득 판정은 매 프레임 유지. 드롭별 초기 `ScanTimer`를 랜덤 분산.
+  - 펫 탐색을 비재귀(`false`)로 — 펫 스폰 2경로(`PlayerInventory` 소환·`Pet.WarpToOwner`) 모두 맵 직속 자식임을 확인.
+  - 소유권(`CanPickup`)·펫 소유자 동일 맵 규칙·자석 반경(3.2 / PickupRange)·획득 거리(0.8)는 그대로.
+- **검증**: LSP Error 0 / Warning 0 (Info 2 = 기존 사용자 컴포넌트 동적 접근) · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 740** (dateTime 2026-09-25T01:57:59, refresh 직후 — Warning 9 전부 몬스터 모델 LWA-4012, itemreact 무관) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 사냥터에서 몬스터 여러 마리 처치·돌/나무 채집 시 드롭 순간 끊김 해소 ② 드롭 흡입·획득이 이전과 같은 거리감으로 동작(최대 0.1초 반응 지연) ③ 펫 자석 줍기 ④ 타인 소유 드롭 60초 잠금 유지.
+- **후속 후보(미적용)**: 착지 후 부유 연출이 서버에서 매 프레임 `WorldPosition`을 써 Transform 동기화 트래픽이 드롭 수에 비례한다. 위 수정 후에도 렉이 남으면 부유 연출의 클라 이관을 검토.
+
+#### 2차 (같은 날) — 서버 상시 부하 감축 & 드롭 반응성 복구
+
+- **제작자 Play 피드백**: 끊김은 사라졌으나 전체적으로 약간 느려진 감(흡입 반응 0.1초 지연 포함). 서버 과부하·불필요 재귀 전수 점검 요청.
+- **점검 결과**:
+  1. **빈 맵 몬스터 AI 상시 가동 (최대 원인)** — 사냥터 12구역 상주 × 맵당 최대 10(밤 20)마리가 **플레이어가 없어도** 매 프레임 `MonsterAI.OnUpdate` 전체를 돌렸다. 몬스터당 프레임마다 `FindNearestPlayer()` 2회(접촉 틱 + 본 로직, 각각 `GetUsersByMapComponent`) + 형제 컴포넌트 문자열 `GetComponent` 수 회.
+  2. **클라 전용 연출의 서버 호출** — `ResourceReaction`·`YSortSprite`·`WalkBehindFade`의 `OnUpdate`가 ExecSpace 미지정이라 서버에서도 자원·소품마다 매 프레임 호출 후 `IsClient()`로 빠져나왔다. `ResourceReaction` 흔들림은 Client RPC로만 켜지므로 서버 몫이 없다(서버 대입 경로 Grep 0건 확인).
+  3. **드롭** — 1차의 0.1초 주기 탐색이 흡입 반응을 늦췄다. 빈 맵의 드롭도 부유 연출 좌표를 매 프레임 써서 Transform 동기화를 유발.
+  4. 재귀 조회 전수(`GetChildComponentsByTypeName(..., true)` 등) 중 **매 프레임 경로는 itemreact(1차에서 제거)뿐**. 나머지는 10초 타이머(`MonsterSpawner`)·이벤트성(가구/세이브/F 상호작용)·UI 초기화라 유지 — 맵 배치 엔티티가 폴더 하위에 있을 가능성이 있어 비재귀 전환의 누락 위험 대비 이득이 없다.
+- **조치**:
+  - `Monster/Scripts/MonsterAI.mlua`: `TickDormancy()` 신설 — 0.5초(`DormantCheckInterval`)마다 맵 유저 유무 확인, 없으면 `STAND`로 전환 후 AI 정지(`IsDormant`). ATTACK/CHARGE/LEAP/PATTERN·넉백 창은 끝난 뒤에만 휴면(상태 꼬임 방지). 복귀 시 `[MONSTER] wake` 로그. `FindNearestPlayer()` 프레임당 1회 캐시(`_T.nearestFresh`, OnUpdate 첫 줄에서 리셋 — `BossPatternController` 호출도 같은 프레임 캐시 공유). `GetMonster/GetAttack/GetBossPatterns` 결과 `_T` 캐시.
+  - `ResourceReaction`·`YSortSprite`·`WalkBehindFade`: `OnUpdate`에 `@ExecSpace("ClientOnly")`.
+  - `item/Scripts/itemreact.mlua`: 플레이어 판정을 **매 프레임으로 복원**(1차 이전과 같은 반응), 펫 목록만 `ScanInterval`(0.25초) 캐시. 맵에 유저가 없으면 부유 연출 좌표 쓰기까지 생략.
+- **검증**: LSP Error 0 · `maker_refresh_workspace` ok · build **Error 0 / Warning 9 / Info 738** (dateTime 2026-09-25T02:08:07~08, refresh 직후 — Warning 9 동일 기존분) · 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① 드롭 흡입 반응이 원래 속도로 복귀 ② 사냥터 입장 직후 몬스터가 0.5초 내 배회·추적 재개(`[MONSTER] wake` 로그) ③ 보스 LEAP·패턴·돌진 중 전원 이탈/재입장 시 상태 정상 ④ 자원 피격 흔들림·건물/나무 뒤 반투명·Y정렬 정상 ⑤ 펫 자석 줍기.
 
 ### 2026-09-18 [스토리/퀘스트] 4대 직업 전직 시험 퀘스트명·조건 설명·NPC 대사 전면 정합 & 테스트 모드 해제
 

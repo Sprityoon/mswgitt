@@ -167,7 +167,8 @@ script VillagerDialog extends Component
 
 	@ExecSpace("ClientOnly")
 	method string GetQuestPingKind(Entity player)
-		-- "" 없음 / "done" 보고 가능 / "!" 수락 가능 / "?" 진행 중. 우선순위 done > ! > ?. 완료 요청은 하지 않는다.
+		-- "" 없음 / "done" 보고 가능 / "hidden" 히든 퀘스트 수락 가능 / "!" 수락 가능 / "?" 진행 중.
+		-- 우선순위 done > hidden·! > ?. 완료 요청은 하지 않는다.
 		-- 자격(레벨·직업) 미달인 진행 중 퀘스트는 표시하지 않는다 — 구 게이트에서 수락돼 보고가 막힌 퀘스트에 ?가 뜨던 결함.
 		if not isvalid(player) or player.PlayerQuest == nil then return "" end
 		local hasProgress = false
@@ -175,7 +176,11 @@ script VillagerDialog extends Component
 			if e.userData:IsReadyToTurnIn(e.data, player) then return "done" end
 			if e.data:IsPlayerEligible(player, true) then hasProgress = true end
 		end
-		if self:FindOfferQuest(player) ~= nil then return "!" end
+		local offer = self:FindOfferQuest(player)
+		if offer ~= nil then
+			if offer.hidden == true then return "hidden" end
+			return "!"
+		end
 		if hasProgress then return "?" end
 		return ""
 	end
@@ -247,12 +252,15 @@ script VillagerDialog extends Component
 			if not isvalid(label) then return end
 		end
 		label.Enable = true
-		-- 보고 가능(done)은 초록 "!", 수락 가능은 금색 "!", 진행 중은 금색 "?".
+		-- 보고 가능(done)은 초록 "!", 히든 퀘스트는 주황 "!", 수락 가능은 금색 "!", 진행 중은 금색 "?".
 		local glyph = kind
 		local glyphColor = Color(1.0, 0.86, 0.12, 1.0)
 		if kind == "done" then
 			glyph = "!"
 			glyphColor = Color(0.42, 1.0, 0.36, 1.0)
+		elseif kind == "hidden" then
+			glyph = "!"
+			glyphColor = Color(1.0, 0.52, 0.10, 1.0)
 		end
 		local textComp = label.TextComponent
 		if isvalid(textComp) and (textComp.Text ~= glyph or self._T.QuestMarkShownKind ~= kind) then
@@ -313,7 +321,7 @@ script VillagerDialog extends Component
 	@ExecSpace("ClientOnly")
 	method any FindOfferQuest(Entity player)
 		-- GiverNpcId 일치 + 수락 가능 퀘스트 1건.
-		-- 반환: { id=integer, pages=table } 또는 nil
+		-- 반환: { id=integer, pages=table, hidden=boolean } 또는 nil
 		-- ⚠ mlua는 method integer, table 다중 반환 시그니처 불가(LEA-3015).
 		if not isvalid(player) or player.PlayerQuest == nil then return nil end
 		local ds = _DataService:GetTable("QuestDataSet")
@@ -369,7 +377,9 @@ script VillagerDialog extends Component
 			if desc ~= "" then table.insert(pages, desc) end
 			table.insert(pages, "이 부탁을 맡아 주겠나?")
 		end
-		return { id = bestId, pages = pages }
+		local bestData = _QuestDataSetLogic:GetData(bestId)
+		local hidden = bestData ~= nil and bestData:IsHidden()
+		return { id = bestId, pages = pages, hidden = hidden }
 	end
 
 	method table LoadStoryPages(integer questId, string phase)

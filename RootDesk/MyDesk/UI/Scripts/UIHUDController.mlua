@@ -6,6 +6,26 @@ script UIHUDController extends Component
 
 	property any spawnFadeTimer = nil
 
+	-- 포탈 이동 전환 연출 (2026-09-25 개정): 커버를 먼저 확실히 그린 뒤 워프를 요청하고(덮기 → 이동),
+	-- 새 맵 도착 후 프레임이 안정되면 걷는다(렌더 완료 → 해제). 도착 직후 약 2.5초간 클라가 초당 ~7프레임으로
+	-- 끊기는 구간을 통째로 가린다. 커버 = 전용 TransitionGroup(GroupOrder 50) — 구 SpawnFade 는 enable=true·
+	-- alpha=1 이 로그로 확인됐는데도 화면에 그려지지 않았다(원인 미규명, 재사용 중단).
+	property Entity warpCover = "f4225e36-03b5-4b95-9600-81f376d4f808"
+	property any warpTimer = nil
+	property number WarpFadeInSeconds = 0.15
+	-- 완전히 덮인 뒤 이만큼 틱(≈프레임)을 더 그린 다음에 워프를 요청한다 — "덮인 화면"이 실제로 한 번은 그려지게.
+	property integer WarpCoverHoldTicks = 3
+	-- 도착 후 최소 유지 시간과 "렌더 안정" 판정: 연속 WarpStableTicks 틱이 WarpStableFrameSeconds 이하 간격으로 돌면 안정.
+	property number WarpMinHoldSeconds = 0.3
+	property integer WarpStableTicks = 8
+	property number WarpStableFrameSeconds = 0.05
+	-- 안전장치: 요청 후 도착이 없으면 / 도착 후 안정 판정이 끝내 안 나면 이 시간 뒤 해제(검은 화면 고착 방지).
+	property number WarpTimeoutSeconds = 6.0
+	property number WarpMaxHoldSeconds = 5.0
+	property number WarpFadeOutSeconds = 0.25
+	-- 서버가 이동을 거절했을 때(보스 입장 조건 미달 등) 타임아웃까지 기다리지 않고 바로 걷기 위한 플래그.
+	property boolean warpCancelPending = false
+
 	property any updateTimer = nil
 
 	property table quickSlotHandlers = {}
@@ -459,7 +479,11 @@ script UIHUDController extends Component
 			_TimerService:ClearTimer(self.updateTimer)
 			self.updateTimer = nil
 		end
-		
+		if self.warpTimer then
+			_TimerService:ClearTimer(self.warpTimer)
+			self.warpTimer = nil
+		end
+
 		local btnMine = _EntityService:GetEntityByPath("/ui/HUDGroup/MobileUI/BtnMine")
 		if isvalid(btnMine) and self.btnMineHandler then
 			btnMine:DisconnectEvent(ButtonClickEvent, self.btnMineHandler)
@@ -789,6 +813,141 @@ script UIHUDController extends Component
 				fade.Color = Color(col.r, col.g, col.b, a)
 			end
 		end, 1/60)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BeginWarpTransition(any onCovered)
+		-- 포탈 이동 전환: ① 커버를 WarpFadeInSeconds 에 걸쳐 덮고 WarpCoverHoldTicks 틱 더 그린 뒤 onCovered()(워프 요청)
+		-- ② 로컬 플레이어 맵이 바뀌면 ③ 프레임이 안정될 때까지 유지 ④ WarpFadeOutSeconds 에 걸쳐 걷고 서버에 해제 통지.
+		local cover = self.warpCover
+		local cg = nil
+		if isvalid(cover) then cg = cover.CanvasGroupComponent end
+		if not isvalid(cover) or not isvalid(cg) then
+			log_warning("[WARPFX] cover missing — warp without transition")
+			if onCovered ~= nil then onCovered() end
+			return
+		end
+		if self.warpTimer then
+			_TimerService:ClearTimer(self.warpTimer)
+			self.warpTimer = nil
+		end
+
+		local lp = _UserService.LocalPlayer
+		local fromMap = ""
+		if isvalid(lp) and isvalid(lp.CurrentMap) then fromMap = lp.CurrentMap.Name end
+
+		cg.GroupAlpha = 0
+		cover.Enable = true
+		self.warpCancelPending = false
+
+		local phase = "in"
+		local startAt = _UtilLogic.ElapsedSeconds
+		local lastAt = startAt
+		local ticks = 0
+		local coveredTicks = 0
+		local requestedAt = -1
+		local arrivedAt = -1
+		local arrivedTick = 0
+		local stable = 0
+		local outStart = -1
+		log("[WARPFX] begin from=" .. fromMap)
+
+		self.warpTimer = _TimerService:SetTimerRepeat(function()
+			if not isvalid(cover) or not isvalid(cg) then
+				if self.warpTimer then
+					_TimerService:ClearTimer(self.warpTimer)
+					self.warpTimer = nil
+				end
+				return
+			end
+			ticks = ticks + 1
+			local now = _UtilLogic.ElapsedSeconds
+			local dt = now - lastAt
+			lastAt = now
+
+			if phase == "in" then
+				local fadeIn = self.WarpFadeInSeconds
+				local a = 1
+				if fadeIn > 0 then a = math.min(1, (now - startAt) / fadeIn) end
+				cg.GroupAlpha = a
+				if a >= 1 then
+					coveredTicks = coveredTicks + 1
+					if coveredTicks >= self.WarpCoverHoldTicks then
+						phase = "wait"
+						requestedAt = now
+						log("[WARPFX] covered -> request t=" .. string.format("%.2f", now - startAt) .. " ticks=" .. tostring(ticks))
+						if onCovered ~= nil then onCovered() end
+					end
+				end
+			elseif phase == "wait" then
+				local p = _UserService.LocalPlayer
+				local cur = ""
+				if isvalid(p) and isvalid(p.CurrentMap) then cur = p.CurrentMap.Name end
+				if cur ~= "" and cur ~= fromMap then
+					phase = "settle"
+					arrivedAt = now
+					arrivedTick = ticks
+					stable = 0
+					log("[WARPFX] arrived map=" .. cur .. " after " .. string.format("%.2f", now - requestedAt) .. "s")
+				elseif self.warpCancelPending then
+					log("[WARPFX] cancelled by server — reveal")
+					self.warpCancelPending = false
+					phase = "out"
+					outStart = now
+				elseif now - requestedAt >= self.WarpTimeoutSeconds then
+					log_warning("[WARPFX] timeout — no map change within " .. tostring(self.WarpTimeoutSeconds) .. "s")
+					phase = "out"
+					outStart = now
+				end
+			elseif phase == "settle" then
+				if dt <= self.WarpStableFrameSeconds then
+					stable = stable + 1
+				else
+					stable = 0
+				end
+				local held = now - arrivedAt
+				if (held >= self.WarpMinHoldSeconds and stable >= self.WarpStableTicks) or held >= self.WarpMaxHoldSeconds then
+					log("[WARPFX] reveal held=" .. string.format("%.2f", held) .. " ticksSinceArrive=" .. tostring(ticks - arrivedTick)
+						.. " stable=" .. tostring(stable))
+					phase = "out"
+					outStart = now
+					self:NotifyWarpRevealed()
+				end
+			elseif phase == "out" then
+				local fo = self.WarpFadeOutSeconds
+				local a = 0
+				if fo > 0 then a = 1 - math.min(1, (now - outStart) / fo) end
+				cg.GroupAlpha = a
+				if a <= 0 then
+					cover.Enable = false
+					if self.warpTimer then
+						_TimerService:ClearTimer(self.warpTimer)
+						self.warpTimer = nil
+					end
+				end
+			end
+		end, 1/60)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void CancelWarpTransition()
+		-- 서버가 이동을 거절했다는 통지. 도착 대기 중인 전환만 즉시 걷는다(진행 중이 아니면 무시).
+		if self.warpTimer then
+			self.warpCancelPending = true
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void NotifyWarpRevealed()
+		-- 화면이 다시 보이는 시점을 서버에 알린다 — 도착 보호(피격 무시)를 짧은 유예 뒤 끝내기 위해.
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return end
+		local pc = lp:GetComponent("script.PlayerController")
+		if isvalid(pc) then
+			---@type PlayerController
+			local c = pc
+			c:ServerNotifyWarpRevealed()
+		end
 	end
 
 	@ExecSpace("ClientOnly")

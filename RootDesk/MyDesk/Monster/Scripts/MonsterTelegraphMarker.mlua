@@ -18,6 +18,18 @@ script MonsterTelegraphMarker extends Component
 	@Sync property number FillSeconds = 0.5
 	-- 도약 개시 여부. true 가 되면 채움을 100%로 고정하고 링을 점멸시켜 착지 임박을 알린다.
 	@Sync property boolean Committed = false
+	-- 잔존 장판(도트) 표시 모드: 채움 100% 고정 + 모래색 틴트 + 느린 호흡. 판정 원 = 보이는 원.
+	@Sync property boolean LingerMode = false
+	-- 잔존 장판 색 계열: "sand"(데우 모래 늪) / "snow"(스노우맨 눈더미).
+	@Sync property string LingerStyle = "sand"
+	@HideFromInspector property number SnowTintR = 0.78
+	@HideFromInspector property number SnowTintG = 0.92
+	@HideFromInspector property number SnowTintB = 1.0
+	@HideFromInspector property number LingerTintR = 0.93
+	@HideFromInspector property number LingerTintG = 0.74
+	@HideFromInspector property number LingerTintB = 0.42
+	@HideFromInspector property number LingerFillAlpha = 0.34
+	@HideFromInspector property number LingerPulseSpeed = 4.0
 
 	-- 채움 원 자식 엔티티 이름.
 	@HideFromInspector property string FillChildName = "Fill"
@@ -76,6 +88,11 @@ script MonsterTelegraphMarker extends Component
 		e = e + delta
 		self._T.elapsed = e
 
+		if self.LingerMode then
+			self:ApplyLinger(e)
+			return
+		end
+
 		if self.Committed then
 			self:ApplyFill(1)
 			self:ApplyRingPulse(e)
@@ -107,6 +124,31 @@ script MonsterTelegraphMarker extends Component
 		end
 		local s = p * ratio
 		t.Scale = Vector3(s, s, 1)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyLinger(number elapsed)
+		-- 잔존 장판: 채움을 가득 채운 모래색 원으로 두고 링 알파만 천천히 호흡시킨다.
+		self:ApplyFill(1)
+		local r = self.LingerTintR
+		local g = self.LingerTintG
+		local b = self.LingerTintB
+		if self.LingerStyle == "snow" then
+			r = self.SnowTintR
+			g = self.SnowTintG
+			b = self.SnowTintB
+		end
+		local wave = (math.sin(elapsed * self.LingerPulseSpeed) + 1) * 0.5
+		local ring = self.Entity.SpriteRendererComponent
+		if isvalid(ring) then
+			ring.Color = Color(r, g, b, 0.55 + 0.45 * wave)
+		end
+		local fill = self.Entity:GetChildByName(self.FillChildName, false)
+		if not isvalid(fill) then return end
+		local fs = fill.SpriteRendererComponent
+		if isvalid(fs) then
+			fs.Color = Color(r, g, b, self.LingerFillAlpha)
+		end
 	end
 
 	@ExecSpace("ClientOnly")

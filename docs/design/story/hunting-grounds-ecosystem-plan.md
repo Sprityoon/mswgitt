@@ -244,7 +244,7 @@
 - [ ] **2. 1~3막 몬스터 스폰 & 드롭 데이터셋 갱신**:
   - `MonsterSpawnDataSet.csv`: `earth_field`, `rocky`, `desert`에 신규 몬스터 가중치 반영
   - `ItemDropDataSet.csv`: 신규 전리품 드롭율 및 수량 배정
-- [ ] **3. 챕터 2~4 퀘스트 데이터셋 반영**:
+- [x] **3. 챕터 2~5 퀘스트 데이터셋 반영** (2026-09-26 — 챕터 3~5 221~247, 원안 대비 변경은 [quest-design.md](./quest-design.md) §4.2~4.5):
   - `QuestDataSet.csv`, `QuestConditionDataSet.csv`, `StoryDialogDataSet.csv`에 퀘스트 211~236 정합 및 대사 작성
 - [ ] **4. 빌드 검증 및 런타임 Play 확인**:
   - `maker_refresh_workspace` + `maker_logs(kind="build")` 무결성 확인 후 제작자 Play 검증 인계

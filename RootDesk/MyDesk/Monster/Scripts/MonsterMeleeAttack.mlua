@@ -51,6 +51,18 @@ script MonsterMeleeAttack extends AttackComponent
 	end
 
 	@ExecSpace("ServerOnly")
+	method void DoPatternDot(Vector2 center, number radius, integer damage)
+		-- 보스 잔존 장판의 도트 틱 (attackInfo="dot"). 플레이어 쪽은 넉백·경직 없이 피해만 받고,
+		-- 정식 피격 i-frame 도 쓰지 않는다(도트가 보스의 큰 기술을 씹지 않게 — 함정 규칙 44).
+		-- 1회 판정(patternDamage)과 같은 프레임에 겹쳐도 값이 섞이지 않게 따로 둔다.
+		self.LastAttackInfo = "dot"
+		self._T.dotDamage = damage
+		local r = radius
+		if r == nil or r <= 0 then r = 1 end
+		self:AttackFast(CircleShape(center, r), "dot", CollisionGroups.HitBox)
+	end
+
+	@ExecSpace("ServerOnly")
 	method void DoTouchAttack()
 		-- (legacy) 트랜스폼 원점 기준 정사각 접촉 틱. 콜라이더를 못 읽는 폴백 경로 전용.
 		self.LastAttackInfo = "touch"
@@ -115,6 +127,9 @@ script MonsterMeleeAttack extends AttackComponent
 				dmg = math.max(1, math.floor(self.ContactDamage * 0.5))
 			end
 			return math.floor(dmg)
+		end
+		if attackInfo == "dot" and self._T.dotDamage ~= nil then
+			return math.floor(self._T.dotDamage)
 		end
 		if attackInfo == "pattern" and self._T.patternDamage ~= nil then
 			return math.floor(self._T.patternDamage)

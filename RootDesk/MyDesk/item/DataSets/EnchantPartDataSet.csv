@@ -1,0 +1,8 @@
+PartId,DisplayName,TargetSlot,StatType,StatLabel,Pct,ValD_Min,ValD_Max,ValC_Min,ValC_Max,ValB_Min,ValB_Max,ValA_Min,ValA_Max,ValS_Min,ValS_Max,MinResearchLv,SWeightScale
+Viscous Jelly Core,점성 젤리 코어,weapon,SlowOnHit,적중 시 둔화,true,0.05,0.07,0.08,0.11,0.12,0.15,0.16,0.2,0.21,0.25,1,1
+Boar Hide Tassel,멧돼지 가죽 장식,shoes,MoveSpeedPct,이동 속도,true,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.11,0.12,1,1
+Iron Plate Rune,철편 덧댐 룬,armor,DamageReductionPct,받는 피해 감소,true,0.02,0.03,0.03,0.04,0.05,0.06,0.06,0.07,0.08,0.1,2,1
+Cactus Bloom Charm,카투스 꽃 부적,helmet,MaxMana,최대 MP,false,10,15,16,22,23,30,31,40,41,50,2,1
+Frost Crystal Knot,서리 결정 매듭,gloves,CooldownPct,스킬 재사용 대기 감소,true,0.02,0.03,0.03,0.04,0.04,0.05,0.05,0.06,0.06,0.08,3,1
+Binding Chain Shard,속박의 사슬 파편,weapon,ControlledDamagePct,둔화·속박·기절 대상 추가 피해,true,0.04,0.06,0.07,0.1,0.11,0.14,0.15,0.18,0.19,0.25,3,0.5
+Gatekeeper Core,관문 수호자의 핵,weapon,BossDamagePct,보스 추가 피해,true,0.04,0.06,0.07,0.09,0.1,0.12,0.13,0.16,0.17,0.2,3,0.5

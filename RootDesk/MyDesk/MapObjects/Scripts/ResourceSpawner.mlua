@@ -75,9 +75,29 @@ script ResourceSpawner extends Logic
 	property boolean UseProceduralBiomes = false
 	-- UseChunkStreaming=false: 근접 로드/언로드 루프 정지, 맵 셋업 시 전 청크 1회 정적 로드
 	property boolean UseChunkStreaming = false
+	-- ⚖️ 2026-09-25 제작자 결정: 사냥터(EnsureHuntMap 생성 맵)만 근접 청크 스트리밍을 켠다.
+	-- 영지·마을·레이드 맵은 정적 로드 유지(영지 Tab 전경 조망에서 자원이 비어 보이지 않게).
+	-- 사냥터 입장 시 도착 지점 주변 청크만 스폰돼 맵 이동 로딩량·서버 상주 엔티티가 줄어든다.
+	property boolean StreamHuntMaps = true
+	-- 플레이어 주변 몇 청크까지 로드할지(반경 2 = 5×5 청크 = 약 50×50칸). 화면 밖 최소 20칸 여유.
+	property integer ChunkLoadRadius = 2
+	-- 범위를 벗어난 청크를 지우기까지의 유예(초). 짧을수록 상주 엔티티가 적다 — 경계 왕복 시 재스폰 떨림만 막는 값.
+	property number ChunkUnloadGraceSeconds = 3.0
+	-- 근접 판정 주기(초).
+	property number ChunkStreamInterval = 0.5
+	-- 스트리밍 대상 맵 이름 집합 (EnsureHuntMap 이 등록).
+	@HideFromInspector property table StreamedMaps = {}
+	-- 사냥터 포탈 안전지대 반경(월드 단위). 몬스터는 진입 반경 안에서 이탈하고, 이탈 반경 밖으로 나갈 때까지 들어오지 않는다.
+	-- 0 이면 끈다. ⚖️ 2026-09-26 기본 꺼짐 — 차단이 강해 몬스터가 포탈 주변 구역에 끼는 문제(제작자 제보).
+	-- 도착 직후 보호는 PlayerController 도착 무적(렌더 안정 + ArrivalGraceAfterReveal, 깜빡임 표시)이 맡는다.
+	property number PortalSafeRadius = 0
+	property number PortalSafeExitRadius = 6.0
 	-- AutotileGrassOnSetup=false: 맵 셋업 시 Layer 2 잔디 커버 오토타일 런타임 재보정 안 함 (맵 = Maker 손편집 소유).
 	-- ⛔ 밀착 페어 스킴(2026-07-08)에서는 켜면 길이 FullGrass로 평탄화됨 — AutotileGrassLayer 주석 참조.
 	property boolean AutotileGrassOnSetup = false
+	-- 돌(Stone) 하나당 주변에 자연 돌 드롭(itemreact 엔티티)이 깔릴 확률.
+	-- ⚖️ 2026-09-25 0.3 → 0.1 (맵당 엔티티 수·맵 이동 로딩량 감축, 제작자 결정).
+	property number NaturalStoneDropChance = 0.1
 
 	method table GetSpawnedEntities(string mapName)
 		if not self.SpawnedEntitiesMap[mapName] then
@@ -1310,20 +1330,22 @@ script ResourceSpawner extends Logic
 			self:TickResourceRespawn()
 		end, 10.0)
 		
-		-- 근접 청크 스트리밍 (⛔ 잠금: UseChunkStreaming=false 동안 미가동 — 맵 셋업 시
-		-- SpawnInitialResourcesForMap이 전 청크를 1회 정적 로드한다)
-		if self.UseChunkStreaming then
+		-- 근접 청크 스트리밍: 전역 UseChunkStreaming(⛔ 잠금) 이거나 사냥터 한정 StreamHuntMaps 일 때 가동.
+		-- 스트리밍 대상이 아닌 맵(영지·마을 등)은 SpawnInitialResourcesForMap 이 전 청크를 1회 정적 로드한다.
+		if self.UseChunkStreaming or self.StreamHuntMaps then
 			self.LoadingTimerId = _TimerService:SetTimerRepeat(function()
 				local mapNames = _DynamicMapService:GetDynamicMapNameList()
 				if mapNames then
 					for _, mapName in ipairs(mapNames) do
-						local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
-						if isvalid(map) then
-							self:CheckProximityLoading(map)
+						if self:IsChunkStreamedMap(mapName) then
+							local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
+							if isvalid(map) then
+								self:CheckProximityLoading(map)
+							end
 						end
 					end
 				end
-			end, 0.5)
+			end, self.ChunkStreamInterval)
 		end
 	end
 
@@ -1770,9 +1792,9 @@ script ResourceSpawner extends Logic
 			self:AutotileGrassLayer(map)
 		end
 
-		-- 청크 스트리밍 ⛔ 잠금 상태: 전 청크를 셋업 시 1회 정적 로드한다 (자원 산포 포함).
-		-- 근접 루프가 없으므로 이후 언로드도 없다 — 맵이 소멸할 때까지 상주.
-		if not self.UseChunkStreaming then
+		-- 스트리밍 대상이 아닌 맵: 전 청크를 셋업 시 1회 정적 로드한다 (자원 산포 포함) — 맵이 소멸할 때까지 상주.
+		-- 스트리밍 대상(사냥터)은 여기서 아무것도 로드하지 않고 근접 루프(CheckProximityLoading)가 채운다.
+		if not self:IsChunkStreamedMap(mapName) then
 			local chunkSize = self.MacroCellSize
 			local maxChunk = math.floor(mapRadius / chunkSize)
 			local minChunk = math.floor(-mapRadius / chunkSize)
@@ -1813,6 +1835,10 @@ script ResourceSpawner extends Logic
 		end
 		self:SetMapForceBiomeId(mapName, biomeId)
 		self:SetMapProceduralTerrain(mapName, self.UseProceduralBiomes)
+		-- 사냥터 = 근접 청크 스트리밍 대상. SpawnInitialResourcesForMap 보다 먼저 등록해야 정적 전량 로드를 건너뛴다.
+		if self.StreamHuntMaps then
+			self.StreamedMaps[mapName] = true
+		end
 		self:SpawnInitialResourcesForMap(huntMap)
 
 		return huntMap
@@ -2187,6 +2213,13 @@ script ResourceSpawner extends Logic
 		self:GetSpawnedEntities(map.Name)[gKey] = portal
 		self:RefreshPortalClearZones(map)
 		self:ClearResourcesNearPortals(map)
+		-- 사냥터 포탈 주변 = 몬스터 안전지대(T93 접근 차단 레지스트리 재사용). 도착 지점(포탈 앞 PortalArriveOffsetY)을
+		-- 덮어, 전환 커버가 걷힌 직후 몰려 있던 몬스터에게 바로 맞지 않게 한다(2026-09-25 제작자 제보). 보스는 차단 대상 아님.
+		if self.PortalSafeRadius > 0 and self:IsChunkStreamedMap(map.Name) and _MonsterAvoidanceRegistry ~= nil then
+			local exitR = self.PortalSafeExitRadius
+			if exitR < self.PortalSafeRadius then exitR = self.PortalSafeRadius end
+			_MonsterAvoidanceRegistry:Register(map.Name, portal, posX, posY, self.PortalSafeRadius, exitR)
+		end
 		log("ResourceSpawner: Portal '" .. portalName .. "' -> " .. targetMap .. " configured in map " .. map.Name .. " at (" .. px .. ", " .. py .. ")")
 	end
 
@@ -2620,9 +2653,9 @@ script ResourceSpawner extends Logic
 		spawnedEntities[key] = resEntity
 		table.insert(chunkEntities, resEntity)
 	
-		-- 돌(Stone) 주변에 확률적으로 itemstone 드롭 스폰
+		-- 돌(Stone) 주변에 확률적으로 itemstone 드롭 스폰 (확률 = NaturalStoneDropChance 프로퍼티)
 		if name == "Stone" and _TileDurabilityManager then
-			local dropChance = 0.3
+			local dropChance = self.NaturalStoneDropChance
 			if self:Hash2D(x, y, seedVal + 777) < dropChance then
 				local offsets = {
 					{x=-1, y=0}, {x=1, y=0}, {x=0, y=-1}, {x=0, y=1},
@@ -2751,7 +2784,22 @@ script ResourceSpawner extends Logic
 				end
 			end
 		end
-		
+
+		-- 청크 안에 남은 무효 점유 기록 정리(흡입으로 움직인 자연 드롭·이미 파괴된 자원이 남긴 칸).
+		-- 타일·가구 기록(isTile/isFurniture)은 엔티티가 없어도 유효하므로 건드리지 않는다.
+		do
+			local cs = self.MacroCellSize
+			for gx = cx * cs, cx * cs + cs - 1 do
+				for gy = cy * cs, cy * cs + cs - 1 do
+					local gKey = gx .. "_" .. gy
+					local occ = gridToEntity[gKey]
+					if occ ~= nil and occ.isTile ~= true and occ.isFurniture ~= true and not isvalid(occ.entity) then
+						gridToEntity[gKey] = nil
+					end
+				end
+			end
+		end
+
 		-- Procedural maps repaint terrain on chunk reload, so stripping terrain tiles on unload is safe.
 		-- Hand-painted estates must NEVER remove terrain tiles — the painted earth/grass is permanent
 		-- and is not regenerated, so removing it on unload would erase the map (game_design.md Phase 11-B).
@@ -2779,39 +2827,42 @@ script ResourceSpawner extends Logic
 		log("ResourceSpawner: Unloaded chunk " .. chunkKey .. " in map " .. mapName)
 	end
 
+	method boolean IsChunkStreamedMap(string mapName)
+		-- 이 맵이 근접 청크 스트리밍 대상인가 (전역 잠금 플래그 또는 사냥터 한정 등록).
+		if self.UseChunkStreaming then return true end
+		return self.StreamHuntMaps and self.StreamedMaps[mapName] == true
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsChunkLoadedAt(string mapName, number x, number y)
+		-- 셀 (x, y) 가 속한 청크가 현재 로드돼 있는가.
+		local loaded = self.LoadedChunksMap[mapName]
+		if loaded == nil then return false end
+		local chunkSize = self.MacroCellSize
+		local key = math.floor(x / chunkSize) .. "_" .. math.floor(y / chunkSize)
+		return loaded[key] ~= nil
+	end
+
 	@ExecSpace("ServerOnly")
 	method void CheckProximityLoading(Entity map)
+		-- 플레이어 주변 ChunkLoadRadius 청크를 로드하고, 범위를 벗어난 지 ChunkUnloadGraceSeconds 가 지난 청크를 언로드한다.
+		-- 맵이 비면 desired 가 비므로 모든 청크가 유예 후 언로드된다(플레이어 설치물 청크는 보존).
 		local mapComp = map.MapComponent
 		if not isvalid(mapComp) then return end
-		
+
 		local mapName = map.Name
 		local users = _UserService:GetUsersByMapComponent(mapComp)
-		if not users or #users == 0 then
-			if self.LoadedChunksMap[mapName] then
-				local chunksToUnload = {}
-				for chunkKey, _ in pairs(self.LoadedChunksMap[mapName]) do
-					table.insert(chunksToUnload, chunkKey)
-				end
-				for _, chunkKey in ipairs(chunksToUnload) do
-					local idx, _ = string.find(chunkKey, "_")
-					if idx then
-						local cx = tonumber(string.sub(chunkKey, 1, idx - 1))
-						local cy = tonumber(string.sub(chunkKey, idx + 1))
-						if cx and cy then
-							if not self:ChunkContainsPlayerStructures(mapName, cx, cy) then
-								self:UnloadChunk(map, cx, cy)
-							end
-						end
-					end
-				end
-			end
-			return
+		if not self.LoadedChunksMap[mapName] then
+			self.LoadedChunksMap[mapName] = {}
 		end
-		
+		local loadedChunks = self.LoadedChunksMap[mapName]
+		local now = _UtilLogic.ElapsedSeconds
+
 		local chunkSize = self.MacroCellSize
-		local loadRadius = 2
-		
+		local loadRadius = self.ChunkLoadRadius
+
 		local desiredChunks = {}
+		if users == nil then users = {} end
 		for _, user in ipairs(users) do
 			if isvalid(user) then
 				local pos = user.TransformComponent.WorldPosition
@@ -2834,31 +2885,37 @@ script ResourceSpawner extends Logic
 			end
 		end
 		
-		if not self.LoadedChunksMap[mapName] then
-			self.LoadedChunksMap[mapName] = {}
-		end
-		
 		for chunkKey, chunkCoord in pairs(desiredChunks) do
-			if self.LoadedChunksMap[mapName][chunkKey] == nil then
+			if loadedChunks[chunkKey] == nil then
 				self:LoadChunk(map, chunkCoord.cx, chunkCoord.cy)
 			end
+			local rec = loadedChunks[chunkKey]
+			if rec ~= nil then
+				rec.lastWanted = now
+			end
 		end
-		
-		local currentLoadedChunks = {}
-		for chunkKey, _ in pairs(self.LoadedChunksMap[mapName]) do
-			currentLoadedChunks[chunkKey] = true
-		end
-		
-		for chunkKey, _ in pairs(currentLoadedChunks) do
+
+		local expired = {}
+		for chunkKey, rec in pairs(loadedChunks) do
 			if desiredChunks[chunkKey] == nil then
-				local idx, _ = string.find(chunkKey, "_")
-				if idx then
-					local cx = tonumber(string.sub(chunkKey, 1, idx - 1))
-					local cy = tonumber(string.sub(chunkKey, idx + 1))
-					if cx and cy then
-						if not self:ChunkContainsPlayerStructures(mapName, cx, cy) then
-							self:UnloadChunk(map, cx, cy)
-						end
+				local lastWanted = tonumber(rec.lastWanted) or 0
+				if now - lastWanted >= self.ChunkUnloadGraceSeconds then
+					table.insert(expired, chunkKey)
+				end
+			end
+		end
+
+		for _, chunkKey in ipairs(expired) do
+			local idx, _ = string.find(chunkKey, "_")
+			if idx then
+				local cx = math.tointeger(tonumber(string.sub(chunkKey, 1, idx - 1)))
+				local cy = math.tointeger(tonumber(string.sub(chunkKey, idx + 1)))
+				if cx ~= nil and cy ~= nil then
+					if self:ChunkContainsPlayerStructures(mapName, cx, cy) then
+						-- 설치물 청크는 보존 — 매 틱 JSON 판정을 반복하지 않도록 유예를 갱신해 둔다.
+						loadedChunks[chunkKey].lastWanted = now
+					else
+						self:UnloadChunk(map, cx, cy)
 					end
 				end
 			end
@@ -2975,6 +3032,12 @@ script ResourceSpawner extends Logic
 			end
 			
 			if now - item.destroyedTime >= duration then
+				-- 스트리밍 맵에서 청크가 내려가 있으면 여기서 스폰하지 않는다 — 청크 목록에 없는 고아 엔티티가
+				-- 되어 영영 언로드되지 않는다. 기록만 지우면 다음 LoadChunk 가 같은 자리에 결정론적으로 되살린다.
+				if self:IsChunkStreamedMap(mapName) and not self:IsChunkLoadedAt(mapName, item.x, item.y) then
+					table.remove(destroyedResources, i)
+					continue
+				end
 				if item.sourceName == "AroundItem_Stone" then
 					table.remove(destroyedResources, i)
 					if string.sub(mapName, 1, 5) == "Home_" then
@@ -3016,6 +3079,14 @@ script ResourceSpawner extends Logic
 				if not isOccupied then
 					local spawned = self:SpawnResourceWithAnimation(map, item.sourceName, item.modelId, cellX, cellY)
 					if isvalid(spawned) then
+						-- 스트리밍 맵: 리스폰한 자원을 소속 청크 목록에 넣어 청크와 함께 언로드되게 한다.
+						if self:IsChunkStreamedMap(mapName) then
+							local loaded = self.LoadedChunksMap[mapName]
+							local ck = math.floor(cellX / self.MacroCellSize) .. "_" .. math.floor(cellY / self.MacroCellSize)
+							if loaded ~= nil and loaded[ck] ~= nil and loaded[ck].entities ~= nil then
+								table.insert(loaded[ck].entities, spawned)
+							end
+						end
 						table.remove(destroyedResources, i)
 						if string.sub(mapName, 1, 5) == "Home_" then
 							local userId = string.sub(mapName, 6)

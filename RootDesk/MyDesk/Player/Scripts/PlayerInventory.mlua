@@ -14,6 +14,15 @@ script PlayerInventory extends Component
 	@Sync
 	property string GearJson = "{}"
 
+	-- 대장간 강화·주문 부여 (docs/design/equipment-enhancement-and-enchant-plan.md). 평탄 맵 { 아이템 키 → "단계|스탯,값,등급,파츠|..." }.
+	-- 도구(고유 키)는 개체별, 장비(이름 키로 중첩)는 종류별로 저장된다. 중첩 테이블 인코딩을 피하려고 값은 문자열이다(LEA-3001).
+	@Sync
+	property string EnhanceJson = "{}"
+	-- 강화 단계가 비율로 올려 주는 item_dataset 수치 열
+	property string EnhanceStatColumns = "Attack|MagicAttack|SkillAttack|Defense"
+	-- 연구 레벨 = 1 + floor(완료한 연구 수 / ResearchCountPerLevel), 최대 5
+	property integer ResearchCountPerLevel = 2
+
 	@Sync
 	property string QuickSlotsJson = "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]"
 
@@ -73,6 +82,7 @@ script PlayerInventory extends Component
 		self.DexItemsJson = "{}"
 		self.DexMonstersJson = "{}"
 		self.ActivePetId = ""
+		self.EnhanceJson = "{}"
 		self._researchTickAccum = 0.0
 		log("PlayerInventory initialized on server for player: " .. self.Entity.Name)
 	end
@@ -1435,6 +1445,8 @@ script PlayerInventory extends Component
 		info.magicAttack = numCol("MagicAttack")
 		info.skillAttack = numCol("SkillAttack")
 		info.toolTier = numCol("ToolTier")
+		-- 대장간 강화 단계의 채집력 보너스 (EquipmentEnhanceDataSet.AddToolPower, 손에 든 도구 개체 기준)
+		info.power = info.power + self:GetEnhanceToolPower(self.EquippedTool)
 		return info
 	end
 
@@ -1525,10 +1537,17 @@ script PlayerInventory extends Component
 	method number GetGearStat(string colName)
 		-- 모든 장비 슬롯의 item_dataset 수치 합 (Attack / MagicAttack / SkillAttack / Defense ...).
 		local total = 0
+		local scales = self:IsEnhanceStatColumn(colName)
 		for _, slot in ipairs(self:GetGearSlotOrder()) do
 			local key = self:GetGearKey(slot)
 			if key ~= "" then
-				total = total + self:GetItemNumber(self:GetBaseItemName(key), colName)
+				local base = self:GetItemNumber(self:GetBaseItemName(key), colName)
+				total = total + base
+				-- 대장간 강화: 기본 수치 × 누적 StatPct (0보다 크면 최소 +1)
+				if scales and base > 0 then
+					local pct = self:GetEnhanceStatPct(key)
+					if pct > 0 then total = total + math.max(1, math.floor(base * pct + 0.5)) end
+				end
 			end
 		end
 		return total
@@ -1548,6 +1567,323 @@ script PlayerInventory extends Component
 		if slot == "shoes" then return "신발" end
 		if slot == "shield" then return "방패" end
 		return slot
+	end
+
+	---------------------------------------------------------------------------
+	-- 대장간 강화 · 주문 부여 — 서버/클라 공용 조회 + 서버 요청.
+	-- 데이터: EquipmentEnhanceDataSet(그룹×단계) · EnchantPartDataSet(파츠) · EnchantWeightDataSet(연구 레벨별 등급 가중치)
+	-- 적용: 강화 = GetGearStat / GetEquippedToolInfo, 주문 = PlayerController.GetGearPerk.
+	---------------------------------------------------------------------------
+
+	method table SplitPlain(string text, string sep)
+		-- 빈 필드를 보존하는 단순 분할("a||b" → {"a","","b"}).
+		local out = {}
+		if text == nil then return out end
+		local start = 1
+		while true do
+			local i, _ = string.find(text, sep, start, true)   -- 반환값 2개(시작·끝)를 모두 받는다 (LWA-1111 회피)
+			if i == nil then
+				table.insert(out, string.sub(text, start))
+				break
+			end
+			table.insert(out, string.sub(text, start, i - 1))
+			start = i + #sep
+		end
+		return out
+	end
+
+	method string GetItemText(string itemName, string colName)
+		-- item_dataset 문자열 열 (공란/없음 = "").
+		if itemName == nil or itemName == "" then return "" end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return "" end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return "" end
+		local ok, raw = pcall(function() return row:GetItem(colName) end)
+		if ok and raw ~= nil then return tostring(raw) end
+		return ""
+	end
+
+	method boolean IsEnhanceStatColumn(string colName)
+		for _, c in ipairs(self:SplitPlain(self.EnhanceStatColumns or "", "|")) do
+			if c == colName then return true end
+		end
+		return false
+	end
+
+	method table GetEnhanceMap()
+		-- EnhanceJson 디코드 캐시 (문자열이 같으면 재사용 — 스탯 조회가 잦다).
+		local json = self.EnhanceJson or "{}"
+		local cache = self._T.EnhanceCache
+		if cache ~= nil and cache.json == json then return cache.map end
+		local map = self:SafeDecodeJson(json, {})
+		if type(map) ~= "table" then map = {} end
+		self._T.EnhanceCache = { json = json, map = map }
+		return map
+	end
+
+	method table GetEnhanceData(string itemKey)
+		-- { lv = 강화 단계, slots = { [슬롯] = { stat, val, grade, part } } }. 기록 없으면 lv 0.
+		local data = { lv = 0, slots = {} }
+		if itemKey == nil or itemKey == "" then return data end
+		local raw = self:GetEnhanceMap()[itemKey]
+		if raw == nil or tostring(raw) == "" then return data end
+		local parts = self:SplitPlain(tostring(raw), "|")
+		data.lv = math.floor(tonumber(parts[1]) or 0)
+		for i = 2, #parts do
+			local s = parts[i]
+			if s ~= nil and s ~= "" then
+				local f = self:SplitPlain(s, ",")
+				data.slots[i - 1] = { stat = f[1] or "", val = tonumber(f[2]) or 0, grade = f[3] or "", part = f[4] or "" }
+			end
+		end
+		return data
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SetEnhanceData(string itemKey, table data)
+		-- data → "단계|슬롯1|슬롯2|…" 로 저장하고 동기화한다.
+		local map = self:SafeDecodeJson(self.EnhanceJson or "{}", {})
+		if type(map) ~= "table" then map = {} end
+		local maxSlot = 0
+		for idx, _ in pairs(data.slots or {}) do
+			if idx > maxSlot then maxSlot = idx end
+		end
+		local chunks = { tostring(math.floor(data.lv or 0)) }
+		for i = 1, maxSlot do
+			local s = data.slots[i]
+			if s ~= nil and s.stat ~= nil and s.stat ~= "" then
+				table.insert(chunks, string.format("%s,%s,%s,%s", s.stat, tostring(s.val), s.grade or "", s.part or ""))
+			else
+				table.insert(chunks, "")
+			end
+		end
+		map[itemKey] = table.concat(chunks, "|")
+		self.EnhanceJson = self:SafeEncodeJson(map, "{}")
+	end
+
+	method any GetEnhanceRow(string itemKey, integer level)
+		-- 그 아이템의 강화 그룹 × 단계 행 (없으면 nil). (규칙 23: 반환 any)
+		if level < 1 then return nil end
+		local group = self:GetItemText(self:GetBaseItemName(itemKey), "EnhanceGroup")
+		if group == "" then return nil end
+		local ds = _DataService:GetTable("EquipmentEnhanceDataSet")
+		if ds == nil then return nil end
+		return ds:FindRow("EnhanceKey", group .. "_" .. tostring(level))
+	end
+
+	method number GetEnhanceStatPct(string itemKey)
+		-- 현재 강화 단계의 누적 수치 증가율 (0 = 강화 없음).
+		local lv = self:GetEnhanceData(itemKey).lv
+		local row = self:GetEnhanceRow(itemKey, lv)
+		if row == nil then return 0 end
+		local ok, raw = pcall(function() return row:GetItem("StatPct") end)
+		return (ok and tonumber(raw)) or 0
+	end
+
+	method integer GetEnhanceToolPower(string itemKey)
+		-- 현재 강화 단계의 채집력 보너스(누적).
+		if itemKey == nil or itemKey == "" then return 0 end
+		local row = self:GetEnhanceRow(itemKey, self:GetEnhanceData(itemKey).lv)
+		if row == nil then return 0 end
+		local ok, raw = pcall(function() return row:GetItem("AddToolPower") end)
+		return math.floor((ok and tonumber(raw)) or 0)
+	end
+
+	method integer GetEnchantSlotCount(string itemKey)
+		return math.floor(tonumber(self:GetItemText(self:GetBaseItemName(itemKey), "EnchantSlots")) or 0)
+	end
+
+	method integer GetCompletedResearchCount()
+		-- 연구소에서 끝낸 연구 수 (ResearchDataSet.UnlockRecipeId 해금 여부).
+		local ds = _DataService:GetTable("ResearchDataSet")
+		if ds == nil then return 0 end
+		local n = 0
+		for i = 1, ds:GetRowCount() do
+			local unlockId = ds:GetCell(i, "UnlockRecipeId") or ""
+			if unlockId ~= "" and self:HasRecipeUnlock(unlockId) then n = n + 1 end
+		end
+		return n
+	end
+
+	method integer GetResearchLevel()
+		-- 연구 레벨 1~5 = 1 + floor(완료 연구 수 / ResearchCountPerLevel). ⚖️ 2026-09-26 제작자 결정.
+		local per = math.max(1, self.ResearchCountPerLevel)
+		return math.max(1, math.min(5, 1 + math.floor(self:GetCompletedResearchCount() / per)))
+	end
+
+	method number GetEnhanceSuccessRate(string itemKey, integer level)
+		-- 강화 성공률(%) = 기본 SuccessRate + 연구 레벨 보정(레벨 2부터 +레벨%p), 최대 100.
+		local row = self:GetEnhanceRow(itemKey, level)
+		if row == nil then return 0 end
+		local ok, raw = pcall(function() return row:GetItem("SuccessRate") end)
+		local base = (ok and tonumber(raw)) or 0
+		local lv = self:GetResearchLevel()
+		local bonus = 0
+		if base < 100 and lv >= 2 then bonus = lv end
+		return math.min(100, base + bonus)
+	end
+
+	method string FormatEnchantValue(any partRow, number value)
+		-- 파츠 수치 표시: Pct=true 면 %(소수 1자리까지), 아니면 정수.
+		local pct = false
+		if partRow ~= nil then
+			local ok, raw = pcall(function() return partRow:GetItem("Pct") end)
+			pct = ok and tostring(raw) == "true"
+		end
+		if pct then
+			local v = value * 100
+			if math.abs(v - math.floor(v + 0.5)) < 0.05 then return tostring(math.floor(v + 0.5)) .. "%" end
+			return string.format("%.1f%%", v)
+		end
+		return tostring(math.floor(value + 0.5))
+	end
+
+	@ExecSpace("ServerOnly")
+	method string RollEnchantGrade(integer researchLevel, number sWeightScale)
+		-- 연구 레벨별 가중치로 D~S 등급을 뽑는다. 희귀 파츠는 S 가중치에 SWeightScale 을 곱한다.
+		local ds = _DataService:GetTable("EnchantWeightDataSet")
+		local row = ds ~= nil and ds:FindRow("ResearchLevel", tostring(researchLevel)) or nil
+		local grades = { "D", "C", "B", "A", "S" }
+		local weights = {}
+		local total = 0
+		for i, g in ipairs(grades) do
+			local w = 0
+			if row ~= nil then
+				local ok, raw = pcall(function() return row:GetItem("Weight" .. g) end)
+				w = (ok and tonumber(raw)) or 0
+			elseif g == "D" then
+				w = 1
+			end
+			if g == "S" then w = w * math.max(0, sWeightScale) end
+			weights[i] = w
+			total = total + w
+		end
+		if total <= 0 then return "D" end
+		local r = math.random() * total
+		local acc = 0
+		for i, g in ipairs(grades) do
+			acc = acc + weights[i]
+			if r <= acc then return g end
+		end
+		return "D"
+	end
+
+	@ExecSpace("ServerOnly")
+	method void NotifyAnvil(string msg)
+		-- 결과 한 줄 피드백 (PlayerController 피드백 경로 재사용).
+		local playerComp = self.Entity.PlayerComponent
+		local pcComp = self.Entity:GetComponent("script.PlayerController")
+		if playerComp ~= nil and isvalid(pcComp) then
+			pcComp:ClientShowMineFeedback(msg, playerComp.UserId)
+		end
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestEnhance(string itemKey)
+		-- 대장간 모루: 강화 1단계 시도. 비용(코인+재료)은 성패와 무관하게 소모, 실패해도 단계 유지·파괴 없음.
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		if not self:OwnsItemKey(itemKey) then return end
+		local baseName = self:GetBaseItemName(itemKey)
+		if self:GetItemText(baseName, "EnhanceGroup") == "" then
+			self:NotifyAnvil("강화할 수 없는 물건입니다.")
+			return
+		end
+		local data = self:GetEnhanceData(itemKey)
+		local nextLv = data.lv + 1
+		local row = self:GetEnhanceRow(itemKey, nextLv)
+		if row == nil then
+			self:NotifyAnvil("이미 최대 강화입니다.")
+			return
+		end
+		local coin = math.floor(tonumber(row:GetItem("CostCoin")) or 0)
+		local costItem = tostring(row:GetItem("CostItem") or "")
+		local costCount = math.floor(tonumber(row:GetItem("CostItemCount")) or 0)
+		if self.Coin < coin then
+			self:NotifyAnvil("코인이 부족합니다. (필요 " .. tostring(coin) .. ")")
+			return
+		end
+		if costItem ~= "" and costCount > 0 and self:GetItemCount(costItem) < costCount then
+			self:NotifyAnvil(self:GetItemDisplayName(costItem) .. "이(가) 부족합니다. (필요 " .. tostring(costCount) .. ")")
+			return
+		end
+		local rate = self:GetEnhanceSuccessRate(itemKey, nextLv)
+		if coin > 0 and not self:RemoveItem("Coin", coin) then return end
+		if costItem ~= "" and costCount > 0 and not self:RemoveItem(costItem, costCount) then return end
+		local disp = self:GetItemDisplayName(baseName)
+		local success = math.random() * 100 < rate
+		if success then
+			data.lv = nextLv
+			self:SetEnhanceData(itemKey, data)
+			self:NotifyAnvil("[강화 성공] " .. disp .. " +" .. tostring(nextLv))
+		else
+			self:NotifyAnvil("[강화 실패] " .. disp .. " +" .. tostring(data.lv) .. " 유지 — 재료만 소모됐습니다.")
+		end
+		if _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(playerComp.UserId) end
+		self:ClientOnGearChanged(playerComp.UserId)
+		log(string.format("[ANVIL] enhance %s key=%s -> %s lv=%d rate=%.0f", playerComp.UserId, itemKey, success and "OK" or "FAIL", data.lv, rate))
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestEnchant(string itemKey, string partName, integer slotIndex)
+		-- 대장간 모루: 주문 부여. 파츠 1개 소모 → 연구 레벨 가중치로 등급(D~S) → 등급 범위 안 수치. 슬롯에 이미 있으면 덮어쓴다.
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		if not self:OwnsItemKey(itemKey) then return end
+		if partName == nil or partName == "" or self:GetItemCount(partName) < 1 then return end
+		local ds = _DataService:GetTable("EnchantPartDataSet")
+		local partRow = ds ~= nil and ds:FindRow("PartId", partName) or nil
+		if partRow == nil then return end
+		local baseName = self:GetBaseItemName(itemKey)
+		local equipSlot = self:GetItemEquipSlot(baseName)
+		local target = tostring(partRow:GetItem("TargetSlot") or "")
+		if target ~= "any" and target ~= equipSlot then
+			self:NotifyAnvil("이 파츠는 " .. self:GetGearSlotLabel(target) .. "에만 새길 수 있습니다.")
+			return
+		end
+		local slots = self:GetEnchantSlotCount(itemKey)
+		if slots <= 0 then
+			self:NotifyAnvil("주문을 새길 수 없는 장비입니다.")
+			return
+		end
+		if slotIndex < 1 or slotIndex > slots then return end
+		local researchLv = self:GetResearchLevel()
+		local minLv = math.floor(tonumber(partRow:GetItem("MinResearchLv")) or 1)
+		if researchLv < minLv then
+			self:NotifyAnvil("연구 Lv." .. tostring(minLv) .. " 이상이어야 다룰 수 있는 파츠입니다. (현재 Lv." .. tostring(researchLv) .. ")")
+			return
+		end
+		if not self:RemoveItem(partName, 1) then return end
+		local grade = self:RollEnchantGrade(researchLv, tonumber(partRow:GetItem("SWeightScale")) or 1)
+		local vMin = tonumber(partRow:GetItem("Val" .. grade .. "_Min")) or 0
+		local vMax = tonumber(partRow:GetItem("Val" .. grade .. "_Max")) or vMin
+		local value = vMin + (vMax - vMin) * math.random()
+		if tostring(partRow:GetItem("Pct") or "") == "true" then
+			value = math.floor(value * 1000 + 0.5) / 1000
+		else
+			value = math.floor(value + 0.5)
+		end
+		local data = self:GetEnhanceData(itemKey)
+		data.slots[slotIndex] = { stat = tostring(partRow:GetItem("StatType") or ""), val = value, grade = grade, part = partName }
+		self:SetEnhanceData(itemKey, data)
+		local label = tostring(partRow:GetItem("StatLabel") or "")
+		self:NotifyAnvil(string.format("[주문 부여 %s급] %s %s", grade, label, self:FormatEnchantValue(partRow, value)))
+		if _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(playerComp.UserId) end
+		self:ClientOnGearChanged(playerComp.UserId)
+		log(string.format("[ANVIL] enchant %s key=%s slot=%d part=%s grade=%s val=%s lvR=%d", playerComp.UserId, itemKey, slotIndex, partName, grade, tostring(value), researchLv))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SanitizeEnhance()
+		-- 로드 직후: 잃은 아이템의 강화 기록을 정리한다 (세이브 경로 무변경).
+		local map = self:SafeDecodeJson(self.EnhanceJson or "{}", {})
+		if type(map) ~= "table" then map = {} end
+		local clean = {}
+		for key, v in pairs(map) do
+			if self:OwnsItemKey(tostring(key)) then clean[key] = v end
+		end
+		self.EnhanceJson = self:SafeEncodeJson(clean, "{}")
 	end
 
 	@ExecSpace("Server")
@@ -1680,6 +2016,11 @@ script PlayerInventory extends Component
 		local needLv = numCol("EquipLevel")
 		if needLv > 0 then
 			lines[#lines + 1] = "착용 Lv." .. tostring(math.floor(needLv))
+		end
+		-- 장비 고유 효과 설명 (PerkStat/PerkValue 는 PlayerController.GetGearPerk 가 적용한다)
+		local okP, rawP = pcall(function() return row:GetItem("PerkDesc") end)
+		if okP and rawP ~= nil and tostring(rawP) ~= "" then
+			lines[#lines + 1] = tostring(rawP)
 		end
 		if #lines == 0 then return "" end
 		return table.concat(lines, "\n")
@@ -2001,6 +2342,18 @@ script PlayerInventory extends Component
 
 		-- Enforce map-specific placement permissions
 		local pc = self.Entity:GetComponent("script.PlayerController")
+		-- 영지 전용 설치물(item_dataset.HomeOnly=true — 침대 등)은 개인 영지(Home_*) 밖에서 거부한다.
+		if string.sub(mapName, 1, 5) ~= "Home_" then
+			local itemDs = _DataService:GetTable("item_dataset")
+			local itemRow = nil
+			if itemDs ~= nil then itemRow = itemDs:FindRow("Name", itemName) end
+			if itemRow ~= nil and tostring(itemRow:GetItem("HomeOnly")) == "true" then
+				if isvalid(pc) then
+					pc:ShowMineFeedback("영지에서만 설치할 수 있습니다.")
+				end
+				return
+			end
+		end
 		if mapName == "town" then
 			if isvalid(pc) then
 				pc:ShowMineFeedback("마을에서는 설치를 할 수 없습니다.")

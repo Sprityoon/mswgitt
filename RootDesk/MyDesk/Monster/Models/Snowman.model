@@ -102,7 +102,7 @@
             "$type": "MODNativeType",
             "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 2.2
+          "Value": 2.6
         },
         {
           "TargetType": "script.Monster",
@@ -111,7 +111,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 5200
+          "Value": 7200
         },
         {
           "TargetType": "script.Monster",
@@ -345,7 +345,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 48
+          "Value": 66
         },
         {
           "TargetType": "script.Monster",
@@ -440,7 +440,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 12
+          "Value": 14
         },
         {
           "TargetType": "script.MonsterMeleeAttack",
@@ -1254,16 +1254,16 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 34
+          "Value": 42
         },
         {
-          "TargetType": "script.MonsterAI",
+          "TargetType": "script.MonsterMeleeAttack",
           "Name": "SlamDamage",
           "ValueType": {
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 48
+          "Value": 72
         }
       ],
       "EventLinks": [],

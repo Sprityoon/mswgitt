@@ -43,9 +43,10 @@ script WalkBehindFade extends Component
 		end
 	end
 
+	@ExecSpace("ClientOnly")
 	method void OnUpdate(number delta)
 		-- 가림 = Trigger AABB 상단의 좁은 북쪽 밴드만 (본체 앞·옆에서는 불투명 유지).
-		if not self:IsClient() then return end
+		-- 로컬 플레이어 기준 연출이라 ClientOnly — 서버는 호출하지 않는다.
 		local localPlayer = _UserService.LocalPlayer
 		if not isvalid(localPlayer) then return end
 		local playerTransform = localPlayer.TransformComponent

@@ -7,6 +7,8 @@ script BossPatternController extends Component
 	--   행의 MinPhase~MaxPhase 가 현재 페이즈를 포함하는 행만 순환에 들어간다(강화 버전 행으로 교체).
 	-- 역할 분담:
 	--   LEAP / CHARGE  → MonsterAI 의 기존 상태로 위임 (이 컴포넌트는 "다음은 LEAP" 만 알려 준다)
+	--                    LEAP 행의 Count 2 이상 = 연속 점프 찍기(Interval = 이어지는 점프의 예고 시간),
+	--                    LEAP/CHARGE 행의 Cooldown = 그 행이 끝난 뒤 후딜(비우면 모델 AttackCooldown).
 	--   그 외 패턴     → MonsterAI 가 PATTERN 상태로 들어가고, 매 프레임 Tick 으로 이 컴포넌트가 진행한다.
 	-- 모든 타격은 "예고 장판(AttackTelegraph) → 채움 완료 시점에 그 자리 재판정" 이다 —
 	-- 판정 순간의 플레이어 위치로 맞으므로 예고를 보고 벗어나면 피할 수 있다.
@@ -19,6 +21,24 @@ script BossPatternController extends Component
 	@HideFromInspector property number IntervalScale = 1.0
 	-- 이 반지름 이상의 예고 원이 터질 때만 카메라를 흔든다.
 	property number ShakeMinRadius = 4.0
+	-- 모래 이펙트(데우) 배율 보정. 판정 반지름 × 이 값 = 파티클 스케일 (Play 실측으로 맞춤).
+	--   SandBurst = 1회 판정: 원형 충격파(CircleBurst) + 솟는 모래 먼지(RisingSteam), 둘 다 모래색 틴트
+	--   SandPool  = 잔존 장판: 모래색 장판 원(텔레그래프 마커 LingerMode) + 반복 재생 모래 먼지(RisingSteam)
+	-- 실측(2026-09-25): CircleBurst 는 Scale 1.1 에서 링 반지름 ≈0.83 → 판정 반지름 × 1.3 이면 링 ≈ 판정 원.
+	property number SandBurstFxScale = 1.3
+	property number SandDustFxScale = 0.6
+	property number SandPoolFxScale = 0.8
+	property Color SandFxColor = Color(0.93, 0.76, 0.46, 1)
+	-- 눈사태(스노우맨) 1회 판정 = 원형 냉기 파동(Nova) 판정 반지름 × 배율. 남는 눈더미는 둔화 지대 마커(snow)가 표시.
+	property number SnowNovaFxScale = 0.7
+	-- 둔화 지대(FieldSeconds/FieldBuffId): 판정이 끝난 자리를 밟고 있는 동안만 버프가 걸리고 벗어나면 즉시 풀린다.
+	-- 이 주기로 지대 안팎을 판정한다. 안에 머무는 동안은 FieldRefreshSeconds 마다 버프를 갱신한다(초 단위 버프라 만료 방지).
+	property number FieldCheckInterval = 0.2
+	-- 명중 버프(HitBuffId) 판정 여유: 피해는 플레이어 히트박스가 원에 닿으면 들어가지만 버프는 중심 거리로 본다.
+	-- 가장자리에 걸려 맞았는데 둔화가 안 걸리던 문제(2026-09-26 제작자 제보) → 히트박스 반폭만큼 넓혀 본다.
+	property number HitBuffMargin = 0.6
+	property number FieldRefreshSeconds = 1.0
+	-- 잔존 장판(도트): 같은 플레이어가 겹친 장판 여러 개에서 한 틱에 중복으로 맞지 않게 하는 최소 간격은 PlayerController 가 가진다.
 
 	@HideFromInspector property integer CurrentPhase = 1
 	@HideFromInspector property integer LastOrder = 0
@@ -86,7 +106,17 @@ script BossPatternController extends Component
 					damageMul = num(i, "DamageMul", 1.0),
 					projectileModel = str(i, "ProjectileModel"),
 					fx = str(i, "FxType"),
-					cooldown = num(i, "Cooldown", 0)
+					cooldown = num(i, "Cooldown", 0),
+					-- 예고 원 판정에 맞은 플레이어에게 걸 BuffDataSet.BuffId (빙결 둔화 등). 공란이면 없음.
+					hitBuff = str(i, "HitBuffId"),
+					-- 잔존 장판(도트): LingerSeconds > 0 이면 판정 순간 1회 타격 대신 그 자리에 장판이 남아
+					-- TickInterval 마다 원 안의 플레이어에게 DamageMul 기준 피해를 준다(넉백·경직 없음).
+					linger = num(i, "LingerSeconds", 0),
+					tick = num(i, "TickInterval", 0.5),
+					-- 둔화 지대: FieldSeconds > 0 이면 1회 판정 뒤 그 원이 FieldSeconds 동안 남아
+					-- 밟는 동안 FieldBuffId 를 건다(빠져나오면 즉시 해제). 피해는 없다.
+					fieldSec = num(i, "FieldSeconds", 0),
+					fieldBuff = str(i, "FieldBuffId")
 				})
 			end
 		end
@@ -132,8 +162,15 @@ script BossPatternController extends Component
 	@ExecSpace("ServerOnly")
 	method number GetCooldown(number fallback)
 		-- 방금 끝난 패턴의 후딜. 행에 Cooldown 이 없으면 모델 AttackCooldown(레이드 배율 적용값)을 쓴다.
-		if self.RowCooldown > 0 then return self.RowCooldown end
+		-- 행 Cooldown 에도 레이드 SkillIntervalScale(IntervalScale)을 곱한다 — 모델 AttackCooldown 만 배율을 받던 구멍 보완.
+		if self.RowCooldown > 0 then return self.RowCooldown * self.IntervalScale end
 		return fallback
+	end
+
+	@ExecSpace("ServerOnly")
+	method number ScaleCooldown(number cd)
+		-- MonsterAI 가 LEAP/CHARGE 행(위임 패턴)의 Cooldown 을 쓸 때 난이도 배율을 똑같이 입힌다.
+		return cd * self.IntervalScale
 	end
 
 	---------------------------------------------------------------------------
@@ -149,6 +186,11 @@ script BossPatternController extends Component
 		self.EndTime = 0
 		self.RowCooldown = row.cooldown
 		self.RunningPattern = row.pattern
+		self._T.currentHitBuff = row.hitBuff or ""
+		self._T.currentLinger = row.linger or 0
+		self._T.currentTick = row.tick or 0.5
+		self._T.currentFieldSec = row.fieldSec or 0
+		self._T.currentFieldBuff = row.fieldBuff or ""
 		self._T.events = {}
 		self._T.markers = {}
 
@@ -171,9 +213,11 @@ script BossPatternController extends Component
 			self:BuildRadial(row, windup)
 		elseif p == "THORNS" then
 			self:BuildThorns(row, windup)
-		elseif p == "ROAR" then
+		elseif p == "ROAR" or p == "FREEZE" then
+			-- FREEZE = 보스 중심 대형 원(ROAR 와 같은 판정) + HitBuffId 로 맞은 플레이어 둔화 — "주변을 얼린다".
 			self:BuildRoar(row, windup)
-		elseif p == "FROST" then
+		elseif p == "FROST" or p == "LINE" then
+			-- LINE = 같은 일렬 타격을 서리가 아닌 용도(주먹 내려치기·모래 기둥 등)로 쓸 때의 이름. Interval 0 이면 동시 타격.
 			self:BuildFrost(row, windup)
 		elseif p == "BOULDER" then
 			self:BuildBoulder(row, windup)
@@ -323,6 +367,8 @@ script BossPatternController extends Component
 			local rot = (w - 1) * (3.1415927 / row.count)
 			self:Schedule(fireAt, function()
 				local center = self:OwnerPos()
+				-- 발사 순간 보스 발밑 폭발 — 방사 파편이 "지금 터졌다"를 읽히게 한다.
+				self:MulticastPatternFX(Vector3(center.x, center.y, 0), 1.5, row.fx, 0)
 				local base = self:AimAngle(center) + rot
 				for i = 1, row.count do
 					local ang = base + (i - 1) / row.count * 6.2831853
@@ -356,6 +402,11 @@ script BossPatternController extends Component
 		-- 판정은 fireAt 순간 플레이어 위치로 새로 계산한다(예고 = 허가일 뿐, 명중 보장이 아니다).
 		if radius <= 0 then return end
 		local slot = {}
+		local hitBuff = self._T.currentHitBuff or ""
+		local linger = tonumber(self._T.currentLinger) or 0
+		local tick = tonumber(self._T.currentTick) or 0.5
+		local fieldSec = tonumber(self._T.currentFieldSec) or 0
+		local fieldBuff = self._T.currentFieldBuff or ""
 		self:Schedule(spawnAt, function()
 			slot.marker = self:SpawnMarker(pos, radius, fireAt - spawnAt)
 		end)
@@ -365,17 +416,241 @@ script BossPatternController extends Component
 				slot.marker = nil
 			end
 			if self:IsOwnerDead() then return end
+			if linger > 0 then
+				-- 잔존 장판: 1회 타격·폭발 연출 대신 장판을 남기고 도트로 판정한다.
+				self:StartLingerZone(pos, radius, damage, fx, linger, tick, hitBuff)
+				return
+			end
 			local atk = self.Entity:GetComponent("script.MonsterMeleeAttack")
 			if isvalid(atk) then
 				---@type MonsterMeleeAttack
 				local a = atk
 				a:DoPatternCircle(pos, radius, damage)
 			end
+			if hitBuff ~= "" then
+				self:ApplyBuffInCircle(pos, radius, hitBuff)
+			end
+			if fieldSec > 0 and fieldBuff ~= "" then
+				self:AddSlowField(pos, radius, fieldSec, fieldBuff)
+			end
 			-- 대형 원(포효 등)만 화면을 흔든다 — 잔원 수십 개가 매번 흔들면 멀미가 난다.
 			local shake = 0
 			if radius >= self.ShakeMinRadius then shake = 0.5 end
 			self:MulticastPatternFX(Vector3(pos.x, pos.y, 0), radius, fx, shake)
 		end)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void StartLingerZone(Vector2 pos, number radius, integer damage, string fx, number linger, number tick, string hitBuff)
+		-- 잔존 장판: linger 초 동안 tick 간격으로 원 안을 도트 판정한다. 패턴 타임라인과 분리된 타이머라
+		-- 보스는 장판이 남아 있는 동안에도 다음 행동으로 넘어간다. 보스가 죽거나 사라지면 즉시 멈춘다.
+		local interval = tick
+		if interval < 0.2 then interval = 0.2 end
+		local total = math.max(1, math.floor(linger / interval + 0.0001))
+		self:MulticastLingerFX(Vector3(pos.x, pos.y, 0), radius, fx, total * interval)
+		-- 판정 원 = 보이는 원: 예고 마커를 모래색 장판으로 남겨 두고 수명이 끝나면 스스로 지운다.
+		-- 패턴 종료 시 ClearMarkers 가 지우지 않도록 _T.markers 에서는 뺀다.
+		local pool = self:SpawnMarker(pos, radius, 0.05)
+		if isvalid(pool) then
+			if self._T.markers ~= nil then self._T.markers[pool] = nil end
+			local mk = pool:GetComponent("script.MonsterTelegraphMarker")
+			if isvalid(mk) then
+				---@type MonsterTelegraphMarker
+				local m = mk
+				m.LingerMode = true
+				m.LingerStyle = "sand"
+				m.MaxLifeTime = total * interval + 0.2
+			end
+			pool:Destroy(total * interval + 0.1)
+		end
+		local fired = 0
+		local timerId = 0
+		local doTick = function()
+			fired = fired + 1
+			if not isvalid(self) or not isvalid(self.Entity) or self:IsOwnerDead() or fired > total then
+				if timerId ~= 0 then
+					_TimerService:ClearTimer(timerId)
+					timerId = 0
+				end
+				return
+			end
+			local atk = self.Entity:GetComponent("script.MonsterMeleeAttack")
+			if isvalid(atk) then
+				---@type MonsterMeleeAttack
+				local a = atk
+				a:DoPatternDot(pos, radius, damage)
+			end
+			if hitBuff ~= "" then
+				self:ApplyBuffInCircle(pos, radius, hitBuff)
+			end
+			if fired >= total and timerId ~= 0 then
+				_TimerService:ClearTimer(timerId)
+				timerId = 0
+			end
+		end
+		doTick()
+		if total > 1 then
+			timerId = _TimerService:SetTimerRepeat(doTick, interval)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void AddSlowField(Vector2 pos, number radius, number seconds, string buffId)
+		-- 둔화 지대 1개 등록. 지대 판정은 보스당 타이머 1개가 모든 지대를 한꺼번에 돈다(원마다 타이머 X).
+		if self._T.fields == nil then self._T.fields = {} end
+		table.insert(self._T.fields, {
+			x = pos.x, y = pos.y, r2 = radius * radius,
+			untilAt = _UtilLogic.ElapsedSeconds + seconds, buff = buffId
+		})
+		-- 지대 표시 = 텔레그래프 마커를 눈더미 색으로 남겨 두고 지대가 끝나는 순간 지운다(이펙트와 판정 수명 일치).
+		local pile = self:SpawnMarker(pos, radius, 0.05)
+		if isvalid(pile) then
+			if self._T.markers ~= nil then self._T.markers[pile] = nil end
+			local mk = pile:GetComponent("script.MonsterTelegraphMarker")
+			if isvalid(mk) then
+				---@type MonsterTelegraphMarker
+				local m = mk
+				m.LingerMode = true
+				m.LingerStyle = "snow"
+			end
+			pile:Destroy(seconds)
+		end
+		if self._T.fieldTimer == nil then
+			self._T.fieldTimer = _TimerService:SetTimerRepeat(function() self:TickSlowFields() end, self.FieldCheckInterval)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void TickSlowFields()
+		-- 지대 안의 플레이어: 버프 적용(머무는 동안 주기 갱신). 지대 밖으로 나가거나 지대가 사라지면 즉시 해제.
+		if not isvalid(self.Entity) then return end
+		local now = _UtilLogic.ElapsedSeconds
+		local alive = {}
+		for _, fd in ipairs(self._T.fields or {}) do
+			if fd.untilAt > now then table.insert(alive, fd) end
+		end
+		self._T.fields = alive
+		if self._T.fieldInside == nil then self._T.fieldInside = {} end
+		local inside = self._T.fieldInside
+
+		local seen = {}
+		local map = self.Entity.CurrentMap
+		local users = nil
+		if isvalid(map) and isvalid(map.MapComponent) then
+			users = _UserService:GetUsersByMapComponent(map.MapComponent)
+		end
+		if users ~= nil and #alive > 0 then
+			for _, u in ipairs(users) do
+				if isvalid(u) then
+					local up = u.TransformComponent.WorldPosition
+					local hitBuff = ""
+					for _, fd in ipairs(alive) do
+						local dx = up.x - fd.x
+						local dy = up.y - fd.y
+						if dx * dx + dy * dy <= fd.r2 then
+							hitBuff = fd.buff
+							break
+						end
+					end
+					local protected = false
+					local pcComp = u:GetComponent("script.PlayerController")
+					if isvalid(pcComp) then
+						---@type PlayerController
+						local pc = pcComp
+						protected = pc:IsArrivalProtected()
+					end
+					if hitBuff ~= "" and not protected then
+						seen[u.Id] = true
+						local rec = inside[u.Id]
+						if rec == nil or rec.buff ~= hitBuff or now - rec.last >= self.FieldRefreshSeconds then
+							local buffs = u:GetComponent("script.PlayerBuffs")
+							if isvalid(buffs) then
+								---@type PlayerBuffs
+								local b = buffs
+								b:ApplyBuff(hitBuff)
+							end
+							if rec ~= nil and rec.buff ~= hitBuff then self:ReleaseFieldBuff(u, rec.buff) end
+							inside[u.Id] = { buff = hitBuff, last = now, entity = u }
+						end
+					end
+				end
+			end
+		end
+
+		-- 이번 판정에서 지대 밖이 된 플레이어는 즉시 해제(맵을 떠난 플레이어 포함).
+		for id, rec in pairs(inside) do
+			if not seen[id] then
+				self:ReleaseFieldBuff(rec.entity, rec.buff)
+				inside[id] = nil
+			end
+		end
+
+		if #alive == 0 and next(inside) == nil and self._T.fieldTimer ~= nil then
+			_TimerService:ClearTimer(self._T.fieldTimer)
+			self._T.fieldTimer = nil
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ReleaseFieldBuff(Entity user, string buffId)
+		if not isvalid(user) then return end
+		local buffs = user:GetComponent("script.PlayerBuffs")
+		if isvalid(buffs) then
+			---@type PlayerBuffs
+			local b = buffs
+			b:RemoveBuff(buffId)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnEndPlay()
+		-- 보스가 사라지면 둔화 지대 판정 타이머를 멈추고 걸어 둔 둔화를 즉시 푼다.
+		if self._T.fieldTimer ~= nil then
+			_TimerService:ClearTimer(self._T.fieldTimer)
+			self._T.fieldTimer = nil
+		end
+		for _, rec in pairs(self._T.fieldInside or {}) do
+			self:ReleaseFieldBuff(rec.entity, rec.buff)
+		end
+		self._T.fieldInside = {}
+		self._T.fields = {}
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplyBuffInCircle(Vector2 pos, number radius, string buffId)
+		-- 판정 원 안의 플레이어에게 BuffDataSet 버프를 건다(빙결 둔화 등). 도착 보호 중인 플레이어는 제외.
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) or not isvalid(map.MapComponent) then return end
+		local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+		if users == nil then return end
+		local rr = radius + self.HitBuffMargin
+		local r2 = rr * rr
+		local applied = 0
+		for _, u in ipairs(users) do
+			if isvalid(u) then
+				local up = u.TransformComponent.WorldPosition
+				local dx = up.x - pos.x
+				local dy = up.y - pos.y
+				if dx * dx + dy * dy <= r2 then
+					local protected = false
+					local pcComp = u:GetComponent("script.PlayerController")
+					if isvalid(pcComp) then
+						---@type PlayerController
+						local pc = pcComp
+						protected = pc:IsArrivalProtected()
+					end
+					local buffs = u:GetComponent("script.PlayerBuffs")
+					if not protected and isvalid(buffs) then
+						---@type PlayerBuffs
+						local b = buffs
+						if b:ApplyBuff(buffId) then applied = applied + 1 end
+					end
+				end
+			end
+		end
+		if radius >= self.ShakeMinRadius then
+			log("[BOSS][PATTERN] hit buff " .. buffId .. " r=" .. tostring(radius) .. " applied=" .. tostring(applied))
+		end
 	end
 
 	@ExecSpace("ServerOnly")
@@ -539,17 +814,60 @@ script BossPatternController extends Component
 			Nova = BasicParticleType.Nova,
 			Pillar = BasicParticleType.UpperCylinder,
 			Steam = BasicParticleType.RisingSteam,
-			Buff = BasicParticleType.Buff
+			Buff = BasicParticleType.Buff,
+			-- 넓게 번지는 냉기 파동(스노우맨 빙결)
+			Frost = BasicParticleType.Nova,
+			-- 데우 모래: 원형 폭발(1회 판정) / 원형 소용돌이(잔존 장판). 둘 다 SandFxColor 로 틴트.
+			-- 구 Sand(DustStorm) 는 옆으로 1자로 번져 원형 판정과 모양이 맞지 않아 SandBurst 로 대체한다.
+			Snow = BasicParticleType.Nova,
+			Sand = BasicParticleType.CircleBurst,
+			SandBurst = BasicParticleType.CircleBurst,
+			SandPool = BasicParticleType.CircleBurst
 		}
 		local pt = types[fxKey]
 		if pt == nil then pt = BasicParticleType.DustExplosion end
 		local s = scale
 		if s <= 0 then s = 1 end
-		_ParticleService:PlayBasicParticle(pt, self.Entity, pos, 0.0, Vector3(s, s, s), false, nil)
+		local options = nil
+		if fxKey == "Sand" or fxKey == "SandBurst" or fxKey == "SandPool" then
+			-- 모래 1회 판정: 원형 충격파 + 솟는 모래 먼지.
+			options = { ["Color"] = self.SandFxColor }
+			local d = s * self.SandDustFxScale
+			_ParticleService:PlayBasicParticle(BasicParticleType.RisingSteam, self.Entity, pos, 0.0, Vector3(d, d, d), false, options)
+			s = s * self.SandBurstFxScale
+		elseif fxKey == "Snow" then
+			-- 눈사태 1회 판정: 짧은 원형 냉기 파동만. 남는 눈더미는 둔화 지대 마커가 지대 수명만큼만 보여 준다
+			-- (구 RisingSteam 은 지대가 끝난 뒤에도 한참 남아 판정과 어긋났다 — 2026-09-26 제작자 제보).
+			s = s * self.SnowNovaFxScale
+		end
+		_ParticleService:PlayBasicParticle(pt, self.Entity, pos, 0.0, Vector3(s, s, s), false, options)
 		if shake > 0 then
 			local cam = _CameraService:GetCurrentCameraComponent()
 			if isvalid(cam) then cam:ShakeCamera(shake, 0.25) end
 		end
+	end
+
+	@ExecSpace("Multicast")
+	method void MulticastLingerFX(Vector3 pos, number radius, string fxKey, number seconds)
+		-- 잔존 장판 연출: seconds 동안 반복 재생한 뒤 제거한다. 같은 맵 클라만 재생한다.
+		-- ⚠ 규칙 12 — instigator 에 nil 금지.
+		if not self:IsClient() then return end
+		local localPlayer = _UserService.LocalPlayer
+		local myMap = self.Entity.CurrentMap
+		if isvalid(localPlayer) and isvalid(myMap) and localPlayer.CurrentMap ~= myMap then return end
+		local pt = BasicParticleType.RisingSteam
+		local s = radius
+		if s <= 0 then s = 1 end
+		local options = nil
+		if fxKey == "SandPool" or fxKey == "Sand" or fxKey == "SandBurst" then
+			s = s * self.SandPoolFxScale
+			options = { ["Color"] = self.SandFxColor }
+		end
+		local serial = _ParticleService:PlayBasicParticle(pt, self.Entity, pos, 0.0, Vector3(s, s, s), true, options)
+		if serial == nil or serial == 0 then return end
+		_TimerService:SetTimerOnce(function()
+			_ParticleService:RemoveParticle(serial)
+		end, seconds)
 	end
 
 end

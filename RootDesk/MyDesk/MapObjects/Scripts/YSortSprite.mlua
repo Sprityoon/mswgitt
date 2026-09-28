@@ -25,9 +25,11 @@ script YSortSprite extends Component
 		end
 	end
 
+	@ExecSpace("ClientOnly")
 	method void OnUpdate(number delta)
 		-- Periodically updates rendering order for dynamic moving entities.
-		if not self:IsClient() or not self.Dynamic then return end
+		-- 렌더 정렬은 클라 전용 — ClientOnly 로 두어 서버가 엔티티마다 매 프레임 호출하지 않게 한다.
+		if not self.Dynamic then return end
 		local transform = self.Entity.TransformComponent
 		if not isvalid(transform) then return end
 

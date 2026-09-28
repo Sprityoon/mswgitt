@@ -140,7 +140,10 @@ for (const r of skills) {
     if (!skillIds.has(parent)) fail(at, `ParentSkillId "${parent}" 가 없는 스킬이다`);
     else {
       const p = skills.find(x => val(x, 'SkillId') === parent);
-      if (val(p, 'JobId') !== val(r, 'JobId')) {
+      // 예외: 공용 선행이라도 그 직업의 변형 행(JobVariantOf=선행)이 있으면 허용한다.
+      // 원본 칸이 변형 이름으로 보이고, Trigger=OnParentTrigger 가 그 변형의 발동에 연쇄하는 구조(예: 불굴의 투혼 → 강철 피부).
+      const variantOk = !val(p, 'JobId') && skills.some(x => val(x, 'JobVariantOf') === parent && val(x, 'JobId') === val(r, 'JobId'));
+      if (val(p, 'JobId') !== val(r, 'JobId') && !variantOk) {
         fail(at, `선행 "${parent}" 의 JobId 가 달라(${val(p, 'JobId') || '공용'} vs ${val(r, 'JobId') || '공용'}) 같은 탭에서 계보가 끊긴다`);
       }
     }

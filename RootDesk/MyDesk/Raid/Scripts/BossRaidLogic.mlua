@@ -257,7 +257,7 @@ script BossRaidLogic extends Logic
 
 		local bossRow = self:GetBossRow(bossId)
 		if bossRow == nil then
-			self:SendFeedback(player, "아직 열리지 않은 보스입니다.")
+			self:RejectEntry(player, "아직 열리지 않은 보스입니다.")
 			return false
 		end
 
@@ -267,13 +267,13 @@ script BossRaidLogic extends Logic
 		---@type PlayerController
 		local controller = pc
 		if not skipActivationCheck and not controller:IsWaypointUnlocked(mapName) then
-			self:SendFeedback(player, "아직 가 보지 못한 곳입니다. 사냥터의 포탈로 먼저 도달해야 합니다.")
+			self:RejectEntry(player, "아직 가 보지 못한 곳입니다. 사냥터의 포탈로 먼저 도달해야 합니다.")
 			return false
 		end
 
 		local lobby = self:EnsureLobbyMap(bossId)
 		if not isvalid(lobby) then
-			self:SendFeedback(player, "대기실을 여는 데 실패했습니다. 잠시 후 다시 시도해 주세요.")
+			self:RejectEntry(player, "대기실을 여는 데 실패했습니다. 잠시 후 다시 시도해 주세요.")
 			return false
 		end
 
@@ -393,13 +393,13 @@ script BossRaidLogic extends Logic
 		local bossRow = self:GetBossRow(bossId)
 		local diffRow = self:GetDifficultyRow(bossId, difficultyId)
 		if bossRow == nil or diffRow == nil then
-			self:SendFeedback(player, "보스 정보를 찾을 수 없습니다.")
+			self:RejectEntry(player, "보스 정보를 찾을 수 없습니다.")
 			return false
 		end
 
 		local reason = self:ValidateEntry(player, bossRow, diffRow)
 		if reason ~= "" then
-			self:SendFeedback(player, reason)
+			self:RejectEntry(player, reason)
 			return false
 		end
 		local party = { player }
@@ -410,7 +410,7 @@ script BossRaidLogic extends Logic
 
 		local raidMap = self:CreateInstanceMap(templateMap, mapName)
 		if not isvalid(raidMap) then
-			self:SendFeedback(player, "보스방을 여는 데 실패했습니다. 잠시 후 다시 시도해 주세요.")
+			self:RejectEntry(player, "보스방을 여는 데 실패했습니다. 잠시 후 다시 시도해 주세요.")
 			return false
 		end
 
@@ -665,6 +665,18 @@ script BossRaidLogic extends Logic
 	---------------------------------------------------------------------------
 	-- 클라 피드백
 	---------------------------------------------------------------------------
+
+	@ExecSpace("ServerOnly")
+	method void RejectEntry(Entity player, string message)
+		-- 입장 거절: 사유 토스트 + 요청 시 띄운 전환 커버를 즉시 걷는다(타임아웃까지 검은 화면 방지).
+		self:SendFeedback(player, message)
+		if not isvalid(player) then return end
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		---@type PlayerController
+		local controller = pc
+		controller:ClientCancelWarpCover()
+	end
 
 	@ExecSpace("ServerOnly")
 	method void SendFeedback(Entity player, string message)

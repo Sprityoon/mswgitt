@@ -18,24 +18,15 @@ script PlayerCombat extends AttackComponent
 	@ExecSpace("ServerOnly")
 	method void DoAttackAt(Vector2 worldPos)
 		-- Emits a melee box at worldPos; only monster hitboxes (HitBox group) take damage.
-		-- 평타 = CharAtk + 장착 Attack. ToolPower는 채집 전용.
 		local dmg = self.BaseDamage
 		local pc = self.Entity:GetComponent("script.PlayerController")
 		if isvalid(pc) then
 			---@type PlayerController
 			local controller = pc
-			dmg = controller:GetCharacterAttack()
+			-- 평타 = 직업 평타 계열 공격력 + 계열 무기 수치 (DoAttackInFront 와 같은 규약).
+			dmg = controller:GetStatAttackTotal(controller:GetBasicAttackStat())
 		end
-		local inv = self.Entity:GetComponent("script.PlayerInventory")
-		if isvalid(inv) then
-			---@type PlayerInventory
-			local pi = inv
-			local toolInfo = pi:GetEquippedToolInfo()
-			if toolInfo ~= nil then
-				dmg = dmg + (tonumber(toolInfo.attack) or 0)
-			end
-		end
-		
+
 		self.PendingSkillId = ""
 		self.PendingTargetId = ""
 		self.PendingDamage = dmg
@@ -55,18 +46,31 @@ script PlayerCombat extends AttackComponent
 		if isvalid(pc) then
 			---@type PlayerController
 			local controller = pc
-			dmg = controller:GetCharacterAttack()
+			-- 평타 = 직업 평타 계열 공격력(레벨·능력치·버프) + 계열 무기 수치. 손에 든 도구는 채집 전용.
+			-- 계열은 PlayerController.BasicAttackStatByJob (기본 STR, 맨주먹 파이터 TRI).
+			dmg = controller:GetStatAttackTotal(controller:GetBasicAttackStat())
 		end
-		local inv = self.Entity:GetComponent("script.PlayerInventory")
-		if isvalid(inv) then
-			---@type PlayerInventory
-			local pi = inv
-			local toolInfo = pi:GetEquippedToolInfo()
-			if toolInfo ~= nil then
-				dmg = dmg + (tonumber(toolInfo.attack) or 0)
+
+		-- 평타 강화 버프 (BuffDataSet StatKey)
+		--   NextHitBonus  : 다음 평타 1회 피해 +비율 후 소멸 (인파이트 스텝)
+		--   FollowUpHit   : 평타마다 그 비율 위력의 추가타 1회 (오라 피스트)
+		--   HitStaminaGain: 평타마다 기력 회복 (오라 피스트)
+		local followUp = 0
+		local buffs = self.Entity:GetComponent("script.PlayerBuffs")
+		if isvalid(buffs) then
+			local bonus = buffs:GetStatAdd("NextHitBonus")
+			if bonus > 0 then
+				dmg = math.floor(dmg * (1 + bonus))
+				buffs:RemoveBuffsByStat("NextHitBonus")
+				log("[DMG] next-hit bonus x" .. string.format("%.2f", 1 + bonus))
+			end
+			followUp = buffs:GetStatAdd("FollowUpHit")
+			local gain = math.floor(buffs:GetStatAdd("HitStaminaGain"))
+			if gain > 0 and isvalid(pc) then
+				pc.Stamina = math.min(pc.MaxStamina, pc.Stamina + gain)
 			end
 		end
-		
+
 		self.PendingSkillId = ""
 		self.PendingTargetId = ""
 		self.PendingDamage = dmg
@@ -78,14 +82,30 @@ script PlayerCombat extends AttackComponent
 		local centerY = playerPos.y + dirY * 1.5
 		local sizeX = (math.abs(dirX) > 0.1) and 3.4 or 2.8
 		local sizeY = (math.abs(dirY) > 0.1) and 3.4 or 2.8
-		
+
 		local shape = BoxShape(Vector2(centerX, centerY), Vector2(sizeX, sizeY), 0)
 		self:AttackFast(shape, nil, CollisionGroups.HitBox)
 		log("[DMG] melee (front)=" .. tostring(dmg) .. " at (" .. centerX .. "," .. centerY .. ")")
+
+		if followUp > 0 then
+			local followDmg = math.max(1, math.floor(dmg * followUp))
+			_TimerService:SetTimerOnce(function()
+				if not isvalid(self) or not isvalid(self.Entity) then return end
+				local prev = self.PendingDamage
+				self.PendingSkillId = ""
+				self.PendingTargetId = ""
+				self.PendingDamage = followDmg
+				self.PendingHitEffectRUID = ""
+				self.PendingHitEffectScale = 1.0
+				self:AttackFast(shape, nil, CollisionGroups.HitBox)
+				self.PendingDamage = prev
+				log("[DMG] follow-up=" .. tostring(followDmg))
+			end, 0.12)
+		end
 	end
 
 	method integer CalcDamage(Entity attacker, Entity defender, string attackInfo)
-		-- Damage dealt to the struck monster (PendingDamage = CharAtk + Attack, or skill core).
+		-- Damage dealt to the struck monster (PendingDamage = 힘 계열 공격력 합계, or skill damage).
 		local monster = defender:GetComponent("script.Monster")
 		if isvalid(monster) then return monster:ResolveSkillDamage(self.PendingDamage, self.PendingSkillId, attacker) end
 		return self.PendingDamage

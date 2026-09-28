@@ -352,8 +352,20 @@ script UIRaidDifficultyController extends Component
 			return
 		end
 		log("[RAID-UI] boss room request boss=" .. self.bossId .. " diff=" .. diff.difficultyId)
-		_BossRaidLogic:RequestEnterBossRoom(self.bossId, diff.difficultyId, lp)
+		local bossId = self.bossId
+		local difficultyId = diff.difficultyId
 		self:Close()
+		-- 포탈과 같은 전환 연출: 커버를 먼저 덮은 뒤 입장을 요청한다(거절되면 서버가 커버를 걷는다).
+		local request = function()
+			_BossRaidLogic:RequestEnterBossRoom(bossId, difficultyId, lp)
+		end
+		if pc ~= nil then
+			---@type PlayerController
+			local c = pc
+			c:ClientWarpWithCover(request)
+		else
+			request()
+		end
 	end
 
 end

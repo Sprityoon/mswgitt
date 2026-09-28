@@ -41,9 +41,9 @@
 | 튜토리얼 101~108 | ✅ 반영 (108 CountMode=State, Play 확인 대기) | `QuestDataSet` 101~108. 108=`왠지 던질 수 있을것 같습니다..` (LearnSkill `hand_axe_throw`, 이미 배웠으면 자동 완료, 보상 Hand Axe:20) |
 | 챕터 1 「마을의 푸른 빛」 | ✅ 반영 (2026-08-15, Play 확인 대기) | `QuestDataSet` 201~205. fisher/blacksmith/researcher 대면 수주 첫 투입 |
 | 챕터 2 「검은 이슬」 | ✅ 맵/시스템 반영 (퀘스트 211~217) | 무대: 흙 벌판 3단계 (`hunt01`~`03`) / **1막 관문 보스: 슬라임킹** (`slime_king`) ➔ 격파 시 `rocky01` 해금 |
-| 챕터 3 「바위 메아리」 | ✅ 템플릿/보스 모델 완료 (퀘스트 기획) | 무대: 바위 고원 (`rocky01`) / **2막 관문 보스: 스톤골렘** (`stone_golem`) ➔ 격파 시 `desert01` 해금 |
-| 챕터 4 「모래에 잠든 길」 | ✅ 템플릿/보스 모델 완료 (퀘스트 기획) | 무대: 모래 언덕 (`desert01`) / **3막 관문 보스: 데우** (`deu`) ➔ 격파 시 `snow01` 해금 |
-| 챕터 5 「만년 설원」 | ✅ 템플릿/보스/몬스터 완비 (퀘스트 기획) | 무대: 만년 설원 (`snow01`) / **4막 관문 보스: 스노우맨** (`snowman`) ➔ 격파 시 설원 평정 및 엔드 아크 |
+| 챕터 3 「바위 메아리」 | ✅ 반영 (2026-09-26, Play 확인 대기) | `QuestDataSet` 221~227. 무대: 바위 고원 (`rocky01`~`03`) / **2막 관문 보스: 스톤골렘** (`stone_golem`) ➔ 격파 시 `desert01` 해금 |
+| 챕터 4 「모래에 잠든 길」 | ✅ 반영 (2026-09-26, Play 확인 대기) | `QuestDataSet` 231~236. 무대: 모래 언덕 (`desert01`~`03`) / 235 = **먹그늘 이름 첫 공개** / **3막 관문 보스: 데우** (`deu`) ➔ 격파 시 `snow01` 해금 |
+| 챕터 5 「눈밭의 대답」 | ✅ 반영 (2026-09-26, Play 확인 대기) | `QuestDataSet` 241~247. 무대: 만년 설원 (`snow01`~`03`) / **4막 관문 보스: 스노우맨** (`snowman`) ➔ 보상 「정원의 등불」 → 247 영지 설치 = 에필로그 완주 |
 
 ### ⚖️ 제작자 판정 로그 (톤·서사 방향)
 
@@ -59,6 +59,7 @@
 | 2026-08-15 | **푸른 빛 발견 기반 마법 스킬 해금** + **몬스터 사냥 희귀 장비 드롭 (고유 특수 효과)** 확정 | [magic-skills-and-rare-equipment.md](../magic-skills-and-rare-equipment.md) |
 | 2026-08-19 | **타이틀 확정 (`메이플크래프트: 마지막 모험가`) + 은퇴 모험가의 귀농/맨땅 개척 서사 확정** | [story-bible.md](./story-bible.md) §1 · [world_metadata.md](../../world_metadata.md) |
 | 2026-09-22 | **사냥터별 공식 메이플 몬스터 생태계 & 챕터 2~4 퀘스트 라인 및 연구소 연계 상세 기획 확정** | [hunting-grounds-ecosystem-plan.md](./hunting-grounds-ecosystem-plan.md) |
+| 2026-09-26 | **메인 빌런 이름 「먹그늘」(Q8) · 완주 보상 가구 「정원의 등불」 신설(Q6)** → 챕터 3~5 퀘스트·대사 반영 | [quest-design.md](./quest-design.md) §4.2~4.5 |
 
 ## 3. 협업 규약 (모든 에이전트 공통)
 
@@ -74,14 +75,14 @@
 
 | # | 질문 | 위치 |
 |---|---|---|
-| Q1 | 메인 미스터리의 답 = "정원사의 등불·푸른 불씨" 설정 채택 여부 | [story-bible.md](./story-bible.md) §1~2 |
-| Q2 | 챕터 제목 5종 + 용어(첫 개척단·첫 정원·뜰지기) 채택 여부 | [story-bible.md](./story-bible.md) §3·§5 |
+| Q1 | 메인 미스터리의 답 = "정원사의 등불·푸른 불씨" 설정 채택 여부 — 🧭 2026-09-26 메모: story-bible §1(⚖️ 2026-08-19)이 이미 이 설정을 확정 표기하고 있어 챕터 3~5 대사도 그 기준으로 썼다. 제작자가 이 행을 닫아 주면 된다 | [story-bible.md](./story-bible.md) §1~2 |
+| Q2 | 챕터 제목 5종 + 용어(첫 개척단·첫 정원·뜰지기) 채택 여부 — 🧭 2026-09-26 메모: 챕터 제목은 story-bible §3(⚖️ 2026-09-22)에 확정 표기. 대사에서는 "뜰지기"를 쓰지 않았다 | [story-bible.md](./story-bible.md) §3·§5 |
 | Q3 | ⚖️ **확정 (2026-08-14)**: 주민 4인 NpcId 및 역할 = `researcher`(연구원 엘렌) · `vendor`(노점상 마리) · `blacksmith`(대장장이 로체) · `barnkeeper`(헛간지기 토리) | [npc-cast.md](./npc-cast.md) §2 |
 | Q4 | hunt04 표시명 "보스 사냥터" → "첫 정원" — **2026-09-10 변경 확정** | [hunting-grounds-plan.md](./hunting-grounds-plan.md) §2.4 |
 | Q5 | ~~구역별 스토리 픽스처~~ — **2026-09-10 해소: (b) 구역별 전용 맵 채택.** 공용 이정표 포함 랜드마크 9종 철거 | [hunting-grounds-plan.md](./hunting-grounds-plan.md) §0 |
-| Q6 | 챕터 완주 보상 가구 「정원의 등불」 신설 여부 (아이템+모델 비용) | [quest-design.md](./quest-design.md) §4.5 |
-| Q7 | 다음 구역 개방을 퀘스트 보상(RewardPortalId)으로 줄지, 도보 도달만 둘지 | [quest-design.md](./quest-design.md) §2.3 |
-| Q8 | 메인 빌런 이름 선택 — 먹그늘 / 어스름 / 어둑서니 (확정 전 대사에 이름 사용 금지) | [story-bible.md](./story-bible.md) §2-B |
+| Q6 | ⚖️ **확정 (2026-09-26): 만든다** — 챕터 완주 보상 가구 「정원의 등불」 신설 (아이템+모델). ✅ 반영 2026-09-26 (246 보상 → 247 설치) | [quest-design.md](./quest-design.md) §4.5 |
+| Q7 | 다음 구역 개방을 퀘스트 보상(RewardPortalId)으로 줄지, 도보 도달만 둘지 — 🧭 2026-09-26 메모: quest-design §2.3(⚖️ 2026-09-22)이 "관문 보스 격파 시 웨이포인트 해금"으로 정해 두어 챕터 3~5 는 그 방식을 따랐다 | [quest-design.md](./quest-design.md) §2.3 |
+| Q8 | ⚖️ **확정 (2026-09-26): 「먹그늘」** — 대사·문서 표기 통일. 어스름/어둑서니 폐기 | [story-bible.md](./story-bible.md) §2-B |
 | Q9 | 몬스터 드롭·연구 라인업 — **Slime Jelly + research_gloom_sample 1차 투입** (2026-08-15). 가죽·갓·그늘 조각 대기 | [quest-design.md](./quest-design.md) §4.6 |
 
 ## 5. 관련 문서 (폴더 밖)

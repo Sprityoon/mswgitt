@@ -334,15 +334,23 @@ script PlayerQuest extends Component
 		end
 		self:MarkSaveDirty()
 		
-		-- 전직 시험 퀘스트(302, 312, 322, 332) 수락 시 다른 전직 시험 퀘스트는 자동 포기(Abandon) 처리
-		local jobExamIds = { [302] = true, [312] = true, [322] = true, [332] = true }
+		-- 전직 시험(보상으로 직업을 주는 퀘스트 = QuestDataSet.RewardJobId) 수락 시 진행 중인 다른 전직 시험은 자동 포기(Abandon).
+		-- 2026-09-26: 하드코딩 목록(302/312/322/332)이 히든 직업 342 를 빠뜨려 데이터 기준 판정으로 교체.
+		local function isJobExam(qid)
+			local qd = _QuestDataSetLogic:GetData(qid)
+			return qd ~= nil and qd.RewardJobId ~= nil and qd.RewardJobId ~= ""
+		end
 		local syncTable = {}
 		for k, v in pairs(acceptUserDataTable) do syncTable[k] = v end
 
 		for acceptedId, _ in pairs(acceptUserDataTable) do
-			if jobExamIds[acceptedId] == true then
-				for otherExamId, _ in pairs(jobExamIds) do
-					if otherExamId ~= acceptedId and progressingIdTable[otherExamId] == true then
+			if isJobExam(acceptedId) then
+				local others = {}
+				for pid, on in pairs(progressingIdTable) do
+					if on == true and pid ~= acceptedId and isJobExam(pid) then others[#others + 1] = pid end
+				end
+				for _, otherExamId in ipairs(others) do
+					do
 						local otherUserData = self.UserDataTable[otherExamId]
 						if otherUserData ~= nil and otherUserData.State == _QuestStateEnum.InProgress then
 							otherUserData:Abandon(elapsed)

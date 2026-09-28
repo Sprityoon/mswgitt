@@ -24,6 +24,12 @@ script MonsterAI extends Component
 	property number StopDistance = 0.8
 	-- 추적 로직 개선: 스폰 기준 리쉬 거리를 넉넉히 잡아 추적이 너무 쉽게 끊기지 않도록 한다.
 	property number LeashRange = 15.0
+	-- 전투 추적 한계 = LeashRange × 이 배율. 교전 중에는 기본 반경을 넘어 여기까지 따라간다.
+	-- 이 한계를 넘는 순간 강제 귀환 — 감지·피격 어그로를 전부 무시하고 기본 반경 안쪽까지 돌아온다.
+	-- (기본 반경 한 선에서 추적/귀환이 동시에 갈리면 경계에서 제자리 진동이 생긴다 — 2026-09-25 제작자 제보)
+	property number CombatLeashMultiplier = 1.5
+	-- 강제 귀환 해제 지점 = LeashRange × 이 비율(스폰 기준). 여기까지 들어와야 다시 교전한다.
+	property number ForcedReturnResumeRatio = 0.5
 	-- 공격 준비(주황 틴트) 대기 시간. 몹별 모델 프로퍼티로 다르게 둘 수 있다.
 	property number AttackWindup = 0.5
 	property number AttackCooldown = 1.5
@@ -153,6 +159,8 @@ script MonsterAI extends Component
 	@HideFromInspector property number KnockTimer = 0
 	@HideFromInspector property Vector2 KnockVel = Vector2(0, 0)
 	@HideFromInspector property number AggroGraceTimer = 0
+	-- 전투 추적 한계를 넘어 강제 귀환 중인지. STAND 진입 또는 해제 지점 도달 시 풀린다.
+	@HideFromInspector property boolean ForcedReturn = false
 	@HideFromInspector property number TouchCooldownTimer = 0
 	@HideFromInspector property boolean AttackStrikePending = false
 	-- LEAP 단계("WINDUP" | "FLY" 스캔 위치 점프 | "HANG" 공중 체공 | "SLAM" 수직 내려찍기)
@@ -168,6 +176,12 @@ script MonsterAI extends Component
 	@HideFromInspector property number SpawnGraceTimer = 0
 	-- 플레이어를 처음 감지한 뒤에만 쿨/유예를 깎는다(맵 선스폰 보스 대응).
 	@HideFromInspector property boolean EngagementStarted = false
+
+	-- 빈 맵 휴면: 이 주기(초)마다 맵에 플레이어가 있는지 확인하고, 없으면 AI 를 멈춘다.
+	-- 사냥터 12구역이 상시 상주하므로 아무도 없는 맵의 몬스터가 매 프레임 AI 를 돌리지 않게 한다.
+	@HideFromInspector property number DormantCheckInterval = 0.5
+	@HideFromInspector property number DormantCheckTimer = 0
+	@HideFromInspector property boolean IsDormant = false
 
 	@ExecSpace("ServerOnly")
 	method void OnBeginPlay()
@@ -241,6 +255,8 @@ script MonsterAI extends Component
 	@ExecSpace("ServerOnly")
 	method void OnUpdate(number delta)
 		-- Drives the monster: death > attack-window > leash/return > chase/attack > wander.
+		-- 최근접 플레이어는 프레임당 1회만 계산한다(접촉 틱·본 로직·패턴이 공유).
+		self._T.nearestFresh = false
 		local monster = self:GetMonster()
 		if isvalid(monster) and monster.IsDead then
 			if not self.DeathPlayed then
@@ -259,6 +275,11 @@ script MonsterAI extends Component
 			return
 		end
 		if self.DeathPlayed then self.DeathPlayed = false end
+
+		if self:TickDormancy(delta) then
+			return
+		end
+
 		-- Boss phases remain uninterrupted; boss hard control is converted to a brief slow.
 		if isvalid(monster) and monster:GetSkillStatus("Stun") ~= nil and self.CurrentAIState ~= "LEAP" and self.CurrentAIState ~= "PATTERN" then
 			self:StopMovement()
@@ -376,13 +397,42 @@ script MonsterAI extends Component
 		end
 		local distSpawnSq = self:DistSq(myPos, self.SpawnPos)
 		local beyondLeash = distSpawnSq > self.LeashRange * self.LeashRange
+		local combatMul = self.CombatLeashMultiplier
+		if combatMul < 1 then combatMul = 1 end
+		local combatLeash = self.LeashRange * combatMul
+		local beyondCombatLeash = distSpawnSq > combatLeash * combatLeash
 		local aggroActive = self.AggroGraceTimer > 0
 		local playerDetected = hasTarget and dSq <= self.DetectRange * self.DetectRange
 		local atkRangeSq = self.AttackRange * self.AttackRange
 		local stopSq = self.StopDistance * self.StopDistance
 
-		-- RETURN: 스폰으로 복귀하되, 복귀 도중이라도 (리쉬 안쪽에서 플레이어를 다시 감지)하거나
-		-- (방금 피격당해 어그로 유예가 살아있으면) 즉시 추적으로 전환해 무시하지 않도록 한다.
+		-- 반경 3단 구조 (경계 진동 방지 — 판정마다 기준선이 달라 한 선에서 추적/귀환이 뒤집히지 않는다):
+		--   ① LeashRange        : 평시 영역. 귀환 중 재교전은 이 안쪽에서만.
+		--   ② combatLeash       : 교전 중 추적 한계 (LeashRange × CombatLeashMultiplier).
+		--   ③ ②를 넘으면 강제 귀환 : 감지·어그로 무시, LeashRange × ForcedReturnResumeRatio 까지 복귀.
+		if beyondCombatLeash and not self.ForcedReturn then
+			self.ForcedReturn = true
+			self.AggroGraceTimer = 0
+			self:EnterState("RETURN")
+			log("[MONSTER] " .. tostring(self.Entity.Name) .. " forced return (combat leash " .. tostring(combatLeash) .. ")")
+		end
+
+		if self.ForcedReturn then
+			local resume = self.LeashRange * self.ForcedReturnResumeRatio
+			if distSpawnSq <= resume * resume then
+				-- 해제 지점 도달 — 남은 거리는 일반 귀환으로 이어간다(여기서부터는 재교전 가능).
+				self.ForcedReturn = false
+				self.AggroGraceTimer = 0
+				log("[MONSTER] " .. tostring(self.Entity.Name) .. " forced return released")
+			else
+				if self.CurrentAIState ~= "RETURN" then self:EnterState("RETURN") end
+				self:MoveTowardScaled(self.SpawnPos, delta, self.ReturnSpeedMultiplier)
+				return
+			end
+		end
+
+		-- RETURN(일반 귀환): 기본 반경 안쪽에서 플레이어를 다시 감지했거나, 방금 피격당해 어그로 유예가
+		-- 살아 있으면 추적으로 전환한다. 전투 한계는 위의 강제 귀환이 막는다.
 		if self.CurrentAIState == "RETURN" then
 			if (playerDetected and not beyondLeash) or (aggroActive and hasTarget) then
 				self:EnterState("CHASE")
@@ -396,9 +446,10 @@ script MonsterAI extends Component
 			end
 		end
 
-		-- Leash: 스폰에서 LeashRange 이상 벗어났고, 어그로 유예도 없을 때만 귀환을 시작한다.
-		-- (피격 직후에는 리쉬를 보류해 끝까지 추적/반격한다.)
-		if beyondLeash and not aggroActive then
+		-- Leash: 기본 반경 밖이면 귀환하되, 교전 중(추적 상태에서 타겟을 감지 중이거나 어그로 유예)이면
+		-- 전투 한계까지는 계속 따라간다. 배회·타겟 상실로 밖에 나간 경우만 여기서 귀환한다.
+		local engaged = hasTarget and (aggroActive or (self.CurrentAIState == "CHASE" and playerDetected))
+		if beyondLeash and not engaged then
 			self:EnterState("RETURN")
 			self:MoveTowardScaled(self.SpawnPos, delta, self.ReturnSpeedMultiplier)
 			return
@@ -419,6 +470,9 @@ script MonsterAI extends Component
 					if isvalid(bp) and bp:HasPatterns() then
 						patternRow = bp:PickNext()
 						if patternRow ~= nil then kind = patternRow.pattern end
+					end
+					if kind == "CHARGE" or kind == "LEAP" then
+						self:PrepareDelegatedPattern(bp, patternRow)
 					end
 					if kind == "CHARGE" then
 						self:EnterState("CHARGE")
@@ -616,6 +670,9 @@ script MonsterAI extends Component
 		-- 반드시 회수한다. LEAP 진입 시에는 SpawnTelegraphMarker 가 먼저 정리하므로 중복이 없다.
 		if newState ~= "LEAP" then
 			self:ClearTelegraphMarker()
+			-- 도약을 벗어나는 모든 경로(스턴·리쉬·강제 귀환 등)에서 남은 연속 점프를 버린다.
+			self._T.leapChainLeft = 0
+			self._T.leapWindupOverride = nil
 		end
 		-- PATTERN 을 떠나는 모든 경로(종료·리쉬·스턴 등)에서 남은 패턴 타격·장판을 회수한다.
 		if self.CurrentAIState == "PATTERN" and newState ~= "PATTERN" then
@@ -624,6 +681,7 @@ script MonsterAI extends Component
 		end
 		self.CurrentAIState = newState
 		if newState == "STAND" then
+			self.ForcedReturn = false
 			self.TelegraphOn = false
 			self.AttackStrikePending = false
 			self.StateTimer = self.StandMin + _UtilLogic:RandomDouble() * (self.StandMax - self.StandMin)
@@ -665,8 +723,14 @@ script MonsterAI extends Component
 			-- 순간에 좌표가 확정된다. 그래야 "예고를 보고 반응"해야 피할 수 있다 —
 			-- 예고 시작에 고정하면 예고 전체가 회피 시간이라 걷기만 해도 빠져나간다.
 			self.LeapPhase = "WINDUP"
-			self.LeapPhaseDuration = self.AttackWindup
-			self.StateTimer = self.AttackWindup
+			-- 연속 점프의 두 번째 이후는 짧은 예고(leapWindupOverride)로 이어 뛴다. 1회 소비.
+			local leapWindup = self.AttackWindup
+			if self._T.leapWindupOverride ~= nil then
+				leapWindup = self._T.leapWindupOverride
+				self._T.leapWindupOverride = nil
+			end
+			self.LeapPhaseDuration = leapWindup
+			self.StateTimer = leapWindup
 			self.LeapLocked = false
 			self.LeapStartPos = self:Pos2D()
 			self.LeapTargetPos = self:ResolveLeapTarget(self.LeapStartPos)
@@ -788,10 +852,42 @@ script MonsterAI extends Component
 
 	@ExecSpace("ServerOnly")
 	method void EndCharge()
-		-- 돌진 종료: 완전 정지 + 회복 쿨 시작(다음 CHARGE까지 AttackCooldown 대기).
+		-- 돌진 종료: 완전 정지 + 회복 쿨 시작(보스 패턴 행 Cooldown 이 있으면 그 값, 없으면 AttackCooldown).
 		self:StopMovement()
-		self.AttackCooldownTimer = self.AttackCooldown
+		self.AttackCooldownTimer = self:ConsumeDelegatedCooldown()
 		self:EnterState("STAND")
+	end
+
+	@ExecSpace("ServerOnly")
+	method void PrepareDelegatedPattern(any bp, any row)
+		-- 보스 패턴 행이 LEAP/CHARGE 를 고른 경우, 행 데이터 중 MonsterAI 가 쓸 값만 챙겨 둔다.
+		--   Cooldown   → 이 행이 끝난 뒤 후딜(난이도 배율 적용)
+		--   Count ≥ 2  → (LEAP) 연속 점프 찍기 횟수. Interval = 두 번째 점프부터의 예고 시간(난이도 반응 배율 적용)
+		self._T.delegatedCooldown = nil
+		self._T.leapChainLeft = 0
+		self._T.leapHopWindup = nil
+		if row == nil then return end
+		if row.cooldown ~= nil and row.cooldown > 0 then
+			local cd = row.cooldown
+			if bp ~= nil then cd = bp:ScaleCooldown(cd) end
+			self._T.delegatedCooldown = cd
+		end
+		if row.pattern == "LEAP" and row.count ~= nil and row.count > 1 then
+			self._T.leapChainLeft = row.count - 1
+			local hop = row.interval or 0.5
+			if bp ~= nil then hop = hop * bp.WindupScale end
+			if hop < 0.25 then hop = 0.25 end
+			self._T.leapHopWindup = hop
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method number ConsumeDelegatedCooldown()
+		-- 위임 패턴 후딜을 한 번 꺼내 쓰고 비운다. 없으면 모델 AttackCooldown.
+		local cd = self._T.delegatedCooldown
+		self._T.delegatedCooldown = nil
+		if cd ~= nil and cd > 0 then return cd end
+		return self.AttackCooldown
 	end
 
 	@ExecSpace("ServerOnly")
@@ -1004,7 +1100,26 @@ script MonsterAI extends Component
 		end
 		self:MulticastImpactFX(Vector3(landing.x, landing.y, 0), self.SlamRadius)
 
-		self.AttackCooldownTimer = self.AttackCooldown
+		-- 연속 점프 찍기: 남은 횟수가 있고 표적이 감지 범위 안이면 짧은 예고로 곧바로 다시 뛴다.
+		local chainLeft = self._T.leapChainLeft or 0
+		if chainLeft > 0 then
+			local target = self:FindNearestPlayer()
+			local inRange = false
+			if isvalid(target) then
+				local d = self:DistSq(self:Pos2D(), self:EntityPos2D(target))
+				inRange = d <= self.DetectRange * self.DetectRange
+			end
+			if inRange then
+				self._T.leapChainLeft = chainLeft - 1
+				self._T.leapWindupOverride = self._T.leapHopWindup
+				log("[BOSS][LEAP] chain hop — " .. tostring(chainLeft - 1) .. " left")
+				self:EnterState("LEAP")
+				return
+			end
+		end
+		self._T.leapChainLeft = 0
+
+		self.AttackCooldownTimer = self:ConsumeDelegatedCooldown()
 		self:EnterState("STAND")
 	end
 
@@ -1641,8 +1756,52 @@ script MonsterAI extends Component
 	end
 
 	@ExecSpace("ServerOnly")
+	method boolean TickDormancy(number delta)
+		-- 빈 맵 휴면 판정. true 를 반환하면 이번 프레임 AI 를 건너뛴다.
+		-- 공격·돌진·도약·패턴·넉백처럼 진행 중인 창은 끝까지 돌린 뒤에만 잠든다(상태 꼬임 방지).
+		self.DormantCheckTimer = self.DormantCheckTimer - delta
+		if self.DormantCheckTimer <= 0 then
+			self.DormantCheckTimer = self.DormantCheckInterval
+			local hasPlayer = false
+			local map = self.Entity.CurrentMap
+			if isvalid(map) and isvalid(map.MapComponent) then
+				local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+				if users ~= nil then
+					for _, u in ipairs(users) do
+						if isvalid(u) then
+							hasPlayer = true
+							break
+						end
+					end
+				end
+			end
+
+			if hasPlayer then
+				if self.IsDormant then
+					self.IsDormant = false
+					log("[MONSTER] wake " .. tostring(self.Entity.Name))
+				end
+			elseif not self.IsDormant then
+				local s = self.CurrentAIState
+				local idle = s == "STAND" or s == "WANDER" or s == "CHASE" or s == "RETURN"
+				if idle and self.KnockTimer <= 0 then
+					self.IsDormant = true
+					self:EnterState("STAND")
+				end
+			end
+		end
+		return self.IsDormant
+	end
+
+	@ExecSpace("ServerOnly")
 	method Entity FindNearestPlayer()
 		-- Returns the nearest player entity on this map, or nil if none.
+		-- OnUpdate 가 프레임마다 _T.nearestFresh 를 내리고, 같은 프레임의 재호출은 캐시를 돌려준다.
+		if self._T.nearestFresh == true then
+			return self._T.nearest
+		end
+		self._T.nearestFresh = true
+		self._T.nearest = nil
 		local map = self.Entity.CurrentMap
 		if not isvalid(map) then return nil end
 		local mapComp = map.MapComponent
@@ -1663,31 +1822,46 @@ script MonsterAI extends Component
 				end
 			end
 		end
+		self._T.nearest = best
 		return best
 	end
 
 	@ExecSpace("ServerOnly")
 	method Monster GetMonster()
-		-- The sibling HP component.
+		-- The sibling HP component. 모델에 고정된 형제 컴포넌트라 1회 조회 후 캐시한다.
+		local m = self._T.monsterComp
+		if not isvalid(m) then
+			m = self.Entity:GetComponent("script.Monster")
+			self._T.monsterComp = m
+		end
 		---@type Monster
-		local m = self.Entity:GetComponent("script.Monster")
-		return m
+		local typed = m
+		return typed
 	end
 
 	@ExecSpace("ServerOnly")
 	method BossPatternController GetBossPatterns()
-		-- 보스 다중 패턴 컴포넌트(보스 모델에만 있음). 일반 몬스터는 nil.
+		-- 보스 다중 패턴 컴포넌트(보스 모델에만 있음). 일반 몬스터는 nil — 없다는 결과도 캐시한다.
+		if self._T.bossPatternsResolved ~= true then
+			self._T.bossPatternsResolved = true
+			self._T.bossPatterns = self.Entity:GetComponent("script.BossPatternController")
+		end
 		---@type BossPatternController
-		local bp = self.Entity:GetComponent("script.BossPatternController")
+		local bp = self._T.bossPatterns
 		return bp
 	end
 
 	@ExecSpace("ServerOnly")
 	method MonsterMeleeAttack GetAttack()
-		-- The sibling attack component.
+		-- The sibling attack component. 1회 조회 후 캐시한다.
+		local a = self._T.attackComp
+		if not isvalid(a) then
+			a = self.Entity:GetComponent("script.MonsterMeleeAttack")
+			self._T.attackComp = a
+		end
 		---@type MonsterMeleeAttack
-		local a = self.Entity:GetComponent("script.MonsterMeleeAttack")
-		return a
+		local typed = a
+		return typed
 	end
 
 end

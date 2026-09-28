@@ -35,6 +35,12 @@ script itemreact extends Component
 	-- 소유자가 줍지 않고 떠났을 때 아이템이 바닥에 영원히 잠기는 것을 막는 안전장치다.
 	property number OwnerLockUntil = 0.0
 
+	-- 펫 목록 갱신 주기(초). 펫 조회는 맵 자식 순회라 매 프레임 돌리면 드롭 수 × 맵 엔티티 수만큼
+	-- 서버 프레임을 잡아먹는다 — 플레이어 판정·흡입 이동은 매 프레임 유지한다.
+	property number ScanInterval = 0.25
+
+	property number ScanTimer = 0.0
+
 	@ExecSpace("ServerOnly")
 	method void SetPickupGrace(number seconds)
 		-- Suppresses magnet pickup for the given seconds (used by discard-drop so the dropper
@@ -73,6 +79,8 @@ script itemreact extends Component
 			self.TargetGroundPosition = self.BasePosition
 			self.ElapsedTime = math.random() * 10 -- Randomize start phase for sine wave float
 			self.IsCollected = false
+			-- 한꺼번에 떨어진 드롭들의 탐색 프레임을 흩어 놓는다.
+			self.ScanTimer = math.random() * self.ScanInterval
 		end
 	end
 
@@ -160,6 +168,15 @@ script itemreact extends Component
 			return
 		end
 
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return end
+		local mapComp = map.MapComponent
+		if not isvalid(mapComp) then return end
+		local users = _UserService:GetUsersByMapComponent(mapComp)
+		-- 맵에 아무도 없으면 볼 사람도 주울 사람도 없다 — 부유 연출 좌표 쓰기(=Transform 동기화)까지 건너뛴다.
+		-- 펫 자석도 소유자가 같은 맵에 있어야 하므로 여기서 함께 끝난다.
+		if users == nil or #users == 0 then return end
+
 		-- 2. Apply floating visual offset (sine wave) after landing
 		local floatOffset = math.sin(self.ElapsedTime * 3.0) * 0.15
 		transform.WorldPosition = Vector3(self.BasePosition.x, self.BasePosition.y + floatOffset, self.BasePosition.z)
@@ -170,37 +187,69 @@ script itemreact extends Component
 		end
 
 		-- 3. Detect nearby players (or their pets — T23) for pickup. PickupGrace already enforced above.
-		local mapComp = self.Entity.CurrentMap.MapComponent
-		if not isvalid(mapComp) then return end
+		--    플레이어 판정은 매 프레임(반응성 유지), 비용이 큰 펫 목록 조회만 ScanInterval 주기로 갱신한다.
+		self.ScanTimer = self.ScanTimer - delta
+		if self.ScanTimer <= 0 then
+			self.ScanTimer = self.ScanInterval
+			self._T.pets = map:GetChildComponentsByTypeName("script.Pet", false)
+		end
+		self:FindMagnetTarget(map, users)
 
-		local users = _UserService:GetUsersByMapComponent(mapComp)
-		if not users then return end
-		
-		local closestPlayer = nil
-		local magnetPos = nil
+		-- 4. Magnet Pull and Pickup
+		local closestPlayer = self._T.magnetPlayer
+		local magnetSource = self._T.magnetSource
+		if not isvalid(closestPlayer) or not isvalid(magnetSource) then return end
+
+		local magnetPos = magnetSource.TransformComponent.WorldPosition
+		local dx = magnetPos.x - transform.WorldPosition.x
+		local dy = magnetPos.y - transform.WorldPosition.y
+		local dist = math.sqrt(dx * dx + dy * dy)
+		if dist > 0.01 then
+			local dirX = dx / dist
+			local dirY = dy / dist
+			self.BasePosition = self.BasePosition + Vector3(dirX, dirY, 0) * delta * 12.0
+		end
+
+		local baseDist = Vector2.Distance(Vector2(self.BasePosition.x, self.BasePosition.y), Vector2(magnetPos.x, magnetPos.y))
+		if baseDist < 0.8 then
+			self.IsCollected = true
+			self:Collect(closestPlayer)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void FindMagnetTarget(Entity map, table users)
+		-- 자석 대상 탐색: 가장 가까운 줍기 가능 플레이어(3.2) 또는 그 플레이어의 펫(PickupRange).
+		-- 결과는 _T.magnetPlayer(획득자) / _T.magnetSource(끌려갈 위치의 엔티티)에 둔다.
+		-- 펫 목록은 OnUpdate 가 ScanInterval 주기로 갱신한 _T.pets 캐시를 쓴다.
+		self._T.magnetPlayer = nil
+		self._T.magnetSource = nil
+
+		local basePos = Vector2(self.BasePosition.x, self.BasePosition.y)
 		local minDistance = 3.2 -- player magnet range (3.2 units)
-		
+
 		for _, user in ipairs(users) do
 			-- 소유권이 걸린 드롭은 소유자에게만 자석이 걸린다. 남이 잡은 몹의 전리품을 지나가다 빨아가지 못한다.
 			if isvalid(user) and self:CanPickup(user) then
 				local playerPos = user.TransformComponent.WorldPosition
-				local dist = Vector2.Distance(Vector2(self.BasePosition.x, self.BasePosition.y), Vector2(playerPos.x, playerPos.y))
+				local dist = Vector2.Distance(basePos, Vector2(playerPos.x, playerPos.y))
 				if dist < minDistance then
-					closestPlayer = user
-					magnetPos = playerPos
+					self._T.magnetPlayer = user
+					self._T.magnetSource = user
 					minDistance = dist
 				end
 			end
 		end
 
 		-- T23: 펫 위치 기준 자석 — 소유 플레이어에게 Collect. PickupGrace·소유권 규칙 유지.
-		local pets = self.Entity.CurrentMap:GetChildComponentsByTypeName("script.Pet", true)
+		-- 펫은 소환(PlayerInventory)·워프(Pet.WarpToOwner) 모두 맵 직속 자식으로 스폰되므로 재귀 탐색하지 않는다.
+		local pets = self._T.pets
 		if pets ~= nil then
 			for _, pet in ipairs(pets) do
 				if isvalid(pet) and isvalid(pet.Entity) then
 					local range = tonumber(pet.PickupRange) or 3.5
 					local petPos = pet.Entity.TransformComponent.WorldPosition
-					local dist = Vector2.Distance(Vector2(self.BasePosition.x, self.BasePosition.y), Vector2(petPos.x, petPos.y))
+					local dist = Vector2.Distance(basePos, Vector2(petPos.x, petPos.y))
 					if dist < range and dist < minDistance then
 						local ownerId = pet.OwnerUserId or ""
 						local owner = nil
@@ -208,30 +257,13 @@ script itemreact extends Component
 							owner = _UserService:GetUserEntityByUserId(ownerId)
 						end
 						-- 펫도 같은 소유권 규칙을 탄다 — 타인의 펫이 대신 훔쳐가지 못한다.
-						if isvalid(owner) and owner.CurrentMap == self.Entity.CurrentMap and self:CanPickup(owner) then
-							closestPlayer = owner
-							magnetPos = petPos
+						if isvalid(owner) and owner.CurrentMap == map and self:CanPickup(owner) then
+							self._T.magnetPlayer = owner
+							self._T.magnetSource = pet.Entity
 							minDistance = dist
 						end
 					end
 				end
-			end
-		end
-		
-		-- 4. Magnet Pull and Pickup
-		if closestPlayer and magnetPos ~= nil then
-			local dx = magnetPos.x - transform.WorldPosition.x
-			local dy = magnetPos.y - transform.WorldPosition.y
-			local dist = math.sqrt(dx * dx + dy * dy)
-			if dist > 0.01 then
-				local dirX = dx / dist
-				local dirY = dy / dist
-				self.BasePosition = self.BasePosition + Vector3(dirX, dirY, 0) * delta * 12.0
-			end
-		
-			if minDistance < 0.8 then
-				self.IsCollected = true
-				self:Collect(closestPlayer)
 			end
 		end
 	end

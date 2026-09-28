@@ -10,7 +10,7 @@ script TestModeConfig extends Logic
 	-- =========================================================================
 
 	-- [스위치] 테스트 모드 활성화 여부
-	property boolean EnableTestMode = false
+	property boolean EnableTestMode = true
 
 	-- [목표 맵] 진입할 맵 식별자 (대소문자 무관)
 	--   - "town"           : 마을 광장 (기본 좌표 10, -2)
@@ -23,6 +23,11 @@ script TestModeConfig extends Logic
 	-- ⚠️ 상시 공유 보스 아레나(hunt04)는 철거됐다. 보스전은 F5(레이드 대기실)로 들어간다 —
 	--    대기실·보스방은 요청 시 생성되는 인스턴스라 TargetMap 으로 직접 지정할 수 없다.
 	property string TargetMap = "template_field"
+
+	-- [포탈 전체 해금] 테스트 모드일 때 모든 웨이포인트(사냥터 워프 목록·체인 포탈)와 보스 대기실을 열린 것으로 본다.
+	--   PlayerController:IsWaypointUnlocked 한 곳에서만 우회한다 — 세이브의 해금 기록(UnlockedWaypointsJson)은 건드리지 않는다.
+	--   보스방 입장 레벨(BossContentsDataSet.RequiredLevel·난이도 EntryLevel)은 그대로다 — F7 레벨업으로 맞출 것.
+	property boolean UnlockAllPortals = true
 
 	-- [테스트 슬롯] 테스트에 사용할 세이브 슬롯 (1~5)
 	property integer TestSlot = 1
@@ -184,7 +189,18 @@ script TestModeConfig extends Logic
 		local lp = _UserService.LocalPlayer
 		if not isvalid(lp) then return end
 		log("[TESTMODE] raid lobby request boss=" .. self.TestRaidBossId)
-		self:ServerEnterTestLobby(self.TestRaidBossId, lp)
+		local bossId = self.TestRaidBossId
+		local request = function()
+			self:ServerEnterTestLobby(bossId, lp)
+		end
+		local pcComp = lp:GetComponent("script.PlayerController")
+		if isvalid(pcComp) then
+			---@type PlayerController
+			local c = pcComp
+			c:ClientWarpWithCover(request)
+		else
+			request()
+		end
 	end
 
 	@ExecSpace("Server")

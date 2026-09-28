@@ -108,7 +108,11 @@ script Animal extends Component
 	@ExecSpace("ServerOnly")
 	method void OnUpdate(number delta)
 		-- 배회 + 생산 타이머(1초 폴링, 오프라인 환산은 타임스탬프).
-		self:TickWander(delta)
+		-- 영지는 소유자가 떠나도 파괴되지 않고 상주하므로(2026-09-25), 맵이 비면 배회만 멈춘다.
+		-- 생산은 타임스탬프 기반이라 그대로 굴린다.
+		if self:IsMapOccupied(delta) then
+			self:TickWander(delta)
+		end
 		self.produceTickAccum = self.produceTickAccum + delta
 		if self.produceTickAccum >= 1.0 then
 			self.produceTickAccum = 0.0
@@ -244,6 +248,34 @@ script Animal extends Component
 			-- 리소스는 왼쪽 향해 제작 → 오른쪽 이동 시 FlipX=true. (반대로 걸면 뒷걸음질처럼 보임)
 			spr.FlipX = dir.x > 0
 		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsMapOccupied(number delta)
+		-- 0.5초마다 맵에 유저가 있는지 확인한다. 비는 순간 정지 상태로 전환(STAND + 이동 정지).
+		local t = (self._T.occupancyTimer or 0) - delta
+		if t <= 0 then
+			t = 0.5
+			local occupied = false
+			local map = self.Entity.CurrentMap
+			if isvalid(map) and isvalid(map.MapComponent) then
+				local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+				if users ~= nil then
+					for _, u in ipairs(users) do
+						if isvalid(u) then
+							occupied = true
+							break
+						end
+					end
+				end
+			end
+			if not occupied and self._T.occupied ~= false then
+				self:EnterState("STAND")
+			end
+			self._T.occupied = occupied
+		end
+		self._T.occupancyTimer = t
+		return self._T.occupied == true
 	end
 
 	@ExecSpace("ServerOnly")

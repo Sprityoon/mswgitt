@@ -3,3 +3,13 @@ gather_boost_small,가벼운 집중,GatherSpeed,mult,1.25,60,f0bce7f800f140559f3
 move_boost_small,가벼운 발걸음,MoveSpeed,mult,1.15,45,f0bce7f800f140559f35a12a93de9c9e,refresh
 gather_boost_big,강한 집중,GatherSpeed,mult,1.5,120,f0bce7f800f140559f35a12a93de9c9e,refresh
 atk_boost_small,가벼운 투지,AttackPower,mult,1.25,60,1b1ccb37d5de4ae5837fad85c54a8e58,refresh
+frost_slow,빙결 둔화,MoveSpeed,mult,0.55,3,086cb115636d4aaa91de07559b28c374,refresh
+snow_field_slow,눈더미 둔화,MoveSpeed,mult,0.6,2,086cb115636d4aaa91de07559b28c374,refresh
+fist_shout_atk,기합: 공격력,AttackPct,add,0.15,12,fc799caaec864d98955815cdab4e33d1,refresh
+fist_shout_move,기합: 이동 속도,MoveSpeed,mult,1.15,12,fc799caaec864d98955815cdab4e33d1,refresh
+fist_shout_speed,기합: 공격 속도,GatherSpeed,mult,1.15,12,fc799caaec864d98955815cdab4e33d1,refresh
+fist_aura_follow,오라 피스트: 추가타,FollowUpHit,add,0.6,12,51d21754397c424c88e1a562ce2b3962,refresh
+fist_aura_stamina,오라 피스트: 기력 흡수,HitStaminaGain,add,5,12,51d21754397c424c88e1a562ce2b3962,refresh
+fist_iron_armor,강철 피부: 슈퍼아머,SuperArmor,add,1,8,52162587bc534b9385af8c77513d93d4,refresh
+fist_step_empower,인파이트 스텝: 강타 준비,NextHitBonus,add,0.5,3,5e32ce05d92b456a8b3c6e25b42d8b7a,refresh
+fist_second_wind_armor,불굴의 투혼: 슈퍼아머,SuperArmor,add,1,4,d1608479766c4b2592825d3cb2f4c072,refresh

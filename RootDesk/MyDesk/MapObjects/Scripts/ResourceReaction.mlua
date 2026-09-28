@@ -54,7 +54,10 @@ script ResourceReaction extends Component
 		self.RefusalShakeTime = 0.25
 	end
 
+	@ExecSpace("ClientOnly")
 	method void OnUpdate(number delta)
+		-- 가림 반투명·피격 흔들림은 전부 클라 연출이다(PlayShake/PlayRefusalShake 는 Client RPC 라
+		-- 서버의 ShakeTime 은 항상 0). ClientOnly 로 두어 서버가 자원마다 매 프레임 호출하지 않게 한다.
 		-- Handle Player Alpha Occlusion (Alternative D)
 		if self:IsClient() then
 			local localPlayer = _UserService.LocalPlayer

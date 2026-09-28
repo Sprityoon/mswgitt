@@ -365,8 +365,19 @@ script UIBossContentsController extends Component
 			return
 		end
 		log("[RAID-UI] lobby warp request boss=" .. boss.bossId)
-		_BossRaidLogic:RequestEnterLobby(boss.bossId, lp)
 		self:Close()
+		-- 포탈과 같은 전환 연출: 커버를 먼저 덮은 뒤 워프를 요청한다(거절되면 서버가 커버를 걷는다).
+		local bossId = boss.bossId
+		local request = function()
+			_BossRaidLogic:RequestEnterLobby(bossId, lp)
+		end
+		if pc ~= nil then
+			---@type PlayerController
+			local c = pc
+			c:ClientWarpWithCover(request)
+		else
+			request()
+		end
 	end
 
 end

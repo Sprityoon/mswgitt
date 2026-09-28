@@ -477,10 +477,22 @@ script UISkillTreeController extends Component
 		local iconRuid = row:GetItem("IconRUID") or ""
 		local level = 0
 		local pc = self:GetLocalPlayerController()
+		-- 직업 변형 행: 이름·설명·피해 줄은 변형 행, 레벨·선행·해금은 원본 행.
+		local infoRow = row
 		if pc ~= nil then
 			---@type PlayerController
 			local controller = pc
 			level = controller:GetSkillLevel(sid)
+			local variantRow = controller:GetJobVariantRow(sid)
+			if variantRow ~= nil then
+				infoRow = variantRow
+				local vn = controller:SkillText(variantRow, "Name")
+				if vn ~= "" then name = vn .. " (" .. tostring(row:GetItem("Name") or sid) .. " 강화)" end
+				local vd = self:StripCsvQuotes(controller:SkillText(variantRow, "Description"))
+				if vd ~= "" then desc = vd end
+				local vi = controller:SkillText(variantRow, "IconRUID")
+				if vi ~= "" then iconRuid = vi end
+			end
 		end
 
 		-- DIcon
@@ -496,9 +508,9 @@ script UISkillTreeController extends Component
 		end
 
 		self:SetTextSafe(self._T.dName, name, true)
-		local kindLabel = self:TypeDisplayLabel(row:GetItem("Type"))
+		local kindLabel = self:TypeDisplayLabel(infoRow:GetItem("Type"))
 		if pc ~= nil then
-			pcall(function() kindLabel = pc:GetSkillKindLabel(row) end)
+			pcall(function() kindLabel = pc:GetSkillKindLabel(infoRow) end)
 		end
 		local typeLv = kindLabel .. " · Lv " .. tostring(level) .. "/" .. tostring(maxLevel)
 		self:SetTextSafe(self._T.dTypeLv, typeLv, true)
@@ -508,10 +520,10 @@ script UISkillTreeController extends Component
 		if equipLine ~= "" then
 			if extra ~= "" then extra = extra .. "\n" .. equipLine else extra = equipLine end
 		end
-		-- 위력 출처 (손에 든 무기 / 장비) — SkillDataSet.WeaponSource
+		-- 피해 설명: 능력치 계열(SkillDataSet.ScaleStat)·배율·현재 능력치 기준 1타 피해
 		local sourceLine = ""
 		if pc ~= nil then
-			pcall(function() sourceLine = pc:GetSkillWeaponSourceLine(row) end)
+			pcall(function() sourceLine = pc:GetSkillDamageLine(infoRow) end)
 		end
 		if sourceLine ~= "" then
 			if extra ~= "" then extra = extra .. "\n" .. sourceLine else extra = sourceLine end
@@ -959,7 +971,8 @@ script UISkillTreeController extends Component
 			local skillId = ds:GetCell(i, "SkillId")
 			if skillId ~= nil and skillId ~= "" then
 				local row = ds:FindRow("SkillId", skillId)
-				if controller:SkillText(row, "JobId") == self.selectedJobId then
+				-- 직업 변형 행(JobVariantOf)은 목록에 따로 두지 않는다 — 원본 스킬 칸에 이름·설명으로 드러난다.
+				if controller:SkillText(row, "JobId") == self.selectedJobId and controller:SkillText(row, "JobVariantOf") == "" then
 					local e = {
 						id = skillId,
 						rowIndex = i,
@@ -1083,7 +1096,7 @@ script UISkillTreeController extends Component
 		local ty = (t ~= nil) and tostring(t) or ""
 		if ty == "Passive" then return "passive" end
 		if ty == "Dash" then return "mobility" end
-		if ty == "Guard" or ty == "HealAura" then return "support" end
+		if ty == "Guard" or ty == "HealAura" or ty == "Buff" then return "support" end
 		return "combat"
 	end
 
@@ -1115,12 +1128,19 @@ script UISkillTreeController extends Component
 		local parentId = ds:GetCell(rowIndex, "ParentSkillId")
 		local parentNeed = self:GetParentRequiredLevelFromDs(ds, rowIndex)
 		local reqLevel = tonumber(ds:GetCell(rowIndex, "RequiredLevel")) or 1
-		local iconRuid = ds:GetCell(rowIndex, "IconRUID") or ""
+		-- 직업 변형이 있으면 변형 아이콘 (예: 파워 스트라이크 칸 → 스크류 펀치 아이콘)
+		local iconRuid = controller:GetSkillIconRUID(skillId)
 		local level = controller:GetSkillLevel(skillId)
 		local selected = (self.selectedSkillId == skillId)
 
 		-- 계보 표현: 깊이만큼 들여쓰고, 자식이면 └ 를 앞에 붙인다
 		local indent = depth * 26
+		-- 현재 직업의 변형이 있으면 그 이름으로 보여 준다 (예: 파워 스트라이크 → 묵직한 정권 지르기)
+		local variantRow = controller:GetJobVariantRow(skillId)
+		if variantRow ~= nil then
+			local vn = controller:SkillText(variantRow, "Name")
+			if vn ~= "" then skillName = vn end
+		end
 		local label = skillName
 		if depth > 0 then label = "└ " .. skillName end
 

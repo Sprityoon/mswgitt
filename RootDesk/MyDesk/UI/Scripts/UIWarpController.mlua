@@ -277,7 +277,11 @@ script UIWarpController extends Component
 			if isvalid(pc) then
 				---@type PlayerController
 				local controller = pc
-				controller:ServerRequestWarpTo(dest.mapName)
+				local targetMap = dest.mapName
+				-- 덮기 → 이동: 커버가 실제로 그려진 뒤에 워프를 요청한다.
+				controller:ClientWarpWithCover(function()
+					controller:ServerRequestWarpTo(targetMap)
+				end)
 			end
 		end
 		self:Close()

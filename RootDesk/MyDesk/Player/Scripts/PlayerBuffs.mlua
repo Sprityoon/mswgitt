@@ -40,6 +40,13 @@ script PlayerBuffs extends Component
 	@ExecSpace("ServerOnly")
 	method boolean ApplyBuff(string buffId)
 		-- BuffDataSet 행 조회 후 적용/갱신. 성공 시 true.
+		return self:ApplyBuffFor(buffId, 0)
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean ApplyBuffFor(string buffId, number durationSeconds)
+		-- ApplyBuff 와 같되 지속시간(초)을 덮어쓴다. 0 이하면 BuffDataSet.Duration 을 쓴다.
+		-- 스킬 자가 강화(SkillDataSet.BuffIds)가 스킬 행의 Duration·지속시간 보너스를 실어 보낸다.
 		if buffId == nil or buffId == "" then return false end
 		local ds = _DataService:GetTable("BuffDataSet")
 		if ds == nil then return false end
@@ -47,6 +54,9 @@ script PlayerBuffs extends Component
 		if row == nil then return false end
 
 		local duration = math.floor(tonumber(row:GetItem("Duration")) or 0)
+		if durationSeconds ~= nil and durationSeconds > 0 then
+			duration = math.max(1, math.floor(durationSeconds + 0.5))
+		end
 		if duration <= 0 then return false end
 		local stackRule = row:GetItem("StackRule") or "refresh"
 		local now = os.time()
@@ -84,6 +94,48 @@ script PlayerBuffs extends Component
 		self:EncodeBuffs(list)
 		log("[BUFF] apply " .. buffId .. " expire=" .. tostring(expireAt))
 		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean RemoveBuff(string buffId)
+		-- 지속시간과 무관하게 즉시 해제(보스 눈더미 장판처럼 "밟는 동안만" 걸리는 버프용). 해제했으면 true.
+		if buffId == nil or buffId == "" then return false end
+		local list = self:DecodeBuffs()
+		local kept = {}
+		local removed = false
+		for _, b in ipairs(list) do
+			if b.buffId == buffId then
+				removed = true
+			else
+				table.insert(kept, b)
+			end
+		end
+		if removed then
+			self:EncodeBuffs(kept)
+			log("[BUFF] remove " .. buffId)
+		end
+		return removed
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean RemoveBuffsByStat(string statKey)
+		-- 그 StatKey 를 주는 버프를 모두 즉시 해제한다(1회성 강타 준비처럼 "쓰면 사라지는" 버프용). 해제했으면 true.
+		if statKey == nil or statKey == "" then return false end
+		local list = self:DecodeBuffs()
+		local kept = {}
+		local removed = false
+		for _, b in ipairs(list) do
+			if b.statKey == statKey then
+				removed = true
+			else
+				table.insert(kept, b)
+			end
+		end
+		if removed then
+			self:EncodeBuffs(kept)
+			log("[BUFF] remove stat=" .. statKey)
+		end
+		return removed
 	end
 
 	@ExecSpace("ServerOnly")

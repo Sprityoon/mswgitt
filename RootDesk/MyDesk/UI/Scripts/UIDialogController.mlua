@@ -158,6 +158,7 @@ script UIDialogController extends Component
 		-- 퀘스트 수락 RPC.
 		if not self.isOpen then return end
 		local qid = self.questId
+		local speaker = self.speakerName
 		self:Close()
 		if qid <= 0 then return end
 		local lp = _UserService.LocalPlayer
@@ -167,13 +168,43 @@ script UIDialogController extends Component
 		end
 		lp.PlayerQuest:RequestAcceptQuests({ qid })
 		log("[DIALOG] accept quest=" .. tostring(qid))
+		self:OpenPhaseReply(speaker, qid, "accept")
 	end
 
 	@ExecSpace("ClientOnly")
 	method void OnDecline()
-		-- 거절 — 창만 닫음.
-		log("[DIALOG] decline quest=" .. tostring(self.questId))
+		-- 거절 — 창을 닫고, StoryDialogDataSet 에 decline 대사가 있으면 한마디 보여 준다.
+		local qid = self.questId
+		local speaker = self.speakerName
+		log("[DIALOG] decline quest=" .. tostring(qid))
 		self:Close()
+		self:OpenPhaseReply(speaker, qid, "decline")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenPhaseReply(string speaker, integer questId, string phase)
+		-- 수락/거절 직후 NPC 의 짧은 반응(StoryDialogDataSet Phase=accept|decline). 없으면 아무것도 안 한다.
+		if questId <= 0 then return end
+		local ds = _DataService:GetTable("StoryDialogDataSet")
+		if ds == nil then return end
+		local rows = ds:GetAllRow()
+		if rows == nil then return end
+		local list = {}
+		for _, row in ipairs(rows) do
+			local qid = math.floor(tonumber(row:GetItem("QuestId")) or 0)
+			if qid == questId and tostring(row:GetItem("Phase") or "") == phase then
+				local text = tostring(row:GetItem("Text") or "")
+				if text ~= "" then
+					table.insert(list, { seq = math.floor(tonumber(row:GetItem("Seq")) or 0), text = text })
+				end
+			end
+		end
+		if #list == 0 then return end
+		table.sort(list, function(a, b) return a.seq < b.seq end)
+		local pages = {}
+		for _, e in ipairs(list) do table.insert(pages, e.text) end
+		self:OpenTalk(speaker, pages)
+		log("[DIALOG] phase reply quest=" .. tostring(questId) .. " phase=" .. phase .. " pages=" .. tostring(#pages))
 	end
 
 	@ExecSpace("ClientOnly")

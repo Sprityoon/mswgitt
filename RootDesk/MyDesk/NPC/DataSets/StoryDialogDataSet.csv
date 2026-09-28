@@ -158,19 +158,221 @@ QuestId,NpcId,Phase,Seq,Text,Speaker
 217,elder,progress,1,슬라임킹은 3구역 끝의 포탈 너머 대기실에서 기다리고 있다네. 도약을 조심하게.,npc
 217,elder,complete,1,해냈구먼! 벌판의 이슬이 한결 맑아졌어.,npc
 217,elder,complete,2,이제 바위 고원의 웨이포인트가 열렸을 걸세. 영지 관문에서 확인해 보게.,npc
-227,researcher,offer,1,바위 고원의 울림돌에서 이상한 진동이 측정되고 있어요.,npc
-227,researcher,offer,2,울림돌 광장을 지키는 돌거인이 그늘에 잠식된 것 같아요.,npc
-227,researcher,offer,3,그 파수꾼을 잠재우고 촌장님께 알려 주세요.,npc
+221,elder,offer,1,슬라임킹이 쓰러진 뒤로 고원 쪽에서 낮은 울림이 들려온다네.,npc
+221,elder,offer,2,바위들이 서로를 부르는 듯한 소리라고 하더군.,npc
+221,elder,offer,3,영지 관문으로 바위 고원에 다녀와 주겠나?,npc
+221,elder,progress,1,바위 고원은 영지 관문의 목록에서 고를 수 있다네.,npc
+221,elder,complete,1,다녀왔구먼. 바위가 운다니… 참 묘한 곳일세.,npc
+221,elder,complete,2,엘렌이 고원의 나무 밑동을 살펴보고 싶다더군. 연구소에 들러 보게.,npc
+222,researcher,offer,1,고원의 스텀프들 밑동에 그늘이 뿌리처럼 번져 있대.,npc
+222,researcher,offer,2,스텀프 다섯을 퇴치하고 단단한 장작 세 개를 가져와 줘.,npc
+222,researcher,offer,3,나이테를 보면 잠식이 언제 시작됐는지 알 수 있을 것 같아.,npc
+222,researcher,progress,1,단단한 장작은 스텀프를 퇴치하면 얻을 수 있어.,npc
+222,researcher,complete,1,고마워. 나이테 바깥쪽 몇 줄만 검게 물들어 있어.,npc
+222,researcher,complete,2,잠식은 아주 최근에 시작됐다는 뜻이야. 불씨가 깨어난 무렵과 겹쳐.,npc
+222,researcher,complete,3,로체가 고원 멧돼지 얘기를 듣고 들떠 있던데 들러 봐.,npc
+223,blacksmith,offer,1,고원에 철 투구를 쓴 멧돼지가 날뛴다며? 아이언호그라더군!,npc
+223,blacksmith,offer,2,녀석들 넷을 퇴치하고 떨어진 철 조각 세 개를 가져와 봐.,npc
+223,blacksmith,offer,3,그 갑주 쇠가 어떤 물건인지 내 눈으로 봐야겠어. 자신 있지?,npc
+223,blacksmith,progress,1,철 조각은 아직이야? 아이언호그 돌진은 옆으로 피하라고!,npc
+223,blacksmith,complete,1,크으! 이건 그냥 쇠가 아니야. 옛날 방식으로 두드린 쇠라고.,npc
+223,blacksmith,complete,2,첫 개척단의 쇳조각을 멧돼지들이 뒤집어쓰고 다닌 모양이군.,npc
+224,blacksmith,offer,1,이제 제대로 된 철을 캘 차례야. 고원 바위엔 철맥이 흐르거든.,npc
+224,blacksmith,offer,2,철 광석 열 개를 모아서 나한테 보여 줘.,npc
+224,blacksmith,offer,3,커다란 바위나 철 광맥을 노리면 금방 모일 거야!,npc
+224,blacksmith,progress,1,철 광석 열 개 모였어? 큰 바위를 깨 보라고!,npc
+224,blacksmith,complete,1,좋아! 광석 질이 훌륭하군. 그 광석은 네가 그대로 가져가.,npc
+224,blacksmith,complete,2,연구소에 맡기면 철 도구 연구를 시작할 수 있을 거야.,npc
+225,blacksmith,offer,1,철 도구 연구를 마쳤으면 이제 직접 두드려 볼 차례지!,npc
+225,blacksmith,offer,2,철 주괴로 철 곡괭이를 만들어서 나한테 보여 줘.,npc
+225,blacksmith,offer,3,광석은 화로에서 주괴로 녹이면 돼. 불 조절은 알지?,npc
+225,blacksmith,progress,1,철 곡괭이는 아직이야? 연구소 연구부터 마쳐야 해!,npc
+225,blacksmith,complete,1,하하! 날이 제대로 섰군. 그런데 곡괭이에 묻은 울림돌 가루 좀 봐.,npc
+225,blacksmith,complete,2,모루에 닿자 푸르게 울렸어. 잘 두드리면 등불 심지로 쓰겠는데?,npc
+225,blacksmith,complete,3,아 참. 토리가 가축 일로 너를 찾더라. 헛간에 들러 봐!,npc
+226,barnkeeper,offer,1,요즘 고원에서 날아온 포자 때문에 가축들이 자꾸 재채기를 해.,npc
+226,barnkeeper,offer,2,바위 틈에 숨은 뿔버섯 다섯만 진정시켜 줄래?,npc
+226,barnkeeper,offer,3,원래는 바위 그늘에서 조용히 살던 아이들이야. 너무 놀라게 하진 마.,npc
+226,barnkeeper,progress,1,뿔버섯은 멀리서 포자를 쏴. 바위 뒤로 숨으면서 다가가 봐.,npc
+226,barnkeeper,complete,1,고마워. 바람이 한결 맑아졌어. 가축들도 금방 괜찮아질 거야.,npc
+226,barnkeeper,complete,2,엘렌이 울림돌 쪽이 수상하다고 찾던데… 가 볼래?,npc
+227,researcher,offer,1,고원의 울림돌이 불씨와 같은 박자로 울리고 있었어.,npc
+227,researcher,offer,2,그런데 광장의 돌거인이 그늘에 잠식돼서 그 울림을 막고 있어.,npc
+227,researcher,offer,3,파수꾼을 잠재우고 촌장님께 알려 줘.,npc
 227,elder,progress,1,스톤골렘은 고원 3구역 끝의 포탈 너머에 있다고 하더군.,npc
 227,elder,complete,1,울림돌이 잠잠해졌구먼. 고원 너머 모래 언덕의 길이 열렸네.,npc
-236,elder,offer,1,모래 언덕 깊은 곳에 첫 개척단이 판 마른 우물이 있다네.,npc
-236,elder,offer,2,그 우물을 지키던 선인장 정령이 그늘에 잠식되고 말았어.,npc
+227,elder,complete,2,엘렌 말로는 울림이 멎기 직전에 누군가 속삭이는 소리가 섞였다더군.,npc
+227,elder,complete,3,그늘에도 목소리가 있다니… 모래 언덕에서 실마리를 찾아보세.,npc
+231,elder,offer,1,모래 언덕은 첫 개척단이 물길을 찾아 헤매던 땅이라네.,npc
+231,elder,offer,2,모래 아래 무언가 잠들어 있다는 옛말이 있지.,npc
+231,elder,offer,3,영지 관문으로 모래 언덕에 다녀와 주겠나? 햇볕을 조심하게.,npc
+231,elder,progress,1,모래 언덕은 영지 관문의 목록에서 고를 수 있다네.,npc
+231,elder,complete,1,다녀왔구먼. 발밑이 들썩였다고? 모래두지 녀석들이로군.,npc
+231,elder,complete,2,엘렌이 그 모래를 걸러 보고 싶다더군. 연구소에 들러 보게.,npc
+232,researcher,offer,1,모래두지들이 굴을 파면서 깊은 모래를 퍼 올리고 있대.,npc
+232,researcher,offer,2,다섯을 퇴치하고 고운 모래 다섯 줌을 가져와 줘.,npc
+232,researcher,offer,3,체로 걸러 보면 오래된 흔적이 나올지도 몰라.,npc
+232,researcher,progress,1,고운 모래는 모래두지를 퇴치하면 얻을 수 있어.,npc
+232,researcher,complete,1,찾았어! 모래 속에 녹슨 수레 못이 섞여 있어.,npc
+232,researcher,complete,2,첫 개척단의 수레가 이 언덕을 지나간 게 분명해.,npc
+232,researcher,complete,3,연못가 낚시꾼 어르신이 모래밭 얘기를 하시던데 들러 봐.,npc
+233,fisher,offer,1,모래밭에도 낚을 거리가 있다네. 카투스 가시 말일세.,npc
+233,fisher,offer,2,곧고 단단해서 낚싯바늘로 그만이지. 여섯 개만 모아 주게.,npc
+233,fisher,offer,3,서두르지 말게. 가시는 멀리서 날아오니 옆으로 비켜서면 돼.,npc
+233,fisher,progress,1,가시는 아직인가? 입질 기다리듯 느긋하게 하게.,npc
+233,fisher,complete,1,좋은 가시로군. 그런데 이 가시 끝에 물기가 배어 있지 않나?,npc
+233,fisher,complete,2,모래에도 물길이 있었던 게지… 어딘가 마른 우물이 있을 걸세.,npc
+233,fisher,complete,3,로체가 수레 쇠붙이 얘기로 자넬 찾더군.,npc
+234,blacksmith,offer,1,수레 못 얘기 들었어! 개척단 수레라면 쇠붙이가 잔뜩 묻혀 있겠군.,npc
+234,blacksmith,offer,2,그런데 그 근처를 전갈들이 지키고 있다며? 넷만 퇴치해 줘.,npc
+234,blacksmith,offer,3,꼬리 독침이 따끔하니까 정면에서 오래 버티지 말라고!,npc
+234,blacksmith,progress,1,전갈은 아직이야? 집게가 닫히면 그때 파고들어!,npc
+234,blacksmith,complete,1,수고했어! 이제 모래를 파헤쳐도 안전하겠군.,npc
+234,blacksmith,complete,2,촌장님이 우물가에서 뭔가 찾으신다던데 가 봐.,npc
+235,elder,offer,1,모래 언덕 우물가에 첫 개척단의 기록통이 묻혀 있다는 전승이 있네.,npc
+235,elder,offer,2,모래두지들이 그 근처를 파헤치다 무언가를 물고 다닌다더군.,npc
+235,elder,offer,3,모래두지를 퇴치해서 그 기록을 찾아와 주겠나?,npc
+235,elder,progress,1,기록은 모래두지가 물고 다닌다네. 굴 근처를 살펴보게.,npc
+235,elder,complete,1,이 필체… 틀림없이 첫 개척단의 기록일세. 한번 읽어 보겠네.,npc
+235,elder,complete,2,「그늘은 땅기운을 마시고 자란다. 우리는 그것을 먹그늘이라 불렀다.」,npc
+235,elder,complete,3,보물 지도가 아니라 경고였구먼. 먹그늘이 다시 깨어난 게야.,npc
+236,elder,offer,1,기록에 따르면 먹그늘은 우물 지킴이부터 잠식했다고 하네.,npc
+236,elder,offer,2,마른 우물을 지키던 선인장 정령 데우가 지금 그 그늘에 붙들려 있어.,npc
 236,elder,offer,3,그를 쉬게 해 주게. 그래야 설원으로 가는 길이 드러날 걸세.,npc
 236,elder,progress,1,데우는 모래 언덕 3구역 끝의 포탈 너머에 있다네.,npc
 236,elder,complete,1,우물이 다시 숨을 쉬는구먼… 만년 설원의 웨이포인트가 열렸을 걸세.,npc
-246,elder,offer,1,마침내 그늘의 본체가 숨어든 곳을 찾았네. 만년 설원 끝자락일세.,npc
-246,elder,offer,2,눈의 거인이 그늘의 핵을 품고 버티고 있어.,npc
+236,elder,complete,2,기록 마지막 장에 「먹그늘은 빛을 피해 추위 속으로 숨는다」고 적혀 있네.,npc
+241,elder,offer,1,설원 쪽 하늘이 밤마다 먹빛으로 흐려진다네.,npc
+241,elder,offer,2,기록대로라면 먹그늘은 그 추위 속에 숨어들었을 게야.,npc
+241,elder,offer,3,만년 설원에 다녀와 주겠나? 옷깃을 단단히 여미게.,npc
+241,elder,progress,1,만년 설원은 영지 관문의 목록에서 고를 수 있다네.,npc
+241,elder,complete,1,무사히 돌아왔구먼. 눈밭에 검은 발자국이 이어져 있었다고?,npc
+241,elder,complete,2,토리가 설원 짐승들 걱정에 잠을 못 이룬다더군. 헛간에 들러 주게.,npc
+242,barnkeeper,offer,1,설원의 페페들이 떼로 몰려다니는 건 겁에 질려서야.,npc
+242,barnkeeper,offer,2,여섯 마리만 진정시켜 줄래? 무리가 흩어지면 조금 차분해질 거야.,npc
+242,barnkeeper,offer,3,뒤뚱거려도 부리는 단단하니까 조심해.,npc
+242,barnkeeper,progress,1,페페들은 무리 지어 다녀. 한꺼번에 둘러싸이지 않게 조심해.,npc
+242,barnkeeper,complete,1,고마워. 무리가 흩어지니 울음소리가 잦아들었어.,npc
+242,barnkeeper,complete,2,그런데 페페들이 도망쳐 온 쪽은 설원 가장 깊은 곳이었어.,npc
+242,barnkeeper,complete,3,엘렌이 눈의 결정을 찾던데 연구소에도 들러 줘.,npc
+243,researcher,offer,1,설원의 눈의 결정이 불씨의 빛을 조금씩 머금고 있어.,npc
+243,researcher,offer,2,결정 네 개만 가져와 줘. 불씨를 옮겨 담을 그릇이 될지도 몰라.,npc
+243,researcher,offer,3,주니어 예티나 예티를 퇴치하면 얻을 수 있어.,npc
+243,researcher,progress,1,눈의 결정은 예티들이 지니고 있어. 조심해서 다녀와.,npc
+243,researcher,complete,1,봐. 결정 속에서 불씨가 작은 등불처럼 타고 있어.,npc
+243,researcher,complete,2,수장고의 정원사의 등불을 다시 켤 수 있겠어. 틀은 로체에게 맡길게.,npc
+243,researcher,complete,3,아 참. 마리가 설원 길목 일로 속을 태우던데 들러 줄래?,npc
+244,vendor,offer,1,소문 들었어? 화이트팽 떼가 설원 길목을 막았대!,npc
+244,vendor,offer,2,덕분에 설원 털실이 하나도 안 들어와. 겨울옷 장사 다 망하게 생겼어!,npc
+244,vendor,offer,3,화이트팽 다섯만 퇴치해 줄래? 보답은 두둑이 챙겨 줄게!,npc
+244,vendor,progress,1,화이트팽은 멀리서 확 뛰어들어. 옆으로 피하는 거 잊지 마~,npc
+244,vendor,complete,1,최고야! 길목이 뚫렸으니 다음 장날엔 털실이 들어오겠어.,npc
+244,vendor,complete,2,아 참. 로체가 뭔가 급하게 찾던데… 대장간에 가 봐!,npc
+245,blacksmith,offer,1,엘렌이 등불 틀을 부탁했어! 이 로체가 빠질 수 없지.,npc
+245,blacksmith,offer,2,틀을 짤 철 주괴 세 개만 가져와. 심지는 고원의 울림돌로 할 거야.,npc
+245,blacksmith,offer,3,내 평생 제일 중요한 물건이 될지도 몰라!,npc
+245,blacksmith,progress,1,철 주괴 세 개 모였어? 화로에서 철 광석을 녹이면 돼!,npc
+245,blacksmith,complete,1,좋아! 틀도 심지도 준비 끝이야. 이제 불씨만 옮겨 담으면 돼.,npc
+245,blacksmith,complete,2,그런데 촌장님 말로는 설원 끝에 먹그늘의 본체가 버티고 있대.,npc
+245,blacksmith,complete,3,등불은 그 녀석을 넘어선 다음에 켜자고. 꼭 돌아와!,npc
+246,elder,offer,1,마침내 먹그늘의 본체가 숨어든 곳을 찾았네. 만년 설원 끝자락일세.,npc
+246,elder,offer,2,눈의 거인 스노우맨이 먹그늘의 핵을 품고 버티고 있어.,npc
 246,elder,offer,3,이 싸움이 끝나면 첫 정원의 등불을 다시 켤 수 있을 걸세.,npc
 246,elder,progress,1,스노우맨은 설원 3구역 끝의 포탈 너머에 있다네. 몸을 따뜻하게 하게.,npc
-246,elder,complete,1,해냈구먼… 설원을 덮던 그늘이 걷혔어.,npc
-246,elder,complete,2,자네 덕분에 이 땅에 다시 빛이 돌아왔네.,npc
+246,elder,complete,1,해냈구먼… 먹그늘의 핵이 흩어지고 설원을 덮던 그늘이 걷혔어.,npc
+246,elder,complete,2,엘렌과 로체가 방금 등불을 완성했다네. 첫 정원의 꺼진 등불일세.,npc
+246,elder,complete,3,이 등불은 자네가 받게. 불씨가 고른 손은 자네 손이니까.,npc
+247,elder,offer,1,그 등불은 자네 영지에 두게. 땀 흘려 가꾼 땅에서 빛이 가장 오래가지.,npc
+247,elder,offer,2,등불이 켜진 땅에는 그늘이 다시 스며들지 못할 걸세.,npc
+247,elder,offer,3,영지에 정원의 등불을 설치하고 돌아오게.,npc
+247,elder,progress,1,등불은 영지 안에서만 설치할 수 있다네. 마음에 드는 자리를 고르게.,npc
+247,elder,complete,1,영지 쪽 하늘이 푸르게 물들었구먼. 참 보기 좋네.,npc
+247,elder,complete,2,세상을 구했던 손이 이번엔 제 보금자리를 지켜 냈군.,npc
+247,elder,complete,3,고생 많았네. 이제 푹 쉬게나… 물론 밭일은 내일도 기다리겠지만.,npc
+341,elder,offer,1,(촌장이 당신의 주머니에서 새어 나오는 묵직한 푸른빛을 보더니 눈을 휘둥그레 뜬다.) 자 잠깐... 자네 손에 든 건... 슬라임킹의 대형 슬라임 젤리가 아닌가?!,npc
+341,elder,offer,2,보통 녀석이 아니었을 텐데 그걸 쓰러뜨리고 통째로 뜯어왔단 말인가? ...그런데 왜 이걸 대장간의 로체나 연구소의 엘렌이 아니라 나한테 가져온 게야?,npc
+341,elder,offer,3,...잠깐. (촌장이 당신의 손을 훑어본다. 칼도 도끼도 지팡이도 쥐지 않은 굳은살 박인 빈손이다.) 자네... 설마 무기 없이 그 거대한 녀석과 맞선 건가?,npc
+341,elder,offer,4,다들 칼날과 마법만 좇을 때 나는 오직 이 두 주먹만 믿었지. 무기는 언젠가 부러지지만 매일 단련한 뼈와 살은 결코 배신하지 않는 법일세.,npc
+341,elder,offer,5,40년 전 '붉은 너클의 루카스'라 불리던 이 늙은이의 비전을 전수해 주지. 세상에 단 하나뿐인 '맨주먹 파이터'의 길을 걷겠는가?,npc
+341,elder,accept,1,좋아! 눈빛이 마음에 드는군! 그 질긴 젤리를 쥔 채로 내게 다시 말을 걸게나. 자네의 주먹을 위한 첫 단련을 시작하지!,npc
+341,elder,decline,1,음... 아직 망설여지는 모양이군. 괜찮네. 주먹 하나로 거친 세상을 헤쳐 나가는 건 쉬운 길이 아니니까.,npc
+341,elder,progress,1,그 젤리는 어디 두고 왔나? 대형 슬라임 젤리를 지닌 채 다시 오게나.,npc
+341,elder,complete,1,허허... 이 탄력 이 무게. 틀림없이 맨손으로 뜯어낸 게로군. 잊고 살았던 불꽃이 다시 튀는구먼!,npc
+341,elder,complete,2,이제 마지막으로 자네의 각오를 확인하겠네. 준비가 되면 다시 말을 걸게.,npc
+342,elder,offer,1,맨주먹의 길을 택하면 다른 스승들의 시험은 모두 포기해야 하네. 두 주먹 외에는 아무것도 기댈 수 없는 길이지.,npc
+342,elder,offer,2,그 대형 슬라임 젤리를 내게 넘기고 맨주먹 파이터로 전직하겠는가?,npc
+342,elder,progress,1,젤리가 없으면 증명도 없네. 대형 슬라임 젤리를 지니고 오게나.,npc
+342,elder,complete,1,크하하! 젤리의 탄성을 맨손으로 찢어내던 그 악력과 패기 확실히 증명되었네! 오늘부터 자네는 메이플 월드의 유일무이한 '맨주먹 파이터'일세!,npc
+342,elder,complete,2,자 이건 내가 젊은 시절 슬라임킹과 바위 골렘을 두들겨 팰 때 끼던 가죽 장갑일세. 장갑은 손을 지키는 방어구이자 주먹의 파괴력을 적의 뼈마디까지 전하는 흉기지!,npc
+342,elder,complete,3,명심하게! 힘(STR)만 세다고 완성되지 않네. 날렵한 솜씨(DEX)와 강철 같은 체력(VIT)이 고르게 어우러질 때 진정한 파괴력이 폭발하지. 스킬창(K)을 열어 보게!,npc
+343,elder,progress,1,기합은 익혔는가? 배에 힘을 주고 내지르며 벌판의 슬라임 다섯을 주먹으로 눌러 주고 오게.,npc
+343,elder,complete,1,그 기합 소리 여기까지 들리더군! 이제 투기를 주먹에 두르는 법을 알려 주지. 기합과 함께 투기가 터져 나올 걸세.,npc
+304,vendor,offer,1,덫 솜씨가 제법 늘었는걸? 이제 칼 한 자루쯤은 제대로 된 걸 쥘 때가 됐어.,npc
+304,vendor,offer,2,내가 젊을 때 쓰던 사냥칼이 있는데 날이 다 죽었거든. 바위 고원 아이언호그의 철 조각이면 다시 벼릴 수 있어!,npc
+304,vendor,offer,3,아이언호그 다섯 마리 잡고 철 조각 다섯 개만 가져와 줄래?,npc
+304,vendor,progress,1,아이언호그는 등껍질이 단단하니까 덫으로 묶어 두고 옆구리를 노려~,npc
+304,vendor,complete,1,좋아좋아! 이 정도 철이면 충분해. 자 받아~ 노련한 사냥꾼의 단검이야!,npc
+304,vendor,complete,2,덫에 묶인 사냥감은 절대 놓치지 않을 거야.,npc
+305,vendor,offer,1,모래 언덕 소문 들었어? 전갈들이 떼로 몰려다닌대.,npc
+305,vendor,offer,2,사냥꾼은 한 마리씩 쫓지 않아. 묶어 두고 한꺼번에 쏟아붓는 거지!,npc
+305,vendor,offer,3,전갈 여섯 마리랑 우물 지킴이 데우까지 해치우고 오면 도끼를 비처럼 쏟아붓는 법을 알려 줄게.,npc
+305,vendor,progress,1,전갈 꼬리 조심해! 덫을 먼저 깔고 기다리는 게 사냥꾼의 여유라고~,npc
+305,vendor,complete,1,역시! 이제 알려 줄게. 덫에 걸린 녀석들 위로 도끼를 쏟아부어 봐. 하나도 못 빠져나갈걸? 스킬창(K)을 열어 봐!,npc
+306,vendor,offer,1,옛날 사냥꾼들 사이에 붉은 발톱 단검 이야기가 있어. 던져도 던져도 손으로 돌아온다는 단검이지.,npc
+306,vendor,offer,2,설원의 화이트팽을 사냥하고 그 꼬리를 모아 오면… 그리고 스노우맨까지 넘어서면 전설을 믿어 볼 만하지 않을까?,npc
+306,vendor,progress,1,화이트팽은 빠르니까 발부터 묶어! 꼬리는 다섯 개면 돼~,npc
+306,vendor,complete,1,세상에… 진짜로 해냈네! 이 붉은 발톱 단검은 이제 네 거야.,npc
+306,vendor,complete,2,던진 칼날이 이상하게 손으로 돌아오는 느낌… 그게 진짜 사냥꾼의 증표야!,npc
+314,blacksmith,offer,1,크하하! 그 망치 날이 무뎌졌군. 제대로 된 쇠를 먹여 줄 때가 됐다!,npc
+314,blacksmith,offer,2,고원의 아이언호그들이 흘린 철 조각 여덟 개. 그리고 울림돌 광장의 스톤골렘을 박살 내고 와라!,npc
+314,blacksmith,progress,1,골렘은 단단하다! 갑주 파쇄타로 껍질부터 벗겨 버려!,npc
+314,blacksmith,complete,1,오오 이 쇳물 색깔 보게! 자 로체 특제 강철구 망치다!,npc
+314,blacksmith,complete,2,…솔직히 내 망치보다 낫다. 흥!,npc
+315,blacksmith,offer,1,모래 언덕 절지류 껍질이 모루를 보강하는 데 그만이라더군.,npc
+315,blacksmith,offer,2,키틴질 껍질 여섯 개랑 데우를 넘어서고 오면 하늘에서 망치를 떨어뜨리는 비기를 보여 주지!,npc
+315,blacksmith,progress,1,껍질은 가볍고 질겨. 조심해서 벗겨 와라!,npc
+315,blacksmith,complete,1,좋아! 잘 봐라. 먼저 대지 분쇄타로 녀석들 발을 묶고… 그 머리 위로 모루를 떨어뜨리는 거다! 스킬창(K)을 열어 봐라!,npc
+316,blacksmith,offer,1,대장장이는 평생 딱 한 자루만 진짜 망치를 벼린다고들 하지. 내 차례가 왔나 보군.,npc
+316,blacksmith,offer,2,눈의 결정 다섯 개와 예티의 뿔 세 개로 담금질한다. 그리고 스노우맨을 넘어서 와라. 그래야 그 망치를 들 자격이 있다!,npc
+316,blacksmith,progress,1,담금질 재료가 모자라면 황금이 제 빛을 안 낸다고!,npc
+316,blacksmith,complete,1,…됐다. 황금 모루망치다. 내 평생 최고의 작품이지.,npc
+316,blacksmith,complete,2,휘두를수록 몸이 먼저 다음 동작을 기억할 거다. 크하하하!,npc
+324,researcher,offer,1,불씨를 수정 속에 가둘 수 있다면 마나가 흩어지지 않을 거야.,npc
+324,researcher,offer,2,고원 뿔버섯의 포자 반응을 여섯 번 관찰하고 슬라임 젤리 다섯 개를 가져와 줄래? 결정화 실험의 핵심이거든.,npc
+324,researcher,progress,1,뿔버섯 포자는 마나와 섞이면 반응이 또렷해져. 천천히 관찰해 줘.,npc
+324,researcher,complete,1,성공이야! 불씨가 수정 안에서 고르게 빛나고 있어. 이 크리스탈 불씨 완드를 받아 줘.,npc
+325,researcher,offer,1,몇 해에 한 번 피는 카투스의 꽃이 불씨를 결정으로 굳히는 촉매가 된대.,npc
+325,researcher,offer,2,꽃 세 송이를 모으고 데우를 쉬게 해 주면 불씨 결정을 다루는 법을 가르쳐 줄게.,npc
+325,researcher,progress,1,카투스의 꽃은 금방 시들어. 모으면 바로 가져와 줘.,npc
+325,researcher,complete,1,결정이 안정됐어! 이건 설치하고 잠시 뒤에 터져. 산성 장판으로 발을 묶어 두면 피할 수 없을 거야. 스킬창(K)을 확인해 봐.,npc
+326,researcher,offer,1,마지막 연구야. 불꽃을 눈의 결정으로 식혀 가며 끝까지 벼리면… 꺼지지 않는 불꽃이 완성될지도 몰라.,npc
+326,researcher,offer,2,눈의 결정 여섯 개. 그리고 스노우맨이 품은 그늘의 핵이 실험의 열쇠야.,npc
+326,researcher,progress,1,결정은 녹지 않게 조심해서 가져와 줘. 그늘의 핵도 잊지 말고.,npc
+326,researcher,complete,1,…완성이야. 창공 불꽃 완드. 끝에 맺힌 불꽃은 절대 꺼지지 않을 거야.,npc
+326,researcher,complete,2,이 불꽃이 앞으로 네 길을 계속 비춰 주길 바라.,npc
+334,barnkeeper,offer,1,고원을 떠도는 그루터기들… 원래는 숲의 일부였대.,npc
+334,barnkeeper,offer,2,여섯 그루만 달래 주고 나무 스무 개를 모아 올래…? 늙은 나무가 스스로 떨군 가지로 스태프를 깎아 줄게.,npc
+334,barnkeeper,progress,1,그루터기들이 아프지 않게… 살살 달래 줘.,npc
+334,barnkeeper,complete,1,고마워… 이 고목나무 스태프는 오래 쓰다듬어서 결이 부드러워. 너한테 잘 맞을 거야.,npc
+335,barnkeeper,offer,1,사막의 카투스들도 원래는 순한 아이들이었어…,npc
+335,barnkeeper,offer,2,여섯 마리를 달래고 우물의 지킴이 데우를 쉬게 해 주면… 덩굴로 붙잡는 법을 알려 줄게.,npc
+335,barnkeeper,progress,1,가시에 찔리지 않게 조심해…,npc
+335,barnkeeper,complete,1,덩굴로 발을 묶고… 그다음 멧돼지 정령을 달리게 해 봐. 한 번에 다 쓸어 담을 수 있을 거야. 스킬창(K)에 새 기술이 있어.,npc
+336,barnkeeper,offer,1,만년설 아래에서도 푸르름을 잃지 않는 에메랄드가 있대…,npc
+336,barnkeeper,offer,2,예티 세 마리를 달래고 눈의 결정 네 개를 모아서… 스노우맨을 쉬게 해 줄래? 그 보석을 품은 스태프를 줄게.,npc
+336,barnkeeper,progress,1,설원은 추우니까… 몸 따뜻하게 하고 다녀와.,npc
+336,barnkeeper,complete,1,만년설 에메랄드 스태프야… 쥐고 있으면 네 숨결을 천천히 되살려 줄 거야.,npc
+336,barnkeeper,complete,2,숲도 동물들도… 언제나 네 편이야.,npc
+344,elder,offer,1,허허 요즘 자네 주먹 소리가 마을까지 들리는구먼.,npc
+344,elder,offer,2,내가 젊을 때 매일 밤 감고 풀던 아대가 있네. 고원의 아이언호그 여섯 마리와 스톤골렘을 맨주먹으로 넘어서 보게. 그럼 물려주지.,npc
+344,elder,progress,1,골렘은 돌덩이일 뿐일세. 기합을 넣고 정권으로 기절시킨 다음 몰아치게!,npc
+344,elder,complete,1,그 주먹… 내 젊을 때보다 낫구먼! 자 강철주먹 아대일세. 철 조각을 덧대 뒀으니 더 단단할 걸세.,npc
+345,elder,offer,1,이제 자네에게 보여 줄 때가 됐군. 붉은 너클의 루카스라는 이름이 붙은 그 비기를.,npc
+345,elder,offer,2,모래 언덕의 모래두지 여덟과 우물의 지킴이 데우를 넘어서 오게. 그 주먹이 준비됐는지 보겠네.,npc
+345,elder,progress,1,비기는 힘을 모으는 찰나가 있네. 그 찰나에 녀석이 도망치지 못하게 하는 게 핵심이지.,npc
+345,elder,complete,1,좋아! 힘을 모았다가… 쾅! 정권이나 스텝으로 기절시킨 녀석에겐 반드시 들어가네. 스킬창(K)을 열어 보게!,npc
+346,elder,offer,1,저 벽에 걸린 붉은 너클이 보이나? 40년 동안 한 번도 내리지 않았지.,npc
+346,elder,offer,2,설원의 예티 다섯과 스노우맨을 넘어서 오게. 그럼 저걸 자네 주먹에 끼워 주겠네.,npc
+346,elder,progress,1,설원은 힘보다 버티는 쪽이 이긴다네. 투혼을 잊지 말게!,npc
+346,elder,complete,1,…허허. 40년 만에 이 너클이 제 주인을 찾았구먼.,npc
+346,elder,complete,2,붉은 너클일세. 이제 그 이름은 자네 걸세. 크하하!,npc

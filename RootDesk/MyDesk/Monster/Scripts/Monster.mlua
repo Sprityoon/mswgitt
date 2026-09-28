@@ -7,6 +7,8 @@ script Monster extends Component
 	property number Defense = 6
 	property number RootThrowBonus = 0.25
 	property number BossControlScale = 0.25
+	-- 장비·주문 부여 적중 시 둔화(SlowOnHit)의 지속 시간(초)
+	property number GearSlowDuration = 2.0
 	@Sync @HideFromInspector property number Hp = 0
 	@Sync property boolean RespawnOn = false
 	@Sync @HideFromInspector property boolean IsDead = false
@@ -439,6 +441,18 @@ script Monster extends Component
 				if combo ~= nil then damage = damage * (1 + combo.stacks * pc:SkillNumber(row, "ComboMultiplier", 0)) end
 				if root ~= nil and pc:SkillText(row, "DamageModel") == "Throw" then damage = damage * (1 + self.RootThrowBonus) end
 			end
+			-- 장비·주문 부여 전투 특수능력 (⚖️ 2026-09-26: 상태이상 대상 추가 피해는 희귀 파츠의 몫)
+			--   ControlledDamagePct: 둔화·속박·기절·산성 상태의 적에게 추가 피해 (보스는 속박·기절이 둔화로 바뀌어도 인정)
+			--   BossDamagePct: 보스에게 추가 피해
+			local controlled = root ~= nil or self:GetSkillStatus("Stun") ~= nil or self:GetSkillStatus("Slow") ~= nil or self:GetSkillStatus("Acid") ~= nil
+			if controlled then
+				local cb = pc:GetPassiveBonus("ControlledDamagePct")
+				if cb > 0 then damage = damage * (1 + cb) end
+			end
+			if self.IsBoss then
+				local bb = pc:GetPassiveBonus("BossDamagePct")
+				if bb > 0 then damage = damage * (1 + bb) end
+			end
 		end
 		return math.max(1, math.floor(damage - self.Defense * (1 - math.min(0.8, shred))))
 	end
@@ -448,6 +462,15 @@ script Monster extends Component
 		local pc = attacker:GetComponent("script.PlayerController")
 		if not isvalid(pc) then return end
 		pc:RefreshTemperedSkin()
+		-- 장비·주문 부여 SlowOnHit(예: 점성 젤리 코어): 평타·스킬 적중 모두 둔화(최대 60%), 더 강한 둔화는 유지.
+		local gearSlow = math.min(0.6, pc:GetPassiveBonus("SlowOnHit"))
+		if gearSlow > 0 then
+			if not self._T.SkillStatuses then self._T.SkillStatuses = {} end
+			local old = self:GetSkillStatus("Slow")
+			local v = gearSlow
+			if old ~= nil and old.value > v then v = old.value end
+			self._T.SkillStatuses["Slow"] = { expires = _UtilLogic.ElapsedSeconds + self.GearSlowDuration, value = v, stacks = 1 }
+		end
 		local ds = _DataService:GetTable("SkillDataSet")
 		local row = ds ~= nil and ds:FindRow("SkillId", skillId) or nil
 		if row == nil then return end

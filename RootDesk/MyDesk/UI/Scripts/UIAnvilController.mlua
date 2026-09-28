@@ -1,0 +1,364 @@
+@Component
+script UIAnvilController extends Component
+
+	-- 대장간 모루 창 (AnvilGroup/AnvilPopup): 왼쪽 = 장착 장비 6칸 + 손에 든 도구, 오른쪽 = 강화 / 주문 부여.
+	-- 데이터·판정은 전부 서버(PlayerInventory.ServerRequestEnhance / ServerRequestEnchant). 이 창은 표시와 요청만 한다.
+	-- 자식은 이름으로 찾는다(Bg/…) — 재생성으로 UUID 가 바뀌어도 안 깨지게.
+
+	property string ClickSoundRUID = "972843e759204d3e9ad84e7d3fa94f83"
+	property number RefreshInterval = 0.25
+	property Color RowColor = Color(0.22, 0.2, 0.17, 1)
+	property Color RowSelectedColor = Color(0.55, 0.4, 0.12, 1)
+	property Color RowDisabledColor = Color(0.14, 0.12, 0.1, 1)
+
+	property integer selectedRow = 1
+	property integer selectedEnch = 1
+	property integer partIndex = 1
+	property number refreshAccum = 0
+	property table handlers = {}
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 버튼 연결 + 초기 숨김.
+		self.Entity.Enable = false
+		self.handlers = {}
+		for i = 1, 7 do
+			local idx = i
+			self:Bind("Slot_" .. i, function() self:SelectRow(idx) end)
+		end
+		for i = 1, 3 do
+			local idx = i
+			self:Bind("Ench_" .. i, function() self:SelectEnch(idx) end)
+		end
+		self:Bind("PartPrev", function() self:ShiftPart(-1) end)
+		self:Bind("PartNext", function() self:ShiftPart(1) end)
+		self:Bind("BtnEnhance", function() self:RequestEnhance() end)
+		self:Bind("BtnEnchant", function() self:RequestEnchant() end)
+		self:Bind("BtnClose", function() self:Close() end)
+		log("[ANVIL-UI] ready handlers=" .. tostring(#self.handlers))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 핸들러 해제.
+		for _, h in ipairs(self.handlers) do
+			if isvalid(h.entity) then h.entity:DisconnectEvent(ButtonClickEvent, h.cb) end
+		end
+		self.handlers = {}
+	end
+
+	@ExecSpace("ClientOnly")
+	method Entity Child(string name)
+		-- Bg 아래 자식 (재귀).
+		local bg = self.Entity:GetChildByName("Bg")
+		if not isvalid(bg) then return nil end
+		return bg:GetChildByName(name, true)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Bind(string name, any fn)
+		local e = self:Child(name)
+		if not isvalid(e) then
+			log_warning("[ANVIL-UI] missing button " .. name)
+			return
+		end
+		local h = e:ConnectEvent(ButtonClickEvent, function()
+			if self.ClickSoundRUID ~= "" then _SoundService:PlaySound(self.ClickSoundRUID, 1.0) end
+			fn()
+		end)
+		table.insert(self.handlers, { entity = e, cb = h })
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetText(string name, string text)
+		local e = self:Child(name)
+		if isvalid(e) and isvalid(e.TextGUIRendererComponent) then e.TextGUIRendererComponent.Text = text end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetColor(string name, Color c)
+		local e = self:Child(name)
+		if isvalid(e) and isvalid(e.SpriteGUIRendererComponent) then e.SpriteGUIRendererComponent.Color = c end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Open()
+		self.Entity.Enable = true
+		self.refreshAccum = 0
+		self:Refresh()
+		log("[ANVIL-UI] open")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		self.Entity.Enable = false
+		log("[ANVIL-UI] close")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 열려 있는 동안 주기 갱신 (서버 결과·인벤 변화가 @Sync 로 들어온다).
+		if not self.Entity.Enable then return end
+		self.refreshAccum = self.refreshAccum + delta
+		if self.refreshAccum < self.RefreshInterval then return end
+		self.refreshAccum = 0
+		self:Refresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method any GetInventory()
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return nil end
+		local inv = lp:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return nil end
+		return inv
+	end
+
+	@ExecSpace("ClientOnly")
+	method table GetRows(any inv)
+		-- 행 = 장비 6칸(캐릭터 창 순서) + 손에 든 도구. { slot, label, key }
+		local rows = {}
+		for _, slot in ipairs(inv:GetGearSlotOrder()) do
+			table.insert(rows, { slot = slot, label = inv:GetGearSlotLabel(slot), key = inv:GetGearKey(slot) })
+		end
+		table.insert(rows, { slot = "tool", label = "손에 든 도구", key = inv.EquippedTool or "" })
+		return rows
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SelectRow(integer idx)
+		self.selectedRow = idx
+		self.selectedEnch = 1
+		self.partIndex = 1
+		self:Refresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SelectEnch(integer idx)
+		self.selectedEnch = idx
+		self:Refresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShiftPart(integer d)
+		self.partIndex = self.partIndex + d
+		self:Refresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method table GetUsableParts(any inv, string equipSlot)
+		-- 이 장비 칸에 새길 수 있는 보유 파츠 { row, id }.
+		local list = {}
+		local ds = _DataService:GetTable("EnchantPartDataSet")
+		if ds == nil then return list end
+		for _, row in ipairs(ds:GetAllRow() or {}) do
+			local id = tostring(row:GetItem("PartId") or "")
+			local target = tostring(row:GetItem("TargetSlot") or "")
+			if id ~= "" and (target == "any" or target == equipSlot) and inv:GetItemCount(id) > 0 then
+				table.insert(list, { row = row, id = id })
+			end
+		end
+		return list
+	end
+
+	@ExecSpace("ClientOnly")
+	method string StatLine(any inv, string key, string baseName)
+		-- "강화 +3 / 5 · 공격력 30 (+4)" 한 줄.
+		local lv = inv:GetEnhanceData(key).lv
+		local pct = inv:GetEnhanceStatPct(key)
+		local parts = { "강화 +" .. tostring(lv) .. " / 5" }
+		local labels = { { "Attack", "공격력" }, { "MagicAttack", "마법 공격력" }, { "SkillAttack", "스킬 공격력" }, { "Defense", "방어력" } }
+		for _, pair in ipairs(labels) do
+			local base = inv:GetItemNumber(baseName, pair[1])
+			if base > 0 then
+				local bonus = 0
+				if pct > 0 then bonus = math.max(1, math.floor(base * pct + 0.5)) end
+				local s = pair[2] .. " " .. tostring(math.floor(base + bonus))
+				if bonus > 0 then s = s .. " (+" .. tostring(bonus) .. ")" end
+				table.insert(parts, s)
+			end
+		end
+		local tp = inv:GetEnhanceToolPower(key)
+		if tp > 0 then table.insert(parts, "채집력 +" .. tostring(tp)) end
+		return table.concat(parts, " · ")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Refresh()
+		-- 창 전체 다시 그리기.
+		local inv = self:GetInventory()
+		if inv == nil then return end
+		local rows = self:GetRows(inv)
+		if self.selectedRow < 1 or self.selectedRow > #rows then self.selectedRow = 1 end
+
+		-- 왼쪽: 칸 목록
+		for i = 1, 7 do
+			local r = rows[i]
+			if r ~= nil then
+				local body = "비어 있음"
+				if r.key ~= "" then
+					local base = inv:GetBaseItemName(r.key)
+					body = inv:GetItemDisplayName(base)
+					local lv = inv:GetEnhanceData(r.key).lv
+					if lv > 0 then body = body .. " +" .. tostring(lv) end
+				end
+				self:SetText("Slot_" .. i, r.label .. "\n" .. body)
+				self:SetColor("Slot_" .. i, i == self.selectedRow and self.RowSelectedColor or self.RowColor)
+			end
+		end
+
+		local row = rows[self.selectedRow]
+		local key = row.key
+		local icon = self:Child("ItemIcon")
+		if key == "" then
+			if isvalid(icon) then icon.Enable = false end
+			self:SetText("ItemName", row.label .. " — 비어 있음")
+			self:SetText("ItemStat", "")
+			self:SetText("EnhanceInfo", "캐릭터 창에서 장비를 장착하거나 도구를 손에 들면\n여기서 강화하고 주문을 새길 수 있습니다.")
+			self:RefreshEnchant(inv, "", "", 0)
+			return
+		end
+		local baseName = inv:GetBaseItemName(key)
+		if isvalid(icon) and isvalid(icon.SpriteGUIRendererComponent) then
+			local ruid = inv:GetItemText(baseName, "IconRUID")
+			icon.Enable = ruid ~= ""
+			if ruid ~= "" then icon.SpriteGUIRendererComponent.ImageRUID = ruid end
+		end
+		self:SetText("ItemName", inv:GetItemDisplayName(baseName))
+		self:SetText("ItemStat", self:StatLine(inv, key, baseName))
+
+		-- 강화
+		local lv = inv:GetEnhanceData(key).lv
+		local info = ""
+		if inv:GetItemText(baseName, "EnhanceGroup") == "" then
+			info = "이 물건은 강화할 수 없습니다."
+		else
+			local nextRow = inv:GetEnhanceRow(key, lv + 1)
+			if nextRow == nil then
+				info = "최대 강화에 도달했습니다. (+" .. tostring(lv) .. ")"
+			else
+				local rate = inv:GetEnhanceSuccessRate(key, lv + 1)
+				local coin = math.floor(tonumber(nextRow:GetItem("CostCoin")) or 0)
+				local costItem = tostring(nextRow:GetItem("CostItem") or "")
+				local costCount = math.floor(tonumber(nextRow:GetItem("CostItemCount")) or 0)
+				info = string.format("다음 +%d · 성공 확률 %d%%  (실패해도 장비는 안전)", lv + 1, math.floor(rate + 0.5))
+				local cost = "비용: 코인 " .. tostring(coin) .. " (보유 " .. tostring(inv.Coin) .. ")"
+				if costItem ~= "" and costCount > 0 then
+					cost = cost .. " · " .. inv:GetItemDisplayName(costItem) .. " " .. tostring(costCount) .. " (보유 " .. tostring(inv:GetItemCount(costItem)) .. ")"
+				end
+				info = info .. "\n" .. cost
+			end
+		end
+		self:SetText("EnhanceInfo", info)
+
+		local equipSlot = row.slot
+		if equipSlot == "tool" then equipSlot = inv:GetItemEquipSlot(baseName) end
+		self:RefreshEnchant(inv, key, equipSlot, inv:GetEnchantSlotCount(key))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshEnchant(any inv, string key, string equipSlot, integer slots)
+		-- 오른쪽 아래: 주문 슬롯 3줄 + 파츠 선택 + 연구 레벨 확률.
+		if self.selectedEnch < 1 or self.selectedEnch > math.max(1, slots) then self.selectedEnch = 1 end
+		local data = inv:GetEnhanceData(key)
+		local ds = _DataService:GetTable("EnchantPartDataSet")
+		for i = 1, 3 do
+			local e = self:Child("Ench_" .. i)
+			if isvalid(e) then
+				if i <= slots then
+					e.Enable = true
+					local s = data.slots[i]
+					local text = "슬롯 " .. tostring(i) .. " · 비어 있음"
+					if s ~= nil and s.stat ~= "" then
+						local prow = ds ~= nil and ds:FindRow("PartId", s.part) or nil
+						local label = s.stat
+						if prow ~= nil then label = tostring(prow:GetItem("StatLabel") or s.stat) end
+						text = string.format("슬롯 %d · %s %s (%s급)", i, label, inv:FormatEnchantValue(prow, s.val), s.grade)
+					end
+					self:SetText("Ench_" .. i, text)
+					self:SetColor("Ench_" .. i, i == self.selectedEnch and self.RowSelectedColor or self.RowColor)
+				else
+					e.Enable = false
+				end
+			end
+		end
+
+		local researchLv = inv:GetResearchLevel()
+		local odds = self:OddsText(researchLv)
+		if key == "" or slots <= 0 then
+			if key ~= "" then self:SetText("EnchantTitle", "이 물건에는 주문을 새길 수 없습니다") else self:SetText("EnchantTitle", "주문 부여") end
+			self:SetText("PartName", "")
+			self:SetText("OddsText", odds)
+			return
+		end
+		self:SetText("EnchantTitle", "주문 부여 — 새길 슬롯을 고르세요 (덮어쓰기)")
+		local parts = self:GetUsableParts(inv, equipSlot)
+		if #parts == 0 then
+			self:SetText("PartName", "새길 수 있는 파츠가 없습니다\n연구소 연구 → 제작대에서 제작 · 희귀 파츠는 보스")
+			self:SetText("OddsText", odds)
+			return
+		end
+		if self.partIndex < 1 then self.partIndex = #parts end
+		if self.partIndex > #parts then self.partIndex = 1 end
+		local p = parts[self.partIndex]
+		local label = tostring(p.row:GetItem("StatLabel") or "")
+		local lo = inv:FormatEnchantValue(p.row, tonumber(p.row:GetItem("ValD_Min")) or 0)
+		local hi = inv:FormatEnchantValue(p.row, tonumber(p.row:GetItem("ValS_Max")) or 0)
+		self:SetText("PartName", string.format("%s (보유 %d)  %d/%d\n%s %s ~ %s", inv:GetItemDisplayName(p.id), inv:GetItemCount(p.id), self.partIndex, #parts, label, lo, hi))
+		local minLv = math.floor(tonumber(p.row:GetItem("MinResearchLv")) or 1)
+		if researchLv < minLv then odds = "이 파츠는 연구 Lv." .. tostring(minLv) .. " 이상 필요 (현재 Lv." .. tostring(researchLv) .. ")" end
+		self:SetText("OddsText", odds)
+	end
+
+	@ExecSpace("ClientOnly")
+	method string OddsText(integer researchLv)
+		-- "연구 Lv3 · D 25% · C 45% …" (EnchantWeightDataSet 기준 표시)
+		local ds = _DataService:GetTable("EnchantWeightDataSet")
+		local row = ds ~= nil and ds:FindRow("ResearchLevel", tostring(researchLv)) or nil
+		if row == nil then return "연구 Lv" .. tostring(researchLv) end
+		local grades = { "D", "C", "B", "A", "S" }
+		local total = 0
+		local w = {}
+		for i, g in ipairs(grades) do
+			w[i] = tonumber(row:GetItem("Weight" .. g)) or 0
+			total = total + w[i]
+		end
+		local parts = { "연구 Lv" .. tostring(researchLv) }
+		for i, g in ipairs(grades) do
+			local pct = total > 0 and (w[i] * 100 / total) or 0
+			local s = pct >= 1 and tostring(math.floor(pct + 0.5)) or string.format("%.1f", pct)
+			table.insert(parts, g .. " " .. s .. "%")
+		end
+		return table.concat(parts, " · ")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RequestEnhance()
+		local inv = self:GetInventory()
+		if inv == nil then return end
+		local rows = self:GetRows(inv)
+		local row = rows[self.selectedRow]
+		if row == nil or row.key == "" then return end
+		inv:ServerRequestEnhance(row.key)
+		log("[ANVIL-UI] request enhance " .. row.key)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RequestEnchant()
+		local inv = self:GetInventory()
+		if inv == nil then return end
+		local rows = self:GetRows(inv)
+		local row = rows[self.selectedRow]
+		if row == nil or row.key == "" then return end
+		local baseName = inv:GetBaseItemName(row.key)
+		local equipSlot = row.slot
+		if equipSlot == "tool" then equipSlot = inv:GetItemEquipSlot(baseName) end
+		local parts = self:GetUsableParts(inv, equipSlot)
+		if #parts == 0 then return end
+		local idx = self.partIndex
+		if idx < 1 or idx > #parts then idx = 1 end
+		inv:ServerRequestEnchant(row.key, parts[idx].id, self.selectedEnch)
+		log("[ANVIL-UI] request enchant " .. row.key .. " part=" .. parts[idx].id .. " slot=" .. tostring(self.selectedEnch))
+	end
+
+end
