@@ -517,8 +517,46 @@ script PlayerInventory extends Component
 			return
 		end
 
+		-- 2026-09-30: DeathEffect 아이템(쓰러짐 관련). instant_revive 는 쓰러져 있을 때 그 자리 부활,
+		-- protect_inventory 는 사용하는 물건이 아니라 쓰러질 때 자동으로 1개 소모된다.
+		local deathEffect = ""
+		local okDE, vDE = pcall(function() return row:GetItem("DeathEffect") end)
+		if okDE and vDE ~= nil then deathEffect = tostring(vDE) end
+		if deathEffect == "instant_revive" then
+			-- ⚠ RPC 본문이라 `---@type` 사용자 타입 주석 금지(규칙 53) — 동적 호출.
+			local pcR = self.Entity:GetComponent("script.PlayerController")
+			if isvalid(pcR) then
+				pcR:TryInstantRevive()
+			end
+			return
+		elseif deathEffect == "protect_inventory" then
+			local pcP = self.Entity:GetComponent("script.PlayerController")
+			if isvalid(pcP) then pcP:ShowMineFeedback("가지고 있으면 쓰러질 때 자동으로 1개 사용돼 인벤토리를 지켜 줘요.") end
+			return
+		end
+
 		local pc2 = self.Entity:GetComponent("script.PlayerController")
 		if isvalid(pc2) then pc2:ShowMineFeedback("아직 사용할 수 없습니다.") end
+	end
+
+	method string GetDeathEffectItemName(string effect)
+		-- item_dataset.DeathEffect 가 effect 인 아이템의 Name(인벤토리 키). 없으면 "".
+		-- 서버(쓰러짐 처리)·클라(쓰러짐 패널 보유 수) 양쪽에서 쓴다 — 이름을 코드에 박지 않는다(규칙 1).
+		if effect == nil or effect == "" then return "" end
+		if self._T.deathEffectNames == nil then
+			local map = {}
+			local ds = _DataService:GetTable("item_dataset")
+			if ds ~= nil then
+				for i = 1, ds:GetRowCount() do
+					local okE, e = pcall(function() return ds:GetCell(i, "DeathEffect") end)
+					if okE and e ~= nil and tostring(e) ~= "" and map[tostring(e)] == nil then
+						map[tostring(e)] = tostring(ds:GetCell(i, "Name") or "")
+					end
+				end
+			end
+			self._T.deathEffectNames = map
+		end
+		return self._T.deathEffectNames[effect] or ""
 	end
 
 	@ExecSpace("ServerOnly")
@@ -2449,16 +2487,11 @@ script PlayerInventory extends Component
 		end
 		local isCropSeed = cropRow ~= nil
 
-		-- 작물 파종: L2 홀 + L1 Soil (마스크 15) 셀만 허용 — GetCellMask 재사용.
+		-- 작물 파종: 호미로 일군 실제 Farm 타일이 있는 셀만 서버에서 허용.
 		if isCropSeed then
-			local layer1Ent = currentMap:GetChildByName("RectTileMap")
-			local layer2Ent = currentMap:GetChildByName("RectTileMap2")
-			local tm1 = isvalid(layer1Ent) and layer1Ent.RectTileMapComponent or nil
-			local tm2 = isvalid(layer2Ent) and layer2Ent.RectTileMapComponent or nil
-			local mask = resourceSpawner:GetCellMask(tm2, tm1, cellPos.x, cellPos.y)
-			if mask ~= 15 then
+			if not resourceSpawner:IsFarmCell(currentMap, cellPos.x, cellPos.y) then
 				if isvalid(pc) then
-					pc:ShowMineFeedback("괭이로 간 밭(흙 홀)에만 심을 수 있습니다.")
+					pc:ShowMineFeedback("호미로 일군 밭에만 작물을 심을 수 있습니다.")
 				end
 				return
 			end

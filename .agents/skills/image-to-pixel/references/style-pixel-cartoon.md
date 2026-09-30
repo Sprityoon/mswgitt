@@ -1,6 +1,8 @@
-# Style: Cartoon (soft illustrated pixel)
+# Style: Pixel Cartoon (soft illustrated pixel) — Track B
 
-One of the two style options. Choose cartoon for **characters, NPCs, monsters, mascots, and any sprite that should feel cute / illustrated / storybook-like**. For icons, tiles, and simple props where a crisp retro look works better, prefer [style-retro.md](style-retro.md).
+> **Track B (도트) only.** This is pixel art with a cartoon feel. It is *not* the MapleStory painted look of world props — for furniture/props/icons that sit next to official MSW sprites use [track-cartoon.md](track-cartoon.md) (Track A).
+
+One of the two pixel style options. Choose pixel cartoon for **characters, NPCs, monsters, mascots, and any pixel sprite that should feel cute / illustrated / storybook-like**. For icons, tiles, and simple props where a crisp retro look works better, prefer [style-retro.md](style-retro.md).
 
 Cartoon is **higher-resolution pixel art** with **rich stepped shading**, **colored outlines (selout)**, and **selective anti-aliasing** on silhouette edges. The result reads as "painted cartoon" rather than "retro 8-bit", while still being discrete pixels on a grid.
 

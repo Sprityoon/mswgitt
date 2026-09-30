@@ -263,9 +263,14 @@ script UIQuestController extends Component
 	end
 
 	method string BuildRewardStr(any data)
-		local rewardItems = data.RewardItems
-		if rewardItems == nil then return "" end
+		-- 완료 토스트용 보상 한 줄: 경험치 → SP → 아이템 순.
 		local parts = {}
+		local exp = tonumber(data.RewardExp) or 0
+		if exp > 0 then parts[#parts + 1] = "경험치 +" .. tostring(math.floor(exp)) end
+		local sp = tonumber(data.RewardSP) or 0
+		if sp > 0 then parts[#parts + 1] = "SP +" .. tostring(math.floor(sp)) end
+		local rewardItems = data.RewardItems
+		if rewardItems == nil then return table.concat(parts, ", ") end
 		for i = 1, #rewardItems do
 			local it = rewardItems[i]
 			parts[#parts + 1] = tostring(it[1]) .. " x" .. tostring(it[2])

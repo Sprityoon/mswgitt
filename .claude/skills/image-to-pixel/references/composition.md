@@ -1,6 +1,6 @@
 # Composition recipes — making the layout exactly what was asked
 
-The user's #1 requirement for this skill: **the composition must match what they asked for, unambiguously.** The source image's composition is irrelevant once the target view is chosen — these recipes define where the subject sits on the canvas, which way it faces, and how the pose reads.
+The user's #1 requirement for this skill: **the composition must match what they asked for, unambiguously.** The source image's composition is irrelevant once the target view is chosen — these recipes define where the subject sits on the canvas, which way it faces, and how the pose reads. The `pixeltool check` commands below are Track B (.pxg); Track A verifies the same numbers from `propkit` `export()`.
 
 ## Global rules (all asset types)
 
@@ -39,6 +39,16 @@ The user's #1 requirement for this skill: **the composition must match what they
 - **Layout**: edge-to-edge, no outline on canvas edges, no transparent margin.
 - **Seamless check**: the left column must continue into the right column, top into bottom. After rendering, verify by imagining the tile repeated 3×3 — obvious repeating "hot spots" (one bright pixel cluster) break the illusion; distribute detail evenly.
 - The source image here is usually a *texture reference* (grass, brick): extract hue + texture rhythm, not layout.
+
+## MSW 가구·설치물·소품 — 탑다운 ¾ (이 프로젝트 기본, 트랙 A)
+
+- **View**: 탑다운 ¾ (위에서 약 60°) — 앞면과 윗면 띠가 함께 보인다. 정면 입면도(윗면 0)와 정수리 직하 뷰 금지 ([art-style-guide](../../../../docs/design/art-style-guide.md) §1).
+- **Pivot / baseline**: 하단 중앙. 받침 바닥이 캔버스 맨 아래(여백 0~2px), 불투명 영역 중심 x = W/2 ± 2px.
+- **Headroom**: 연기·불빛·잎처럼 위로 솟는 요소까지 캔버스 안(위 여백 ≥ 2px). 상태 짝 중 하나라도 솟으면 두 상태 모두 같은 캔버스.
+- **No baked ground shadow / ground glow** — 엔진이 처리.
+- **Footprint**: 화면 폭 ≈ 점유 칸 수 × 0.8~1.0 유닛 ([msw-integration.md](msw-integration.md) §1).
+
+`구도: 탑다운 ¾ 가구, 하단 중앙 피벗 | bottom_margin 0..2, center_x_offset ±2, top_margin ≥2` — `propkit` 의 `export()` 반환값(bbox · bottom_margin · center_x_offset)으로 매 렌더 확인한다.
 
 ## Background prop (tree, sign, building)
 

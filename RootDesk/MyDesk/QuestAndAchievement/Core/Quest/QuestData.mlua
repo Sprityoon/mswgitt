@@ -6,6 +6,8 @@ script QuestData
 	property string RequiredJobId = ""
 	property string RewardJobId = ""
 	property integer RewardSP = 0
+	-- 완료 시 지급할 경험치 (공란=0). 잡몹 퀘스트는 경험치·코인, 보스 퀘스트는 아이템·SP 위주로 배분한다.
+	property integer RewardExp = 0
 
 	property string Name = ""
 
@@ -68,7 +70,8 @@ script QuestData
 		self.RequiredJobId = tostring(optional("RequiredJobId") or "")
 		self.RewardJobId = tostring(optional("RewardJobId") or "")
 		self.RewardSP = math.max(0, math.floor(tonumber(optional("RewardSP")) or 0))
-		
+		self.RewardExp = math.max(0, math.floor(tonumber(optional("RewardExp")) or 0))
+
 		self.Name = row:GetItem("Name")
 		self.Desc = row:GetItem("Desc")
 		self.ProgressingDesc = row:GetItem("ProgressingDesc")

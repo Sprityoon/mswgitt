@@ -2,12 +2,13 @@
 
 This skill was explicitly designed to **ask instead of guess**. A wrong guess on asset type or view costs a full redraw; one round of questions costs seconds. But over-asking is also a failure — asking about things the user already said, or things with obvious defaults, trains the user to ignore the questions.
 
-## The five spec slots
+## The spec slots
 
 | # | Slot | Decides | Default (if user says "just decide") | Ask when |
 |:-:|---|---|---|---|
-| 1 | **Asset type** — character/monster sprite, NPC, item icon, tile, background prop, UI icon | Composition recipe, size default, style default | Judged from subject (creature → sprite, object → icon) | The request doesn't name a use ("이거 픽셀로 바꿔줘" alone) |
-| 2 | **Style / concept** — `retro` (8/16-bit) vs `cartoon` (soft, illustrated), plus mood keywords | Which style reference governs the redraw | icon/tile → retro, character/creature → cartoon | Source is a photo or detailed art and the user gave no style/mood words |
+| 0 | **Input & track** — 원본 변환 / 신규 생성 · 트랙 A(메이플 카툰 일러스트) / 트랙 B(도트) | 도구(propkit vs .pxg)와 모든 스타일 규칙 | 월드에 놓이는 가구·소품·자원·아이템 아이콘 → **A** · 지형 타일·도트 UI → **B** · 이웃 에셋과 같은 쪽 | 사용자가 '도트'라고 했는데 대상이 공식 가구 옆에 놓일 때 (충돌을 알리고 확인) |
+| 1 | **Asset type** — character/monster sprite, NPC, item icon, tile, background prop, furniture/station, UI icon | Composition recipe, size default, style default | Judged from subject (creature → sprite, object → icon, 설치형 → furniture) | The request doesn't name a use ("이거 픽셀로 바꿔줘" alone) |
+| 2 | **Style / concept** — Track A mood keywords (힐링·아늑함·귀여움…) / Track B `retro` vs `pixel cartoon`, plus mood keywords | Which style reference governs the drawing | A: 이웃 공식 에셋 톤 + 요청 무드 · B: icon/tile → retro, character/creature → pixel cartoon | Source is a photo or detailed art and the user gave no style/mood words |
 | 3 | **Composition / view** — front, side, ¾, top-down; full-body / bust; idle / action pose | The entire drawing plan; also the most expensive slot to get wrong | Side-view idle for side-scroller games; top-down ¾ for top-down games; centered for icons | Almost always for characters/monsters — the user must own this choice |
 | 4 | **Size & pixel density** — output px + chunky (visible dots) vs hi-res 1:1 (barely visible pixels, modern 2D-game look) | Output canvas + logical grid + density (size table in SKILL.md) | Match the project's existing sprites if visible; else chunky — icon 64, character 128, tile 128 | If anchors don't fit the default (analysis.md detail budget), the asset is a tile/background, or the target look is ambiguous between dot-feel and hi-res (user mentions a high-fidelity 2D game, or project assets are hi-res) |
 | 5 | **Identity anchors** | What must survive from the source | Top 3–5 from analysis | Only if ambiguous — e.g. a logo with text (keep lettering?), multiple subjects in one image (which one?) |
@@ -42,6 +43,12 @@ Q4 [해상도감] 픽셀이 어느 정도 보이길 원하나요?
 ```
 
 Q4 is only worth asking when the project's own sprites aren't visible to check — matching neighbors beats asking.
+
+### This project's defaults (MSW 탑다운 크래프팅 게임)
+
+- 가구·설치물: 트랙 A · 탑다운 ¾ · 하단 중앙 피벗 · 기존 모델 Scale 유지(보통 0.75) · 상태 짝(대기/가동)이 있으면 둘 다 · 아이콘 128×128 포함.
+- 지형 타일: 트랙 B · 64px · 헤네시스 테라스 킷 팔레트(`docs/design/palettes/`).
+- 제작자가 "판단해서", "알아서"라고 하면 위 기본값을 **한 줄로 명시**하고 진행한다(프리뷰에서 교정 가능).
 
 ## When to skip elicitation entirely
 

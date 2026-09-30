@@ -1,6 +1,6 @@
 # Style: Retro (8/16-bit)
 
-One of the two style options. Choose retro for **icons, buttons, tiles, blocks, simple props, and any sprite that should read as classic 8/16-bit console art**. For characters and creatures that should feel soft or illustrated, prefer [style-cartoon.md](style-cartoon.md).
+**Track B (도트) style.** One of the two pixel style options. Choose retro for **icons, buttons, tiles, blocks, simple props, and any sprite that should read as classic 8/16-bit console art**. For pixel characters and creatures that should feel soft, prefer [style-pixel-cartoon.md](style-pixel-cartoon.md). For props that sit next to official MapleStory art, this is the wrong track — use [track-cartoon.md](track-cartoon.md) (Track A).
 
 Retro emphasizes **large, clearly visible dots** with a minimal palette. Each pixel is a deliberate design element.
 

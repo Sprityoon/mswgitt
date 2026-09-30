@@ -7,7 +7,7 @@
 > 2. 보스전에서는 속박·기절이 둔화로 바뀌어도 연계로 인정.
 > 3. 상위 무기 = 퀘스트 확정(2·3티어) + 보스 희귀 드롭.
 > 4. 3단계 우선 = 대장간 강화/주문 부여, 스토리 챕터 확장.
-> 관련 문서: [skill-tree-plan.md](./skill-tree-plan.md) §7~§8(직업 체계·단순성 가드라인) · [magic-skills-and-rare-equipment.md](./magic-skills-and-rare-equipment.md)(희귀 드롭 원안) · [equipment-enhancement-and-enchant-plan.md](./equipment-enhancement-and-enchant-plan.md)(강화 원안) · [hidden_job_barefist_fighter.md](./hidden_job_barefist_fighter.md) §7
+> 관련 문서: [skill-tree-plan.md](./skill-tree-plan.md) §7~§8(직업 체계·단순성 가드라인) · [combat-redesign-jobs-and-knockback.md](./combat-redesign-jobs-and-knockback.md)(트래퍼·알케미스트 특성화 & 넉백 개선 설계) · [magic-skills-and-rare-equipment.md](./magic-skills-and-rare-equipment.md)(희귀 드롭 원안) · [equipment-enhancement-and-enchant-plan.md](./equipment-enhancement-and-enchant-plan.md)(강화 원안) · [hidden_job_barefist_fighter.md](./hidden_job_barefist_fighter.md) §7
 
 ---
 

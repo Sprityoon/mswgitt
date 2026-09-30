@@ -392,13 +392,27 @@ script Animal extends Component
 		if not inv:RemoveItem(feedItem, 1) then return end
 
 		local keeper = player:GetComponent("script.PlayerController")
-		self.CareBonus = isvalid(keeper) and math.min(0.3, keeper:GetPassiveBonus("AnimalCare")) or 0
+		-- CareBonus = 와일드키퍼 패시브(AnimalCare, 상한 0.3) + 사육 숙련 가산(PlayerController:GetRanchingCareBonus, 2026-09-30).
+		-- ⚠ RPC 본문이라 `---@type` 사용자 타입 주석 금지(규칙 53 — LEA-1118) — 동적 호출.
+		local care = 0
+		if isvalid(keeper) then
+			care = math.min(0.3, keeper:GetPassiveBonus("AnimalCare")) + keeper:GetRanchingCareBonus()
+		end
+		self.CareBonus = math.min(0.5, care)
 		self.Bond = math.min(100, self.Bond + 1 + math.floor(self.CareBonus * 10 + 0.5))
 		self.FedAtUnix = now
 		self.ProducedForFeed = false
 		self:MarkOwnerDirty()
 		self:Feedback(player, self.AnimalId .. "에게 먹이를 줬습니다. 친밀도 " .. self.Bond .. "/100 · 생산 대기 -" .. math.floor(self.CareBonus * 100 + 0.5) .. "%")
 		log("[ANIMAL] feed " .. self.AnimalId .. " item=" .. feedItem .. " by=" .. userId)
+
+		-- 사육 숙련 XP (AnimalDataSet.FeedXp, 공란이면 10)
+		if isvalid(keeper) then
+			local feedXp = 10
+			local okX, vX = pcall(function() return row:GetItem("FeedXp") end)
+			if okX and vX ~= nil and tonumber(vX) ~= nil then feedXp = math.floor(tonumber(vX)) end
+			keeper:AddRanchingXP(feedXp)
+		end
 	end
 
 	@ExecSpace("ServerOnly")

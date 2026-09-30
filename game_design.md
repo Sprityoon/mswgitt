@@ -410,12 +410,16 @@ graph TD
   - **취미 (Hobby)**:
     - 전투 레벨과 무관하게 독립적으로 누적되는 라이프/생활 숙련도 체계.
     - **낚시 (Fishing)**: 낚시 성공률, 희귀 어종 획득, 낚시왕 랭킹 등과 연동. (기존 낚시 레벨을 취미 1호로 편입)
+    - 🔶 **사육 (Ranching) — 취미 2호, 2026-09-30 제작자 확정 · Play 검증 보류**: 가축 먹이 주기로 XP(`AnimalDataSet.FeedXp`). 레벨당 가축 생산 대기 -2%(상한 -20%, 와일드키퍼 패시브와 합산 상한 50%)·친밀도 상승폭 증가. 멘토 = **헛간지기 토리** — 말을 걸면 단계 보상(`HobbyRewardDataSet`)과 현황 안내, 가축·펫·먹이 상점.
     - **농사 (Farming)**: 밭 갈기, 파종, 수확을 통한 작물 품질 향상 및 수확 주기 단축. (확장 예정)
     - **채광/채집 (Mining/Gathering)**: 암석·광물 채굴 및 벌목 숙련도로 보너스 부산물/희귀 광물 획득 확률 증가. (확장 예정)
 - **UI 및 데이터 정합**:
   - 시작 화면 슬롯 카드(`UIMainMenuController`): `meta.jobId`를 파싱하여 `Lv.X · 직업명`(미전직 시 `모험가`) 단일 행으로 직관화.
   - 세이브 데이터(`PersistenceManager`): `SlotMeta`에 `jobId`를 영속화하여 슬롯 선택 시 즉시 동기화.
   - 플레이어 컨트롤러(`PlayerController`): `GetHobbyLevel(hobbyKey)`, `GetHobbySummary()` 헬퍼를 통해 인게임 캐릭터 정보창 및 생활 UI에서 취미별 진행도를 열람할 수 있는 통합 인터페이스 제공.
+- **전투 레벨 경험치 원천 & 직업 퀘스트 구조** ⚖️ 2026-09-29 (제작자 피드백 반영):
+  - 경험치 곡선은 기존대로 `MaxXP ×1.5/레벨`(누적 Lv8 ≈ 3.2천 · Lv12 ≈ 1.7만 · Lv16 ≈ 8.7만). 원천 = 채집(`ResourceDataSet.XpReward`) · 도감 최초 발견 · **몬스터 처치(`MonsterCoinDropDataSet.KillXp`, 보스는 방 전원)** · **퀘스트 보상(`QuestDataSet.RewardExp`)**. 처치 경험치는 권역 적정 레벨에서 레벨당 30~40마리가 되게 잡았다(벌판 6~14 · 고원 40~55 · 사막 150~185 · 설원 480~800).
+  - 직업 퀘스트 사슬(직업당 7단계): `첫 기술(L6) → 고원 잡몹(L7) → 스톤골렘(L8) → 사막 잡몹(L10) → 데우(L12, 비기 해금) → 설원 잡몹(L14) → 스노우맨(L16)`. **잡몹 퀘스트 = 경험치·코인**(레벨의 약 50~60%) / **보스 퀘스트 = 무기·비기·에픽 파츠·SP**(경험치는 약 20%). 데이터는 `QuestDataSet` 3x4~3x9 행.
 
 ## 4. 자원 및 제작 테크 트리 (Progression Tiers)
 
@@ -431,7 +435,7 @@ graph TD
 | **T1** | **Wood** (Tree1/Tree2) | 도끼(axe) | Hand Axe(Stone 2), Stone Axe(Stone 3+Wood 1), Wooden Chest(Wood 8), Wood Floor(Wood 2), Furnace(Stone 8+Wood 4) | ✅ |
 | **T2** | **Stone** (Stone/Big Stone1/Big Stone2) | 곡괭이(pickaxe) | Stone Pickaxe(Wood 1+Stone 3), Furnace 재료 | ✅ |
 | **—** | **Grass** (GrownGrass) | 맨손 | (재료) | ✅ |
-| **T3** | **Copper Ore** | 곡괭이 | 화로 제련 → Copper Bar (2 Copper Ore→1, 5초) → 구리 곡괭이/도끼 | 제련 ✅ / 구리 장비 ⏳ |
+| **T3** | **Copper Ore** (흙 벌판 사냥터 Big Stone — 1~3개 70% / 2~4개 85%, 2026-09-29 상향) | 곡괭이 | 화로 제련 → Copper Bar (2 Copper Ore→1, 5초) → 구리 곡괭이/도끼 | 제련 ✅ / 구리 장비 ⏳ |
 | **T4** | **Iron Ore** | 구리 곡괭이(Tech Lock 예정) | 화로 제련 → Iron Bar (2 Iron Ore→1, 8초) → 철 곡괭이/도끼·철제 장비 | Iron 노드·장비 ⏳ |
 
 - **도구 효율 값**(`item_dataset`): Hand Axe(axe, ToolPower 0, Attack 0, **MaxStack 99 기믹 무기**) / Stone Pickaxe(pickaxe, ToolPower 2, Attack 0) / Stone Axe(axe, ToolPower 2, Attack 8). 채집 데미지 = `1 + ToolPower`. 전투 평타 = CharAtk + Attack. 주먹도끼 던지기 = `SkillDataSet.hand_axe_throw` (Throw, 장착 필수).
@@ -562,7 +566,7 @@ graph TD
     - ✅ 몬스터→플레이어 데미지: 슬라임 AI가 인접 시 접촉 공격, 베이스 `player` 모델 내장 HitComponent가 HP 자동 차감.
     - ✅ 넉백 양방향 및 보간: 피격 시 EaseOutCubic 곡선을 이용해 롤백 없이 부드럽게 감속하는 클라이언트 넉백 연출 적용.
     - ✅ 연속 피격/넉백 정상화: IFrameTimer의 갱신을 서버 타이머 루틴으로 이관하여 2차 피격 넉백 씹힘을 완전히 제거함.
-    - ✅ 완료: 사망(HP0)→3s 후 (0,0) 리스폰 + 자원 50% 손실, 플레이어 피격 적색 플래시(아바타). 전투 공격력은 `item_dataset.Attack`(채집 ToolPower와 분리, ⚖️ 2026-08-16).
+    - ✅ 완료: 사망(HP0) 처리(→ 2026-09-30 "쓰러짐" 개편: 손실·보험 티켓·마을 귀환·레이드 규칙, 아래 §플레이어 HP 항목), 플레이어 피격 적색 플래시(아바타). 전투 공격력은 `item_dataset.Attack`(채집 ToolPower와 분리, ⚖️ 2026-08-16).
   - ✅ AI 추격 튜닝 완료: 몬스터가 플레이어에게 끝까지 달려들지 않고 바로 앞칸에서 공격을 멈추던 현상을 `DSq <= 0.81`(밀착) 및 공격 쿨타임 중에도 근접 타겟팅을 유지하도록 튜닝하여 해결.
   - [x] M3 완료: `MonsterSpawner`(@Logic, 맵당 인구캡, 바이옴별 변종 HpMul/AtkMul, 녹색섬 중앙 제외, 10분 주기 낮/밤 부스트 적용 완료) + `MonsterSpawnDataSet`.
   - 🔶 **전투 체감 개선(T38 — 코드 완료 2026-07-11, Play 검증 보류)**: 접촉 데미지 틱(TouchDamage/i-frame 위임) + 공격 타이밍 정정(윈드업 만료 시점 타격) + 텔레그래프 틴트 + `AttackRange` 단일화(리터럴 0.81 제거 — 상단 "AI 추격 튜닝"의 밀착 기준 대체)·`StopDistance` 신설. handoff §3 T38.
@@ -577,7 +581,13 @@ graph TD
   - ✅ 몬스터 반투명/깜빡임 현상 해결: Slime 모델이 Pattern A `MonsterAI`(수동 SpriteRUID 스왑)와 레거시 `StateAnimationComponent`(ActionSheet) 애니메이션 파이프라인을 **동시 보유**해, HitComponent+StateComponent로 자동 등록된 `HIT` 상태 전이 시 ActionSheet에 없는 `hit` 키를 재생하려다 스프라이트를 비우던 충돌이 원인. 중복 `StateAnimationComponent`(+고아 `ActionSheet` 값) 제거로 `MonsterAI`를 스프라이트 단독 제어자로 일원화.
   - 플레이어 기본 `HitComponent`/HP와 `UIMyInfo` HUD 연동:
     - 피격 시 적색 깜빡임 화면 연출, 넉백(바라보는 반대 방향 격자로 밀림), 피격 무적 시간(i-frame) 1초 동안 반투명 깜빡임 연출 적용.
-    - 사망 시 3초 후 중앙(0,0)에 전체 체력으로 리스폰 및 원자재 인벤토리 자원 50% 유실 처리.
+    - 🔶 **쓰러짐(HP 0) — 2026-09-30 제작자 확정 규칙, Play 검증 보류** (design-policy §2):
+      - **손실**: 쓰러지는 즉시 가방 속 `DeathLossItems`(나무·돌·구리 광석·철 광석) 50% + 코인 20%(`DeathCoinLossRatio`) 손실. 상자(`Chest`) 보관분은 별도 저장소라 대상 아님.
+      - **보험 티켓 (상점 구매, `item_dataset.DeathEffect`)**: 인벤토리 보호권(`protect_inventory`, 120코인) — 보유 시 쓰러질 때 자동 1개 소모하고 손실 면제. 즉시 부활권(`instant_revive`, 300코인, **상위 티켓**) — 쓰러진 상태에서 사용하면 그 자리에서 부활 + 이번 손실(또는 소모된 보호권)을 되돌림. 레이드 중에도 사용 가능.
+      - **일반 귀환**: 아바타 `dead` 동작으로 8초 → **마을**(`DeathTownMap` town (10,-2))에서 HP 가득 + 3초 보호. 쓰러짐 패널(HUD): 남은 초 · 잃은 물건 · [즉시 부활권 사용 (N)] · [마을에서 깨어나기].
+      - **레이드(미클리어 보스방)**: 자동 부활 없음. 방 안 인원이 모두 쓰러지면 → 전원 대기실에서 부활(도전 실패, 빈 방은 스윕 파기). 보스 처치 → 쓰러진 인원 그 방에서 부활(전리품 수거).
+      - 몬스터는 쓰러진 플레이어를 노리지 않는다. 수치는 `PlayerController` 프로퍼티.
+    - 🔶 **상점 2곳 (2026-09-30, Play 검증 보류)**: `ShopItemDataSet.Vendor` 로 판매자 구분 — 마을 상점(공란) = 도구·가구·씨앗·보험, **헛간지기 토리**(`barnkeeper`) = 가축 입주권·가축우리·펫·먹이(구매) / 달걀·양털(판매). 토리는 보고·제안할 퀘스트가 없을 때 F 로 상점이 열린다. 상점 창: 분류 칩(`ShopCategory`) + 정렬(기본·이름·가격↑↓) + 페이지.
 - **그리드 기반 기지 건설 및 보관 시스템 (일부 구현)**:
   - [x] 건설 배치: 퀵 슬롯 가구/타일 선택 후 Ctrl로 인접 셀 설치, 거리(≤4)·지반·점유 검사 + 격자 중심 `(cx+0.5, cy+0.5, 0)` 스폰/타일 칠.
   - [x] 청사진 프리뷰: 바라보는 셀에 반투명 미리보기(가능=녹색/불가=적색).

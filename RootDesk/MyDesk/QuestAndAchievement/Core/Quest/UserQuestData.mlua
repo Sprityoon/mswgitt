@@ -415,6 +415,11 @@ script UserQuestData
 
 		if not jobAlreadyGranted then
 			if data.RewardSP > 0 then pc.SP = pc.SP + data.RewardSP end
+			-- 경험치 보상은 실제 레벨업 경로(AddXP)로 지급한다 — 레벨업 시 SP·AP·최대 HP 성장이 함께 적용된다.
+			if data.RewardExp > 0 and isvalid(pc) then
+				pc:AddXP(data.RewardExp)
+				log(string.format("[QUEST] Reward XP granted: %d (Quest %d)", data.RewardExp, data.Id))
+			end
 			if data.RewardJobId ~= "" then
 				pc:GrantJob(data.RewardJobId)
 				local jobQuestMap = {
@@ -447,7 +452,7 @@ script UserQuestData
 					end
 				end
 			end
-			if data.RewardSP > 0 then _PersistenceManager:MarkPlayerDirty(userEntity.PlayerComponent.UserId) end
+			if data.RewardSP > 0 or data.RewardExp > 0 then _PersistenceManager:MarkPlayerDirty(userEntity.PlayerComponent.UserId) end
 		end
 		if data.IsRepeatable then
 			self.State = _QuestStateEnum.Stored

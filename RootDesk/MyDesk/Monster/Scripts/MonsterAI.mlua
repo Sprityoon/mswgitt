@@ -1812,7 +1812,8 @@ script MonsterAI extends Component
 		local best = nil
 		local bestSq = 0
 		for i, u in ipairs(users) do
-			if isvalid(u) then
+			-- 쓰러진(HP 0) 플레이어는 대상에서 뺀다 — 쓰러진 자리를 맴돌며 깨어나자마자 치지 않게.
+			if isvalid(u) and u.PlayerComponent ~= nil and u.PlayerComponent.Hp > 0 then
 				local dx = u.TransformComponent.WorldPosition.x - myPos.x
 				local dy = u.TransformComponent.WorldPosition.y - myPos.y
 				local dSq = dx * dx + dy * dy

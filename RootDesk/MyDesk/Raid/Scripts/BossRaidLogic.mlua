@@ -562,6 +562,8 @@ script BossRaidLogic extends Logic
 		if inst == nil then return end
 		if inst.cleared then return end
 		inst.cleared = true
+		-- 쓰러져 있던 파티원은 그 방에서 일어나 전리품을 줍는다(쓰러짐 손실은 쓰러질 때 이미 확정됨).
+		self:ReviveDownedInRoom(map, "raid_clear")
 
 		-- 주간 카운트는 그 방에 실제로 있던 전원에게 준다 (파티 도입 시 그대로 동작).
 		local users = _UserService:GetUsersByMapComponent(map.MapComponent)
@@ -602,12 +604,101 @@ script BossRaidLogic extends Logic
 		_TimerService:SetTimerOnce(expel, self.ClearGraceSeconds)
 	end
 
+	---------------------------------------------------------------------------
+	-- 쓰러짐 규칙 (2026-09-30 제작자 확정)
+	--   미클리어 보스방에서 쓰러지면 자동 부활이 없다(즉시 부활권만 예외 — PlayerController).
+	--   · 방 안 인원이 **모두** 쓰러지면(전멸) → 전원 대기실로 보내며 부활(도전 실패, 빈 방은 스윕이 파기)
+	--   · 보스를 처치하면 → 쓰러져 있던 인원을 그 방에서 부활(전리품 수거 가능)
+	---------------------------------------------------------------------------
+
+	@ExecSpace("ServerOnly")
+	method boolean IsActiveBossRoom(string mapName)
+		-- 아직 클리어·전멸 처리되지 않은 보스방 인스턴스인지. 쓰러짐 모드 판정에 쓴다(PlayerController).
+		if mapName == nil or mapName == "" then return false end
+		local inst = self.Instances[mapName]
+		return inst ~= nil and inst.cleared ~= true and inst.wiped ~= true
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnPlayerDowned(Entity player)
+		-- PlayerController:ServerDie 가 보스방에서 부른다. 이 쓰러짐으로 전멸이 됐는지 본다.
+		if not isvalid(player) then return end
+		local map = player.CurrentMap
+		if not isvalid(map) then return end
+		self:CheckRaidWipe(map.Name)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void CheckRaidWipe(string mapName)
+		-- 방 안 인원이 전부 쓰러졌으면 전원을 대기실로 보내며 부활시킨다. 한 명이라도 서 있으면 아무것도 안 한다.
+		-- 쓰러짐 직후 · 스윕 주기(살아 있던 인원이 포탈로 나가 쓰러진 인원만 남은 경우)에서 부른다.
+		if not self:IsActiveBossRoom(mapName) then return end
+		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
+		if not isvalid(map) then return end
+		local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+		if users == nil or #users == 0 then return end
+		local downed = {}
+		for _, user in ipairs(users) do
+			if isvalid(user) then
+				local pc = user:GetComponent("script.PlayerController")
+				if not isvalid(pc) then return end
+				---@type PlayerController
+				local controller = pc
+				if not controller.IsDead then return end
+				downed[#downed + 1] = controller
+			end
+		end
+		if #downed == 0 then return end
+
+		local inst = self.Instances[mapName]
+		inst.wiped = true
+		local lobby = self:EnsureLobbyMap(inst.bossId)
+		local target = "town"
+		local tx = 10
+		local ty = -2
+		if isvalid(lobby) then
+			target = self:LobbyMapName(inst.bossId)
+			tx = self.LobbyArriveX
+			ty = self.LobbyArriveY
+		end
+		for _, controller in ipairs(downed) do
+			self:SendFeedback(controller.Entity, "파티가 모두 쓰러졌어요. 대기실에서 깨어나요.")
+			controller:ReviveAndMove(target, tx, ty, "raid_wipe")
+		end
+		log("[RAID] wipe map=" .. mapName .. " boss=" .. tostring(inst.bossId) .. " downed=" .. tostring(#downed) .. " -> " .. target)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ReviveDownedInRoom(Entity map, string reason)
+		-- 그 방에서 쓰러져 있는 인원을 제자리 부활시킨다(보스 처치 · 방 정리 전).
+		if not isvalid(map) then return end
+		local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+		if users == nil then return end
+		local n = 0
+		for _, user in ipairs(users) do
+			if isvalid(user) then
+				local pc = user:GetComponent("script.PlayerController")
+				if isvalid(pc) then
+					---@type PlayerController
+					local controller = pc
+					if controller.IsDead then
+						controller:ReviveInPlace(reason)
+						n = n + 1
+					end
+				end
+			end
+		end
+		if n > 0 then log("[RAID] revived " .. tostring(n) .. " downed in " .. map.Name .. " reason=" .. reason) end
+	end
+
 	@ExecSpace("ServerOnly")
 	method void ExpelAndDestroy(string mapName)
 		-- 남은 인원을 마을로 내보낸 뒤 맵을 파기한다.
 		-- DestroyDynamicMap 은 유저가 남아 있으면 실패하므로 퇴장이 먼저다.
 		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
 		if isvalid(map) then
+			-- 쓰러진 채 남은 인원(수명 상한 정리 등)은 먼저 일으켜 보낸다 — 죽은 상태로 마을에 떨어지지 않게.
+			self:ReviveDownedInRoom(map, "raid_expel")
 			local users = _UserService:GetUsersByMapComponent(map.MapComponent)
 			if users ~= nil then
 				for _, user in ipairs(users) do
@@ -643,6 +734,9 @@ script BossRaidLogic extends Logic
 				doomed[#doomed + 1] = mapName
 			elseif occupied and age > self.InstanceMaxLifetimeSeconds then
 				self:ExpelAndDestroy(mapName)
+			elseif occupied then
+				-- 서 있던 인원이 포탈로 나가 쓰러진 인원만 남은 경우도 전멸로 처리한다(최대 스윕 주기만큼 지연).
+				self:CheckRaidWipe(mapName)
 			end
 		end
 

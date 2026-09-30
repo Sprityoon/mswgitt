@@ -34,6 +34,8 @@ script UIQuestLogController extends Component
 	property number TargetScale = 1.0
 	property any ScaleTimer = nil
 	property number LastToggleTime = 0
+	-- 보상 칸의 경험치 아이콘 (공식 item 스프라이트 "EXP" 구슬 40×40)
+	property string ExpRewardIconRUID = "cc20081c70c449f2b9f3a8852d7eda8d"
 	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
 	property string uiHoverSfx = "159bf70a74634bfc8e91a29e527a4be5"
 	property number uiSfxVolume = 1.0
@@ -482,23 +484,33 @@ script UIQuestLogController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void FillRewards(any data)
+		-- 보상 칸: 경험치(있으면 첫 칸) → RewardItems 순서로 채운다.
 		local slots = { self._T.slot1, self._T.slot2, self._T.slot3, self._T.slot4 }
+		local entries = {}
+		local exp = math.floor(tonumber(data.RewardExp) or 0)
+		if exp > 0 then
+			entries[#entries + 1] = { icon = self.ExpRewardIconRUID, label = tostring(exp) }
+		end
 		local items = data.RewardItems
+		if items ~= nil then
+			for i = 1, #items do
+				local itemName = tostring(items[i][1] or "")
+				local count = tonumber(items[i][2]) or 0
+				entries[#entries + 1] = { icon = self:GetItemIconRuid(itemName), label = "x" .. tostring(math.floor(count)) }
+			end
+		end
 		for i = 1, #slots do
 			local slot = slots[i]
 			if isvalid(slot) then
-				local it = nil
-				if items ~= nil then it = items[i] end
+				local it = entries[i]
 				if it ~= nil then
 					slot.Enable = true
-					local itemName = tostring(it[1] or "")
-					local count = tonumber(it[2]) or 0
 					local iconEnt = slot:GetChildByName("Icon")
 					local countEnt = slot:GetChildByName("Count")
-					self:SetLabel(countEnt, "x" .. tostring(math.floor(count)))
+					self:SetLabel(countEnt, it.label)
 					if isvalid(iconEnt) then
 						local spr = iconEnt.SpriteGUIRendererComponent
-						local icon = self:GetItemIconRuid(itemName)
+						local icon = it.icon
 						if isvalid(spr) and icon ~= "" then
 							spr.ImageRUID = icon
 							iconEnt.Enable = true

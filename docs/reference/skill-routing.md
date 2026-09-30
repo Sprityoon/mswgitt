@@ -41,7 +41,7 @@
 | DataSet / `.csv` / i18n | `msw-general` | `references/dataset.md` |
 | MCP / refresh / logs / Play | `msw-general` | `references/workspace.md` |
 | BT `.behaviourtree` 파일 저작 | `msw-behaviourtree` | `references/node-catalog.md` |
-| 스프라이트 직접 제작 | `msw-painter` / `image-to-pixel` | 각 SKILL.md 라우팅 준수 |
+| 스프라이트 직접 제작 | `image-to-pixel` (기본) / `msw-painter` (기법 참고만) | `image-to-pixel` §0 공식 리소스 판정 → 트랙 A `references/track-cartoon.md` · `msw-integration.md` / 트랙 B `pxg-format.md`. `msw-painter` 의 업로드 경로는 규칙 45 로 Play 불가 |
 
 ## 프로젝트 스킬 (이 저장소 전용)
 
@@ -50,4 +50,4 @@
 | `msw-project` | 작업 부팅: 현황 파악 → 함정 확인 → 구현 → 검증 체인 → 기록 |
 | `msw-checkpoint` | 문서 동기화 점검 + git 커밋·푸시 |
 | `msw-wiki` | 로컬 위키(docs/wiki) 안내 — MSWPackages 미러 + RoguelikeWorld 예제 큐레이션 |
-| `image-to-pixel` | 원본 이미지 → 픽셀 게임 에셋 변환 |
+| `image-to-pixel` | 게임 아트 제작 — 원본 변환 + 원본 없는 신규 생성. 트랙 A 메이플 카툰 일러스트(가구·소품·아이콘, `propkit.py`) / 트랙 B 도트(지형 타일·도트 UI, `.pxg`). 2026-09-29 전면 개편 |

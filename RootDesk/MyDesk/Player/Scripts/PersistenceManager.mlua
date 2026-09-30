@@ -931,6 +931,10 @@ script PersistenceManager extends Logic
 				-- T64: 낚시 숙련
 				pc.FishingLevel = data.fishingLevel or 1
 				pc.FishingXp = data.fishingXp or 0
+				-- 2026-09-30: 사육 숙련 (구 세이브엔 키가 없어 기본값)
+				pc.RanchingLevel = math.max(1, math.floor(tonumber(data.ranchingLevel) or 1))
+				pc.RanchingXp = math.max(0, math.floor(tonumber(data.ranchingXp) or 0))
+				pc.RanchingRewardLevel = math.max(1, math.floor(tonumber(data.ranchingRewardLevel) or 1))
 				-- T45⑥: 로드 직후 미해금·패시브·중복 장착 필터
 				pc:SanitizeEquippedSkills()
 				log("[T69][SAVE] load equippedSkills=" .. tostring(pc.EquippedSkillsJson))
@@ -1311,6 +1315,9 @@ script PersistenceManager extends Logic
 			pc.Mana = pc:GetMaxMana()
 			pc.FishingLevel = 1
 			pc.FishingXp = 0
+			pc.RanchingLevel = 1
+			pc.RanchingXp = 0
+			pc.RanchingRewardLevel = 1
 			pc.EquippedSkillsJson = "[]"
 			pc:SanitizeEquippedSkills()
 			pc.IsSleeping = false
@@ -1403,6 +1410,9 @@ script PersistenceManager extends Logic
 		local capMana = pc.Mana
 		local capFishingLevel = tonumber(pc.FishingLevel) or 1
 		local capFishingXp = tonumber(pc.FishingXp) or 0
+		local capRanchingLevel = tonumber(pc.RanchingLevel) or 1
+		local capRanchingXp = tonumber(pc.RanchingXp) or 0
+		local capRanchingRewardLevel = tonumber(pc.RanchingRewardLevel) or 1
 		local capSleeping = pc.IsSleeping == true
 		local capSleepTicks = pc.SleepStartTimeTicks or "0"
 		local capCoin = tonumber(inv.Coin) or 0
@@ -1605,6 +1615,9 @@ script PersistenceManager extends Logic
 			mana = capMana,
 			fishingLevel = capFishingLevel,
 			fishingXp = capFishingXp,
+			ranchingLevel = capRanchingLevel,
+			ranchingXp = capRanchingXp,
+			ranchingRewardLevel = capRanchingRewardLevel,
 			isSleeping = capSleeping,
 			sleepStartTimeTicks = capSleepTicks,
 			posX = tonumber(posX) or 0.0,

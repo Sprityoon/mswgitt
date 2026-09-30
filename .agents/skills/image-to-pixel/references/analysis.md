@@ -1,8 +1,28 @@
-# Source image analysis → Conversion Brief
+# Brief — Design Brief (신규 생성) / Conversion Brief (원본 변환)
+
+두 경우 모두 **그리기 전에 대화에 브리프를 먼저 적는다.** 브리프는 질문(elicitation)의 근거이자 자가비평 루프가 대조하는 체크리스트다.
+
+## Design Brief (원본 없이 새로 그릴 때 — required output)
+
+```
+## Design Brief
+- Subject / 용도: <무엇 + 게임에서의 역할 (예: 광석 제련 가구, 2×2 점유, 대기/가동 상태 교체)>
+- 공식 리소스 판정: <검토 후보 N개와 부적합 사유 — SKILL.md §0>
+- 무드 키워드: <예: 힐링·아늑함·둥글둥글 / 금지: 어두움·가시·해골>
+- 이웃 실측: <같은 화면 공식 에셋 2~4개 — 게임 배율 크기·외곽선·채도>
+- 부품 목록: <뒤→앞 순서 5~12개 (예: 굴뚝 → 받침돌 → 벽돌 돔 → 이끼 모자 → 돌 아치 → 아궁이 → 장작)>
+- 재질 → 램프: <부품별 재질과 hex 램프 — 프리셋에서 재채색>
+- 상태: <상태별로 바뀌는 부품만 (예: 가동 = 불꽃·빛 번짐·연기)>
+- Spec: 트랙 A|B / 캔버스 WxH / 모델 Scale / 피벗 / 아이콘 여부  (모르는 칸 "TBD → elicit")
+```
+
+---
+
+## Conversion Brief (원본 이미지를 변환할 때)
 
 The goal of analysis is to extract **what makes the subject recognizable** so it can be redrawn in a completely different style, size, and composition without losing identity. You are not building a pixel map of the image — you are building a *description* precise enough to draw from.
 
-## The Conversion Brief (required output)
+### The Conversion Brief (required output)
 
 Write this in the conversation before eliciting or drawing. Use this exact template:
 
@@ -38,7 +58,8 @@ Raw photo colors are desaturated by lighting and contain thousands of shades; a 
 
 1. **Quantize** — name the 3–5 dominant hues of the subject ("warm brown fur, cream chest, red collar"), ignoring lighting variation. Each hue becomes one ramp. For objective data, run `python scripts/pixeltool.py analyze source.png` — its palette clusters are the quantization starting point.
 2. **Style-shift** — move each hue toward the target style's palette:
-   - `cartoon` → warm, slightly desaturated pastel (see [style-cartoon.md](style-cartoon.md) palette section). Build 4–6 level ramps + a colored-outline shade per surface.
+   - Track A (메이플 카툰 일러스트) → [track-cartoon.md](track-cartoon.md) §4 material ramps + warm dark outline.
+   - `pixel cartoon` → warm, slightly desaturated pastel (see [style-pixel-cartoon.md](style-pixel-cartoon.md) palette section). Build 4–6 level ramps + a colored-outline shade per surface.
    - `retro` → minimal and punchy, 2–4 levels per surface, black/white outline allowed (see [style-retro.md](style-retro.md)).
 
 Write the resulting hex ramps into the brief. When drawing, use ONLY these ramps.
@@ -67,7 +88,7 @@ Detail that fits shrinks fast with the grid. Decide what survives *before* drawi
 | 32×32 | Silhouette + 3 anchors + simple face (dot eyes, 1px mouth) |
 | 48×48 | Most anchors + cartoon face features (eyes with highlight, blush) |
 | 64×64 | Full anchor list + shading ramps + accessories with interior detail |
-| 96–200 (hi-res 1:1) | Everything above + full face detail, material contrast (fur/cloth/metal read differently), cluster shading — see style-cartoon.md high-resolution mode. Plan the surface list (8–15 surfaces) in the brief |
+| 96–200 (hi-res 1:1) | Everything above + full face detail, material contrast (fur/cloth/metal read differently), cluster shading — see style-pixel-cartoon.md high-resolution mode. Plan the surface list (8–15 surfaces) in the brief |
 | 200+ (hi-res 1:1) | Boss/large-monster scale: sub-anchors get their own ramps (each hair lock, armor plate); skipping the surface plan here guarantees a muddy result |
 
 If the user's requested size can't fit their must-keep anchors, raise it during elicitation ("이 디테일을 유지하려면 128×128 이상을 추천합니다").

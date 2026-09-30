@@ -40,6 +40,34 @@ script UIShopController extends Component
 	property Entity slot6_name = "f1e65861-c49a-428d-b8e5-6bd0081bdf4b"
 	property Entity slot6_price = "e11a4798-1040-4004-89b0-961e4feed9af"
 
+	-- 페이지 넘김 (2026-09-30): 슬롯은 6칸 고정인데 구매 목록이 6개를 넘어 뒤쪽 품목이 보이지 않았다.
+	property Entity btnPrevPage = "4d411011-dcc6-4e25-be0b-1be4714d6149"
+	property Entity btnNextPage = "a384eee3-5812-4468-8f1c-08358713af11"
+	property Entity pageText = "2e97db52-8c2d-4f2a-a2b6-fb033de3f8dc"
+	property integer currentPage = 1
+	property integer pageCount = 1
+	property any prevPageHandler = nil
+	property any nextPageHandler = nil
+
+	-- 판매자 (2026-09-30): ShopItemDataSet.Vendor 로 품목을 나눈다. 공란 = "merchant"(마을 상점).
+	-- 헛간지기 토리(VillagerDialog NpcId "barnkeeper")는 가축·펫·먹이를 판다 — VillagerDialog:TryInteract 가 OpenVendor 를 부른다.
+	property string currentVendor = "merchant"
+	property Entity titleText = "2af5ae21-c4d2-4b44-a225-07dc2ba6a107"
+
+	-- 분류 칩 + 정렬 (2026-09-30): 분류 = ShopItemDataSet.ShopCategory(상점 전용 표기). 칩1 = 전체, 칩2~5 = 지금 목록에 있는 분류(등장 순).
+	property Entity chip1 = "3207bb21-ae95-4913-9f40-dff6339cd594"
+	property Entity chip2 = "7f3ed42e-aa9a-4585-b260-3df49c79d153"
+	property Entity chip3 = "4fa41d51-893b-439b-8693-c280b0676201"
+	property Entity chip4 = "efce98d9-0c75-436c-8fc1-238ec704d03e"
+	property Entity chip5 = "5d5e72e1-58cf-42fd-8a87-9e85773b9b2c"
+	property Entity btnSort = "5024f18d-c609-438e-b4ee-8f8936e55b7b"
+	property string currentCategory = ""
+	-- default = 데이터 순 · name = 이름순 · price_asc = 낮은 가격순 · price_desc = 높은 가격순
+	property string sortMode = "default"
+	property table chipCategories = {}
+	property table chipHandlers = {}
+	property any sortHandler = nil
+
 	-- Runtime state (client-only)
 	property string currentTab = "buy"  -- "buy" or "sell"
 	property table shopItems = {}       -- index -> { name, price }
@@ -70,6 +98,24 @@ script UIShopController extends Component
 				self.slotHandlers[i] = h
 			end
 		end
+
+		if isvalid(self.btnPrevPage) then
+			self.prevPageHandler = self.btnPrevPage:ConnectEvent(ButtonClickEvent, function() self:ChangePage(-1) end)
+		end
+		if isvalid(self.btnNextPage) then
+			self.nextPageHandler = self.btnNextPage:ConnectEvent(ButtonClickEvent, function() self:ChangePage(1) end)
+		end
+
+		for i = 1, 5 do
+			local chip = self["chip" .. i]
+			if isvalid(chip) then
+				local index = i
+				self.chipHandlers[i] = chip:ConnectEvent(ButtonClickEvent, function() self:OnChipClick(index) end)
+			end
+		end
+		if isvalid(self.btnSort) then
+			self.sortHandler = self.btnSort:ConnectEvent(ButtonClickEvent, function() self:CycleSort() end)
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -81,12 +127,105 @@ script UIShopController extends Component
 				slot:DisconnectEvent(ButtonClickEvent, h)
 			end
 		end
+		if isvalid(self.btnPrevPage) and self.prevPageHandler ~= nil then
+			self.btnPrevPage:DisconnectEvent(ButtonClickEvent, self.prevPageHandler)
+		end
+		if isvalid(self.btnNextPage) and self.nextPageHandler ~= nil then
+			self.btnNextPage:DisconnectEvent(ButtonClickEvent, self.nextPageHandler)
+		end
+		for i = 1, 5 do
+			local chip = self["chip" .. i]
+			local h = self.chipHandlers[i]
+			if isvalid(chip) and h ~= nil then
+				chip:DisconnectEvent(ButtonClickEvent, h)
+			end
+		end
+		if isvalid(self.btnSort) and self.sortHandler ~= nil then
+			self.btnSort:DisconnectEvent(ButtonClickEvent, self.sortHandler)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ChangePage(integer delta)
+		-- 이전/다음 페이지. 범위를 벗어나면 무시한다.
+		local nextPage = self.currentPage + delta
+		if nextPage < 1 or nextPage > self.pageCount then return end
+		self.currentPage = nextPage
+		self:RefreshShop()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnChipClick(integer index)
+		-- 분류 칩: 1 = 전체, 2~5 = chipCategories[index].
+		if index == 1 then
+			self.currentCategory = ""
+		else
+			self.currentCategory = self.chipCategories[index] or ""
+		end
+		self.currentPage = 1
+		self:RefreshShop()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void CycleSort()
+		-- 정렬 순환: 기본순 → 이름순 → 낮은 가격순 → 높은 가격순 → 기본순.
+		local order = { "default", "name", "price_asc", "price_desc" }
+		local nextIdx = 1
+		for i, m in ipairs(order) do
+			if m == self.sortMode then nextIdx = (i % #order) + 1 end
+		end
+		self.sortMode = order[nextIdx]
+		self.currentPage = 1
+		self:RefreshShop()
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetSortLabel()
+		-- 정렬 버튼 표기.
+		if self.sortMode == "name" then return "정렬: 이름순" end
+		if self.sortMode == "price_asc" then return "정렬: 낮은 가격" end
+		if self.sortMode == "price_desc" then return "정렬: 높은 가격" end
+		return "정렬: 기본순"
 	end
 
 	@ExecSpace("ClientOnly")
 	method void Open()
+		-- 마을 상점(기존 진입점 — MerchantInteract). 시그니처 유지(규칙 46).
+		self:OpenVendor("merchant", "상점")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenVendor(string vendorId, string title)
+		-- 판매자별 상점 열기. vendorId 는 ShopItemDataSet.Vendor 값(공란 행 = "merchant").
+		self.currentVendor = vendorId
+		self.currentCategory = ""
+		self.sortMode = "default"
+		if isvalid(self.titleText) then
+			local t = self.titleText.TextGUIRendererComponent
+			if isvalid(t) then t.Text = title end
+		end
 		self.Entity.Enable = true
 		self:SetTab("buy")
+		log("[SHOP] open vendor=" .. vendorId)
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean HasVendorItems(string vendorId)
+		-- 이 판매자에게 등록된 품목이 하나라도 있는가(VillagerDialog 가 상점 NPC 여부 판정에 쓴다).
+		local shopDs = _DataService:GetTable("ShopItemDataSet")
+		if shopDs == nil then return false end
+		for i = 1, shopDs:GetRowCount() do
+			if self:RowVendor(shopDs, i) == vendorId then return true end
+		end
+		return false
+	end
+
+	@ExecSpace("ClientOnly")
+	method string RowVendor(any shopDs, integer i)
+		-- ShopItemDataSet.Vendor (공란 = "merchant").
+		local ok, v = pcall(function() return shopDs:GetCell(i, "Vendor") end)
+		if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		return "merchant"
 	end
 
 	@ExecSpace("ClientOnly")
@@ -97,6 +236,8 @@ script UIShopController extends Component
 	@ExecSpace("ClientOnly")
 	method void SetTab(string tabName)
 		self.currentTab = tabName
+		self.currentPage = 1
+		self.currentCategory = ""
 
 		-- Highlight the active tab (Buy = green, Sell = grey/blue)
 		if isvalid(self.btnTabBuy) and isvalid(self.btnTabBuy.SpriteGUIRendererComponent) then
@@ -120,6 +261,7 @@ script UIShopController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void RefreshShop()
+		-- 판매자·탭 → 분류 칩 → 분류 필터 → 정렬 → 페이지 순으로 목록을 만든다.
 		local localPlayer = _UserService.LocalPlayer
 		if not isvalid(localPlayer) then return end
 
@@ -131,94 +273,140 @@ script UIShopController extends Component
 			self.coinText.TextComponent.Text = "보유 코인: " .. tostring(inv.Coin) .. " 코인"
 		end
 
-		-- Load ShopItemDataSet
 		local shopDs = _DataService:GetTable("ShopItemDataSet")
 		if shopDs == nil then
 			log_error("RefreshShop: ShopItemDataSet not found.")
 			return
 		end
-
 		local itemDs = _DataService:GetTable("item_dataset")
 		if itemDs == nil then
 			log_error("RefreshShop: item_dataset not found.")
 			return
 		end
 
-		self.shopItems = {}
-		local activeCount = 0
-		local rowCount = shopDs:GetRowCount()
-
-		for i = 1, rowCount do
-			local itemName = shopDs:GetCell(i, "Name") or ""
-			local buyPrice = tonumber(shopDs:GetCell(i, "BuyPrice")) or 0
-			local sellPrice = tonumber(shopDs:GetCell(i, "SellPrice")) or 0
-
-			local isValidItem = false
-			local displayPrice = 0
-
-			if self.currentTab == "buy" and buyPrice > 0 then
-				isValidItem = true
-				displayPrice = buyPrice
-			elseif self.currentTab == "sell" and sellPrice > 0 then
-				isValidItem = true
-				displayPrice = sellPrice
+		-- ① 이 판매자 · 이 탭의 전체 품목
+		local all = {}
+		for i = 1, shopDs:GetRowCount() do
+			if self:RowVendor(shopDs, i) == self.currentVendor then
+				local itemName = shopDs:GetCell(i, "Name") or ""
+				local buyPrice = tonumber(shopDs:GetCell(i, "BuyPrice")) or 0
+				local sellPrice = tonumber(shopDs:GetCell(i, "SellPrice")) or 0
+				local price = 0
+				if self.currentTab == "buy" then price = buyPrice else price = sellPrice end
+				if itemName ~= "" and price > 0 then
+					local cat = ""
+					local okC, vC = pcall(function() return shopDs:GetCell(i, "ShopCategory") end)
+					if okC and vC ~= nil then cat = tostring(vC) end
+					local row = itemDs:FindRow("Name", itemName)
+					local disp = itemName
+					local ruid = ""
+					if row ~= nil then
+						ruid = row:GetItem("IconRUID") or ""
+						local okD, vD = pcall(function() return row:GetItem("DisplayName") end)
+						if okD and vD ~= nil and tostring(vD) ~= "" then disp = tostring(vD) end
+					end
+					all[#all + 1] = { name = itemName, price = price, cat = cat, disp = disp, ruid = ruid, order = i }
+				end
 			end
+		end
 
-			if isValidItem then
-				activeCount = activeCount + 1
-				if activeCount <= 6 then
-					self.shopItems[activeCount] = { name = itemName, price = displayPrice }
-
-					local slot = self["slot" .. activeCount]
-					local icon = self["slot" .. activeCount .. "_icon"]
-					local nameTxt = self["slot" .. activeCount .. "_name"]
-					local priceTxt = self["slot" .. activeCount .. "_price"]
-
-					if isvalid(slot) then
-						-- Find IconRUID from item_dataset
-						local ruid = ""
-						local row = itemDs:FindRow("Name", itemName)
-						if row ~= nil then
-							ruid = row:GetItem("IconRUID") or ""
-						end
-
-						-- Set Icon
-						if isvalid(icon) and isvalid(icon.SpriteGUIRendererComponent) then
-							icon.SpriteGUIRendererComponent.ImageRUID = ruid
-						end
-
-						-- Set Name
-						if isvalid(nameTxt) and isvalid(nameTxt.TextComponent) then
-							local disp = itemName
-							if row ~= nil then
-								local okD, vD = pcall(function() return row:GetItem("DisplayName") end)
-								if okD and vD ~= nil and tostring(vD) ~= "" then disp = tostring(vD) end
-							end
-							nameTxt.TextComponent.Text = disp
-						end
-
-						-- Set Price text
-						if isvalid(priceTxt) and isvalid(priceTxt.TextComponent) then
-							if self.currentTab == "buy" then
-								priceTxt.TextComponent.Text = tostring(displayPrice) .. " 코인"
-							else
-								priceTxt.TextComponent.Text = tostring(displayPrice) .. " 코인"
-							end
-						end
-
-						slot.Enable = true
+		-- ② 분류 칩: 전체 + 등장 순 분류(최대 4개)
+		self.chipCategories = {}
+		local seen = {}
+		local cats = {}
+		for _, e in ipairs(all) do
+			if e.cat ~= "" and not seen[e.cat] then
+				seen[e.cat] = true
+				cats[#cats + 1] = e.cat
+			end
+		end
+		if self.currentCategory ~= "" and not seen[self.currentCategory] then self.currentCategory = "" end
+		for i = 1, 5 do
+			local chip = self["chip" .. i]
+			if isvalid(chip) then
+				local label = ""
+				local key = ""
+				if i == 1 then
+					label = "전체"
+				elseif cats[i - 1] ~= nil then
+					key = cats[i - 1]
+					label = key
+				end
+				self.chipCategories[i] = key
+				-- 분류가 하나뿐이면 칩 줄 전체를 숨긴다(고를 게 없다).
+				chip.Enable = (label ~= "") and (#cats > 1)
+				local t = chip.TextGUIRendererComponent
+				if isvalid(t) then t.Text = label end
+				local s = chip.SpriteGUIRendererComponent
+				if isvalid(s) then
+					if key == self.currentCategory then
+						s.Color = Color(0.18, 0.40, 0.20, 1.0)
+					else
+						s.Color = Color(0.30, 0.30, 0.36, 1.0)
 					end
 				end
 			end
 		end
 
-		-- Hide unused slots
-		for i = activeCount + 1, 6 do
-			local slot = self["slot" .. i]
+		-- ③ 분류 필터
+		local list = {}
+		for _, e in ipairs(all) do
+			if self.currentCategory == "" or e.cat == self.currentCategory then list[#list + 1] = e end
+		end
+
+		-- ④ 정렬 (같으면 데이터 순으로 안정화)
+		local mode = self.sortMode
+		table.sort(list, function(a, b)
+			if mode == "name" and a.disp ~= b.disp then return a.disp < b.disp end
+			if mode == "price_asc" and a.price ~= b.price then return a.price < b.price end
+			if mode == "price_desc" and a.price ~= b.price then return a.price > b.price end
+			return a.order < b.order
+		end)
+		if isvalid(self.btnSort) then
+			local st = self.btnSort.TextGUIRendererComponent
+			if isvalid(st) then st.Text = self:GetSortLabel() end
+		end
+
+		-- ⑤ 페이지
+		self.pageCount = math.max(1, math.ceil(#list / 6))
+		if self.currentPage > self.pageCount then self.currentPage = self.pageCount end
+		if self.currentPage < 1 then self.currentPage = 1 end
+		local pageStart = (self.currentPage - 1) * 6
+
+		self.shopItems = {}
+		for slotIdx = 1, 6 do
+			local slot = self["slot" .. slotIdx]
+			local e = list[pageStart + slotIdx]
 			if isvalid(slot) then
-				slot.Enable = false
+				if e == nil then
+					slot.Enable = false
+				else
+					self.shopItems[slotIdx] = { name = e.name, price = e.price }
+					local icon = self["slot" .. slotIdx .. "_icon"]
+					local nameTxt = self["slot" .. slotIdx .. "_name"]
+					local priceTxt = self["slot" .. slotIdx .. "_price"]
+					if isvalid(icon) and isvalid(icon.SpriteGUIRendererComponent) then
+						icon.SpriteGUIRendererComponent.ImageRUID = e.ruid
+					end
+					if isvalid(nameTxt) and isvalid(nameTxt.TextComponent) then
+						nameTxt.TextComponent.Text = e.disp
+					end
+					if isvalid(priceTxt) and isvalid(priceTxt.TextComponent) then
+						priceTxt.TextComponent.Text = tostring(e.price) .. " 코인"
+					end
+					slot.Enable = true
+				end
 			end
 		end
+
+		local multi = self.pageCount > 1
+		if isvalid(self.pageText) then
+			self.pageText.Enable = multi
+			local t = self.pageText.TextGUIRendererComponent
+			if isvalid(t) then t.Text = tostring(self.currentPage) .. " / " .. tostring(self.pageCount) end
+		end
+		if isvalid(self.btnPrevPage) then self.btnPrevPage.Enable = multi and self.currentPage > 1 end
+		if isvalid(self.btnNextPage) then self.btnNextPage.Enable = multi and self.currentPage < self.pageCount end
 	end
 
 	@ExecSpace("ClientOnly")

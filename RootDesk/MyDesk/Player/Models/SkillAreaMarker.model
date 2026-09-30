@@ -1,0 +1,352 @@
+{
+  "Id": "",
+  "GameId": "",
+  "EntryKey": "model://skillareamarker",
+  "ContentType": "x-mod/model",
+  "Content": "",
+  "Usage": 0,
+  "UsePublish": 1,
+  "UseService": 0,
+  "CoreVersion": "26.7.0.0",
+  "StudioVersion": "0.1.0.0",
+  "DynamicLoading": 0,
+  "ContentProto": {
+    "Use": "Json",
+    "Json": {
+      "Version": 1,
+      "Name": "SkillAreaMarker",
+      "BaseModelId": null,
+      "Id": "skillareamarker",
+      "Components": [
+        "MOD.Core.TransformComponent",
+        "MOD.Core.SpriteRendererComponent",
+        "script.MonsterTelegraphMarker"
+      ],
+      "Properties": [
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Name": "Position",
+          "DisplayName": "Position",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "MOD.Core.TransformComponent, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+            },
+            "Property": "Position"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODQuaternion, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Name": "Rotation",
+          "DisplayName": "Rotation",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "MOD.Core.TransformComponent, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+            },
+            "Property": "Rotation"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Name": "Scale",
+          "DisplayName": "Scale",
+          "ShowInInspector": true,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "MOD.Core.TransformComponent, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+            },
+            "Property": "Scale"
+          }
+        },
+        {
+          "Type": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Name": "renderguid",
+          "DisplayName": "renderguid",
+          "ShowInInspector": false,
+          "Link": {
+            "Target": {
+              "$type": "MODNativeType",
+              "type": "MOD.Core.SpriteRendererComponent, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+            },
+            "Property": "SpriteRUID"
+          }
+        }
+      ],
+      "Values": [
+        {
+          "TargetType": "MOD.Core.SpriteRendererComponent",
+          "Name": "SpriteRUID",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "09705c32052c47ce8decadc669dfa9e5"
+        },
+        {
+          "TargetType": "MOD.Core.SpriteRendererComponent",
+          "Name": "SortingLayer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": "MapLayer5"
+        },
+        {
+          "TargetType": "MOD.Core.SpriteRendererComponent",
+          "Name": "OrderInLayer",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0
+        },
+        {
+          "TargetType": "MOD.Core.TransformComponent",
+          "Name": "Scale",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+          },
+          "Value": {
+            "$type": "MOD.Core.MODVector3, MOD.Core",
+            "x": 1,
+            "y": 1,
+            "z": 1
+          }
+        },
+        {
+          "TargetType": "script.MonsterTelegraphMarker",
+          "Name": "SpriteRadius",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.24
+        },
+        {
+          "TargetType": "script.MonsterTelegraphMarker",
+          "Name": "FillSpriteRadius",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 0.24
+        },
+        {
+          "TargetType": "script.MonsterTelegraphMarker",
+          "Name": "MaxLifeTime",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 30
+        }
+      ],
+      "EventLinks": [],
+      "Children": [
+        {
+          "Id": "7974339f-61ef-4bf8-9b68-02e7f3ce3c98",
+          "ParentId": "skillareamarker",
+          "Name": "Fill",
+          "Model": {
+            "Version": 1,
+            "Name": "Fill",
+            "BaseModelId": null,
+            "Id": "7974339f-61ef-4bf8-9b68-02e7f3ce3c98",
+            "Components": [
+              "MOD.Core.TransformComponent",
+              "MOD.Core.SpriteRendererComponent"
+            ],
+            "Properties": [],
+            "Values": [
+              {
+                "TargetType": "MOD.Core.MODEntity",
+                "Name": "Enable",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": true
+              },
+              {
+                "TargetType": "MOD.Core.MODEntity",
+                "Name": "Visible",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": true
+              },
+              {
+                "TargetType": "MOD.Core.TransformComponent",
+                "Name": "Position",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+                },
+                "Value": {
+                  "$type": "MOD.Core.MODVector3, MOD.Core",
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              {
+                "TargetType": "MOD.Core.TransformComponent",
+                "Name": "Scale",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+                },
+                "Value": {
+                  "$type": "MOD.Core.MODVector3, MOD.Core",
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                }
+              },
+              {
+                "TargetType": "MOD.Core.SpriteRendererComponent",
+                "Name": "SortingLayer",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": "MapLayer5"
+              },
+              {
+                "TargetType": "MOD.Core.SpriteRendererComponent",
+                "Name": "SpriteRUID",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": "09705c32052c47ce8decadc669dfa9e5"
+              },
+              {
+                "TargetType": "MOD.Core.SpriteRendererComponent",
+                "Name": "OrderInLayer",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": 1
+              }
+            ],
+            "EventLinks": [],
+            "Children": []
+          }
+        },
+        {
+          "Id": "0d57b2da-4844-447e-a36a-14f841e3fd84",
+          "ParentId": "skillareamarker",
+          "Name": "Edge",
+          "Model": {
+            "Version": 1,
+            "Name": "Edge",
+            "BaseModelId": null,
+            "Id": "0d57b2da-4844-447e-a36a-14f841e3fd84",
+            "Components": [
+              "MOD.Core.TransformComponent",
+              "MOD.Core.SpriteRendererComponent"
+            ],
+            "Properties": [],
+            "Values": [
+              {
+                "TargetType": "MOD.Core.MODEntity",
+                "Name": "Enable",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": true
+              },
+              {
+                "TargetType": "MOD.Core.MODEntity",
+                "Name": "Visible",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": true
+              },
+              {
+                "TargetType": "MOD.Core.TransformComponent",
+                "Name": "Position",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+                },
+                "Value": {
+                  "$type": "MOD.Core.MODVector3, MOD.Core",
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              {
+                "TargetType": "MOD.Core.TransformComponent",
+                "Name": "Scale",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+                },
+                "Value": {
+                  "$type": "MOD.Core.MODVector3, MOD.Core",
+                  "x": 0.192,
+                  "y": 0.192,
+                  "z": 1
+                }
+              },
+              {
+                "TargetType": "MOD.Core.SpriteRendererComponent",
+                "Name": "SpriteRUID",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": "037985dd24d4431d9e5fc694d80e2dbb"
+              },
+              {
+                "TargetType": "MOD.Core.SpriteRendererComponent",
+                "Name": "SortingLayer",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": "MapLayer5"
+              },
+              {
+                "TargetType": "MOD.Core.SpriteRendererComponent",
+                "Name": "OrderInLayer",
+                "ValueType": {
+                  "$type": "MODNativeType",
+                  "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                },
+                "Value": 1
+              }
+            ],
+            "EventLinks": [],
+            "Children": []
+          }
+        }
+      ]
+    }
+  }
+}

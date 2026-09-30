@@ -28,15 +28,17 @@
 - **배경 투명 PNG** (키 아트 제외). 캔버스는 2의 배수 권장, 내용물 주변 여백 최소화.
 - 타일 스냅 크기: 소품 100~200px, 가구 100~300px, 건물 300~600px 폭 (탑다운 시점 압축 — 높이는 폭의 0.8~1.4배).
 - 아이콘: **64~128px 정사각**, 실루엣 중심, 3/4 기울임 통일 (기존 `IconRUID = thumbnail://` 관행과 톤 맞춤).
-- 생성 원본이 고해상 일러스트여도 최종은 **도트화**를 거친다 → `image-to-pixel` 스킬 (컨셉 리드로우 방식, 단순 축소 금지).
+- 생성 원본이 고해상 일러스트여도 최종은 **도트화**를 거친다 — ⚖️ 2026-09-29 제작자 확정: **"약간" 도트화**. 형태·명암은 메이플 카툰 채색으로 잡고, 마감만 **지형 타일과 같은 도트 밀도**(64px 타일이 화면 100px → 1도트 ≈ 1.5px, 즉 `dot × 모델 Scale ≈ 1.5`)로 도트화한다. 디테일은 "더 쌓아서"(재질 편차·쓰던 흔적·공예 디테일·생활 소품·자연 포인트). → `image-to-pixel` 스킬 **트랙 A**(`propkit.py` 드로잉 + `export(dot=)` / 외부 AI 결과는 `propkit.py pixelize`). 순수 도트(64px 타일·도트 UI)는 트랙 B.
 - 완성 판정: Maker에서 기존 오브젝트(노점/헛간 리드로우: `scratch/artwork_rework/`) 옆에 놓고 **톤 이질감 육안 대조**.
 
 ## 3. 파이프라인 (생성 → 게임 적용)
 
 ```
-① 프롬프트로 생성 (타사 에이전트)          — §4 템플릿
-② image-to-pixel 스킬로 도트 리드로우      — 팔레트/외곽선 통일
-③ 제작자: Maker에 리소스 업로드 → RUID 확보
+⓪ msw-search 로 공식 리소스 우선 판정       — 맞는 게 있으면 여기서 끝 (R1)
+① 생성: image-to-pixel 트랙 A(가구·소품·아이콘, 코드 드로잉 + 살짝 도트화) / 트랙 B(타일, 도트)
+   또는 타사 에이전트 프롬프트(§4 · image-to-pixel imagegen-path §0) → propkit pixelize 로 도트 마감
+② 산출물: docs/design/art/<asset>/ (상태별 PNG + 아이콘 + 그리기 스크립트 + preview)
+③ 제작자: Maker에 리소스 등록 → RUID 확보 (⚠️ 에이전트의 계정 업로드는 Play 불가 — pitfalls 규칙 45)
 ④ .model SpriteRUID / item_dataset IconRUID 교체 (코드 무변경 — artwork-spec §5 방식)
 ⑤ 실루엣 대조 (규칙 17) + F9 프리뷰 도구(PreviewTool)로 육안 확인
 ```
@@ -77,5 +79,5 @@
 ## 관련 문서
 
 - 티켓별 상세 치수·우선순위: [artwork-spec.md](./artwork-spec.md)
-- 도트 변환 스킬: `.claude/skills/image-to-pixel` (컨셉 리드로우 파이프라인)
+- 아트 제작 스킬: `.claude/skills/image-to-pixel` (트랙 A 카툰 일러스트 · 트랙 B 도트, 변환 + 신규 생성) — 선례 [art/furnace/](./art/furnace/)
 - 메인화면 UI 설계: [main-menu-save-slots.md](./main-menu-save-slots.md)

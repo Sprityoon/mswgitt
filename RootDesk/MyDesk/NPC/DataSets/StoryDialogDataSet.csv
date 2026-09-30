@@ -49,12 +49,12 @@ QuestId,NpcId,Phase,Seq,Text,Speaker
 212,researcher,complete,1,고마워! 이 젤리 속에… 어두운 그늘의 파편이 엉겨 붙어 있어.,npc
 212,researcher,complete,2,연구소에서 정밀하게 분석해 볼게. 정화할 방법도 찾을 수 있을 거야.,npc
 213,blacksmith,offer,1,이제 진짜 광석을 두드려 볼 때가 왔어!,npc
-213,blacksmith,offer,2,벌판 바위틈에서 구리 광석 열 개만 캐다 줘. 튼튼한 금속의 시작이지!,npc
-213,blacksmith,offer,3,단단한 놈들로 채광하려면 손맛 좀 봐야 할 텐데 자신 있지?,npc
+213,blacksmith,offer,2,흙 벌판 사냥터에 박혀 있는 커다란 바위 알지? 돌 곡괭이로 깨 보면 구리 광석이 섞여 나오거든!,npc
+213,blacksmith,offer,3,작은 돌멩이 말고 큰 바위야. 한 번에 안 깨지니 여러 번 두드려서 구리 광석 열 개만 모아 와 봐!,npc
 213,blacksmith,offer,4,멋지게 두드려 볼까?,npc
-213,blacksmith,progress,1,구리 광석은 아직이야? 대장간 화로는 언제든 준비 완료라고!,npc
+213,blacksmith,progress,1,구리 광석은 흙 벌판의 큰 바위에서 나와! 돌 곡괭이로 여러 번 두드려야 깨진다고.,npc
 213,blacksmith,complete,1,크으! 때깔 좋은 구리 광석이군. 제련할 맛 제대로 나겠어.,npc
-213,blacksmith,complete,2,다음은 화로 차례야. 광석을 녹여서 번쩍이는 주괴를 뽑아보자고!,npc
+213,blacksmith,complete,2,광석은 네가 그대로 가져가. 다음은 화로 차례야. 그걸 녹여서 번쩍이는 주괴를 뽑아보자고!,npc
 214,blacksmith,offer,1,가져온 광석을 화로에 넣고 쇳물을 끓여봐!,npc
 214,blacksmith,offer,2,구리 주괴 두 개면 돼. 이게 바로 대장장이의 첫 결실이지.,npc
 214,blacksmith,offer,3,불 앞에서 조급해하면 쇠를 망치는 법이야. 침착하게 지켜보라고!,npc
@@ -309,70 +309,150 @@ QuestId,NpcId,Phase,Seq,Text,Speaker
 343,elder,complete,1,그 기합 소리 여기까지 들리더군! 이제 투기를 주먹에 두르는 법을 알려 주지. 기합과 함께 투기가 터져 나올 걸세.,npc
 304,vendor,offer,1,덫 솜씨가 제법 늘었는걸? 이제 칼 한 자루쯤은 제대로 된 걸 쥘 때가 됐어.,npc
 304,vendor,offer,2,내가 젊을 때 쓰던 사냥칼이 있는데 날이 다 죽었거든. 바위 고원 아이언호그의 철 조각이면 다시 벼릴 수 있어!,npc
-304,vendor,offer,3,아이언호그 다섯 마리 잡고 철 조각 다섯 개만 가져와 줄래?,npc
+304,vendor,offer,3,아이언호그 다섯 마리 잡고 철 조각 다섯 개만 가져와 줄래? 수고비는 두둑이 챙겨 줄게~,npc
 304,vendor,progress,1,아이언호그는 등껍질이 단단하니까 덫으로 묶어 두고 옆구리를 노려~,npc
-304,vendor,complete,1,좋아좋아! 이 정도 철이면 충분해. 자 받아~ 노련한 사냥꾼의 단검이야!,npc
-304,vendor,complete,2,덫에 묶인 사냥감은 절대 놓치지 않을 거야.,npc
-305,vendor,offer,1,모래 언덕 소문 들었어? 전갈들이 떼로 몰려다닌대.,npc
-305,vendor,offer,2,사냥꾼은 한 마리씩 쫓지 않아. 묶어 두고 한꺼번에 쏟아붓는 거지!,npc
-305,vendor,offer,3,전갈 여섯 마리랑 우물 지킴이 데우까지 해치우고 오면 도끼를 비처럼 쏟아붓는 법을 알려 줄게.,npc
-305,vendor,progress,1,전갈 꼬리 조심해! 덫을 먼저 깔고 기다리는 게 사냥꾼의 여유라고~,npc
+304,vendor,complete,1,좋아좋아! 이 정도 철이면 충분해. 칼날에 덧대는 건 내가 할 테니 이건 수고비야~,npc
+304,vendor,complete,2,그런데 철을 덧댄 칼은 제대로 담금질을 한 번 해야 하거든. 준비되면 다시 말 걸어 줘!,npc
+305,vendor,offer,1,전갈들은 다 정리됐으니 이제 그 주인 차례야. 우물의 지킴이 데우 말이야.,npc
+305,vendor,offer,2,데우까지 해치우고 오면 도끼를 비처럼 쏟아붓는 법을 알려 줄게. 덫이랑 같이 쓰면 하나도 못 빠져나가!,npc
+305,vendor,progress,1,데우는 모래 속을 파고들어. 발밑을 잘 보고 덫을 깔아 둬~,npc
 305,vendor,complete,1,역시! 이제 알려 줄게. 덫에 걸린 녀석들 위로 도끼를 쏟아부어 봐. 하나도 못 빠져나갈걸? 스킬창(K)을 열어 봐!,npc
+305,vendor,complete,2,그리고 이건 데우를 묶어 두던 사슬 조각이야. 대장간 모루에서 무기에 새기면 묶인 적을 더 세게 칠 수 있어!,npc
 306,vendor,offer,1,옛날 사냥꾼들 사이에 붉은 발톱 단검 이야기가 있어. 던져도 던져도 손으로 돌아온다는 단검이지.,npc
-306,vendor,offer,2,설원의 화이트팽을 사냥하고 그 꼬리를 모아 오면… 그리고 스노우맨까지 넘어서면 전설을 믿어 볼 만하지 않을까?,npc
-306,vendor,progress,1,화이트팽은 빠르니까 발부터 묶어! 꼬리는 다섯 개면 돼~,npc
+306,vendor,offer,2,설원 끝의 거인 스노우맨까지 넘어서면… 전설을 믿어 볼 만하지 않을까?,npc
+306,vendor,progress,1,스노우맨은 커다란 눈덩이를 던져. 덫을 깔아 두고 옆으로 돌아 들어가~,npc
 306,vendor,complete,1,세상에… 진짜로 해냈네! 이 붉은 발톱 단검은 이제 네 거야.,npc
 306,vendor,complete,2,던진 칼날이 이상하게 손으로 돌아오는 느낌… 그게 진짜 사냥꾼의 증표야!,npc
+307,vendor,offer,1,고원 울림돌 광장의 스톤골렘 알지? 그 녀석이 울릴 때 나는 진동이 칼날을 단단하게 굳혀 준대.,npc
+307,vendor,offer,2,스톤골렘을 쓰러뜨리고 오면 담금질을 마친 칼을 건네줄게. 이번엔 진짜 사냥꾼의 무기야!,npc
+307,vendor,progress,1,골렘은 느리지만 한 방이 무거워. 덫으로 묶고 거리를 벌려!,npc
+307,vendor,complete,1,해냈구나! 자 받아~ 노련한 사냥꾼의 단검이야!,npc
+307,vendor,complete,2,덫에 묶인 사냥감은 절대 놓치지 않을 거야.,npc
+308,vendor,offer,1,모래 언덕 소문 들었어? 전갈들이 떼로 몰려다닌대.,npc
+308,vendor,offer,2,사냥꾼은 한 마리씩 쫓지 않아. 덫으로 묶어 두고 한꺼번에 해치우는 거지!,npc
+308,vendor,offer,3,전갈 여덟 마리만 사냥하고 와 줄래? 사냥값은 넉넉히 쳐 줄게~,npc
+308,vendor,progress,1,전갈 꼬리 조심해! 덫을 먼저 깔고 기다리는 게 사냥꾼의 여유라고~,npc
+308,vendor,complete,1,역시 내 눈은 틀리지 않았어! 자 두둑한 사냥값이야.,npc
+308,vendor,complete,2,이제 모래 언덕의 주인만 남았네. 준비되면 말 걸어 줘~,npc
+309,vendor,offer,1,설원의 화이트팽은 빠르고 영리해. 사냥꾼 실력을 제대로 시험할 수 있는 상대지.,npc
+309,vendor,offer,2,화이트팽 여덟 마리를 사냥하고 꼬리 다섯 개를 모아 와 줄래? 꼬리 값은 섭섭지 않게 쳐 줄게~,npc
+309,vendor,progress,1,화이트팽은 빠르니까 발부터 묶어! 꼬리는 다섯 개면 돼~,npc
+309,vendor,complete,1,이 꼬리 털 결 좀 봐! 역시 믿고 맡길 만하다니까. 자 사냥값이야~,npc
+309,vendor,complete,2,이제 전설 이야기를 해 줄 때가 됐네. 준비되면 다시 말 걸어 줘.,npc
 314,blacksmith,offer,1,크하하! 그 망치 날이 무뎌졌군. 제대로 된 쇠를 먹여 줄 때가 됐다!,npc
-314,blacksmith,offer,2,고원의 아이언호그들이 흘린 철 조각 여덟 개. 그리고 울림돌 광장의 스톤골렘을 박살 내고 와라!,npc
-314,blacksmith,progress,1,골렘은 단단하다! 갑주 파쇄타로 껍질부터 벗겨 버려!,npc
-314,blacksmith,complete,1,오오 이 쇳물 색깔 보게! 자 로체 특제 강철구 망치다!,npc
-314,blacksmith,complete,2,…솔직히 내 망치보다 낫다. 흥!,npc
-315,blacksmith,offer,1,모래 언덕 절지류 껍질이 모루를 보강하는 데 그만이라더군.,npc
-315,blacksmith,offer,2,키틴질 껍질 여섯 개랑 데우를 넘어서고 오면 하늘에서 망치를 떨어뜨리는 비기를 보여 주지!,npc
-315,blacksmith,progress,1,껍질은 가볍고 질겨. 조심해서 벗겨 와라!,npc
+314,blacksmith,offer,2,고원의 아이언호그 다섯 놈을 두들겨 패고 녀석들이 흘린 철 조각 여덟 개를 가져와라. 품삯은 두둑이 주마!,npc
+314,blacksmith,progress,1,아이언호그 등껍질은 단단하다! 갑주 파쇄타로 껍질부터 벗겨 버려!,npc
+314,blacksmith,complete,1,오오 이 쇳물 색깔 보게! 좋은 쇠다. 자 품삯이다!,npc
+314,blacksmith,complete,2,이제 강철을 먹인 망치에 마지막 담금질만 남았군. 준비되면 다시 오게.,npc
+315,blacksmith,offer,1,모루를 보강했으니 이제 그 모루를 하늘에서 떨어뜨릴 차례다!,npc
+315,blacksmith,offer,2,우물의 지킴이 데우를 넘어서고 오면 하늘에서 망치를 떨어뜨리는 비기를 보여 주지!,npc
+315,blacksmith,progress,1,데우는 모래 속을 파고든다. 발을 단단히 딛고 버텨라!,npc
 315,blacksmith,complete,1,좋아! 잘 봐라. 먼저 대지 분쇄타로 녀석들 발을 묶고… 그 머리 위로 모루를 떨어뜨리는 거다! 스킬창(K)을 열어 봐라!,npc
-316,blacksmith,offer,1,대장장이는 평생 딱 한 자루만 진짜 망치를 벼린다고들 하지. 내 차례가 왔나 보군.,npc
-316,blacksmith,offer,2,눈의 결정 다섯 개와 예티의 뿔 세 개로 담금질한다. 그리고 스노우맨을 넘어서 와라. 그래야 그 망치를 들 자격이 있다!,npc
-316,blacksmith,progress,1,담금질 재료가 모자라면 황금이 제 빛을 안 낸다고!,npc
+315,blacksmith,complete,2,그리고 이건 데우 녀석 속에서 나온 관문 수호자의 핵이다. 모루에서 무기에 새기면 덩치 큰 놈들이 우습게 보일 거다!,npc
+316,blacksmith,offer,1,황금 모루망치의 담금질이 끝났다. 이제 그걸 들 자격을 보여 줄 차례다.,npc
+316,blacksmith,offer,2,설원의 거인 스노우맨을 넘어서 와라. 그래야 그 망치를 들 자격이 있다!,npc
+316,blacksmith,progress,1,스노우맨의 눈덩이는 모루로 받아내라! 크하하!,npc
 316,blacksmith,complete,1,…됐다. 황금 모루망치다. 내 평생 최고의 작품이지.,npc
 316,blacksmith,complete,2,휘두를수록 몸이 먼저 다음 동작을 기억할 거다. 크하하하!,npc
+317,blacksmith,offer,1,담금질엔 울림이 필요하다. 울림돌 광장의 스톤골렘이 내는 그 묵직한 울림 말이야!,npc
+317,blacksmith,offer,2,스톤골렘을 박살 내고 와라. 그럼 로체 특제 강철구 망치를 네 손에 쥐여 주마!,npc
+317,blacksmith,progress,1,골렘은 단단하다! 갑주 파쇄타로 껍질부터 벗겨 버려!,npc
+317,blacksmith,complete,1,크하하! 해냈군! 자 로체 특제 강철구 망치다!,npc
+317,blacksmith,complete,2,…솔직히 내 망치보다 낫다. 흥!,npc
+318,blacksmith,offer,1,모래 언덕 절지류 껍질이 모루를 보강하는 데 그만이라더군.,npc
+318,blacksmith,offer,2,스콜피온 여덟 놈을 두들기고 키틴질 껍질 여섯 개를 벗겨 와라. 품삯은 넉넉히 쳐 주지!,npc
+318,blacksmith,progress,1,껍질은 가볍고 질겨. 조심해서 벗겨 와라!,npc
+318,blacksmith,complete,1,좋아! 이 껍질이면 모루가 절대 안 깨지겠군. 자 품삯이다!,npc
+318,blacksmith,complete,2,보강한 모루로 보여 줄 비기가 있다. 준비되면 다시 오게.,npc
+319,blacksmith,offer,1,대장장이는 평생 딱 한 자루만 진짜 망치를 벼린다고들 하지. 내 차례가 왔나 보군.,npc
+319,blacksmith,offer,2,담금질엔 눈의 결정 다섯 개와 예티의 뿔 세 개가 필요하다. 설원의 예티 다섯 놈을 넘어서 재료를 모아 와라!,npc
+319,blacksmith,progress,1,담금질 재료가 모자라면 황금이 제 빛을 안 낸다고!,npc
+319,blacksmith,complete,1,좋은 재료다! 자 품삯이다. 이제 불을 지피마!,npc
+319,blacksmith,complete,2,망치를 들 자격이 있는지는 설원의 거인이 판가름해 줄 거다. 준비되면 오게.,npc
 324,researcher,offer,1,불씨를 수정 속에 가둘 수 있다면 마나가 흩어지지 않을 거야.,npc
-324,researcher,offer,2,고원 뿔버섯의 포자 반응을 여섯 번 관찰하고 슬라임 젤리 다섯 개를 가져와 줄래? 결정화 실험의 핵심이거든.,npc
+324,researcher,offer,2,고원 뿔버섯의 포자 반응을 여섯 번 관찰하고 슬라임 젤리 다섯 개를 가져와 줄래? 결정화 실험의 핵심이거든. 연구비도 넉넉히 줄게.,npc
 324,researcher,progress,1,뿔버섯 포자는 마나와 섞이면 반응이 또렷해져. 천천히 관찰해 줘.,npc
-324,researcher,complete,1,성공이야! 불씨가 수정 안에서 고르게 빛나고 있어. 이 크리스탈 불씨 완드를 받아 줘.,npc
-325,researcher,offer,1,몇 해에 한 번 피는 카투스의 꽃이 불씨를 결정으로 굳히는 촉매가 된대.,npc
-325,researcher,offer,2,꽃 세 송이를 모으고 데우를 쉬게 해 주면 불씨 결정을 다루는 법을 가르쳐 줄게.,npc
-325,researcher,progress,1,카투스의 꽃은 금방 시들어. 모으면 바로 가져와 줘.,npc
+324,researcher,complete,1,훌륭한 관찰이야! 불씨가 수정 안으로 스며들기 시작했어. 이건 약속한 연구비야.,npc
+324,researcher,complete,2,다만 결정을 완전히 굳히려면 한 가지가 더 필요해. 준비되면 다시 말 걸어 줘.,npc
+325,researcher,offer,1,촉매는 준비됐어. 이제 데우가 품고 있는 메마른 기운만 걷어내면 돼.,npc
+325,researcher,offer,2,데우를 쉬게 해 주면 불씨 결정을 다루는 법을 가르쳐 줄게.,npc
+325,researcher,progress,1,데우는 모래 속을 파고들어. 산성 장판으로 발을 묶어 두면 수월할 거야.,npc
 325,researcher,complete,1,결정이 안정됐어! 이건 설치하고 잠시 뒤에 터져. 산성 장판으로 발을 묶어 두면 피할 수 없을 거야. 스킬창(K)을 확인해 봐.,npc
+325,researcher,complete,2,그리고 이 사슬 파편… 느려진 적을 붙잡는 그늘의 힘이 남아 있어. 대장간 모루에서 무기에 새겨 봐.,npc
 326,researcher,offer,1,마지막 연구야. 불꽃을 눈의 결정으로 식혀 가며 끝까지 벼리면… 꺼지지 않는 불꽃이 완성될지도 몰라.,npc
-326,researcher,offer,2,눈의 결정 여섯 개. 그리고 스노우맨이 품은 그늘의 핵이 실험의 열쇠야.,npc
-326,researcher,progress,1,결정은 녹지 않게 조심해서 가져와 줘. 그늘의 핵도 잊지 말고.,npc
+326,researcher,offer,2,스노우맨이 품은 그늘의 핵이 실험의 열쇠야. 스노우맨을 쓰러뜨리고 와 줘.,npc
+326,researcher,progress,1,그늘의 핵은 스노우맨 안에 있어. 조심해서 다녀와.,npc
 326,researcher,complete,1,…완성이야. 창공 불꽃 완드. 끝에 맺힌 불꽃은 절대 꺼지지 않을 거야.,npc
 326,researcher,complete,2,이 불꽃이 앞으로 네 길을 계속 비춰 주길 바라.,npc
+327,researcher,offer,1,스톤골렘의 몸속에는 울림돌의 진동이 흐르고 있어. 그 진동이면 불씨 결정을 단단히 굳힐 수 있을 거야.,npc
+327,researcher,offer,2,스톤골렘을 쓰러뜨리고 와 줄래? 완성된 크리스탈 불씨 완드를 네게 줄게.,npc
+327,researcher,progress,1,골렘의 진동은 강해. 거리를 두고 마법으로 공략해 봐.,npc
+327,researcher,complete,1,성공이야! 불씨가 수정 안에서 고르게 빛나고 있어. 이 크리스탈 불씨 완드를 받아 줘.,npc
+328,researcher,offer,1,몇 해에 한 번 피는 카투스의 꽃이 불씨를 결정으로 굳히는 촉매가 된대.,npc
+328,researcher,offer,2,모래 언덕의 카투스 여덟 마리를 처치하고 꽃 세 송이를 모아 줄래? 연구비는 충분히 준비해 뒀어.,npc
+328,researcher,progress,1,카투스의 꽃은 금방 시들어. 모으면 바로 가져와 줘.,npc
+328,researcher,complete,1,싱싱한 꽃이야! 촉매 반응이 아주 안정적이야. 약속한 연구비야.,npc
+328,researcher,complete,2,이제 우물의 지킴이 데우만 남았어. 준비되면 말 걸어 줘.,npc
+329,researcher,offer,1,마지막 연구에는 불꽃을 식혀 줄 눈의 결정이 아주 많이 필요해.,npc
+329,researcher,offer,2,설원의 주니어 예티 여덟 마리를 처치하고 눈의 결정 여섯 개를 모아 줄래? 연구비는 아끼지 않을게.,npc
+329,researcher,progress,1,결정은 녹지 않게 조심해서 가져와 줘.,npc
+329,researcher,complete,1,완벽한 결정이야! 이 정도면 불꽃을 끝까지 벼릴 수 있어. 약속한 연구비야.,npc
+329,researcher,complete,2,이제 스노우맨이 품은 그늘의 핵만 남았어. 준비되면 말 걸어 줘.,npc
 334,barnkeeper,offer,1,고원을 떠도는 그루터기들… 원래는 숲의 일부였대.,npc
-334,barnkeeper,offer,2,여섯 그루만 달래 주고 나무 스무 개를 모아 올래…? 늙은 나무가 스스로 떨군 가지로 스태프를 깎아 줄게.,npc
+334,barnkeeper,offer,2,여섯 그루만 달래 주고 나무 스무 개를 모아 올래…? 수고비도 챙겨 줄게.,npc
 334,barnkeeper,progress,1,그루터기들이 아프지 않게… 살살 달래 줘.,npc
-334,barnkeeper,complete,1,고마워… 이 고목나무 스태프는 오래 쓰다듬어서 결이 부드러워. 너한테 잘 맞을 거야.,npc
-335,barnkeeper,offer,1,사막의 카투스들도 원래는 순한 아이들이었어…,npc
-335,barnkeeper,offer,2,여섯 마리를 달래고 우물의 지킴이 데우를 쉬게 해 주면… 덩굴로 붙잡는 법을 알려 줄게.,npc
-335,barnkeeper,progress,1,가시에 찔리지 않게 조심해…,npc
+334,barnkeeper,complete,1,고마워… 그루터기들이 한결 편안해졌어. 이건 수고비야.,npc
+334,barnkeeper,complete,2,늙은 나무가 가지를 내어 줄 준비를 하고 있대… 준비되면 다시 말 걸어 줘.,npc
+335,barnkeeper,offer,1,우물의 지킴이 데우도… 사실은 목이 마를 뿐이래.,npc
+335,barnkeeper,offer,2,데우를 쉬게 해 주면… 덩굴로 붙잡는 법을 알려 줄게.,npc
+335,barnkeeper,progress,1,데우는 모래 속을 파고들어… 덩굴을 넓게 펼쳐 줘.,npc
 335,barnkeeper,complete,1,덩굴로 발을 묶고… 그다음 멧돼지 정령을 달리게 해 봐. 한 번에 다 쓸어 담을 수 있을 거야. 스킬창(K)에 새 기술이 있어.,npc
-336,barnkeeper,offer,1,만년설 아래에서도 푸르름을 잃지 않는 에메랄드가 있대…,npc
-336,barnkeeper,offer,2,예티 세 마리를 달래고 눈의 결정 네 개를 모아서… 스노우맨을 쉬게 해 줄래? 그 보석을 품은 스태프를 줄게.,npc
-336,barnkeeper,progress,1,설원은 추우니까… 몸 따뜻하게 하고 다녀와.,npc
+335,barnkeeper,complete,2,그리고 이 사슬 조각… 모루에서 무기에 새기면 묶인 적을 더 세게 칠 수 있대.,npc
+336,barnkeeper,offer,1,에메랄드는 스노우맨의 그늘 아래에서 잠들어 있대…,npc
+336,barnkeeper,offer,2,스노우맨을 쉬게 해 줄래…? 그 보석을 품은 스태프를 줄게.,npc
+336,barnkeeper,progress,1,스노우맨의 눈덩이는 차가워… 조심해.,npc
 336,barnkeeper,complete,1,만년설 에메랄드 스태프야… 쥐고 있으면 네 숨결을 천천히 되살려 줄 거야.,npc
 336,barnkeeper,complete,2,숲도 동물들도… 언제나 네 편이야.,npc
+337,barnkeeper,offer,1,늙은 나무가 가지를 내어 주려면… 고원을 울리는 돌거인이 잠들어야 한대.,npc
+337,barnkeeper,offer,2,스톤골렘을 쉬게 해 줄래…? 그럼 고목나무 스태프를 깎아 줄게.,npc
+337,barnkeeper,progress,1,돌거인은 무거워… 덩굴로 발을 묶고 멀리서 달래 줘.,npc
+337,barnkeeper,complete,1,고마워… 이 고목나무 스태프는 오래 쓰다듬어서 결이 부드러워. 너한테 잘 맞을 거야.,npc
+338,barnkeeper,offer,1,사막의 카투스들도 원래는 순한 아이들이었어…,npc
+338,barnkeeper,offer,2,여덟 마리만 달래 줄래…? 수고비는 꼭 챙겨 줄게.,npc
+338,barnkeeper,progress,1,가시에 찔리지 않게 조심해…,npc
+338,barnkeeper,complete,1,카투스들이 다시 햇볕을 쬐고 있어… 고마워. 이건 수고비야.,npc
+338,barnkeeper,complete,2,이제 우물의 지킴이만 남았어… 준비되면 말 걸어 줘.,npc
+339,barnkeeper,offer,1,만년설 아래에서도 푸르름을 잃지 않는 에메랄드가 있대…,npc
+339,barnkeeper,offer,2,그 에메랄드를 깨우려면 눈의 결정이 필요해. 예티 다섯 마리를 달래고 눈의 결정 네 개를 모아 줄래…? 수고비도 줄게.,npc
+339,barnkeeper,progress,1,설원은 추우니까… 몸 따뜻하게 하고 다녀와.,npc
+339,barnkeeper,complete,1,결정이 반짝반짝해… 고마워. 이건 수고비야.,npc
+339,barnkeeper,complete,2,마지막으로… 스노우맨을 쉬게 해 줘. 준비되면 말 걸어 줘.,npc
 344,elder,offer,1,허허 요즘 자네 주먹 소리가 마을까지 들리는구먼.,npc
-344,elder,offer,2,내가 젊을 때 매일 밤 감고 풀던 아대가 있네. 고원의 아이언호그 여섯 마리와 스톤골렘을 맨주먹으로 넘어서 보게. 그럼 물려주지.,npc
-344,elder,progress,1,골렘은 돌덩이일 뿐일세. 기합을 넣고 정권으로 기절시킨 다음 몰아치게!,npc
-344,elder,complete,1,그 주먹… 내 젊을 때보다 낫구먼! 자 강철주먹 아대일세. 철 조각을 덧대 뒀으니 더 단단할 걸세.,npc
+344,elder,offer,2,고원의 아이언호그 여섯 마리를 맨주먹으로 넘어서 보게. 쇠를 두른 녀석들이니 좋은 수련이 될 걸세. 수련비도 두둑이 챙겨 주지.,npc
+344,elder,progress,1,쇠 갑주도 정권으로 두드리면 결국 금이 가네. 기합을 잊지 말게!,npc
+344,elder,complete,1,허허! 주먹이 한층 단단해졌구먼. 자 수련비일세.,npc
+344,elder,complete,2,내가 젊을 때 감던 아대를 물려줄 때가 된 것 같군. 준비되면 다시 오게.,npc
 345,elder,offer,1,이제 자네에게 보여 줄 때가 됐군. 붉은 너클의 루카스라는 이름이 붙은 그 비기를.,npc
-345,elder,offer,2,모래 언덕의 모래두지 여덟과 우물의 지킴이 데우를 넘어서 오게. 그 주먹이 준비됐는지 보겠네.,npc
+345,elder,offer,2,우물의 지킴이 데우를 넘어서 오게. 그 주먹이 준비됐는지 보겠네.,npc
 345,elder,progress,1,비기는 힘을 모으는 찰나가 있네. 그 찰나에 녀석이 도망치지 못하게 하는 게 핵심이지.,npc
 345,elder,complete,1,좋아! 힘을 모았다가… 쾅! 정권이나 스텝으로 기절시킨 녀석에겐 반드시 들어가네. 스킬창(K)을 열어 보게!,npc
+345,elder,complete,2,그리고 이건 관문 수호자의 핵일세. 모루에서 무기에 새기면 덩치 큰 녀석들에게 주먹이 더 깊이 박힐 걸세.,npc
 346,elder,offer,1,저 벽에 걸린 붉은 너클이 보이나? 40년 동안 한 번도 내리지 않았지.,npc
-346,elder,offer,2,설원의 예티 다섯과 스노우맨을 넘어서 오게. 그럼 저걸 자네 주먹에 끼워 주겠네.,npc
-346,elder,progress,1,설원은 힘보다 버티는 쪽이 이긴다네. 투혼을 잊지 말게!,npc
+346,elder,offer,2,설원의 거인 스노우맨을 넘어서 오게. 그럼 저걸 자네 주먹에 끼워 주겠네.,npc
+346,elder,progress,1,스노우맨의 눈덩이는 피하지 말고 흘려보내게. 투혼을 잊지 말게!,npc
 346,elder,complete,1,…허허. 40년 만에 이 너클이 제 주인을 찾았구먼.,npc
 346,elder,complete,2,붉은 너클일세. 이제 그 이름은 자네 걸세. 크하하!,npc
+347,elder,offer,1,내가 매일 밤 감고 풀던 아대가 있네. 허나 그냥 줄 수는 없지.,npc
+347,elder,offer,2,고원의 스톤골렘을 맨주먹으로 넘어서 보게. 그럼 이 아대를 물려주지.,npc
+347,elder,progress,1,골렘은 돌덩이일 뿐일세. 기합을 넣고 정권으로 기절시킨 다음 몰아치게!,npc
+347,elder,complete,1,그 주먹… 내 젊을 때보다 낫구먼! 자 강철주먹 아대일세. 철 조각을 덧대 뒀으니 더 단단할 걸세.,npc
+348,elder,offer,1,모래 위에서는 발이 푹푹 빠지지. 그런 곳에서 버티는 법을 익혀야 하네.,npc
+348,elder,offer,2,모래 언덕의 모래두지 여덟 마리를 넘어서 오게. 수련비는 넉넉히 주겠네.,npc
+348,elder,progress,1,모래두지는 땅속으로 숨지. 튀어나오는 순간을 노리게!,npc
+348,elder,complete,1,허허! 모래 위에서도 흔들림이 없구먼. 자 수련비일세.,npc
+348,elder,complete,2,이제 보여 줄 때가 됐군. 준비되면 다시 오게.,npc
+349,elder,offer,1,설원은 힘보다 버티는 쪽이 이긴다네.,npc
+349,elder,offer,2,설원의 예티 여섯 마리를 넘어서 오게. 추위 속에서 주먹을 지키는 법을 익히게 될 걸세. 수련비도 주지.,npc
+349,elder,progress,1,추위에 몸이 굳으면 주먹도 굳네. 투혼을 잊지 말게!,npc
+349,elder,complete,1,허허! 추위도 자네 주먹을 막지 못하는구먼. 자 수련비일세.,npc
+349,elder,complete,2,저 벽의 붉은 너클을 내릴 때가 가까워졌네. 준비되면 다시 오게.,npc

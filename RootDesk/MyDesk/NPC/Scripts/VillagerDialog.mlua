@@ -104,6 +104,13 @@ script VillagerDialog extends Component
 		end
 
 		local speaker = self:GetSpeakerName()
+
+		-- 취미 멘토(사육 = 헛간지기 토리): 말을 걸 때마다 밀린 단계 보상 지급 + 현황 안내(서버가 멘토 여부를 다시 검증).
+		local isRanchMentor = (pc.RanchingMentorNpcId == self.NpcId)
+		if isRanchMentor then
+			pc:ServerVisitHobbyMentor(self.NpcId)
+		end
+
 		-- 머리 위 초록 "!"(보고 가능)와 같은 우선순위: 제출 가능한 퀘스트가 있으면 새 제안보다 보고가 먼저다.
 		local offer = nil
 		if self:GetQuestPingKind(localPlayer) ~= "done" then
@@ -120,6 +127,26 @@ script VillagerDialog extends Component
 				dialog:OpenQuestOffer(speaker, offerPages, questId)
 				log("[DIALOG] offer npc=" .. tostring(self.NpcId) .. " quest=" .. tostring(questId))
 				return
+			end
+		end
+
+		-- 상점을 겸하는 주민(ShopItemDataSet.Vendor == NpcId, 예: 헛간지기 토리 "barnkeeper"):
+		-- 보고할 퀘스트·새 제안이 없으면 잡담 대신 상점을 연다. 퀘스트가 우선이라 전직·스토리 흐름은 그대로다.
+		if self:GetQuestPingKind(localPlayer) ~= "done" then
+			local shopPopup = _EntityService:GetEntityByPath("/ui/PopupGroup/ShopPopup")
+			if isvalid(shopPopup) then
+				local shop = shopPopup:GetComponent("script.UIShopController")
+				if isvalid(shop) then
+					---@type UIShopController
+					local s = shop
+					if s:HasVendorItems(self.NpcId) then
+						local title = speaker .. "의 가게"
+						if isRanchMentor then title = title .. " · 사육 Lv." .. tostring(pc.RanchingLevel) end
+						s:OpenVendor(self.NpcId, title)
+						log("[DIALOG] shop npc=" .. tostring(self.NpcId))
+						return
+					end
+				end
 			end
 		end
 

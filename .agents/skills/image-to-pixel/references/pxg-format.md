@@ -50,7 +50,7 @@ Draw in **passes**, each pass a full rewrite of the grid (cheap in text):
    **Composition gate (hard stop)**: render, run `pixeltool check` with the contract numbers (composition.md), and verify the facing cues table. Only when both pass, delete the `_` guides and continue. Composition locks here — every later pass inherits it, and fixing view or framing after shading means redoing everything, which is exactly why it otherwise gets "left as is".
 2. **Surface pass** — split the silhouette into flat base colors per surface (skin/hair/cloth…), per the preset's palette.
 3. **Shading pass** — add ramp steps per surface, following the preset's cluster idioms (bands at chunky density, organic clusters at hi-res). Light upper-left.
-4. **Outline & detail pass** — selout the silhouette (style-cartoon) or hard outline (style-retro), then face/anchor details, then selective AA pixels where the style allows.
+4. **Outline & detail pass** — selout the silhouette (style-pixel-cartoon) or hard outline (style-retro), then face/anchor details, then selective AA pixels where the style allows.
 
 ## Grid size strategy
 

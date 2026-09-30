@@ -72,6 +72,24 @@ script UIHUDController extends Component
 
 	-- 보스 클리어 후 마을 귀환까지 남은 시간(절대 시각). 0 이면 카운트다운 없음.
 	property number raidReturnDeadline = 0
+	-- 쓰러짐 패널 (2026-09-30). 서버 PlayerController:ClientOnDowned 가 연다.
+	--   mode "normal" = n초 뒤 마을에서 깨어남(버튼: 즉시 부활권 · 마을에서 깨어나기)
+	--   mode "raid"   = 파티 전멸 또는 보스 처치 때까지 대기(버튼: 즉시 부활권)
+	property Entity downedPanel = "c9d82847-1af6-414d-b991-db748ed07d62"
+	property Entity downedStatus = "6e4a2acd-3d23-4faa-af43-400129a99cae"
+	property Entity downedLoss = "3b2571fd-adc6-4155-80c2-7c46ca9d39b5"
+	property Entity btnDownedRevive = "39c275ce-01e2-42a0-aab0-aade6729c920"
+	property Entity btnDownedTown = "3a008dc2-5108-4bd0-8fa2-2f426f45ca8a"
+	property any btnDownedReviveHandler = nil
+	property any btnDownedTownHandler = nil
+	property string downedMode = ""
+	-- normal 모드의 깨어나는 시각(절대 시각). 0 이면 카운트다운 없음.
+	property number downedDeadline = 0
+	-- 깨어나기 직전 같은 맵 순간이동을 가리는 짧은 커버(warpCover 재사용): 덮기 → 유지 → 걷기.
+	property any respawnCoverTimer = nil
+	property number RespawnCoverInSeconds = 0.25
+	property number RespawnCoverHoldSeconds = 0.3
+	property number RespawnCoverOutSeconds = 0.4
 
 	property boolean playHudReady = false
 
@@ -146,7 +164,15 @@ script UIHUDController extends Component
 		self.updateTimer = _TimerService:SetTimerRepeat(function()
 			self:UpdateHUD()
 		end, 1/10)
-		
+
+		-- 쓰러짐 패널: .ui 에서 Enable=false 로 저장돼 있다(규칙 30). 버튼만 여기서 잇는다.
+		if isvalid(self.btnDownedRevive) then
+			self.btnDownedReviveHandler = self.btnDownedRevive:ConnectEvent(ButtonClickEvent, function() self:OnDownedReviveClicked() end)
+		end
+		if isvalid(self.btnDownedTown) then
+			self.btnDownedTownHandler = self.btnDownedTown:ConnectEvent(ButtonClickEvent, function() self:OnDownedTownClicked() end)
+		end
+
 		self:InitTimeUI()
 		self:SetPlayHudVisible(false)
 		
@@ -483,6 +509,16 @@ script UIHUDController extends Component
 			_TimerService:ClearTimer(self.warpTimer)
 			self.warpTimer = nil
 		end
+		if self.respawnCoverTimer then
+			_TimerService:ClearTimer(self.respawnCoverTimer)
+			self.respawnCoverTimer = nil
+		end
+		if isvalid(self.btnDownedRevive) and self.btnDownedReviveHandler then
+			self.btnDownedRevive:DisconnectEvent(ButtonClickEvent, self.btnDownedReviveHandler)
+		end
+		if isvalid(self.btnDownedTown) and self.btnDownedTownHandler then
+			self.btnDownedTown:DisconnectEvent(ButtonClickEvent, self.btnDownedTownHandler)
+		end
 
 		local btnMine = _EntityService:GetEntityByPath("/ui/HUDGroup/MobileUI/BtnMine")
 		if isvalid(btnMine) and self.btnMineHandler then
@@ -649,6 +685,168 @@ script UIHUDController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method void ShowDowned(string mode, number seconds, string lossText)
+		-- 쓰러짐 패널을 연다. mode = "normal"(seconds 뒤 마을) | "raid"(파티 전멸·보스 처치까지 대기).
+		self.downedMode = mode
+		if mode == "normal" and seconds > 0 then
+			self.downedDeadline = _UtilLogic.ElapsedSeconds + seconds
+		else
+			self.downedDeadline = 0
+		end
+		if isvalid(self.downedLoss) then
+			local lt = self.downedLoss.TextGUIRendererComponent
+			if isvalid(lt) then lt.Text = lossText end
+		end
+		if isvalid(self.btnDownedTown) then
+			self.btnDownedTown.Enable = (mode == "normal")
+		end
+		if isvalid(self.downedPanel) then
+			self.downedPanel.Enable = true
+		end
+		self:UpdateDownedPanel()
+		log("[DEATH] downed panel mode=" .. mode .. " seconds=" .. tostring(seconds))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void HideDowned()
+		-- 쓰러짐 패널을 닫는다(부활·이동 커버 시작 시).
+		self.downedMode = ""
+		self.downedDeadline = 0
+		if isvalid(self.downedPanel) and self.downedPanel.Enable then
+			self.downedPanel.Enable = false
+			log("[DEATH] downed panel hidden")
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateDownedPanel()
+		-- UpdateHUD(10Hz)가 부른다. 남은 초 · 즉시 부활권 보유 수를 갱신한다.
+		if self.downedMode == "" then return end
+		if not isvalid(self.downedPanel) or not self.downedPanel.Enable then return end
+
+		local statusText = ""
+		if self.downedMode == "raid" then
+			statusText = "파티가 모두 쓰러지거나 보스를 쓰러뜨리면 깨어나요"
+		else
+			local remain = math.max(0, math.ceil(self.downedDeadline - _UtilLogic.ElapsedSeconds))
+			statusText = tostring(remain) .. "초 뒤 마을에서 깨어나요"
+		end
+		if isvalid(self.downedStatus) then
+			local st = self.downedStatus.TextGUIRendererComponent
+			if isvalid(st) and st.Text ~= statusText then st.Text = statusText end
+		end
+
+		local count = 0
+		local player = _UserService.LocalPlayer
+		if isvalid(player) then
+			local inv = player:GetComponent("script.PlayerInventory")
+			if isvalid(inv) then
+				---@type PlayerInventory
+				local pinv = inv
+				local reviveName = pinv:GetDeathEffectItemName("instant_revive")
+				if reviveName ~= "" then count = pinv:GetItemCount(reviveName) end
+			end
+		end
+		if isvalid(self.btnDownedRevive) then
+			local bt = self.btnDownedRevive.TextGUIRendererComponent
+			local label = "즉시 부활권 사용 (" .. tostring(count) .. ")"
+			if isvalid(bt) and bt.Text ~= label then bt.Text = label end
+			-- 없을 때도 누를 수는 있다(서버가 "상점에서 살 수 있어요" 안내) — 색만 흐리게.
+			local bs = self.btnDownedRevive.SpriteGUIRendererComponent
+			if isvalid(bs) then
+				if count > 0 then
+					bs.Color = Color(0.55, 0.40, 0.12, 0.95)
+				else
+					bs.Color = Color(0.30, 0.27, 0.22, 0.85)
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnDownedReviveClicked()
+		-- 즉시 부활권 버튼 → 서버 검증(보유·쓰러짐 상태) 후 그 자리에서 부활.
+		local player = _UserService.LocalPlayer
+		if not isvalid(player) then return end
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		---@type PlayerController
+		local c = pc
+		c:ServerRequestInstantRevive()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnDownedTownClicked()
+		-- 마을에서 깨어나기 버튼 → 남은 대기 시간 없이 바로 마을로(normal 모드만).
+		local player = _UserService.LocalPlayer
+		if not isvalid(player) then return end
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		---@type PlayerController
+		local c = pc
+		c:ServerRequestWakeInTown()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlayRespawnCover(boolean waitForMapChange)
+		-- 깨어나기 직전 커버. 맵 이동(→ 마을·대기실)이면 포탈 전환 커버를 그대로 쓴다(도착·렌더 안정까지 대기).
+		-- 같은 맵이면 서버가 RespawnCoverLeadSeconds 뒤 순간이동하므로 그보다 조금 길게 덮었다 걷는다.
+		self:HideDowned()
+		if waitForMapChange then
+			self:BeginWarpTransition(nil)
+			log("[DEATH] respawn cover (map change)")
+			return
+		end
+		-- 포탈 전환이 진행 중이면 그 커버에 맡긴다(두 타이머가 같은 커버를 다투지 않게).
+		if self.warpTimer then return end
+		local cover = self.warpCover
+		local cg = nil
+		if isvalid(cover) then cg = cover.CanvasGroupComponent end
+		if not isvalid(cover) or not isvalid(cg) then return end
+		if self.respawnCoverTimer then
+			_TimerService:ClearTimer(self.respawnCoverTimer)
+			self.respawnCoverTimer = nil
+		end
+
+		cg.GroupAlpha = 0
+		cover.Enable = true
+		local startAt = _UtilLogic.ElapsedSeconds
+		local fadeIn = self.RespawnCoverInSeconds
+		local hold = self.RespawnCoverHoldSeconds
+		local fadeOut = self.RespawnCoverOutSeconds
+		log("[DEATH] respawn cover (same map)")
+
+		self.respawnCoverTimer = _TimerService:SetTimerRepeat(function()
+			if not isvalid(cover) or not isvalid(cg) then
+				if self.respawnCoverTimer then
+					_TimerService:ClearTimer(self.respawnCoverTimer)
+					self.respawnCoverTimer = nil
+				end
+				return
+			end
+			local t = _UtilLogic.ElapsedSeconds - startAt
+			local a = 1
+			if t < fadeIn then
+				a = fadeIn > 0 and (t / fadeIn) or 1
+			elseif t < fadeIn + hold then
+				a = 1
+			elseif fadeOut > 0 and t < fadeIn + hold + fadeOut then
+				a = 1 - (t - fadeIn - hold) / fadeOut
+			else
+				a = 0
+			end
+			cg.GroupAlpha = a
+			if t >= fadeIn + hold + fadeOut then
+				cover.Enable = false
+				if self.respawnCoverTimer then
+					_TimerService:ClearTimer(self.respawnCoverTimer)
+					self.respawnCoverTimer = nil
+				end
+			end
+		end, 1/60)
+	end
+
+	@ExecSpace("ClientOnly")
 	method void StopRaidCountdown()
 		-- 카운트다운 종료 + 표시 숨김.
 		self.raidReturnDeadline = 0
@@ -661,6 +859,7 @@ script UIHUDController extends Component
 		-- UpdateHUD(10Hz)가 부른다. 남은 초를 갱신하고 0 이 되면 스스로 숨는다.
 		local ent = self.Entity:GetChildByName("RaidReturnTimer", false)
 		if not isvalid(ent) then return end
+
 		if self.raidReturnDeadline <= 0 then
 			if ent.Enable then ent.Enable = false end
 			return
@@ -705,6 +904,7 @@ script UIHUDController extends Component
 
 		self:UpdateBuffBar(player)
 		self:UpdateRaidCountdown()
+		self:UpdateDownedPanel()
 
 		local inv = player:GetComponent("script.PlayerInventory")
 		if isvalid(inv) then

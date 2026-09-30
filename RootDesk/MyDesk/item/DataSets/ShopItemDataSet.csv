@@ -1,14 +1,20 @@
-Name,BuyPrice,SellPrice
-Wood,0,2
-Stone,0,2
-Copper Ore,0,5
-Iron Ore,0,10
-Hand Axe,15,0
-Stone Pickaxe,30,0
-Bed,50,0
-Carrot Seed,10,0
-Carrot,0,5
-Chicken Ticket,80,0
-Sheep Ticket,100,0
-Animal Pen,40,0
-Dog Whistle,120,0
+Name,BuyPrice,SellPrice,Vendor,ShopCategory
+Wood,0,2,,자원
+Stone,0,2,,자원
+Copper Ore,0,5,,자원
+Iron Ore,0,10,,자원
+Hand Axe,15,0,,도구
+Stone Pickaxe,30,0,,도구
+Bed,50,0,,가구
+Carrot Seed,10,0,,씨앗
+Carrot,0,5,,작물
+Inventory Guard Ticket,120,0,,보험
+Instant Revive Ticket,300,0,,보험
+Chicken Ticket,80,0,barnkeeper,가축
+Sheep Ticket,100,0,barnkeeper,가축
+Animal Pen,40,0,barnkeeper,가축
+Dog Whistle,120,0,barnkeeper,펫
+Carrot Seed,10,0,barnkeeper,먹이
+Grass,3,0,barnkeeper,먹이
+Egg,0,6,barnkeeper,축산물
+Wool,0,10,barnkeeper,축산물
