@@ -5,8 +5,8 @@ script TestModeConfig extends Logic
 	-- [테스트 모드 설정 (TestModeConfig)]
 	-- =========================================================================
 	-- 테스트 모드를 켜거나 끄려면 아래 EnableTestMode 프로퍼티 값을 변경하세요.
-	--   true  : 메인화면(타이틀/슬롯) 스킵 및 TargetMap으로 즉시 스폰
-	--   false : 일반 플레이 모드 (타이틀/슬롯 선택 화면 정상 노출)
+	--   true  : 메인 메뉴에 "테스트 모드" 배지가 뜨고, 슬롯 1~5는 테스트 전용 슬롯이다. 캐릭터를 고르면 TargetMap 으로 스폰
+	--   false : 일반 플레이 모드 (실제 슬롯 1~5)
 	-- =========================================================================
 
 	-- [스위치] 테스트 모드 활성화 여부
@@ -29,11 +29,10 @@ script TestModeConfig extends Logic
 	--   보스방 입장 레벨(BossContentsDataSet.RequiredLevel·난이도 EntryLevel)은 그대로다 — F7 레벨업으로 맞출 것.
 	property boolean UnlockAllPortals = true
 
-	-- [테스트 슬롯] 테스트에 사용할 세이브 슬롯 (1~5)
-	property integer TestSlot = 1
-
-	-- [테스트 닉네임] 선택한 슬롯에 캐릭터가 없을 때 자동 생성할 닉네임
-	property string TestNickname = "Tester"
+	-- [테스트 전용 슬롯] 테스트 모드의 메인 메뉴 슬롯 1~5 = 저장 슬롯 (TestStorageSlotOffset + 1~5), 기본 101~105.
+	--   저장 키 SaveData_s101 · Quest_s101 · Achievement_s101 … 로 실제 슬롯과 분리된다 — F7·F8로 올린 상태가 일반 플레이에 남지 않는다(pitfalls 규칙 63).
+	--   변환은 PersistenceManager.ToStorageSlot 한 곳. 테스트 캐릭터는 닉네임 전역 등록을 하지 않는다.
+	property integer TestStorageSlotOffset = 100
 
 	-- [커스텀 좌표 사용 여부]
 	--   false: 각 맵별 안전/기본 스폰 위치 사용

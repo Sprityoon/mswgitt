@@ -54,7 +54,7 @@ script MonsterProjectile extends AttackComponent
 		if overlaps and #overlaps > 0 then
 			for _, hb in ipairs(overlaps) do
 				local target = hb.Entity
-				if isvalid(target) and target ~= self.Owner and isvalid(target.PlayerComponent) then
+				if isvalid(target) and target ~= self.Owner and (isvalid(target.PlayerComponent) or isvalid(target:GetComponent("script.Summon"))) then
 					-- 정식 히트 파이프라인(데미지 스킨/i-frame/넉백 훅) 경유.
 					self:AttackFast(shape, "projectile", CollisionGroups.HitBox)
 					self.Entity:Destroy()
@@ -66,12 +66,22 @@ script MonsterProjectile extends AttackComponent
 
 	method integer CalcDamage(Entity attacker, Entity defender, string attackInfo)
 		-- attackInfo="projectile" — 이름 분기 아님(태깅 규약). @ExecSpace 금지(LEA-3014).
-		return math.floor(self.ProjectileDamage)
+		-- 쏜 몬스터가 약화(Weaken)에 걸려 있으면 그만큼 줄어든다.
+		local dmg = math.floor(self.ProjectileDamage)
+		if isvalid(self.Owner) then
+			local monster = self.Owner:GetComponent("script.Monster")
+			if isvalid(monster) then
+				---@type Monster
+				local m = monster
+				dmg = math.max(1, math.floor(dmg * m:GetOutgoingDamageScale()))
+			end
+		end
+		return dmg
 	end
 
 	method boolean IsAttackTarget(Entity defender, string attackInfo)
-		-- 플레이어에게만 명중.
-		if isvalid(defender.PlayerComponent) == false then return false end
+		-- 플레이어와 소환수(script.Summon)에게만 명중.
+		if isvalid(defender.PlayerComponent) == false and isvalid(defender:GetComponent("script.Summon")) == false then return false end
 		return __base:IsAttackTarget(defender, attackInfo)
 	end
 

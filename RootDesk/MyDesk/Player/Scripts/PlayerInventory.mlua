@@ -422,6 +422,25 @@ script PlayerInventory extends Component
 			return
 		end
 
+		-- 재분배 소모품: 데이터 효과 키로만 분기. 잘못된 데이터·미투자 상태에서는 소모하지 않는다.
+		local okReset, rawReset = pcall(function() return row:GetItem("UseReset") end)
+		local resetKind = ""
+		if okReset and rawReset ~= nil then resetKind = tostring(rawReset) end
+		if resetKind ~= "" then
+			if resetKind ~= "AP" and resetKind ~= "JobSP" then return end
+			local pcReset = self.Entity:GetComponent("script.PlayerController")
+			if not isvalid(pcReset) then return end
+			local plan = pcReset:BuildProgressReset(resetKind)
+			if plan == nil then
+				pcReset:ShowMineFeedback("초기화할 투자 포인트가 없거나 데이터를 확인할 수 없습니다.")
+				return
+			end
+			if not self:RemoveItem(baseName, 1) then return end
+			pcReset:ApplyProgressReset(plan)
+			pcReset:ShowMineFeedback("초기화 완료: AP " .. tostring(plan.ap) .. " / SP " .. tostring(plan.sp) .. " 환급")
+			return
+		end
+
 		local useUnlockId = ""
 		local okU, vU = pcall(function() return row:GetItem("UseUnlockId") end)
 		if okU and vU ~= nil then useUnlockId = vU end
@@ -1536,18 +1555,80 @@ script PlayerInventory extends Component
 		return ""
 	end
 
+	method string GetOwnerJobId()
+		-- 이 인벤토리 주인의 직업 id (미전직 = ""). PlayerController.JobId 는 @Sync 라 서버·클라 공용이다.
+		local pc = self.Entity:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return "" end
+		---@type PlayerController
+		local ctrl = pc
+		return ctrl.JobId or ""
+	end
+
+	method boolean IsItemAllowedForJob(string itemName, string jobId)
+		-- item_dataset.EquipJobs("|"로 구분한 직업 id). 공란 = 전 직업. 정적 데이터라 아이템별로 캐시한다.
+		if itemName == nil or itemName == "" then return true end
+		local cache = self._T.EquipJobsCache
+		if cache == nil then
+			cache = {}
+			self._T.EquipJobsCache = cache
+		end
+		local jobs = cache[itemName]
+		if jobs == nil then
+			jobs = self:GetItemText(itemName, "EquipJobs")
+			cache[itemName] = jobs
+		end
+		if jobs == "" then return true end
+		for _, j in ipairs(self:SplitPlain(jobs, "|")) do
+			if j == jobId then return true end
+		end
+		return false
+	end
+
+	method boolean IsGearKeyAllowed(string itemKey)
+		-- 그 아이템(키)을 지금 직업이 쓸 수 있는가. 장착 등록이 남아 있어도 직업이 안 맞으면 실효 장비에서 뺀다 (저장값은 건드리지 않는다).
+		return self:IsItemAllowedForJob(self:GetBaseItemName(itemKey), self:GetOwnerJobId())
+	end
+
+	method string GetEquipJobsLabel(string itemName)
+		-- 장착 가능 직업 표시("트래퍼·배틀스미스"). EquipJobs 가 공란이면 "".
+		local jobs = self:GetItemText(itemName, "EquipJobs")
+		if jobs == "" then return "" end
+		local pc = self.Entity:GetComponent("script.PlayerController")
+		local names = {}
+		for _, j in ipairs(self:SplitPlain(jobs, "|")) do
+			local label = j
+			if isvalid(pc) then
+				---@type PlayerController
+				local ctrl = pc
+				local n = ctrl:GetJobName(j)
+				if n ~= "" then label = n end
+			end
+			names[#names + 1] = label
+		end
+		return table.concat(names, "·")
+	end
+
+	method string GetWeaponTypeLabel(string weaponType)
+		-- WeaponType → 툴팁 한 줄. 근접(Melee)은 기본이라 적지 않는다. 신규 종류는 여기와 WeaponAttackDataSet 만 늘린다.
+		if weaponType == "Wand" then return "마법봉 · 탭: 휘두르기 / 꾹: 충전 마법탄" end
+		if weaponType == "Nature" then return "자연 무기 · 탭: 정령탄 / 꾹: 생명 펄스" end
+		if weaponType == "Dagger" then return "단검 · 탭: 찌르기 (투척 숙련: 투척)" end
+		return ""
+	end
+
 	method string FindBestWeaponKey()
-		-- 주무기를 등록하지 않았을 때 쓰는 자동 주무기: 보유 무기 중 (공격력 + 마법 공격력) 최고.
+		-- 주무기를 등록하지 않았을 때 쓰는 자동 주무기: 보유·착용 가능한 무기 중 (공격력 + 마법 공격력) 최고.
 		local items = self.Items
 		if self:IsClient() then
 			items = self:SafeDecodeJson(self.InventoryDataJson, {})
 		end
+		local jobId = self:GetOwnerJobId()
 		local bestKey = ""
 		local bestScore = -1
 		for key, entry in pairs(items) do
 			local name = key
 			if type(entry) == "table" and entry.name ~= nil then name = entry.name end
-			if self:OwnsItemKey(key) and self:GetItemEquipSlot(name) == "weapon" then
+			if self:OwnsItemKey(key) and self:GetItemEquipSlot(name) == "weapon" and self:IsItemAllowedForJob(name, jobId) then
 				local score = self:GetItemNumber(name, "Attack") + self:GetItemNumber(name, "MagicAttack")
 				if score > bestScore or (score == bestScore and key < bestKey) then
 					bestScore = score
@@ -1560,8 +1641,9 @@ script PlayerInventory extends Component
 
 	method string GetGearKey(string slot)
 		-- 그 슬롯에 실제로 적용되는 아이템 키. 등록했지만 잃은 아이템은 "" (주무기는 자동 선택으로 폴백).
+		-- 직업 제한(EquipJobs)이 안 맞는 등록은 없는 것으로 본다 — 주무기면 자동 주무기로 돌아간다.
 		local key = self:GetGearSlots()[slot]
-		if key ~= nil and key ~= "" and self:OwnsItemKey(tostring(key)) then return tostring(key) end
+		if key ~= nil and key ~= "" and self:OwnsItemKey(tostring(key)) and self:IsGearKeyAllowed(tostring(key)) then return tostring(key) end
 		if slot == "weapon" then return self:FindBestWeaponKey() end
 		return ""
 	end
@@ -1569,7 +1651,7 @@ script PlayerInventory extends Component
 	method boolean IsWeaponAutoSelected()
 		-- 주무기 칸이 "등록"이 아니라 자동 선택으로 채워졌는가 (캐릭터 창 표시용).
 		local key = self:GetGearSlots()["weapon"]
-		return key == nil or key == "" or not self:OwnsItemKey(tostring(key))
+		return key == nil or key == "" or not self:OwnsItemKey(tostring(key)) or not self:IsGearKeyAllowed(tostring(key))
 	end
 
 	method number GetGearStat(string colName)
@@ -1948,6 +2030,13 @@ script PlayerInventory extends Component
 			slots[slot] = nil
 			msg = "[" .. label .. "] " .. disp .. " 해제"
 		else
+			-- 직업 제한(item_dataset.EquipJobs). 해제는 항상 허용한다.
+			if not self:IsItemAllowedForJob(baseName, self:GetOwnerJobId()) then
+				if isvalid(pcComp) then
+					pcComp:ClientShowMineFeedback(disp .. "은(는) " .. self:GetEquipJobsLabel(baseName) .. " 전용입니다.", playerComp.UserId)
+				end
+				return
+			end
 			slots[slot] = itemKey
 			msg = "[" .. label .. "] " .. disp .. " 장착"
 		end
@@ -2054,6 +2143,15 @@ script PlayerInventory extends Component
 		local needLv = numCol("EquipLevel")
 		if needLv > 0 then
 			lines[#lines + 1] = "착용 Lv." .. tostring(math.floor(needLv))
+		end
+		-- 무기 평타 방식(WeaponType)과 직업 제한(EquipJobs)
+		local weaponLabel = self:GetWeaponTypeLabel(self:GetItemText(itemName, "WeaponType"))
+		if weaponLabel ~= "" then
+			lines[#lines + 1] = weaponLabel
+		end
+		local jobLabel = self:GetEquipJobsLabel(itemName)
+		if jobLabel ~= "" then
+			lines[#lines + 1] = "전용: " .. jobLabel
 		end
 		-- 장비 고유 효과 설명 (PerkStat/PerkValue 는 PlayerController.GetGearPerk 가 적용한다)
 		local okP, rawP = pcall(function() return row:GetItem("PerkDesc") end)

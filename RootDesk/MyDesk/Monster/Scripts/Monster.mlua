@@ -7,6 +7,10 @@ script Monster extends Component
 	property number Defense = 6
 	property number RootThrowBonus = 0.25
 	property number BossControlScale = 0.25
+	-- 보스에게 건 균열(Vulnerable, 받는 피해 증가)은 이 배율로 줄어든다 (균열 각인: 일반 +20% / 보스 +10%).
+	property number BossVulnerableScale = 0.5
+	-- 보스에게 건 약화(Weaken, 주는 피해 감소)는 이 배율로 줄어든다 (야생의 고무: 일반 −15% / 보스 약 −8%).
+	property number BossWeakenScale = 0.55
 	-- 장비·주문 부여 적중 시 둔화(SlowOnHit)의 지속 시간(초)
 	property number GearSlowDuration = 2.0
 	@Sync @HideFromInspector property number Hp = 0
@@ -376,7 +380,8 @@ script Monster extends Component
 		end
 
 		-- Hit feedback: knockback away from the attacker + brief red flash.
-		if isvalid(event.AttackerEntity) then
+		-- 넉백 정책(IsKnockbackAllowed): 속박·기절 중이거나 스킬의 Knockback 열이 0 이면 밀지 않는다.
+		if isvalid(event.AttackerEntity) and self:IsKnockbackAllowed(event.AttackerEntity) then
 			local ai = self.Entity:GetComponent("script.MonsterAI")
 			if isvalid(ai) then
 				---@type MonsterAI
@@ -447,6 +452,36 @@ script Monster extends Component
 		return status
 	end
 
+	method boolean IsKnockbackAllowed(Entity attacker)
+		-- 이번 타격이 넉백을 주는가 (2026-10-01 넉백 정책).
+		--  ① 속박·기절 중인 적은 밀지 않는다 — 덫에 묶인 적이 맞을 때마다 덫 밖으로 밀려나는 일을 막는다.
+		--     보스의 속박·기절은 둔화로 바뀌어(ApplySkillHit) 여기 걸리지 않는다.
+		--  ② 스킬 행의 Knockback 열이 0 이면 넉백이 없다(장판·덫·도트 틱). 공란 = 넉백 있음. 평타는 항상 넉백이 있다.
+		if self:GetSkillStatus("Root") ~= nil or self:GetSkillStatus("Stun") ~= nil then return false end
+		local combatComp = attacker:GetComponent("script.PlayerCombat")
+		if not isvalid(combatComp) then return true end
+		---@type PlayerCombat
+		local combat = combatComp
+		local skillId = combat.PendingSkillId
+		if skillId == nil or skillId == "" then return true end
+		local ds = _DataService:GetTable("SkillDataSet")
+		local row = ds ~= nil and ds:FindRow("SkillId", skillId) or nil
+		if row == nil then return true end
+		local pcComp = attacker:GetComponent("script.PlayerController")
+		if not isvalid(pcComp) then return true end
+		---@type PlayerController
+		local pc = pcComp
+		return pc:SkillNumber(row, "Knockback", 1) > 0
+	end
+
+	method number GetOutgoingDamageScale()
+		-- 이 몬스터가 주는 피해 배율. 약화(Weaken — 야생의 고무)가 걸려 있으면 줄어든다. 보스 값은 걸 때 이미 줄였다.
+		-- MonsterMeleeAttack·MonsterProjectile 의 CalcDamage 가 곱한다.
+		local weaken = self:GetSkillStatus("Weaken")
+		if weaken == nil then return 1 end
+		return math.max(0.1, 1 - weaken.value)
+	end
+
 	method number GetSkillMoveFactor()
 		if self:GetSkillStatus("Root") ~= nil then return 0 end
 		local acid = self:GetSkillStatus("Acid")
@@ -482,7 +517,17 @@ script Monster extends Component
 				local bb = pc:GetPassiveBonus("BossDamagePct")
 				if bb > 0 then damage = damage * (1 + bb) end
 			end
+			-- 정밀 배합(FarDamagePct): 공격자와 FarDamageDistance 이상 떨어진 적에게 추가 피해 (투사체·장판 포함 — 맞은 순간의 거리).
+			local far = pc:GetPassiveBonus("FarDamagePct")
+			if far > 0 then
+				local ap = attacker.TransformComponent.WorldPosition
+				local mp = self.Entity.TransformComponent.WorldPosition
+				if Vector2.Distance(ap:ToVector2(), mp:ToVector2()) >= pc.FarDamageDistance then damage = damage * (1 + far) end
+			end
 		end
+		-- 균열(Vulnerable — 균열 각인): 받는 모든 피해 증가. 몬스터 쪽 상태라 누가 때리든 적용된다(파티 딜 지원). 보스 값은 걸 때 이미 줄였다.
+		local vulnerable = self:GetSkillStatus("Vulnerable")
+		if vulnerable ~= nil then damage = damage * (1 + vulnerable.value) end
 		return math.max(1, math.floor(damage - self.Defense * (1 - math.min(0.8, shred))))
 	end
 
@@ -498,8 +543,18 @@ script Monster extends Component
 			local old = self:GetSkillStatus("Slow")
 			local v = gearSlow
 			if old ~= nil and old.value > v then v = old.value end
-			self._T.SkillStatuses["Slow"] = { expires = _UtilLogic.ElapsedSeconds + self.GearSlowDuration, value = v, stacks = 1 }
+			-- 내가 건 상태이상 지속은 교감·패시브(GetControlDurationScale)만큼 늘어난다.
+			self._T.SkillStatuses["Slow"] = { expires = _UtilLogic.ElapsedSeconds + self.GearSlowDuration * pc:GetControlDurationScale(), value = v, stacks = 1 }
 		end
+		self:ApplySkillStatus(skillId, attacker)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplySkillStatus(string skillId, Entity attacker)
+		-- 스킬 행의 상태이상(Status·콤보 소모)만 건다. 적중(ApplySkillHit)과, 피해 없이 상태만 거는 오라(야생의 고무 → 약화)가 함께 쓴다.
+		-- 장판 판정은 피해가 최소 1이라 "상태만" 걸 수 없어서 따로 둔 경로다 (job-branch-redesign §7.5).
+		local pc = attacker:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
 		local ds = _DataService:GetTable("SkillDataSet")
 		local row = ds ~= nil and ds:FindRow("SkillId", skillId) or nil
 		if row == nil then return end
@@ -507,15 +562,22 @@ script Monster extends Component
 		if pc:SkillText(row, "ConsumeCombo") == "true" then self._T.SkillStatuses[pc:SkillText(row, "ComboStatus")] = nil end
 		local key = pc:SkillText(row, "Status")
 		if key == "" then return end
-		local duration = pc:SkillNumber(row, "StatusDuration", 0)
+		-- 내가 건 상태이상 지속은 교감·패시브(GetControlDurationScale)만큼 늘어난다. 보스는 아래에서 둔화로 바뀌며 한 번 더 줄어든다.
+		local duration = pc:SkillNumber(row, "StatusDuration", 0) * pc:GetControlDurationScale()
 		local value = pc:SkillNumber(row, "StatusValue", 0)
 		if self.IsBoss and (key == "Root" or key == "Stun") then
 			key = "Slow"
 			value = self.BossControlScale
 			duration = duration * self.BossControlScale
+		elseif self.IsBoss and key == "Vulnerable" then
+			value = value * self.BossVulnerableScale
+		elseif self.IsBoss and key == "Weaken" then
+			value = value * self.BossWeakenScale
 		end
 		local old = self:GetSkillStatus(key)
-		local stacks = math.min(pc:SkillNumber(row, "StatusMaxStacks", 1), (old ~= nil and old.stacks or 0) + 1)
+		-- 최대 중첩 = 스킬 행 StatusMaxStacks + 패시브 "<상태>MaxStacks"(파쇄 숙련 → ArmorBreakMaxStacks, 레벨 비례 값의 정수 부분).
+		local maxStacks = pc:SkillNumber(row, "StatusMaxStacks", 1) + math.floor(math.max(0, pc:GetPassiveBonus(key .. "MaxStacks")) + 0.0001)
+		local stacks = math.min(maxStacks, (old ~= nil and old.stacks or 0) + 1)
 		self._T.SkillStatuses[key] = { expires = _UtilLogic.ElapsedSeconds + duration, value = value, stacks = stacks }
 		log("[SKILL-STATUS] " .. self:GetMonsterId() .. " " .. key .. " stacks=" .. stacks)
 	end

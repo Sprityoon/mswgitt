@@ -53,6 +53,8 @@
 ### L2 잔디 패밀리 = 15종
 `FullGrass` + `Grass{dir}` 8 + `Grass*Corner` 4 + `SubGrass{LTRD|RTLD}` 2
 
+> 2026-10-01 제작자 요청으로 `tileimg/new grass` 아트로 15종 교체 완료. 기존 그룹 리소스 RUID·팔레트 순서·이름·마스크·충돌 설정은 유지한다. `12.png`가 RTLD이며 LTRD는 정확한 픽셀 좌우 반전이다. 파일 대응·갱신 버전·원격 픽셀 검증은 해당 폴더의 `replacement-manifest.json`·`replacement-results.json`·`verification-results.json`, 제작자 Play 항목은 [tasks.md](./tasks.md) 참조.
+
 ### L0 물 프린지 패밀리 = 15종 (2026-08-28 도입, 2026-08-29 대각 2종 추가)
 `Water`(중심 수면) + `Water{T|D|L|R|LT|RT|LD|RD}` 8 + `Water*Corner` 4 + `Water{LTRD|RTLD}` 2 (퍼즐식 여집합)
 

@@ -11,6 +11,8 @@ script UIMainMenuController extends Component
 	property ButtonComponent btnQuit = "241f788d-36f4-4ef4-8d60-1740d019bd9e"
 	property TextGUIRendererComponent titleHint = "dca47c27-479a-4f20-a856-e2dcba7e2ce3"
 	property Entity titleHintPlate = "4438e7c8-9e1c-46ad-bb09-7bcde1f25c2b"
+	-- 테스트 모드 배지(상단 중앙). .ui 에서 Enable=false 로 저장돼 있고 테스트 모드일 때만 켠다(규칙 30).
+	property Entity testModeBadge = "de952b99-8908-422f-948b-539aa3fc184b"
 
 	property Entity slotPanel = "5759b110-6221-4759-a72f-bd3cd107ab5a"
 	property TextGUIRendererComponent slotSubtitle = "d463b57e-818f-41b8-aba7-f5d55b14c257"
@@ -104,13 +106,10 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
-		-- 테스트 모드가 켜져 있으면 메인메뉴(타이틀 화면)를 스킵하고 HUD를 즉시 활성화합니다.
-		if _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true then
-			self:SetRootEnable(false)
-			self:SetPlayHudVisible(true)
-			log("[TESTMODE] MainMenu UI skipped by TestModeConfig")
-			return
-		end
+		-- 테스트 모드도 메인 메뉴를 거친다(2026-10-02). 대신 상단에 배지를 띄워 테스트 전용 슬롯임을 알린다.
+		local isTest = _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true
+		if isvalid(self.testModeBadge) then self.testModeBadge.Enable = isTest end
+		if isTest then log("[TESTMODE] MainMenu shown with test-mode badge (test slots)") end
 
 		-- 타이틀은 첫 프레임부터 켠다. 끄면 HUD·PreviewTool이 슬롯 RPC보다 먼저 보인다.
 		self:SetRootEnable(true)
@@ -317,10 +316,7 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OpenWithMetaJson(string metaJson)
-		if _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true then
-			log("[TESTMODE] UIMainMenuController.OpenWithMetaJson ignored (TestMode active)")
-			return
-		end
+		-- 테스트 모드여도 연다. 서버가 보내는 meta 는 이미 테스트 전용 슬롯(101~105)을 1~5에 실은 것이다.
 		self.slotMeta = {}
 		if metaJson ~= nil and metaJson ~= "" and metaJson ~= "{}" then
 			local ok, decoded = pcall(function() return _HttpService:JSONDecode(metaJson) end)
@@ -604,26 +600,30 @@ script UIMainMenuController extends Component
 	method void SetLookMode(boolean useAccount)
 		self.useAccountLook = useAccount
 		self:SetPartsInteractable(not useAccount)
-		-- 선택 강조: 계정=초록 톤, 커스텀=나무 톤
+		-- 선택 강조: 활성=포레스트 올리브(초록), 비활성=따뜻한 원목 브라운
 		if isvalid(self.btnLookAccount) then
 			local spr = self.btnLookAccount.Entity and self.btnLookAccount.Entity.SpriteGUIRendererComponent
 			if isvalid(spr) then
 				if useAccount then
-					spr.Color = Color(0.35, 0.55, 0.32, 0.92)
+					spr.Color = Color(0.45, 0.72, 0.35, 1.0)
 				else
-					spr.Color = Color(0.42, 0.3, 0.2, 0.75)
+					spr.Color = Color(0.55, 0.42, 0.32, 0.85)
 				end
 			end
+			local txt = self.btnLookAccount.Entity and self.btnLookAccount.Entity.TextGUIRendererComponent
+			if isvalid(txt) then txt.FontColor = Color(1.0, 1.0, 0.96, 1.0) end
 		end
 		if isvalid(self.btnLookCustom) then
 			local spr = self.btnLookCustom.Entity and self.btnLookCustom.Entity.SpriteGUIRendererComponent
 			if isvalid(spr) then
 				if useAccount then
-					spr.Color = Color(0.42, 0.3, 0.2, 0.75)
+					spr.Color = Color(0.55, 0.42, 0.32, 0.85)
 				else
-					spr.Color = Color(0.35, 0.55, 0.32, 0.92)
+					spr.Color = Color(0.45, 0.72, 0.35, 1.0)
 				end
 			end
+			local txt = self.btnLookCustom.Entity and self.btnLookCustom.Entity.TextGUIRendererComponent
+			if isvalid(txt) then txt.FontColor = Color(1.0, 1.0, 0.96, 1.0) end
 		end
 		self:RefreshCustomizePreview()
 		log("[MAINMENU] lookMode account=" .. tostring(useAccount))
@@ -719,6 +719,10 @@ script UIMainMenuController extends Component
 	@ExecSpace("ClientOnly")
 	method void ApplyCostumeToEntity(Entity avatarEnt, table costume)
 		if not isvalid(avatarEnt) or type(costume) ~= "table" then return end
+		local renderer = avatarEnt.AvatarGUIRendererComponent
+		if isvalid(renderer) then
+			renderer.PreserveAvatar = PreserveSpriteType.AspectOnly
+		end
 		local cm = avatarEnt.CostumeManagerComponent
 		if not isvalid(cm) then return end
 		if self:IsAccountCostumeTable(costume) then

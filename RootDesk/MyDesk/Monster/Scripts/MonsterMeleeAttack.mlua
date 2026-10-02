@@ -119,7 +119,19 @@ script MonsterMeleeAttack extends AttackComponent
 	end
 
 	method integer CalcDamage(Entity attacker, Entity defender, string attackInfo)
-		-- attackInfo 태깅으로 분기 (이름 분기 아님). ⚠ AttackComponent 훅에 @ExecSpace 금지.
+		-- 최종 피해 = 기본 피해 × 약화 배율(Monster.GetOutgoingDamageScale — 야생의 고무). ⚠ AttackComponent 훅에 @ExecSpace 금지.
+		local dmg = self:CalcBaseDamage(attackInfo)
+		local monster = self.Entity:GetComponent("script.Monster")
+		if isvalid(monster) then
+			---@type Monster
+			local m = monster
+			dmg = math.max(1, math.floor(dmg * m:GetOutgoingDamageScale()))
+		end
+		return dmg
+	end
+
+	method integer CalcBaseDamage(string attackInfo)
+		-- attackInfo 태깅으로 분기 (이름 분기 아님).
 		if attackInfo == "touch" then
 			local dmg = self.TouchDamage
 			-- T102: 모델 기본값 2이거나 미설정된 경우, 몬스터 본체 공격력(ContactDamage)의 50%로 자동 비례 산출
@@ -141,8 +153,8 @@ script MonsterMeleeAttack extends AttackComponent
 	end
 
 	method boolean IsAttackTarget(Entity defender, string attackInfo)
-		-- Only player entities take this monster's contact damage.
-		if isvalid(defender.PlayerComponent) == false then return false end
+		-- 플레이어와 소환수(script.Summon — 어그로 우회)만 이 몬스터의 공격을 받는다.
+		if isvalid(defender.PlayerComponent) == false and isvalid(defender:GetComponent("script.Summon")) == false then return false end
 		if attackInfo == "charge" and self._T.chargeHitIds ~= nil and self._T.chargeHitIds[defender.Id] then
 			return false
 		end

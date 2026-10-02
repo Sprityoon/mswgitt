@@ -1,5 +1,245 @@
 # 작업 목록 (Tasks)
 
+## [마을/아트] 버섯 연구소(Research Lab) 건물 신규 제작 & 정면 탑다운 구도 및 투명화 완료 (2026-10-02) — 아트 납품 완료 · Maker 임포트 대기
+
+- 제작자 요청: 마을 건물 아트 교체(버섯 테마). 1순위 타겟 연구소(ResearchLab), 기준 규격 대장간(`ruid: 3cf6b9e903e645c295fadfa6bb0548b0`, 356×248 px).
+- **디자인 & 정합**: 메이플스토리 헤네시스풍 연금술/마법 연구소 버섯 하우스 (마법 인디고/보라 갓 지붕, 플라스크 엠블럼, 아치형 원목 문, 보글보글 가마솥, 약초 건조대, 양피지 상자 등). 대장간과 완벽 1:1 규격(356×248, 바닥 접지 여백 2px, 피벗 0.5, 0.0 정합).
+- **구도 수정(제작자 피드백 반영)**: 대각선 쿼터뷰에서 대장간과 동일한 **위에서 아래 방향의 정면으로 내려다보는 구도(Straight-on Front Top-down View)**로 전면 재정렬.
+- **세부 투명화(제작자 피드백 반영)**: 좌측 허브 건조대 틈새 및 우측 연금술 테이블 다리/선반 사이 고립된 흰색 공간을 OpenCV 연결 요소 분석을 통해 정밀 투명(`Alpha=0`) 관통 처리 및 `#4a2a1c` 디프린지 마감.
+- **산출물**:
+  - 스프라이트: [docs/design/art/researchlab/researchlab_front_clean.png](./design/art/researchlab/researchlab_front_clean.png) (356×248 RGBA)
+  - 검증 시트: [docs/design/art/researchlab/preview_front_comparison.png](./design/art/researchlab/preview_front_comparison.png) (대장간 vs 연구소 비교)
+  - 보고서: [docs/design/art/researchlab/researchlab_report.md](./design/art/researchlab/researchlab_report.md)
+  - 처리 파이프라인 스크립트: `process_front_view.py`, `fix_holes.py`, `make_front_preview.py`
+- **인게임 교체 대기**: pitfalls 규칙 45(계정 업로드 리소스 런타임 오류 방지)에 따라 제작자 Maker 임포트 후 RUID 발급 대기.
+
+## [UI/메인메뉴] 시작화면(슬롯/외형/신규생성) 코지 우드 리디자인 & 아바타 왜곡 보정 (2026-10-02) — 코드/UI 완료 · 런타임 캡쳐 검증 완료
+
+- 제작자 요청: 시작화면 UI 전면 리디자인 (색감, 슬롯 카드, 아바타 찌그러짐 보정, 어색한 반투명 배경 제거, 정갈한 UI 요소 직접 드로잉/배치).
+- **리디자인 내용**:
+  1. **슬롯 선택 화면 (`SlotSelectPanel`)**:
+     - 400×480 비율의 우아하고 따뜻한 원목 플레이트(`Cozy Wood Frame`) 및 코너 브래킷 UI 적용.
+     - 슬롯 카드(1~5번) 550×58 가로형 컴팩트 레이아웃, 레벨 뱃지 및 골드 라벨.
+     - 아바타 뷰어(`SlotAvatar`): `AvatarGUIRendererComponent`의 찌그러짐 현상(1:1 왜곡)을 180×220 세로형 뷰포트 및 상향 오프셋으로 완벽 보정.
+     - [◀ 뒤로] 버튼 텍스트 가독성 강화: 아이보리 화이트(`Color(1.0, 1.0, 0.96)`) + Bold + 다크브라운 섀도우.
+  2. **캐릭터 생성/외형 화면 (`CustomizePanel`)**:
+     - 동일한 코지 우드 프레임 테마 일관성 유지.
+     - 중앙 아바타 프리뷰 왜곡 방지 및 상향 정렬.
+     - 4개 외형 카테고리(스킨/헤어/페이스/의상) 버튼 및 랜덤 버튼 디자인 정비.
+- **수정 파일**:
+  - `ui/MainMenuGroup.ui` (UIBuilder 패치)
+  - `scripts/apply_cozy_wood_v5_final.cjs`, `scripts/patch_slot_back_btn.cjs`
+  - `RootDesk/MyDesk/DevTools/Scripts/TestModeConfig.mlua` (테스트모드 false 원복)
+- **검증**: `maker_refresh_workspace` ok, Maker 런타임 스크린샷 캡쳐 검증 완료 (`v5_slot_screen.png`, `v5_customize_screen.png`, `slot_screen_back_button_fixed.png`).
+
+## [버그] 마을 시작 시 깜빡임 · 사냥터 도착 직후 피격 (2026-10-02) — 코드 완료 · 런타임 검증 보류
+
+- 제작자 보고: ① 게임 시작 때 마을에서 시작하면 캐릭터가 계속 깜빡임 ② 사냥터로 이동하면 로딩이 끝나자마자 몬스터에게 맞음(이전 도착 무적 도입 뒤에도 여전).
+- **원인(런타임 로그 근거)**: ① 맵 진입마다 6초 도착 무적(반투명 깜빡임)이 걸리고, 전환 커버 해제 통지(`ServerNotifyWarpRevealed`)가 오면 2초로 줄어든다. 슬롯 로드로 마을에 나타나는 경로는 통지가 없어 6초를 꽉 채워 깜빡였다(18:49:39 마을 도착 → 18:49:47 종료, 세션 내내 보호 중). ② `MonsterAI.FindNearestPlayer` 가 보호 중인 플레이어도 표적으로 잡아 도착 지점에 몰려 공격 모션을 반복했고, 보호가 끝나는 순간 그대로 맞혔다(hunt01 18:58:04 도착 → 18:58:07 화면 표시 → **18:58:09 보호 종료와 동시에 첫 피격**) → [pitfalls 규칙 64](./pitfalls.md).
+- **수정**: `PlayerController.OnMapEnter` — 도착 보호는 전투 맵에서만 건다(마을·`map01`·`Home_*` 는 보호 해제 + 종료 타이머 취소). `MonsterAI.FindNearestPlayer` — 도착 보호 중인 플레이어는 표적에서 제외(`IsTargetArrivalProtected` → `PlayerController.IsArrivalProtected`). 보호 시간·통지 흐름은 그대로.
+- **검증**: LSP 2스크립트 clean · refresh ok → 빌드 **19:02:23(마지막 저장 19:02:22 직후) Error 0 / Warning 9(기존) / Info 836**.
+- **런타임 검증 보류(제작자 수행)**: ① 마을·영지에서 게임 시작 → 깜빡임 없음 ② 사냥터 도착 직후 근처 몬스터가 다가오지 않고 배회 → 보호가 끝난(화면 표시 후 약 2초) 뒤부터 감지해 다가옴 — 로그에 보호 중 `hit for` 없음 ③ 사냥터 도착 시 깜빡임은 지금처럼 보호 동안만 ④ 쓰러진 뒤 마을에서 깨어날 때 깜빡임 없음. 알려진 영향: 보스방 입장 직후 약 2초도 보스가 표적으로 잡지 않는다(같은 도착 보호).
+
+## [DevTools/UI] 테스트 모드도 메인 메뉴부터 — 테스트 전용 슬롯 5칸 + 배지 (2026-10-02) — 코드 완료 · 런타임 검증 보류
+
+- 제작자 요청: 테스트 모드도 메인 메뉴에서 캐릭터를 고르게 하고, 테스트 모드임을 메뉴에 표시. 아래 "저장 격리" 항목의 자동 슬롯 선택을 대체한다.
+- **서버** `PersistenceManager`: 테스트 모드 자동 선택 분기 삭제 → 일반 모드처럼 `ClientOpenMainMenu`. `ToStorageSlot(menuSlot)` 신설(테스트 모드면 +`TestStorageSlotOffset` 100) — `SelectSaveSlot`·`DeleteSaveSlot` 입구에서 변환, `ReadSlotMetaTable` 은 저장 슬롯 101~105를 동기화, `ReadSlotMetaJson` 은 메뉴용 1~5 키로 재키잉. `IsTestStorageSlot` 은 101~105 범위. 테스트 슬롯은 닉네임 전역 등록·중복 검사 생략(기존 유지). 저장·직렬화 호출 변경 없음(규칙 9).
+- **TestModeConfig**: `TestSlot`·`TestNickname`·`GetTestStorageSlot` 삭제(참조 0), `TestStorageSlotOffset` 유지, 머리 설명 갱신. 시작 맵(`TargetMap`)·포탈 해금·핫키는 그대로 — 캐릭터를 고른 뒤 TargetMap 으로 스폰.
+- **클라** `PlayerController.ClientOpenMainMenu`·`UIMainMenuController`(`OnBeginPlay`·`OpenWithMetaJson`)의 테스트 모드 건너뛰기 삭제. 신규 `testModeBadge` 바인딩.
+- **UI** `ui/MainMenuGroup.ui`(UIBuilder): 루트 자식 `TestModeBadge` — 상단 중앙(top-center, pos 0,-24, 780×56, PC 예약 구역 밖), 메뉴의 나무 플레이트 RUID에 적갈색 틴트, 글자는 같은 엔티티(규칙 50) 크림 24 bold + 갈색 외곽선 "테스트 모드 · 테스트 전용 슬롯 (일반 저장과 분리)". `.ui` 기본 Enable=false(규칙 30), displayOrder 6(형제 중 최상단 — 규칙 47). ui_lint 에러 0, 신규 경고 0(기존 32건 그대로), refresh 후에도 엔티티·바인딩 UUID 유지(규칙 11 점검).
+- **검증**: LSP 4스크립트 에러 0·경고 0 · `test_job_progress_reset` PASS · refresh ok → 빌드 **18:24:50(마지막 저장 18:24:33 직후) Error 0 / Warning 9(기존) / Info 836**.
+- **런타임 검증 보류(제작자 수행)**: ① 테스트 모드로 Play → 타이틀·슬롯·외형 화면 모두 상단에 배지, 일반 모드에선 안 보임 ② 슬롯 목록이 비어 있음(테스트 전용) → 새로하기로 캐릭터 생성 → TargetMap 스폰(로그 `[SLOT] selected ... slot=101`) ③ F7 후 재진입하면 같은 테스트 슬롯이 이어하기에 Lv 반영 ④ 테스트 모드 끄면 실제 슬롯 1~5가 그대로 ⑤ 배지 글자가 플레이트 안에 들어오는지·색이 메뉴와 어울리는지.
+
+## [DevTools/세이브] 테스트 모드 저장 격리 (2026-10-02) — 위 항목으로 자동 선택 부분 대체 · 저장 격리는 유지
+
+- 증상(제작자): 테스트 모드에서 F7로 레벨을 올린 캐릭터가 테스트 모드 해제 후에도 그 상태로 남음. 원인: 테스트 모드가 `TestSlot`(1번) 실제 슬롯을 일반 로드·저장 경로로 썼고, F7·F8은 실제 레벨업·SP 경로라 그대로 저장됨 → [pitfalls 규칙 63](./pitfalls.md).
+- 수정: `TestModeConfig.GetTestStorageSlot()` = `TestStorageSlotOffset`(100) + `TestSlot` → 테스트 모드의 활성 슬롯 101. 모든 저장 키가 슬롯 번호로 갈려(`SaveData_s101`·`Quest_s101`·`Achievement_s101`) 실제 슬롯 1~5와 분리된다. `PersistenceManager.IsTestStorageSlot` 신설, `SelectSaveSlot` 범위 검사 허용, 테스트 슬롯은 닉네임 전역 등록·중복 검사 생략. 직렬화·저장 호출은 변경 없음(추가 Yield 없음, 규칙 9). 메인 메뉴는 1~5번만 그려 테스트 캐릭터가 보이지 않는다(SlotMeta 안에 "101" 항목만 숨은 채 생긴다).
+- 기존 1번 슬롯의 테스트 흔적은 제작자 판단으로 초기화하지 않는다(Maker 테스트 캐릭터).
+- **검증**: LSP `PersistenceManager` clean · `TestModeConfig` 에러 0 · `test_job_progress_reset` PASS · refresh ok → 빌드 **18:10:12(마지막 저장 18:10:10 직후) Error 0 / Warning 9(기존) / Info 836**.
+- **런타임 검증 보류(제작자 수행)**: ① 테스트 모드로 첫 진입 → 새 "Tester" 캐릭터가 Lv1로 생성(로그 `[TESTMODE] ... isolated test slot 101`, `[SLOT] selected ... slot=101 new=true`) ② F7 레벨업 → 재진입해도 101번 유지 ③ 테스트 모드 끄고 메인 메뉴 → 1~5번 슬롯이 테스트 전 상태 그대로, 101번은 안 보임 ④ 일반 모드에서 "Tester" 닉네임 사용 가능 여부(전역 등록 안 함). 알려진 영향: 낚시 대회 랭킹 키가 `userId_s101`로 별도 캐릭터 취급된다.
+
+## [UI/직업] 스킬창 개편 — 성격별 분류 · 강화/상위만 선행 · 트래퍼 주/부 교체 (2026-10-02) — 코드 완료 · 런타임 검증 보류
+
+- 계기: 목록 UI가 사슬 루트의 Type을 자식에게 물려줘 트래퍼 주 트리 전체가 "이동" 탭에 들어갔다. ⚖️ 제작자 결정: 트래퍼 정체성은 덫 → 덫 계열이 주 / 주·부 명시 대신 스킬 성격으로 분류 / 트리 연결은 강화형·상위형만, 나머지 선행 해제(A안). 설계 [job-branch-redesign.md](./design/job-branch-redesign.md) §15, 정책 [design-policy.md](./design-policy.md) 스킬트리 가드라인.
+- **데이터** `SkillDataSet` +2열: `Category`(직업 스킬 36개 전부 — 공격·설치·소환·이동·보조·특성) · `LinkType`(upgrade/evolve). 선행 16건만 유지(강화 5 · 상위 11), 그 밖의 선행 전부 해제(레벨·업적·x05 퀘스트 조건은 유지). 트래퍼 `Branch` 교체 + 좌표(덫 계열 1열·그림자 계열 3열, 알뜰한 손놀림 (2,2) · 급소 간파 (3,2)), `JobBranchDataSet` 트래퍼 주/부 교체(BOM·LF 유지).
+- **UI** `UISkillTreeController`(`.ui` 변경 없음): `[주]/[부]/[공용]` 접두사·갈래 테두리·상세 갈래 줄 제거(재사용 행 Outline 끔), 분류 탭에 설치·소환 추가(기존 6칸 슬롯), 탭 안 요구 레벨 순 정렬, 강화·상위 스킬은 기반 스킬 아래 `└`, 상세 선행 줄 문구 "강화 대상: ○○" / "상위 스킬 · 기반: ○○". 클라가 더 이상 `JobBranchDataSet` 을 읽지 않는다(`GetBranchLabel` 삭제).
+- **검사기** `check_job_branches.cjs`: 선행 ⇔ `LinkType` 일치, `LinkType`·`Category` 허용값, 직업 스킬 `Category` 필수.
+- **검증**: `check_job_branches` PASS(36스킬/8갈래, 연결 16) · `check_skill_quest_pipeline` 결함 없음 · `check_dataset_columns` 불일치 0 · LSP `UISkillTreeController` clean · `test_job_progress_reset` PASS. Maker refresh ok → 빌드 **17:22:18(UI 저장 17:22:17 직후) Error 0 / Warning 9(기존 LWA-4012) / Info 836**.
+- **런타임 검증 보류(제작자 수행)**: ① 트래퍼 탭 = 공격(급소 찌르기 └ 그림자 난도) · 설치(사냥꾼의 덫·도끼 비) · 이동(그림자 걸음) · 특성(4종), 배틀스미스 공격 탭에 갑주 파쇄타 아래 └ 대지 분쇄타·파쇄 숙련·균열 각인, 와일드키퍼 소환 탭에 야수 소환 └ 무리의 우두머리·숲의 군주 ② 탭 전환 시 이전 금색·청록 테두리가 남지 않음 ③ 선행이 풀린 스킬(예: 급소 찌르기·매직 클로·도끼 비)이 레벨·퀘스트만 맞으면 "해금 가능" — 서버 레벨업도 통과 ④ 상세 패널 선행 줄 문구와 색(충족 금색/미충족 빨강) ⑤ 이름이 긴 강화 행(예: └ 투기 방출: 오라 피스트)이 칸 안에 들어오는지.
+
+## [전투/직업] 직업 재설계 3·4단계 — 신규 19종 (2026-10-02) — 코드 완료 · 런타임 검증 보류
+
+- 설계: [job-branch-redesign.md](./design/job-branch-redesign.md) §5·§7·§10, 구현 차이·새 데이터 계약은 §14. 이것으로 1~4단계 전부 코드 완료다. 직업당 9노드, 직업 스킬 36개.
+- **3단계(기존 타입 14종)**: 트래퍼 그림자 걸음(Dash+확정 치명·이속 버프)·급소 찌르기(Melee, 치명 +30%)·급소 간파·그림자 난도(근접 다단 Field, 슈퍼아머)·투척 숙련(단검 탭 평타 → 투척) / 배틀스미스 쇠망치 회전·강철 체격(체력→힘 환산, 피해 감소)·파쇄 숙련(갑주 파쇄 중첩 +1/+2, CC 지속)·균열 각인(지연 강타 + `Vulnerable`) / 알케미스트 촉매 연구(지속 장판 지속·피해)·대연성 진(1초 뒤 8초 연성진, 둔화)·불씨 저격(초고속 관통탄, 치명 +25%)·정밀 배합(치명 피해, 4칸 밖 피해) / 와일드키퍼 생명의 순환.
+- **4단계(신규 장치 5종)**: 쇠망치 도발(반경 3.5 강제 표적 5초 + 6초 피해 −25%·슈퍼아머) / 야수 소환(멧돼지 정령 40초)·무리의 우두머리(소환수 피해·체력 +10%/Lv, Lv3 동시 +1)·숲의 군주(거대 수호수 15초, 광역 내려찍기·반경 4 도발) / 야생의 고무(반경 4 아군 공격력 +15%·이속 +10%, 몬스터 `Weaken` −15%).
+- **코드**: `PlayerController`(확정 치명 예약·`GetCritChanceFor`·`IsForcedCrit` · 지속 장판 보너스 · 장판 틱 예정 시각 누적 · 시전 슈퍼아머 정밀 창 · `GetPowerStatPoints` · 평타 변형 `RequirePassive`/`DamageBonusStat` · `ExecuteBuffSkill`(도발·아군 버프·피해 없는 상태이상) · `ExecuteSummonSkill`·소환수 회복 · 버프 `DamageReductionPct` 합산) / `PlayerCombat.CalcCritical` / `Monster`(`Vulnerable`·`Weaken`·`FarDamagePct`·`<상태>MaxStacks`·`ApplySkillStatus` 분리) / `MonsterAI`(`SetForcedTarget`·`GetForcedTarget`, 보스 무시) / `MonsterMeleeAttack`·`MonsterProjectile`(소환수 피격 허용, 약화 배율) / `PlayerInventory`(단검 툴팁) / **신규** `Player/Scripts/Summon.mlua`.
+- **데이터**: `SkillDataSet` +19행·+6열(`CritBonus`·`SummonId`·`TauntRadius`·`TauntDuration`·`BuffTarget`·`BuffRadius`)과 선행 8건 재연결 / **신규** `SummonDataSet`(2행) / `WeaponAttackDataSet` +2열·`Dagger_Throw_1` / `BuffDataSet` +6행 / `item_dataset` 단검 4종 `WeaponType=Dagger`. **신규 모델** `Player/Models/Summon_Spirit.model`(ModelBuilder, Boar 구성에서 몬스터 스크립트를 뺀 네이티브 모델 — `script.Summon` 은 스폰 직후 부착).
+- **리소스**: 공식 메이플 스킬 팩만 사용(그림자 걸음=쉐도우 스텝, 급소 찌르기=더블 스탭, 급소 간파=샤프 아이즈, 그림자 난도=블레이드 퓨리, 투척 숙련=자벨린 마스터리, 쇠망치 회전=휠 윈드, 강철 체격=솔리드 바디, 파쇄 숙련=웨폰 마스터리, 균열 각인=기가 크래시, 촉매 연구=스펠 마스터리, 대연성 진=포이즌 미스트 VI, 불씨 저격=스나이핑, 정밀 배합=매직 크리티컬, 생명의 순환=회복, 쇠망치 도발=프로보크·파워 가드, 야수 소환=비스트 폼, 무리의 우두머리=크루 커맨더십, 숲의 군주=피닉스·비스트 폼, 야생의 고무=하이퍼 바디). 소환수 외형은 공식 멧돼지·화이트팽 클립에 정령 틴트. 단검 투척 그림은 사냥꾼의 투척검 썸네일.
+
+| 원장 | 증거 | 상태 |
+|---|---|---|
+| DATA-01~04 | 기존 데이터셋 확장 + `SummonDataSet` 신설(.csv BOM·CRLF + .userdataset 신규 UUID). `check_job_branches` 36스킬/8갈래 PASS · `check_skill_quest_pipeline` 결함 없음(데이터 경유 소비 키 인식 추가) · `check_dataset_columns` 불일치 0 | 정적 PASS · 런타임 로드 BLOCKED |
+| PAP-01~04 | 시전 모션은 기존 `CastAction`·`EffectRUID`·`SoundRUID` 경로. 그림자 걸음=Dash 경로. 시전 잠금 없음(프로젝트 관례), 슈퍼아머만 추가 | 구현 · 런타임 BLOCKED |
+| PAJ-01~04 | 즉시 판정은 기존 `AttackFast`/장판 틱/투사체 경로. 소환수 판정은 서버 `Summon.Attack`(지연 콜백 없음). 로그 `[CRIT]`·`[SKILL-AREA]`·`[SKILL] buff`·`[SUMMON]` | 구현 · 런타임 BLOCKED |
+| MHP-01~04 | 피격·사망 연출 코드 무변경(같은 `HandleHitEvent`). 넉백 0: 그림자 난도·쇠망치 회전·대연성 진·소환 2종. 강제 표적은 보스 무시 | 구현 · 런타임 BLOCKED |
+
+- **검증**: LSP 변경 8스크립트 에러 0·경고 0(`PlayerController`·`PlayerCombat`·`PlayerInventory`·`Summon`·`Monster`·`MonsterAI`·`MonsterMeleeAttack`·`MonsterProjectile`). `test_job_progress_reset.cjs` PASS(재실행 — 신규 스킬이 늘어도 환급 로직 유지). Maker: 3단계 15:27 refresh ok → 빌드 15:26:42(마지막 저장 15:26:41 직후) **Error 0 / Warning 9(기존 LWA-4012) / Info 830**; 4단계 15:38 refresh ok → 빌드 **15:35:09(마지막 `.mlua` 저장 15:35:07 직후) Error 0 / Warning 9(기존, 15:31:37) / Info 836**, `Summon.codeblock` 15:33:32 생성 확인. 데이터·모델은 빌드 뒤(15:36:46)에 썼고 이후 refresh ok — 데이터·모델 쪽 신규 경고는 보이지 않았으나 빌드 로그로 증명되는 범위는 아니다. `.ui`·`.map` 변경 없음.
+- **런타임 검증 보류(제작자 수행) — Play 체크리스트** (로그 태그 `[CRIT]` · `[SKILL-AREA]` · `[SKILL-BUFF]` · `[SKILL] buff` · `[SUMMON]`)
+  1. **스킬창**: 4직업 모두 9칸, 선행 줄(예: 알뜰한 손놀림 ← 투척 숙련, 덩굴 올가미 ← 야생의 고무), 3티어 2개는 x05 퀘스트 해금. 배틀스미스 주 트리는 루트가 Buff라 목록의 "보조" 탭에, 알케미스트 매직 클로 계열은 "특성" 탭에 나온다(목록 UI의 기존 탭 규칙).
+  2. **그림자 걸음 → 급소 찌르기**: 걸음 뒤 3초 안에 쓴 피해 스킬이 모두 치명(`[CRIT] forced crit reserved` → `forced=true`), 이속 체감. 급소 찌르기 상세 패널 "치명 확률 +30% (현재 n%)".
+  3. **그림자 난도·쇠망치 회전**: 0.25초 간격 5회/4회 타격(`[SKILL-AREA]` 생성 1회 + 피해 로그), 시전 중 맞아도 밀리거나 경직되지 않음, 적이 밀려나지 않음.
+  4. **투척 숙련**: 단검 장착 + 습득 후 Ctrl 탭이 단검 투척(`[WEAPON] shot Dagger_Throw_1`), 미습득·도끼면 기존 찌르기/휘두르기. 자원 앞에서는 채집 우선.
+  5. **강철 체격**: 체력 20 → Lv3이면 캐릭터창 힘 숫자는 그대로, 힘 계열 공격력만 오른다. 받는 피해 감소.
+  6. **파쇄 숙련**: 갑주 파쇄 7중첩(Lv3)·8중첩(Lv5)까지 쌓임(`[SKILL-STATUS] ... ArmorBreak stacks=`).
+  7. **균열 각인**: 0.6초 예고 후 강타, 이후 8초 동안 그 적에게 들어가는 모든 피해(다른 플레이어 포함) +20%(보스 +10%).
+  8. **촉매 연구·대연성 진**: 산성 포션 지속 6초 → Lv당 +10%(`life=` 로그), 대연성 진은 1초 뒤 8초 동안 1초마다 피해+둔화, 밀림 없음. 장판 이펙트 크기·겹침 눈으로 확인.
+  9. **불씨 저격·정밀 배합**: 약 10칸 날아가 최대 3마리 관통, 4칸 밖 적에게 피해 증가.
+  10. **쇠망치 도발**: 반경 3.5 몬스터가 5초간 나만 쫓음(다른 플레이어가 가까워도), 보스는 그대로. 6초 피해 감소·슈퍼아머. 마을·영지에서도 시전은 되지만 도발은 없음.
+  11. **야수 소환**: 정령 멧돼지가 따라오다 몬스터를 들이받음(`[SUMMON] attack`), 맞은 몬스터가 정령을 쫓아가 공격 → 정령 HP 감소·0이면 사라짐(`dismiss reason=down`). 40초 뒤·맵 이동·주인 쓰러짐 시 사라짐. 무리의 우두머리 Lv3이면 2마리, 세 번째 소환 시 가장 오래된 것 교체(`replaced`). 자연의 활력·생명 펄스가 정령도 회복. **외형(틴트·크기·좌우 방향)과 이동 애니 전환은 눈으로 확인 필요.**
+  12. **숲의 군주**: 1.5초마다 광역 내려찍기(이펙트 + 다수 피해), 반경 4 몬스터가 수호수를 노림. 보스는 무시.
+  13. **야생의 고무**: 반경 4 아군에게 `rally_atk`·`rally_move` 버프 아이콘, 몬스터에 `Weaken` 상태(`[SKILL] buff ... status=n`) → 그 몬스터의 접촉·공격·투사체 피해가 줄어듦.
+- **알려진 한계**: 소환수 이동은 `MovementComponent` 직진이라 장애물 우회가 없다(벽에 막히면 멀어질 때 주인 곁으로 순간이동). 소환수 HP 바 없음. 몬스터는 소환수에게 맞기 전에는 소환수를 먼저 노리지 않는다(§14). 수치는 전부 가안.
+
+## [지형/아트] wall grass 15종 이미지 교체 (2026-10-01) — 리소스 갱신·원격 픽셀 검증 완료 · 런타임 검증 보류
+
+- 제작자 요청: `tileimg/new grass/0.png`~`13.png`로 기존 wall 잔디 패밀리 교체. `12.png`(SubGrassRTLD)를 정확한 RGBA 픽셀 좌우 반전으로 `SubGrassLTRD.png` 생성. 리샘플링·크기 변경 없음, 모두 64×64.
+- 매핑(접미사=흙 쪽): 0→GrassLT, 1→GrassT, 2→GrassRT, 3→GrassL, 4→FullGrass, 5→GrassR, 6→GrassLD, 7→GrassD, 8→GrassRD, 9→GrassRDCorner, 10→GrassLDCorner, 11→GrassRTCorner, 12→SubGrassRTLD, 13→GrassLTCorner, 12의 좌우 반전→SubGrassLTRD.
+- **기존 그룹 리소스의 바이너리만 갱신**(`asset_update_resource_storage_data` 15종 모두 status.code=0). 신규 계정 UGC 생성 없음. RUID·그룹 소유(ownerType=1)·리소스 이름·타일 인덱스·충돌 설정 유지. `wall.tileset`은 SHA-256으로 원본과 byte-identical 확인했고 `.map`/타일 배열 변경 없음. 이 tileset을 사용하는 모든 맵이 같은 기존 RUID로 새 그림을 참조한다.
+- 검증: 그룹 메타데이터 15/15의 갱신 버전 일치, 썸네일 15/15 available=true, 다운로드한 64×64 원격 PNG 모두 알파·보이는 RGB 픽셀 원본과 차이 0. 반전 출력은 원본의 x↔63-x RGBA 전량 일치. 계정용 썸네일 조회의 Missing resultData는 그룹 소유 경로로 바꿔 해결했다.
+- 로컬 `tileimg/{Grass*,FullGrass,SubGrass*}.png` 15장도 새 이미지로 동기화. 기존 이미지·tileset 백업: `scratch/grass-replacement-before-20261001/`. 매핑·파일 해시 = `tileimg/new grass/replacement-manifest.json`, 갱신 RUID/버전 = `replacement-results.json`, 원격 픽셀 결과 = `verification-results.json`. 재준비 도구 = `scripts/prepare_grass_replacement.cjs`.
+- Maker refresh: **20:27:25 KST status ok**. 조회된 build는 **19:30:19의 이전 스냅샷**(Info825·기존 Warning9, 모델 경고15:07:44)으로 **build 로그 갱신 미확인**. 이번 리소스 변경의 Error=0 근거로 쓰지 않는다. 스크립트·구조 변경은 없다.
+- **런타임 검증 보류(제작자 수행)**: 기존 잔디 맵에서 새 질감·상하좌우 에지·볼록/오목 코너 확인, 괭이/삽 편집으로 RTLD/LTRD 양 대각 확인, 흙길·물가의 이음새와 투명 영역 확인. 입력·지형 마스크·충돌 로직은 변경하지 않았다.
+- 직업 재설계 Phase 3(신규 14종)는 이 교체 작업 뒤 이어갈 다음 구현 묶음이다.
+
+## [전투/직업] 직업 재설계 2-B — AP/SP 환급·초기화 소모품·계열 전환 (2026-10-01) — 코드 완료 · 런타임 검증 보류
+
+- 설계: [job-branch-redesign.md](./design/job-branch-redesign.md) §10 Phase 2. 2-A 표시와 2-B 재분배를 구현했다. 신규 스킬을 부모로 삼는 연결은 대상 생성 시점인 Phase 3/4에 적용한다.
+- `PlayerController.BuildProgressReset/ApplyProgressReset`(ServerOnly): 투자한 STR/DEX/INT/SPI/VIT 전량 AP 환급; 현재 직업의 비변형 스킬만 레벨×SPCost 환급, 공용·다른 직업 행 유지; 환급한 직업 스킬 장착 정리·파생 HP/MP 재계산. 최대 레벨을 초과한 구 레벨도 전량 환급한다. SPCost는 변경하지 않았다. 쿨다운·진행 퀘스트는 초기화하지 않는다.
+- `PersistenceManager`: 슬롯별 `jobBranchResetVersion=1` 저장. 기존 세이브는 로드 중 무료 AP/직업 SP 초기화 1회, 신규 캐릭터는 적용 버전 1로 시작. 잘못된 스킬 JSON/누락 데이터에는 초기화·버전 표기 없음. 마이그레이션 중에는 dirty 표시를 미루고 홈·마을·테스트 워프의 로드 종료 분기에서 표시한다. 저장 데이터는 기존 선캡처 블록에서 버전까지 캡처하며 추가 Yield는 없다.
+- `item_dataset.UseReset`: 「망각의 물약」(`Oblivion Potion`, AP), 「망각의 두루마리」(`Oblivion Scroll`, JobSP), 소모품/최대 스택 99. 기존 퀵슬롯 Ctrl 사용 경로. 서버가 소유자·보유량·환급 계획을 검증한 다음 아이템 제거 성공 시에만 적용한다. 미투자 상태·제거 실패에는 환급/소모 없음.
+- `ShopItemDataSet`: 전직 멘토 마리(`vendor`)·로체(`blacksmith`)·엘렌(`researcher`)·토리(`barnkeeper`) 모두 각 150코인에 판매, 재판매 0. 전직 시험 준비 퀘스트의 150코인 보상과 기존 보험 120/300코인을 기준으로 정한 초기 가격이며 데이터에서 조정 가능. 기존 NPC의 퀘스트 우선 상점 연결을 재사용한다. 판매자별 동일 가격으로 서버의 Name 첫 행 조회와 클라 표시를 맞췄다.
+- 기존 8스킬 `ScaleStat` 전환: 덫·도끼 비 STR, 갑주 파쇄타·대지 분쇄타 SPI, 푸른 불씨·불씨 결정 DEX, 자연의 활력·덩굴 올가미 INT. `fireball` 최대 Lv5→3. 자연의 활력 설명을 지능 기준으로 수정. 알뜰한 손놀림의 `ThrowDamagePct` +4%/Lv를 서버 피해와 클라 상세 예상 피해 모두에 적용했다. 상세 갈래 이름 뒤에 메타데이터의 대표 능력치를 표시한다.
+- 공식 아이콘: 물약 = 「파란 포션」sprite `b562aa71340d4e429efa034d668a24ac`(28×28), 두루마리 = 「AP 초기화 주문서」sprite `f7357cf05a984ec5a207646f045d448d`(32×28) 외형 재사용. API의 유형·이름·썸네일을 확인했다. 팩 검색은 관련 없는 펫만 반환하여 공식 개별 sprite 검색으로 전환했다.
+
+| 원장 | 증거 | 상태 |
+|---|---|---|
+| DATA | 8계열 전환·최대 Lv·보조 패시브·초기화 아이템2/상점8행, 스킬/퀘스트·열·갈래 검사 | 정적 PASS |
+| PAP | 투척 피해 +4%/Lv 소비 경로 및 서버/상세창 일치 Lua 테스트 | 모의 서비스 테스트 PASS, 실전 대기 |
+| PAJ | 입력·모션 변경 없음, 기존 소모품 Ctrl 경로 재사용 | 신규 장치 없음 |
+| MHP | 몬스터 피격·사망 표시 변경 없음 | 이번 범위 해당 없음 |
+| SAVE | 실제 메서드의 환급·마이그레이션·사용 RPC를 Lua 5.3에서 실행 | 테스트 PASS, Maker 재접속 대기 |
+
+- **검증**: 변경 4스크립트 LSP 오류 0 / 경고 0 / staleCrossFileResults=false. `test_job_progress_reset.cjs` PASS(AP/SP 총량, 구 Lv5 환급, 공용·타 직업 유지, 장착 정리, 재사용/슬롯별 버전, 잘못된 JSON/데이터 누락, RPC 타인 호출/아이템 부족/제거 실패, 피해·상세창 일치, 멘토8품목). 테스트는 실제 mlua 메서드를 추출하되 MSW 서비스를 모의 처리한다. 엔진 런타임 검증을 대체하지 않는다. 실행 의존성은 scratch에만 `fengari@0.1.4` 설치(`npm install --prefix scratch/job-reset-tests --no-save --package-lock=false fengari@0.1.4` 후 `node scripts/test_job_progress_reset.cjs`).
+- 갈래 검사 17스킬/8갈래 PASS · 스킬/퀘스트 결함 없음(아이템119) · 데이터셋 열 불일치0(동적 row 추적 실패185는 수동 확인 범위). 전체 diff-check의 기존 참고 문서 Markdown 줄끝 공백은 범위 밖이며 이번 파일 체크는 별도 수행.
+- **Maker 검증**: 19:30:14 KST refresh ok → 19:30:19 빌드 Error 0 / Warning 9(기존 모델 LWA4012, 15:07:44) / Info 825로 스크립트 변경 빌드 갱신 확인. 이후 공식 아이콘 CSV 반영 후 최종 19:35:11 refresh도 ok이나 build는 여전히 19:30:19 스냅샷이므로 **최종 build 로그 갱신 미확인**. 변경 파일 diff-check 통과. 신규 mlua는 없어 codeblock 신규 생성 대상 없음.
+- **런타임 검증 보류(제작자 수행)**: 기존 캐릭터 로드 시 AP=잔여+투자5능력치, SP=잔여+직업투자만 / 공용 스킬 유지 / 직업 슬롯 해제 → 재접속·다른 슬롯에서 무료 환급의 중복/누락 여부 → 새 캐릭터에서 불필요한 환급 없음 → 4멘토 판매·퀵슬롯 Ctrl 사용·미투자 시 비소모 → 변경 계열의 실제 피해·자연의 활력 회복·알뜰한 손놀림 투척 피해 증가. 로그 `[BUILD-RESET]` 확인. 최대 HP가 줄면 현재 HP도 새 최대치로 제한된다.
+- **다음 묶음**: Phase 3 신규 스킬 14종을 직업별로 구현하고 `throw_mastery`·`hammer_whirl`·`ember_snipe` 부모 연결을 같은 묶음에서 전환. `vine_snare → wild_rally`는 Phase 4 대상.
+
+## [전투/직업] 직업 재설계 2-A — 기존 스킬 갈래·배치 표시 (2026-10-01) — 코드 완료 · refresh 검증 보류
+
+- 설계: [job-branch-redesign.md](./design/job-branch-redesign.md) §10 Phase 2의 첫 묶음. Phase 2 전체 완료가 아니다.
+- `SkillDataSet`: 기존 17스킬의 `Branch`와 3×3 좌표를 정리했다(주 1열, 부 3열, 공용/마스터리 2열). `trophy_eye`·`blue_ember`·`nature_vitality`의 이전 갈래 선행 조건을 제거했다. 퀘스트 해금 조건은 유지했다.
+- `JobBranchDataSet.csv/.userdataset`: 4직업 × 주/부 8행, 이름·목표 능력치·설명 등록. 클라이언트에서도 읽을 수 있다.
+- `UISkillTreeController`: 기존 목록형 UI에서 `[주]`/`[부]`/`[공용]` 접두사, 주 금색·부 청록 테두리, 상세 설명 갈래 이름을 표시한다. 재사용 행의 테두리를 매번 설정해 탭 전환 시 남지 않도록 했다. UIBuilder로 기존 행·상세 패널 구조를 확인했으며 `.ui` 변경은 없다.
+- **의도적으로 남긴 것**: `ScaleStat`·최대 레벨·SP 비용·효과 설명 변경은 무료 환급과 함께 **2-B**에서 처리한다. 상세 패널의 능력치 줄은 실제 현재 피해 계열을 계속 표시한다(갈래 메타데이터의 목표 능력치로 바꾸지 않음). `thrifty_hands`/`axe_rain`의 `throw_mastery`, `anvil_drop`의 `hammer_whirl`, `ember_crystal`의 `ember_snipe`, `vine_snare`의 `wild_rally` 선행 연결은 대상이 생기는 Phase 3/4까지 기존 연결을 유지한다.
+
+| 원장 | 소유자/증거 | 상태 |
+|---|---|---|
+| DATA | 17행 배치·갈래, 8행 메타데이터, `check_job_branches.cjs`의 좌표 중복·선행 누락/순환·등록 검사 | 정적 PASS |
+| PAP | 공격 처리와 피해 수치 변경 없음; 기존 `ScaleStat`·레벨·SP·소모량 유지 | 이번 범위 해당 없음 |
+| PAJ | 입력·애니메이션·시전 잠금 변경 없음 | 이번 범위 해당 없음 |
+| MHP | 몬스터 피격·사망 표시 변경 없음 | 이번 범위 해당 없음 |
+| UI | 갈래 텍스트·색상 테두리와 탭 전환 잔상 확인 | 런타임 BLOCKED(제작자 Play) |
+
+- **정적 검증**: LSP 오류 0 / 경고 0 / staleCrossFileResults=false. `check_job_branches.cjs` PASS(17스킬/8갈래), `check_skill_quest_pipeline.cjs` 결함 없음, `check_dataset_columns.cjs` 불일치 0(동적 row 참조 추적 실패 185건은 별도 수동 확인 범위).
+- **refresh 검증 보류**: 2026-10-01 19:14:42 KST 호출이 `unavailable`, `mode=play`로 거부됨. Play 중지는 제작자 전담이므로 호출하지 않았다. 조회된 build는 18:08:38의 이전 스냅샷(Info 814, 기존 Warning 9; 모델 경고 시각 15:07:44)이라 **build 로그 갱신 미확인**. 이번 변경의 Error=0 근거로 쓰지 않는다.
+- **런타임 검증 보류(제작자 수행)**: Play 종료 후 refresh·빌드 시각 재확인 → 4직업 목록의 주/부/공용 표시 → 상세 갈래 이름·현재 피해 계열 → 다른 직업/카테고리로 전환 시 이전 테두리 제거 → 기존 퀘스트 잠금 유지 확인. 목록은 기존 카테고리·선행 순서이며 화면에서 3×3으로 바뀌지는 않는다.
+- **다음 순서**: 2-B = 1회 무료 AP·직업 SP 환급(세이브 버전), 망각의 물약·두루마리와 멘토 상점, 기존 스킬 계열·레벨·설명 변경 → Phase 3 신규 14종과 해당 부모 연결 → Phase 4 신규 장치 5종과 나머지 부모 연결.
+
+## [UI] 팝업 공통 닫기 — ESC · 바깥 클릭/터치 (2026-10-01) — 코드 완료 · 런타임 검증 보류
+
+- **신규** `UI/Scripts/PopupDismissLogic.mlua` (@Logic, 클라 전용): **ESC** = 가장 나중에 열린 팝업 1개 닫기 / **바깥 터치·클릭** = 열린 팝업 모두 닫기. 팝업별 코드는 수정하지 않고 각 컨트롤러의 `Close()` 를 그대로 호출(실패 시 `Enable=false`). 대상 15개 = `PopupGroup` 하위(`PopupControllers` 프로퍼티에 "엔티티:컨트롤러" 한 줄 추가로 확장). **제외**: `EstateInvitePopup`·`PlayerInteractPopup`(응답이 필요한 요청창).
+- **바깥 판정**: `IsPointerOverUI`(RaycastTarget 있는 UI 위 = HUD 버튼·팝업 내용·툴팁)이면 무시 + 팝업 영역(`anchoredPosition ± RectSize/2`) 안이면 무시 + 막 열린 팝업은 0.3초 보호(팝업을 연 그 클릭이 바로 닫지 않게). HUD 버튼이 팝업을 토글할 때 먼저 닫혀서 다시 열리는 문제도 이 규칙으로 막는다.
+- 사전 조사: `PopupGroup` 팝업 안에 화면 전체를 덮는 RaycastTarget 요소 없음(UIBuilder 조회), 15개 컨트롤러 모두 인자 없는 `Close()` 보유.
+- **검증**: LSP clean(경고 1건 `string.match` 반환값 수 — 즉시 수정) · refresh ok · `.codeblock` 생성 확인 · build **Error 0 / Warning 9(기존) / Info 814**, 빌드 18:08:38 = 마지막 저장 18:08:37 직후.
+- **런타임 검증 보류(제작자 수행)**: ① 인벤토리·스킬트리 등 열고 ESC → 닫힘, 둘 이상 열면 ESC 한 번에 하나씩 ② 월드(빈 땅) 클릭/터치 → 모두 닫힘, 팝업 안·HUD 버튼 위 클릭은 안 닫힘 ③ HUD 인벤토리 버튼으로 열린 상태에서 다시 눌러도 정상 토글(닫혔다 다시 열리지 않음) ④ 상자·화로·상점을 바깥 클릭으로 닫아도 정상 종료 ⑤ 팝업 영역 판정 좌표(`ScreenToUIPosition` 기준)가 팝업 가장자리에서 어긋나지 않는지 — 로그 `[POPUP] dismissed 이름`.
+- 범위 밖: `PopupGroup` 밖 창(`AnvilGroup` 대장간 · `DialogGroup` NPC 대화 · 메인 메뉴)은 적용하지 않았다.
+
+## [전투/직업] 직업 재설계 1단계(기반) 구현 — 코드 완료 · 런타임 검증 보류 (2026-10-01)
+
+> 설계: [design/job-branch-redesign.md](./design/job-branch-redesign.md) §10 Phase 1 · [design-policy.md](./design-policy.md) 능력치 절. 아래 원장은 `maplestory-skill-maker` 시작 게이트(DATA/PAP/PAJ/MHP)를 이 프로젝트의 소유자에 대응시킨 것이다. **런타임 증거가 필요한 행은 Play 가 제작자 전담이라 BLOCKED 로 남는다 — 그 행을 완료라고 부르지 않는다.**
+>
+> **역할 지도(현행 소유자)** — 입력: `PlayerController.OnKeyDown/UpdateCharge`(Ctrl) · `UIHUDController`(모바일 BtnMine) / 서버 공격 어댑터: `PlayerController.RequestMine` · `ServerRequestCharge*` · `ServerRequestCastSkill` / 판정: `PlayerCombat`(`AttackFast`·`DealSkillHit`·치명타 훅) + `Projectile` / 몬스터 피격·사망 연출: `Monster.HandleHitEvent`·`Dead` + `MonsterAI`(연출 코드 무변경, 넉백 정책만 추가) / 장착: `PlayerInventory` / 데이터: `SkillDataSet` · `item_dataset` · 신설 `WeaponAttackDataSet` (카탈로그 = `_DataService` 직접 조회 + `scripts/check_dataset_columns.cjs` 정적 검증 — 별도 카탈로그 로직 없음).
+
+**구현 내용**
+- **치명타**: `PlayerCombat.CalcCritical`/`GetCriticalDamageRate` 오버라이드(부모가 `@ExecSpace` 미지정 → 붙이지 않음). 확률 = 5% + 솜씨×0.4%p + `CritChance`(패시브·장비), 상한 75%, 배율 = 1.5 + `CritDamage`. 터질 때만 `[CRIT]` 로그.
+- **능력치 공통 효과 이관**: 힘 = 공격·채집 속도(구 솜씨 효과), 솜씨 = 치명타, 교감 = 내가 건 상태이상 지속(`Monster.ApplySkillHit` 에 배율), 회복 스킬 = 그 스킬 계열 능력치 1당 +1%(`HealAura` 일반화 — 현 데이터는 `nature_vitality` 가 SPI 라 수치 불변). 프로퍼티 `DexGatherPerPoint`·`SpiHealPerPoint` 는 `StrSpeedPerPoint`·`DexCritPerPoint`·`SpiControlPerPoint`·`HealPowerPerPoint` 로 교체(잔존 참조 0).
+- **무기 수치 규칙**: `GetSkillCore` 가 무기 수치를 계열이 아니라 `DamageModel` 로 고른다(Magic=`MagicAttack`, 그 밖=`Attack`, 삼위일체=장갑 환산). 현 데이터에서는 결과 불변.
+- **무기별 평타**: `item_dataset.WeaponType`(Melee/Wand/Nature) + 신설 `WeaponAttackDataSet`(5행). 자연 무기 탭 = 정령탄(교감), 마법봉·자연 무기 홀드 = 충전(마법탄 / 생명 펄스). 충전 입력은 엔진 `KeyHoldEvent` 대신 `IsKeyPressed` 폴링(시작 지연 0.25초, 모바일은 BtnMine Pressed/Released 플래그). 서버는 `ChargeStartAt` 로 자기 시계 충전 시간을 다시 재서 단계를 정한다. 투사체 생성은 `SpawnPlayerProjectile(spec)` 공용 헬퍼로 분리(`ExecuteProjectileSkill` 시그니처 불변).
+- **탭은 뗄 때 처리(2026-10-01 추가)**: 충전 가능한 무기(마법봉·자연 무기)는 Ctrl 을 누르는 순간 휘두르지 않는다. 0.25초 안에 떼면 그때 탭(휘두르기·정령탄), 넘기면 충전 — 홀드 때 헛스윙이 나가지 않는다. 대가: 탭이 뗄 때까지 늦게 나간다(지연이 거슬리면 `ChargeStartDelay` 조정). 물리 무기·충전 불가 상황은 누르는 즉시 처리. 빌드 확인: Error 0 / Warning 9(기존) / Info 813, 빌드 17:30:50 = 마지막 저장 17:30:48 직후.
+- **스노우맨 장판·트랩·투사체 피해 무효 버그 수정(2026-10-01, 기존 버그 — 이번 개편과 무관)**: `PlayerCombat.DealSkillHit` 가 대상의 발밑 좌표에 1×1 박스를 놓고 판정해서, 피격 콜라이더가 위로 떠 있는 몬스터(스노우맨: 원 반지름 0.754 × 스케일 2.5, 중심이 발 위 약 2.75)는 맞지 않았다. 판정 중심을 `HitComponent.ColliderOffset × Scale` 로 옮겼다(규칙 14). 런타임 로그 근거: 트랩 `hits=1` 인데 `[SKILL-STATUS]`·피격 이펙트 없음. 보스·몬스터 전반에서 장판·트랩·투사체가 들어가는지 Play 확인 필요.
+- **쓰러진 채 복구 안 되는 문제 대비 감시 장치(2026-10-01)**: `ServerDie` 는 단발 타이머(8초 뒤 마을)·레이드 전멸 판정 한 번에만 의존해, 그 사이 어긋나면 영구히 쓰러진 채 남을 수 있었다. 런타임 로그에는 재현 사례가 없어(두 번의 레이드 사망은 정상 복귀) 원인은 미확정이다. `PlayerController.TickDownedWatchdog`(1초 서버 타이머)을 추가: 활성 보스방이면 전멸 판정을 다시 보고, 아니면 귀환 타이머가 없는 채 `DownedRespawnSeconds+3초` 지나면 마을로 깨운다. 발동 시 `[DEATH] watchdog: stuck downed …` 로그 — 이 로그가 나오면 어떤 경로가 끊겼는지 추적할 근거가 된다.
+- **장착 직업 제한**: `item_dataset.EquipJobs`. 저장값은 건드리지 않고 `GetGearKey` 가 읽을 때 걸러낸다(맞지 않는 등록은 자동 주무기로). 장착 RPC 거절 메시지·툴팁(무기 종류·"전용: 직업") 추가.
+- **넉백 정책**: 속박·기절 중 면역(`Monster.IsKnockbackAllowed` + `MonsterAI.ApplyKnockback` 이중 가드 — 기절 뒤 뒤늦은 밀림도 제거) + `SkillDataSet.Knockback`(0 = 넉백 없음: `acid_potion`·`hunter_trap`·`axe_rain`·`vine_snare`).
+- **데이터**: 무기 19종에 타입·직업, 자연 무기 3종 `Attack` 14→18 · 22→30 · 20→24, `SkillDataSet.Knockback` 열 신설.
+- **캐릭터창 문구**: 힘 "속도 +x%" · 솜씨 "치명 +x%" · 교감 "지속 +x%".
+
+| ID | 요구 / 결정 | 구현 위치 | 정적 증거 | 상태 |
+|---|---|---|---|---|
+| DATA-01 | `SkillDataSet`(+`Knockback`)·`item_dataset`(+`WeaponType`·`EquipJobs`) 확장 + 평타 변형 전용 `WeaponAttackDataSet`(스킬 행으로 만들지 않음 — 스킬트리·패시브 순회에 섞이지 않게) | `Player/DataSets` · `item/DataSets` | 파일 실존 | PASS |
+| DATA-02 | 스키마·`.userdataset`·CSV(BOM·CRLF 유지) | 동일 | 열 폭 일치(49/71/25), 변경 전후 셀 대조(바뀐 셀 = 의도한 3칸뿐), refresh 전후 mtime 불변 | PASS |
+| DATA-03 | 구체 행: `Wand_Charge_1/2` · `Nature_Tap_1` · `Nature_Charge_1/2` / 무기 19종 / `Knockback=0` 4종 | CSV | 행 대조 출력 | PASS |
+| DATA-04 | 열 참조 정합 + 로드 | `check_dataset_columns.cjs` · refresh | 스크립트 불일치 0 · refresh ok · build Error 0 | **정적 PASS · 런타임 로드 BLOCKED** (`GetTable("WeaponAttackDataSet")` non-nil 은 Play 에서 확인) |
+| PAP-01 | 탭 = 기존 MINE 스윙(`TryMine`) 그대로, 충전 발사·펄스 = `MulticastPlayCastAction`(CastAction 열) | `PlayerController` | LSP 0 | 구현 · 런타임 BLOCKED |
+| PAP-02 | 충전 중 이동 ×0.6 외 조작 잠금 없음(프로젝트 스킬 관례) | `OnUpdate` | LSP 0 | 구현 · 런타임 BLOCKED |
+| PAP-03 | 해제·중단 정리: 서버 `ChargeStartAt` 1회용, 클라 충전 상태는 해제·스킬 시전·사망·수면·낚시·맵 이동·`OnEndPlay` 에서 초기화(파티클 serial 회수) | `PlayerController` | LSP 0 | 구현 · 런타임 BLOCKED |
+| PAJ-01~03 | 투사체 = 비행 중 겹침 판정·대상당 1회(`HitTargets`), 펄스 = 서버 즉시 반경 판정, 지연 콜백 없음(피격 연출은 `HandleHitEvent` 시점) | `Projectile` · `DoHealPulse` | 로그 `[WEAPON]` 심음 | 구현 · 런타임 BLOCKED |
+| MHP-01~03 | 새 투사체도 `DealSkillHit → Monster.HandleHitEvent` 기존 경로 — 몬스터 모델별 HIT·사망 연출 코드는 무변경 | `Monster` | LSP 0 | 구현 · 런타임 BLOCKED |
+| FX-01 | 치명타 훅 | `PlayerCombat` | LSP 0(info 만) | 구현 · 런타임 BLOCKED |
+| FX-02 | 넉백 정책 | `Monster` · `MonsterAI` | LSP 0 | 구현 · 런타임 BLOCKED |
+| FX-03 | 능력치 공통 효과 + 무기 수치 규칙 + 장착 제한 + 캐릭터창 문구 | `PlayerController` · `PlayerInventory` · `UICharacterController` | LSP 0 · 스킬 파이프라인 검사 결함 0 | 구현 · 런타임 BLOCKED |
+
+**검증 범위와 결과 (AI = 정적 + refresh + 빌드 로그까지)**
+- LSP(`mlua-diagnose`): 수정 7개 스크립트(`PlayerController`·`PlayerCombat`·`PlayerInventory`·`Monster`·`MonsterAI`·`UICharacterController`·`UIHUDController`) **에러 0 · 경고 0**. 남은 info 는 기존과 같은 종류의 동적 호출 알림이다. (훅은 0건이면 침묵하므로 `MLUA_LSP_HOOK_REPORT_CLEAN=1` 로 직접 실행해 "clean" 을 확인했다.)
+- `scripts/check_dataset_columns.cjs` 불일치 0 · `scripts/check_skill_quest_pipeline.cjs` 결함 0(새 `PassiveStat` 키 `CritChance`·`CritDamage`·`ControlDurationPct`·`HealPowerPct` 를 소비처로 인식).
+- `maker_refresh_workspace` ok(17:21:34). build 로그 **dateTime 2026-10-01T17:21:27 = 마지막 `.mlua` 저장(17:21:26) 직후 자동 빌드**이고 refresh 시점에는 갱신이 없었다(규칙 22) → **Error 0 / Warning 9(전부 15:07:44 기존 LWA-4012 — 신규 0) / Info 813**(직전 기록 807, +6 = 새 메서드의 동적 호출 info).
+- 규칙 11 점검: refresh 전후 CSV 수정 시각 불변, `git status` 에 의도하지 않은 `.ui`·`.map`·모델 변경 없음. 신규 `.mlua` 없음 → `.codeblock` 생성 확인 대상 없음.
+
+**런타임 검증 보류(제작자 수행) — Play 체크리스트** (태그 로그: `[WEAPON]` · `[CRIT]`)
+1. **마법봉(알케미스트, 전투 맵)**: Ctrl 탭 = 근접 휘두르기 / Ctrl 꾹 → 0.25초 뒤 머리 위 충전 파티클 → 0.5초에 원형 파동(1단계) → 1.2초에 한 번 더(만충전) → 키를 떼면 마법탄. 만충전탄은 두 마리를 관통. 영지·마을에서는 충전되지 않는다. 로그 `[WEAPON] charge begin/stage/release` · 서버 `charge fire … stage=N held=…` · `shot Wand_Charge_N dmg=…`.
+2. **자연 무기(와일드키퍼)**: 탭 = 초록 구체 정령탄(`shot Nature_Tap_1`), 앞 자원이 있으면 채집이 우선 / 꾹 → 떼면 `heal pulse amount= radius=3 healed=` 와 화면 메시지, 직후 3초간 "재충전 중". 다른 플레이어가 반경 3 안에 있으면 같이 회복.
+3. **충전 중 이동 ×0.6**, Q/W/E/R 스킬 시전 시 충전 취소(`charge cancelled`), 사망·맵 이동 후 파티클 잔상 없음.
+4. **치명타**: 일부 타격이 치명 숫자로 뜨고 `[CRIT] … chance= rate=` 로그. 솜씨를 올리면 빈도 증가(기본 5% + 솜씨 1당 0.4%p).
+5. **넉백**: 트래퍼 덫에 묶인 몬스터가 맞아도 밀리지 않음 / 산성 포션·덩굴 올가미·도끼 비 장판 틱에 튕기지 않음 / 대지 분쇄타 기절 중 안 밀림(기절이 끝난 뒤 뒤늦게 미끄러지지 않음) / 일반 평타는 여전히 넉백.
+6. **장착 제한**: 트래퍼가 망치·완드를 장착하려 하면 "…은(는) … 전용입니다." 거절, 툴팁에 무기 종류 줄과 "전용: 직업", 다른 직업 무기를 등록해 둔 캐릭터는 캐릭터창 주무기가 "(자동)".
+7. **캐릭터창 능력치 문구**(힘 속도 / 솜씨 치명 / 교감 지속)가 칸 안에 들어오는지(줄바꿈·잘림), 힘이 공격·채집 간격을 줄이고 솜씨는 더 이상 채집 속도에 영향이 없는지.
+8. **교감 투자**: 덫 속박·산성 둔화 지속시간이 늘어나는지.
+9. (모바일 해당 시) BtnMine 을 누르고 있으면 충전, 뗄 때 탭 평타가 추가로 나가지 않는지.
+
+**알려진 한계·메모**
+- 충전탄·정령탄 구체는 매직 클로 리소스를 재사용했다(정령탄은 초록 틴트). 공식 검색 API 는 미리보기를 주지 않아 눈으로 고를 수 없었다 — 전용 리소스는 `WeaponAttackDataSet` 데이터만 바꾸면 교체된다.
+- 설계 문서의 "자원을 조준 중이면 충전하지 않는다"는 구현하지 않았다. 채집은 탭, 충전은 홀드라 충돌하지 않고, 조준 칸 자원 조회가 클라이언트에는 없다.
+- 치명타는 엔진이 `CalcDamage` 결과에 `GetCriticalDamageRate` 를 곱하는 구조를 전제한다(`AttackComponent.d.mlua` 설명 기준) — Play 에서 숫자로 확인할 것. 곱셈은 방어력 차감 뒤에 적용된다.
+- 충전 시각 연출(파티클 위치·크기·단계 신호)과 충전 중 아바타 동작(별도 자세 없음)은 눈으로 확인이 필요하다.
+
+---
+
+## [전투/직업기획] 직업 주/부 트리 & 능력치 빌드 재설계 확정 — 구현 대기 (2026-10-01)
+
+- **요청**: 직업별 스킬 컨셉을 주/부 트리로 명확히 하고, 스킬 트리와 능력치 분배로 빌드 특색을 준다. 교감 능력치의 방향도 재검토한다(미확정). 2026-09-30 설계서는 참고만 하고 미끼 등은 구현하지 않는다.
+- **초안**: [docs/design/job-branch-redesign.md](./design/job-branch-redesign.md)
+  - 능력치 링: 힘·솜씨·지능·교감이 각각 두 직업의 트리 하나씩을 맡는다. 교감은 와일드키퍼 주(소환)와 배틀스미스 부(방깎·CC)를 담당한다.
+  - 공통 효과: 솜씨 = 치명타(신규), 힘 = 공격·채집 속도(솜씨에서 이관), 교감 = 내가 건 상태이상 지속(신규).
+  - 직업당 3×3 상한 유지: 1열 주 · 3열 부 · 2열 공용 패시브와 마스터리. 기존 17스킬은 재배치하고, 신규는 19종이다(기존 타입으로 만드는 14종 + 새 장치가 필요한 5종).
+  - 공통 장치: 치명타(엔진 훅), 넉백 정책(속박·기절 면역, 장판 틱 무넉백), 무기별 평타, 강제 표적, 소환, 아군 버프·몬스터 약화, 갈래 표시, 1회 무료 AP·SP 초기화.
+- **⚖️ 제작자 확정 (2026-10-01)**
+  - 교감 = A안. 이름은 유지하고 의미를 영향력(소환수·약화·제압)으로 넓힌다. 공통 효과는 내가 건 상태이상 지속이다.
+  - 평타 = 장착 무기 기준. 물리 무기(망치·단검·도끼)는 힘 비례이고 치명은 솜씨에서 따라온다. 마법봉은 탭하면 휘두르기(힘), 꾹 누르면 충전 마법탄(지능)이다. 엔진의 `KeyHoldEvent`/`KeyReleaseEvent`로 탭과 홀드를 구분할 수 있음을 확인했다.
+  - 와일드키퍼 자연 무기 = 이중 모드. 탭은 정령탄(교감, 원거리), 홀드는 생명 펄스(지능, 주변 아군 회복, 펄스 뒤 3초 재충전 대기).
+  - 나머지는 추천안대로 확정: 무기 직업별 장착 제한(도끼만 전 직업) · 충전 가안 수치(0.5초/1.2초/이동 ×0.6) · 3×3 유지 · 보스는 강제 표적 무시 · AP·SP 1회 무료 초기화 + 멘토 상점의 망각의 물약·두루마리 · 1~3단계 먼저 · 이름은 가칭으로 진행.
+- **상태**: 설계 확정. **1단계(기반)는 코드 완료 — 위 "직업 재설계 1단계(기반) 구현" 항목** (런타임 검증 보류). 다음 작업은 문서 §10의 **2단계(재배치: 기존 17스킬의 `ScaleStat`·부모·좌표·`Branch` + `JobBranchDataSet` + 갈래 표시 + 1회 무료 초기화 + 망각의 물약·두루마리)** 이다. 관련 문서(skill-tree-plan §7.3, design-policy 능력치 절, game_design Phase 16-G)에 확정 표기를 달았다.
+- 2026-09-30 설계서 머리에 참고용 격하 표기를 달았다(채택/미채택 구분은 새 문서 §8.1).
+
 ## [전투/직업기획] 트래퍼·알케미스트 특성화 및 넉백 메커니즘 개선 설계 완료 (2026-09-30)
 
 - **배경**: 배틀스미스(전방 전사) 대비 트래퍼와 알케미스트가 "장판 깔고 원거리 투사체 난사" 형태로 플레이 감각이 중복되던 문제 및 모든 공격이 몬스터를 튕겨내는 1차원적 넉백 구조(산성 포션 DoT 시 튕김, 덫 속박 중 피격 밀림) 해소.

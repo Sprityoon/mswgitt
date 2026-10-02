@@ -1,0 +1,150 @@
+@Logic
+script PopupDismissLogic extends Logic
+	-- 팝업 닫기 공통 규칙 (2026-10-01 제작자 요청):
+	--   · ESC: 가장 나중에 열린 팝업 1개를 닫는다.
+	--   · 팝업 바깥(월드)을 터치/클릭: 열려 있는 팝업을 모두 닫는다. HUD 버튼·팝업 내용·툴팁 위(= IsPointerOverUI)나 팝업 영역 안은 무시한다.
+	-- 팝업마다 다른 닫기 처리(상자·화로 세션 종료 등)를 건드리지 않도록 각 컨트롤러의 Close() 를 그대로 부른다.
+	-- 새 팝업은 PopupControllers 목록에 "엔티티이름:컨트롤러" 한 줄만 더하면 된다.
+
+	property string PopupGroupPath = "/ui/PopupGroup"
+	-- 대상 팝업 "엔티티이름:컨트롤러스크립트". 제외: EstateInvitePopup · PlayerInteractPopup (응답이 필요한 요청창 — 바깥 클릭으로 닫히면 안 된다).
+	property string PopupControllers = "BossContentsPopup:UIBossContentsController,CharacterPopup:UICharacterController,ChestPopup:UIChestController,CollectionPopup:UICollectionController,CraftingPopup:UICraftingController,FurnacePopup:UIFurnaceController,InventoryPopup:UIInventoryController,PermissionPopup:UIPermissionController,QuestPopup:UIQuestLogController,RaidDifficultyPopup:UIRaidDifficultyController,RequestPopup:UIRequestController,ResearchPopup:UIResearchController,ShopPopup:UIShopController,SkillTreePopup:UISkillTreeController,WarpPopup:UIWarpController"
+	-- 막 열린 팝업은 이 시간(초) 동안 바깥 클릭으로 닫지 않는다 — 팝업을 연 그 클릭이 곧바로 닫아 버리는 것을 막는다.
+	property number IgnoreSecondsAfterOpen = 0.3
+
+	property any KeyHandler = nil
+	property any TouchHandler = nil
+	@HideFromInspector property table Entries = {}
+	@HideFromInspector property table OpenedAt = {}
+	@HideFromInspector property number PollAccum = 0
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 클라이언트 입력만 연결한다 (UI 는 클라 전용).
+		self.KeyHandler = _InputService:ConnectEvent(KeyDownEvent, self.OnKeyDown)
+		self.TouchHandler = _InputService:ConnectEvent(ScreenTouchEvent, self.OnScreenTouch)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		if self.KeyHandler ~= nil then
+			_InputService:DisconnectEvent(KeyDownEvent, self.KeyHandler)
+			self.KeyHandler = nil
+		end
+		if self.TouchHandler ~= nil then
+			_InputService:DisconnectEvent(ScreenTouchEvent, self.TouchHandler)
+			self.TouchHandler = nil
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method table GetEntries()
+		-- PopupControllers 를 엔티티로 해석해 캐시한다. 무효한 엔티티가 있으면 다시 해석한다.
+		local allValid = #self.Entries > 0
+		for _, e in ipairs(self.Entries) do
+			if not isvalid(e.entity) then allValid = false end
+		end
+		if allValid then return self.Entries end
+		local list = {}
+		for pair in string.gmatch(self.PopupControllers, "[^,]+") do
+			local colon, _ = string.find(pair, ":", 1, true)
+			local name = nil
+			local ctrl = nil
+			if colon ~= nil then
+				name = string.match(string.sub(pair, 1, colon - 1), "^%s*(.-)%s*$")
+				ctrl = string.match(string.sub(pair, colon + 1), "^%s*(.-)%s*$")
+			end
+			if name ~= nil and name ~= "" and ctrl ~= nil then
+				local ent = _EntityService:GetEntityByPath(self.PopupGroupPath .. "/" .. name)
+				if isvalid(ent) then list[#list + 1] = { name = name, ctrl = ctrl, entity = ent } end
+			end
+		end
+		self.Entries = list
+		return list
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 0.1초마다 팝업이 열린 시각을 기록한다 (ESC 가 "가장 나중에 열린" 것을 고르고, 막 열린 팝업을 보호하는 데 쓴다).
+		self.PollAccum = self.PollAccum + delta
+		if self.PollAccum < 0.1 then return end
+		self.PollAccum = 0
+		local now = _UtilLogic.ElapsedSeconds
+		for _, e in ipairs(self:GetEntries()) do
+			if e.entity.Enable then
+				if self.OpenedAt[e.name] == nil then self.OpenedAt[e.name] = now end
+			else
+				self.OpenedAt[e.name] = nil
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method table GetOpenPopups()
+		-- 지금 열려 있는 팝업 목록. 기록이 아직 없으면(방금 열림) openedAt = 지금으로 본다.
+		local now = _UtilLogic.ElapsedSeconds
+		local open = {}
+		for _, e in ipairs(self:GetEntries()) do
+			if e.entity.Enable then
+				open[#open + 1] = { name = e.name, ctrl = e.ctrl, entity = e.entity, openedAt = self.OpenedAt[e.name] or now }
+			end
+		end
+		return open
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsInsidePopup(Entity popup, Vector2 screenPoint)
+		-- 터치 지점이 팝업 영역 안인가. 팝업은 PopupGroup(전체 화면, 중앙 기준) 아래 중앙 앵커라 중심 = anchoredPosition 이다.
+		local ut = popup.UITransformComponent
+		if not isvalid(ut) then return false end
+		local p = _UILogic:ScreenToUIPosition(screenPoint)
+		local c = ut.anchoredPosition
+		local size = ut.RectSize
+		local scale = ut.UIScale
+		local halfW = size.x * scale.x * 0.5
+		local halfH = size.y * scale.y * 0.5
+		return math.abs(p.x - c.x) <= halfW and math.abs(p.y - c.y) <= halfH
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ClosePopup(any entry)
+		-- 컨트롤러의 Close() 를 그대로 부른다. 컨트롤러가 없거나 실패하면 Enable 만 끈다.
+		local ok = false
+		local ctrl = entry.entity:GetComponent("script." .. entry.ctrl)
+		if isvalid(ctrl) then
+			local success, err = pcall(function() ctrl:Close() end)
+			ok = success
+			if not success then log_warning("[POPUP] Close() failed " .. entry.name .. ": " .. tostring(err)) end
+		end
+		if not ok then entry.entity.Enable = false end
+		self.OpenedAt[entry.name] = nil
+		log("[POPUP] dismissed " .. entry.name)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnKeyDown(KeyDownEvent event)
+		-- ESC: 가장 나중에 열린 팝업 1개.
+		if event.key ~= KeyboardKey.Escape then return end
+		local top = nil
+		for _, e in ipairs(self:GetOpenPopups()) do
+			if top == nil or e.openedAt > top.openedAt then top = e end
+		end
+		if top ~= nil then self:ClosePopup(top) end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnScreenTouch(ScreenTouchEvent event)
+		-- 팝업 바깥(월드) 터치/클릭: 열린 팝업을 모두 닫는다.
+		local open = self:GetOpenPopups()
+		if #open == 0 then return end
+		-- HUD 버튼·팝업 내용·툴팁 위면 무시 (RaycastTarget 이 있는 UI 위). HUD 버튼이 팝업을 토글하는데 여기서 먼저 닫으면 다시 열리는 문제도 막는다.
+		if _InputService:IsPointerOverUI(event.TouchId) then return end
+		for _, e in ipairs(open) do
+			if self:IsInsidePopup(e.entity, event.TouchPoint) then return end
+		end
+		local now = _UtilLogic.ElapsedSeconds
+		for _, e in ipairs(open) do
+			if now - e.openedAt >= self.IgnoreSecondsAfterOpen then self:ClosePopup(e) end
+		end
+	end
+end

@@ -52,6 +52,9 @@ script UIHUDController extends Component
 
 	property any btnMineHandler = nil
 
+	-- 공격 버튼 Pressed/Released → 충전 평타 홀드 플래그 (PlayerController.SetMobileAttackHold)
+	property any btnMineStateHandler = nil
+
 	property any btnJumpHandler = nil
 
 	property any btnBagHandler = nil
@@ -186,6 +189,18 @@ script UIHUDController extends Component
 					if isvalid(controller) then
 						controller:TryMine()
 					end
+				end
+			end)
+			-- 충전 평타(마법봉·자연 무기)용 홀드 감지 — 누르는 동안 플래그를 세운다. 충전하지 않는 무기에는 아무 영향이 없다.
+			self.btnMineStateHandler = btnMine:ConnectEvent(ButtonStateChangeEvent, function(event)
+				local player = _UserService.LocalPlayer
+				if not isvalid(player) then return end
+				local controller = player:GetComponent("script.PlayerController")
+				if not isvalid(controller) then return end
+				if event.state == ButtonState.Pressed then
+					controller:SetMobileAttackHold(true)
+				elseif event.state == ButtonState.Released or event.state == ButtonState.Normal then
+					controller:SetMobileAttackHold(false)
 				end
 			end)
 		end
@@ -523,6 +538,9 @@ script UIHUDController extends Component
 		local btnMine = _EntityService:GetEntityByPath("/ui/HUDGroup/MobileUI/BtnMine")
 		if isvalid(btnMine) and self.btnMineHandler then
 			btnMine:DisconnectEvent(ButtonClickEvent, self.btnMineHandler)
+		end
+		if isvalid(btnMine) and self.btnMineStateHandler then
+			btnMine:DisconnectEvent(ButtonStateChangeEvent, self.btnMineStateHandler)
 		end
 		
 		local btnJump = _EntityService:GetEntityByPath("/ui/HUDGroup/MobileUI/BtnJump")

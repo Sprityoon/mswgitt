@@ -344,17 +344,19 @@ script UICharacterController extends Component
 			local bal = self:SafeNumber(function() return controller:GetTrinityBalance() end, 1)
 			return "삼위일체 공격력 " .. tostring(math.floor(tri)) .. " · 균형 " .. tostring(math.floor(bal * 100 + 0.5)) .. "%"
 		end
+		-- 능력치 공통 효과(2026-10-01 재설계): 힘=공격·채집 속도 / 솜씨=치명타 / 지능=최대 MP / 교감=내가 건 상태이상 지속.
 		if key == "STR" then
-			return "물리·투척 공격력 " .. tostring(math.floor(atk))
+			local sp = pts * (controller.StrSpeedPerPoint or 0.005) * 100
+			return "물리·투척 공격력 " .. tostring(math.floor(atk)) .. " · 속도 +" .. string.format("%.1f", sp) .. "%"
 		elseif key == "DEX" then
-			local g = pts * (controller.DexGatherPerPoint or 0.005) * 100
-			return "기교 공격력 " .. tostring(math.floor(atk)) .. " · 채집 +" .. string.format("%.1f", g) .. "%"
+			local cr = pts * (controller.DexCritPerPoint or 0.004) * 100
+			return "정밀 공격력 " .. tostring(math.floor(atk)) .. " · 치명 +" .. string.format("%.1f", cr) .. "%"
 		elseif key == "INT" then
 			local mp = math.floor(pts * (controller.IntManaPerPoint or 1))
 			return "마법 공격력 " .. tostring(math.floor(atk)) .. " · 최대 MP +" .. tostring(mp)
 		elseif key == "SPI" then
-			local h = math.floor(pts * (controller.SpiHealPerPoint or 0.01) * 100 + 0.5)
-			return "자연 공격력 " .. tostring(math.floor(atk)) .. " · 회복 +" .. tostring(h) .. "%"
+			local cd = pts * (controller.SpiControlPerPoint or 0.005) * 100
+			return "영향력 공격력 " .. tostring(math.floor(atk)) .. " · 지속 +" .. string.format("%.1f", cd) .. "%"
 		end
 		return ""
 	end

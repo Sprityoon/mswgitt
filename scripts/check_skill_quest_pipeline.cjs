@@ -88,6 +88,24 @@ function consumedPassiveStats() {
       s.add('@skill:' + m[1]);
     }
   }
+  // 무기 평타 변형(WeaponAttackDataSet)의 RequirePassive·DamageBonusStat 열은 그 값을 GetPassiveBonus(변수) 로 읽는다.
+  // 코드가 실제로 그 열을 읽을 때만 데이터 값을 소비 키로 인정한다(투척 숙련 ThrowBasic·BasicThrowDamagePct).
+  const waPath = 'RootDesk/MyDesk/Player/DataSets/WeaponAttackDataSet.csv';
+  if (fs.existsSync(P(waPath))) {
+    for (const col of ['RequirePassive', 'DamageBonusStat']) {
+      if (!PC.includes(`"${col}"`)) continue;
+      for (const r of readCsv(waPath)) if (val(r, col)) s.add(val(r, col));
+    }
+  }
+  // 소환 상한 보너스(SummonDataSet.MaxBonusStat — 무리의 우두머리 SummonMax)도 GetPassiveBonus(변수) 로 읽는다.
+  const sumPath = 'RootDesk/MyDesk/Player/DataSets/SummonDataSet.csv';
+  if (fs.existsSync(P(sumPath)) && PC.includes('"MaxBonusStat"')) {
+    for (const r of readCsv(sumPath)) if (val(r, 'MaxBonusStat')) s.add(val(r, 'MaxBonusStat'));
+  }
+  // 상태 최대 중첩 보너스: Monster 가 GetPassiveBonus(key .. "MaxStacks") 로 읽으면 처리되는 상태마다 "<상태>MaxStacks" 가 소비 키다.
+  if (/GetPassiveBonus\(\s*key\s*\.\.\s*"MaxStacks"\s*\)/.test(MONSTER)) {
+    for (const st of handledStatuses()) s.add(st + 'MaxStacks');
+  }
   return s;
 }
 

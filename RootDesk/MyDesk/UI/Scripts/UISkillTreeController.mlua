@@ -443,6 +443,15 @@ script UISkillTreeController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method string RowText(any row, string key)
+		-- 데이터셋 행의 열 값(없으면 ""). 열 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
+		if row == nil then return "" end
+		local ok, value = pcall(function() return row:GetItem(key) end)
+		if not ok or value == nil then return "" end
+		return tostring(value)
+	end
+
+	@ExecSpace("ClientOnly")
 	method void RefreshDetailPanel(string skillId)
 		-- T50: 우측 고정 상세 패널. skillId 공란 = 미선택 안내 1줄.
 		self:ResolveDetailRefs()
@@ -516,7 +525,11 @@ script UISkillTreeController extends Component
 		self:SetTextSafe(self._T.dTypeLv, typeLv, true)
 		local consumeLine = self:FormatConsumeLine(row)
 		local equipLine = self:FormatEquipReqLine(row)
-		local extra = consumeLine
+		-- 주/부 갈래는 화면에 쓰지 않는다(2026-10-02 — 스킬은 성격별 탭으로만 분류). 따르는 능력치는 아래 피해 줄에 나온다.
+		local extra = ""
+		if consumeLine ~= "" then
+			if extra ~= "" then extra = extra .. "\n" .. consumeLine else extra = consumeLine end
+		end
 		if equipLine ~= "" then
 			if extra ~= "" then extra = extra .. "\n" .. equipLine else extra = equipLine end
 		end
@@ -551,8 +564,12 @@ script UISkillTreeController extends Component
 			if pc ~= nil then
 				parentLv = pc:GetSkillLevel(parentId)
 			end
-			local parentLine = "선행: " .. parentName .. " Lv " .. tostring(parentNeed)
-				.. " (현재 " .. tostring(parentLv) .. ")"
+			-- 선행은 강화(upgrade: 기존 스킬에 능력을 더함)·상위(evolve: 비슷하지만 더 강한 스킬)에만 있다. 관계를 문구로 밝힌다.
+			local linkType = self:RowText(row, "LinkType")
+			local prefix = "선행: "
+			if linkType == "upgrade" then prefix = "강화 대상: " elseif linkType == "evolve" then prefix = "상위 스킬 · 기반: " end
+			local parentLine = prefix .. parentName .. " Lv " .. tostring(parentNeed)
+				.. " 필요 (현재 " .. tostring(parentLv) .. ")"
 			self:SetTextSafe(self._T.dParent, parentLine, true)
 			if isvalid(self._T.dParent) and isvalid(self._T.dParent.TextComponent) then
 				if parentLv >= parentNeed then
@@ -953,9 +970,9 @@ script UISkillTreeController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void RefreshSkillList(any pc)
-		-- 계열은 상단 탭으로 갈라지고, 선택된 계열 안에서만 선행 사슬을 따라
-		-- 세로로 늘어놓는다. 들여쓰기 + └ 로 "무엇이 무엇의 강화인지"를 표현한다
-		-- (skill-tree-plan §8 의 트리 의도를 목록 형태로 유지).
+		-- 스킬은 성격별 탭(공격·설치·소환·이동·보조·특성)으로 나뉘고, 탭 안에서는 단계 순으로 늘어놓는다.
+		-- 선행이 있는 스킬은 강화(upgrade)·상위(evolve)뿐이며, 들여쓰기 + └ 로 기반 스킬 아래에 붙는다
+		-- (2026-10-02 — 주/부 갈래 표시와 일반 선행 사슬은 폐지, job-branch-redesign §15).
 		---@type PlayerController
 		local controller = pc
 		self.nodeSkillMap = {}
@@ -997,8 +1014,17 @@ script UISkillTreeController extends Component
 			end
 		end
 
-		-- 3) 계열 목록을 정해진 순서로 만든다 (탭 버튼의 원본)
-		local order = { "combat", "mobility", "support", "passive", "gather" }
+		-- 2-1) 탭 안 순서 = 단계 순(요구 레벨 오름차순, 같으면 CSV 순). 전직 기본 → 2단계 → 3티어가 위에서 아래로 놓인다.
+		--      강화·상위 스킬은 루트가 아니라 기반 스킬 바로 아래(자식)로 붙는다.
+		table.sort(roots, function(a, b)
+			local la = tonumber(ds:GetCell(a.rowIndex, "RequiredLevel")) or 1
+			local lb = tonumber(ds:GetCell(b.rowIndex, "RequiredLevel")) or 1
+			if la ~= lb then return la < lb end
+			return a.rowIndex < b.rowIndex
+		end)
+
+		-- 3) 계열 목록을 정해진 순서로 만든다 (탭 버튼의 원본). 직업 스킬은 SkillDataSet.Category 로 스킬마다 지정한다.
+		local order = { "combat", "install", "summon", "mobility", "support", "passive", "gather" }
 		local catRoots = {}
 		local seen = {}
 		for _, e in ipairs(roots) do
@@ -1096,6 +1122,7 @@ script UISkillTreeController extends Component
 		local ty = (t ~= nil) and tostring(t) or ""
 		if ty == "Passive" then return "passive" end
 		if ty == "Dash" then return "mobility" end
+		if ty == "Summon" then return "summon" end
 		if ty == "Guard" or ty == "HealAura" or ty == "Buff" then return "support" end
 		return "combat"
 	end
@@ -1103,6 +1130,8 @@ script UISkillTreeController extends Component
 	method string CategoryLabel(string cat)
 		-- 계열 키 -> 화면 표시명 (design-policy §6: 키는 영문, 표시는 한글)
 		if cat == "combat" then return "공격" end
+		if cat == "install" then return "설치" end
+		if cat == "summon" then return "소환" end
 		if cat == "mobility" then return "이동" end
 		if cat == "support" then return "보조" end
 		if cat == "passive" then return "특성" end
@@ -1141,8 +1170,10 @@ script UISkillTreeController extends Component
 			local vn = controller:SkillText(variantRow, "Name")
 			if vn ~= "" then skillName = vn end
 		end
+		local dsRow = ds:FindRow("SkillId", skillId)
+		-- 연결선(└)은 강화·상위 스킬만 달린다 — 선행이 있는 행은 그 둘뿐이다(check_job_branches.cjs 가 지킨다).
 		local label = skillName
-		if depth > 0 then label = "└ " .. skillName end
+		if depth > 0 then label = "└ " .. label end
 
 		local icon = row:GetChildByName("Icon", true)
 		if isvalid(icon) then
@@ -1172,7 +1203,6 @@ script UISkillTreeController extends Component
 			parentOk = (controller:GetSkillLevel(parentId) >= parentNeed)
 		end
 		local levelOk = (controller.Level >= reqLevel)
-		local dsRow = ds:FindRow("SkillId", skillId)
 		local achOk = self:IsUnlockGateOpenClient(dsRow, controller)
 
 		local state = ""
@@ -1201,7 +1231,11 @@ script UISkillTreeController extends Component
 		end
 		self:SetChildText(row, "State", state)
 		local rspr = row.SpriteGUIRendererComponent
-		if isvalid(rspr) then rspr.Color = bg end
+		if isvalid(rspr) then
+			rspr.Color = bg
+			-- 갈래 테두리(주 금색·부 청록)는 폐지했다. 이전 빌드에서 켜진 상태로 재사용되는 행도 끈다.
+			rspr.Outline = false
+		end
 	end
 
 	@ExecSpace("ClientOnly")

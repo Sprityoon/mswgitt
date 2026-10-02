@@ -111,6 +111,34 @@ script PlayerCombat extends AttackComponent
 		return self.PendingDamage
 	end
 
+	method boolean CalcCritical(Entity attacker, Entity defender, string attackInfo)
+		-- 솜씨 기반 치명타. 확률 = PlayerController.GetCritChance (기본 + 솜씨 + 패시브·장비).
+		-- 평타·스킬·투사체가 모두 AttackFast 를 거치므로 한 곳에서 적용된다. 엔진이 CalcDamage 결과에 GetCriticalDamageRate 를 곱한다.
+		-- ⚠ AttackComponent 훅이라 @ExecSpace 를 붙이지 않는다 (부모가 미지정 — 붙이면 LEA-3014).
+		local pc = self.Entity:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return false end
+		---@type PlayerController
+		local controller = pc
+		-- 시전 스킬의 CritBonus 를 더하고, NextCrit 버프로 예약된 시전이면 확정 치명이다.
+		local chance = controller:GetCritChanceFor(self.PendingSkillId)
+		local forced = controller:IsForcedCrit(self.PendingSkillId)
+		local isCrit = forced or math.random() < chance
+		-- 치명타가 터질 때만 로그를 남긴다 (매 타격 로그는 소음 — Play 검증 근거용).
+		if isCrit then
+			log("[CRIT] skill=" .. tostring(self.PendingSkillId) .. " chance=" .. string.format("%.3f", chance) .. " forced=" .. tostring(forced) .. " rate=" .. string.format("%.2f", controller:GetCritDamageRate()))
+		end
+		return isCrit
+	end
+
+	method float GetCriticalDamageRate()
+		-- 치명타 피해 배율. 부모 기본값(2.0) 대신 PlayerController.GetCritDamageRate (기본 1.5 + 패시브·장비).
+		local pc = self.Entity:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return 1.5 end
+		---@type PlayerController
+		local controller = pc
+		return controller:GetCritDamageRate()
+	end
+
 	method boolean IsAttackTarget(Entity defender, string attackInfo)
 		-- Exact target filtering prevents nearby monsters from receiving each pellet twice.
 		if not isvalid(defender) then return false end
@@ -137,8 +165,17 @@ script PlayerCombat extends AttackComponent
 		self.PendingTargetId = target.Id
 		self.PendingHitEffectRUID = hitRUID
 		self.PendingHitEffectScale = hitScale
+		-- 판정 중심 = 대상의 피격 콜라이더 중심. 발밑(Transform) 좌표에 놓으면 콜라이더가 위로 떠 있는 큰 몬스터(스노우맨: 원 중심이
+		-- 발 위 약 2.75)에는 닿지 않아 장판·트랩·투사체 피해가 통째로 빗나간다. 오프셋에도 Transform.Scale 이 곱해진다(pitfalls 규칙 14).
 		local p = target.TransformComponent.WorldPosition
-		self:AttackFast(BoxShape(p:ToVector2(), Vector2(1, 1), 0), nil, CollisionGroups.HitBox)
+		local center = p:ToVector2()
+		local hitComp = target.HitComponent
+		if isvalid(hitComp) then
+			local s = target.TransformComponent.Scale
+			local o = hitComp.ColliderOffset
+			center = Vector2(p.x + o.x * s.x, p.y + o.y * s.y)
+		end
+		self:AttackFast(BoxShape(center, Vector2(1, 1), 0), nil, CollisionGroups.HitBox)
 		self.PendingDamage = oldDamage
 		self.PendingSkillId = oldSkill
 		self.PendingTargetId = oldTarget

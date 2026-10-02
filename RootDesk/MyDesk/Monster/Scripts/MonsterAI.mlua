@@ -401,7 +401,8 @@ script MonsterAI extends Component
 		if combatMul < 1 then combatMul = 1 end
 		local combatLeash = self.LeashRange * combatMul
 		local beyondCombatLeash = distSpawnSq > combatLeash * combatLeash
-		local aggroActive = self.AggroGraceTimer > 0
+		-- 강제 표적이 살아 있는 동안은 어그로 유예가 끝나도 교전 상태로 본다(도발 5초가 어그로 유예보다 길 수 있다).
+		local aggroActive = self.AggroGraceTimer > 0 or (hasTarget and self._T.forcedTarget == target)
 		local playerDetected = hasTarget and dSq <= self.DetectRange * self.DetectRange
 		local atkRangeSq = self.AttackRange * self.AttackRange
 		local stopSq = self.StopDistance * self.StopDistance
@@ -1354,6 +1355,15 @@ script MonsterAI extends Component
 			self:BeginEngagement()
 			return
 		end
+		-- 속박·기절 중에는 넉백하지 않는다 (2026-10-01 넉백 정책 — Monster.IsKnockbackAllowed 와 같은 기준의 이중 안전장치).
+		-- 덫에 묶인 적이 맞을 때마다 밀려 덫 밖으로 빠지는 것을 막는다. 기절 중에는 이 값이 소비되지 않다가 기절이 끝난 뒤 뒤늦게 밀리는 문제도 함께 없앤다.
+		-- 피해·어그로는 그대로 들어간다. 보스의 속박·기절은 둔화로 바뀌어 이 조건에 걸리지 않는다.
+		local statusOwner = self:GetMonster()
+		if isvalid(statusOwner) and (statusOwner:GetSkillStatus("Root") ~= nil or statusOwner:GetSkillStatus("Stun") ~= nil) then
+			self.AggroGraceTimer = self.AggroGraceDuration
+			self:BeginEngagement()
+			return
+		end
 		local p = self:Pos2D()
 		local dx = p.x - fromPos.x
 		local dy = p.y - fromPos.y
@@ -1802,6 +1812,12 @@ script MonsterAI extends Component
 		end
 		self._T.nearestFresh = true
 		self._T.nearest = nil
+		-- 강제 표적(도발·소환수 어그로)이 살아 있으면 최근접 대신 그 대상을 쫓는다. 대상이 소환수일 수도 있다(PlayerComponent 가 없다).
+		local forced = self:GetForcedTarget()
+		if forced ~= nil then
+			self._T.nearest = forced
+			return forced
+		end
 		local map = self.Entity.CurrentMap
 		if not isvalid(map) then return nil end
 		local mapComp = map.MapComponent
@@ -1813,7 +1829,9 @@ script MonsterAI extends Component
 		local bestSq = 0
 		for i, u in ipairs(users) do
 			-- 쓰러진(HP 0) 플레이어는 대상에서 뺀다 — 쓰러진 자리를 맴돌며 깨어나자마자 치지 않게.
-			if isvalid(u) and u.PlayerComponent ~= nil and u.PlayerComponent.Hp > 0 then
+			-- 도착 보호 중인 플레이어도 뺀다 — 보호 중에도 표적으로 잡으면 도착 지점에 몰려 공격 모션을 반복하다가
+			-- 보호가 끝나는 순간 그대로 맞혔다("로딩이 끝나자마자 두들겨 맞는다", 2026-10-02 로그 18:58:09).
+			if isvalid(u) and u.PlayerComponent ~= nil and u.PlayerComponent.Hp > 0 and not self:IsTargetArrivalProtected(u) then
 				local dx = u.TransformComponent.WorldPosition.x - myPos.x
 				local dy = u.TransformComponent.WorldPosition.y - myPos.y
 				local dSq = dx * dx + dy * dy
@@ -1825,6 +1843,59 @@ script MonsterAI extends Component
 		end
 		self._T.nearest = best
 		return best
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsTargetArrivalProtected(Entity user)
+		-- 맵 진입 직후 도착 보호(PlayerController.IsArrivalProtected) 중인 플레이어인가. 보호 중에는 표적으로 잡지 않는다.
+		local pc = user:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return false end
+		---@type PlayerController
+		local controller = pc
+		return controller:IsArrivalProtected()
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SetForcedTarget(Entity target, number seconds, integer priority)
+		-- 강제 표적을 건다 (job-branch-redesign §7.3). 도발(쇠망치 도발·숲의 군주)은 우선순위 2, 소환수에게 맞아 생기는 짧은 어그로는 1.
+		-- 살아 있는 더 높은 우선순위가 있으면 덮지 않는다(소환수 타격이 플레이어의 도발을 빼앗지 않게). ⚖️ 보스는 무시한다(2026-10-01).
+		if self:IsBossMonster() then return end
+		if not isvalid(target) or seconds <= 0 then return end
+		local now = _UtilLogic.ElapsedSeconds
+		local active = self:GetForcedTarget() ~= nil
+		local curPriority = self._T.forcedPriority or 0
+		if active and priority < curPriority then return end
+		local untilAt = now + seconds
+		if active and self._T.forcedTarget == target and (self._T.forcedUntil or 0) > untilAt then untilAt = self._T.forcedUntil end
+		self._T.forcedTarget = target
+		self._T.forcedUntil = untilAt
+		self._T.forcedPriority = priority
+		-- 다음 프레임에 바로 새 표적을 보도록 최근접 캐시를 무효화하고, 감지 범위 밖이어도 추적하게 어그로 유예를 연다.
+		self._T.nearestFresh = false
+		self.AggroGraceTimer = math.max(self.AggroGraceTimer, seconds)
+		self:BeginEngagement()
+	end
+
+	@ExecSpace("ServerOnly")
+	method Entity GetForcedTarget()
+		-- 유효한 강제 표적(같은 맵·살아 있음·만료 전)이면 그 엔티티, 아니면 nil.
+		local t = self._T.forcedTarget
+		if t == nil then return nil end
+		local ok = isvalid(t) and _UtilLogic.ElapsedSeconds < (self._T.forcedUntil or 0) and t.CurrentMap == self.Entity.CurrentMap
+		if ok then
+			if isvalid(t.PlayerComponent) then
+				ok = t.PlayerComponent.Hp > 0
+			else
+				local summon = t:GetComponent("script.Summon")
+				ok = isvalid(summon) and summon.Hp > 0
+			end
+		end
+		if not ok then
+			self._T.forcedTarget = nil
+			self._T.forcedPriority = 0
+			return nil
+		end
+		return t
 	end
 
 	@ExecSpace("ServerOnly")

@@ -1,6 +1,7 @@
 # [전투 설계서] 직업 특성화(트래퍼·알케미스트) 및 넉백 메커니즘 개선 사양
 
 > **문서 상태**: 2026-09-30 작성 (기획·설계 완료 / 타 에이전트 구현 인계용)  
+> ⚠️ **2026-10-01 제작자: 참고용으로 격하.** 직업 컨셉은 [job-branch-redesign.md](./job-branch-redesign.md)(초안)에서 다시 정리하고 있다. 미끼 등은 구현하지 않는다. 어떤 항목을 채택했는지는 그 문서 §8.1 표를 따른다.  
 > **관련 문서**: [skill-tree-plan.md](./skill-tree-plan.md) · [job-content-update.md](./job-content-update.md) · [Monster.mlua](../../RootDesk/MyDesk/Monster/Scripts/Monster.mlua) · [MonsterAI.mlua](../../RootDesk/MyDesk/Monster/Scripts/MonsterAI.mlua)
 
 ---

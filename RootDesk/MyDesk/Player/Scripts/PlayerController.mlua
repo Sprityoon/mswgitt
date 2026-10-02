@@ -21,6 +21,8 @@ script PlayerController extends Component
 	property integer MaxStamina = 100
 
 	@Sync property string JobId = ""
+	-- 캐릭터 슬롯별 무료 재분배 적용 버전. 서버 메모리 → PersistenceManager 선캡처로 저장한다.
+	@HideFromInspector property integer JobBranchResetVersion = 0
 	@Sync property number Mana = 60
 	property number BaseMaxMana = 60
 	property number BaseManaRegen = 2
@@ -147,14 +149,15 @@ script PlayerController extends Component
 	-- 레벨업당 SP 지급량 (밸런스 튜닝값 — 인스펙터 프로퍼티로 관리)
 	property integer SPPerLevelUp = 3
 
-	-- 능력치 (2026-09-25): 레벨업마다 기본 성장 + AP 를 받아 5개 능력치에 직접 분배한다.
-	--   STR 힘   : 물리·투척 스킬과 평타의 계열 공격력
-	--   DEX 솜씨 : 덫·장치 같은 기교 스킬의 계열 공격력 + 채집 속도
-	--   INT 지능 : 마법 스킬의 계열 공격력 + 최대 마나
-	--   SPI 교감 : 자연·야생 스킬의 계열 공격력 + 회복 효과
+	-- 능력치 (2026-09-25 도입, 2026-10-01 직업 재설계 — docs/design/job-branch-redesign.md §3):
+	-- 레벨업마다 기본 성장 + AP 를 받아 5개 능력치에 직접 분배한다. 능력치는 직업이 아니라 플레이 스타일에 붙는다.
+	--   STR 힘   : 물리·투척 계열 공격력 + 공통 효과: 공격·채집 속도
+	--   DEX 솜씨 : 정밀(덫·표창 등) 계열 공격력 + 공통 효과: 치명타 확률
+	--   INT 지능 : 마법 계열 공격력 + 공통 효과: 최대 마나 (회복 스킬의 회복량도 지능 계열이 된다)
+	--   SPI 교감 : 영향력(소환수·약화·제압) 계열 공격력 + 공통 효과: 내가 건 상태이상 지속
 	--   VIT 체력 : 최대 HP + 방어력
-	-- 스킬 피해 = (계열 공격력 + 무기 + 장비 스킬 공격력 + 스킬 기본 위력) × 스킬 배율.
-	-- 무기: 지능 계열은 MagicAttack, 나머지는 Attack. 스킬별 계열은 SkillDataSet.ScaleStat.
+	-- 스킬 피해 = (계열 공격력 + 무기 수치 + 장비 스킬 공격력 + 스킬 기본 위력) × 스킬 배율.
+	-- 무기 수치: 삼위일체는 장갑 환산, 마법 피해(DamageModel=Magic)는 MagicAttack, 그 밖은 Attack. 스킬별 계열은 SkillDataSet.ScaleStat.
 	@Sync property integer StatStr = 0
 	@Sync property integer StatDex = 0
 	@Sync property integer StatInt = 0
@@ -175,9 +178,26 @@ script PlayerController extends Component
 	-- 최대 마나 += (레벨-1)×LevelManaGrowth + 지능×IntManaPerPoint
 	property number LevelManaGrowth = 2
 	property number IntManaPerPoint = 1
-	-- 솜씨 1당 채집 속도 +0.5% / 교감 1당 회복 효과 +1%
-	property number DexGatherPerPoint = 0.005
-	property number SpiHealPerPoint = 0.01
+	-- 능력치 공통 효과 계수 (1 포인트당).
+	-- 힘: 공격·채집 속도 +0.5% / 솜씨: 치명타 확률 +0.4%p / 교감: 내가 건 상태이상 지속 +0.5% / 회복 스킬: 그 스킬 계열 능력치 1당 회복량 +1%
+	property number StrSpeedPerPoint = 0.005
+	property number DexCritPerPoint = 0.004
+	property number SpiControlPerPoint = 0.005
+	property number HealPowerPerPoint = 0.01
+	-- 치명타: 확률 = BaseCritChance + 솜씨 × DexCritPerPoint + 패시브·장비(PassiveStat=CritChance), 상한 MaxCritChance.
+	-- 피해 배율 = BaseCritDamage + 패시브·장비(CritDamage).
+	property number BaseCritChance = 0.05
+	property number MaxCritChance = 0.75
+	property number BaseCritDamage = 1.5
+	-- 정밀 배합(FarDamagePct): 이 거리(월드 유닛) 이상 떨어진 적에게 피해 보너스. Monster.ResolveSkillDamage 가 읽는다.
+	property number FarDamageDistance = 4
+	-- 충전 평타(마법봉·자연 무기): 공격키를 ChargeStartDelay 초 이상 누르면 충전을 시작한다. 그보다 짧으면 탭(즉시 휘두르기)이다.
+	-- 단계별 필요 시간·배율은 WeaponAttackDataSet. 충전 중 이동 속도는 ChargeMoveScale 배.
+	property number ChargeStartDelay = 0.25
+	property number ChargeMoveScale = 0.6
+	-- 서버가 충전 시간을 재검증할 때 허용하는 오차(초)와, 충전 발사 사이 최소 간격(서버 방어 — 정상 플레이에는 닿지 않는다).
+	property number ChargeTolerance = 0.2
+	property number ChargeMinInterval = 0.4
 	-- 삼위일체(TRI) 계열 — 히든 직업 맨주먹 파이터 (docs/design/hidden_job_barefist_fighter.md §7).
 	--   유효 포인트 = (힘 + 솜씨 + 체력) × (TrinityBaseFactor + TrinityBalanceFactor × 균형도)
 	--   균형도 = 최솟값 / 평균 (0 = 한쪽 몰빵, 1 = 1:1:1).
@@ -315,7 +335,10 @@ script PlayerController extends Component
 				end
 			end, 0.5)
 			self._T.StaminaTimer = _TimerService:SetTimerRepeat(function()
-				if self.IsDead then return end
+				if self.IsDead then
+					self:TickDownedWatchdog()
+					return
+				end
 				self.Mana = math.min(self:GetMaxMana(), self.Mana + self.BaseManaRegen + self:GetPassiveBonus("ManaRegen"))
 				local playerComp = self.Entity.PlayerComponent
 				if self.IsSleeping then
@@ -366,6 +389,7 @@ script PlayerController extends Component
 				preview.Visible = false
 				self._T.PlacementPreviewEntity = nil
 			end
+			self:CancelCharge()
 			self:ClearInteractHighlight()
 			local guideLabel = self._T.InteractGuideLabel
 			if isvalid(guideLabel) then
@@ -453,6 +477,7 @@ script PlayerController extends Component
 		end
 
 		if self.IsSleeping then
+			self:CancelCharge()
 			local movement = self.Entity.MovementComponent
 			if isvalid(movement) then movement:Stop() end
 			if _InputService:IsKeyPressed(KeyboardKey.LeftArrow) or
@@ -469,6 +494,7 @@ script PlayerController extends Component
 		end
 
 		if self.FishingState ~= "None" then
+			self:CancelCharge()
 			local movement = self.Entity.MovementComponent
 			if isvalid(movement) then movement:Stop() end
 			if _InputService:IsKeyPressed(KeyboardKey.LeftArrow) or
@@ -493,10 +519,12 @@ script PlayerController extends Component
 			return
 		end
 
-		-- T16: 이동속도 버프 반영
+		-- T16: 이동속도 버프 반영 (충전 중에는 ChargeMoveScale 배)
 		local movementBuff = self.Entity.MovementComponent
 		if isvalid(movementBuff) then
-			movementBuff.InputSpeed = self:GetBuffedMoveSpeed()
+			local moveSpeed = self:GetBuffedMoveSpeed()
+			if self._T.ChargeActive then moveSpeed = moveSpeed * self.ChargeMoveScale end
+			movementBuff.InputSpeed = moveSpeed
 		end
 
 		-- Resolve any overlaps with resource colliders first
@@ -523,10 +551,14 @@ script PlayerController extends Component
 		end
 		
 		if self.IsDead then
+			self:CancelCharge()
 			local movement = self.Entity.MovementComponent
 			if isvalid(movement) then movement:Stop() end
 			return
 		end
+
+		-- 충전 평타(마법봉·자연 무기) 홀드 폴링 — 짧게 누르면 탭(OnKeyDown), 오래 누르면 충전.
+		self:UpdateCharge(delta)
 		
 		-- Knockback: while active, interpolate player position smoothly on client (EaseOutCubic)
 		if self.KnockTimer > 0 then
@@ -689,6 +721,7 @@ script PlayerController extends Component
 		-- 일반 맵: DownedRespawnSeconds 뒤 마을. 미클리어 레이드 보스방: 자동 부활 없이 BossRaidLogic 이 판정.
 		if self.IsDead then return end
 		self.IsDead = true
+		self._T.DownedAt = _UtilLogic.ElapsedSeconds
 		self:ClearSkillAreas()
 
 		local movement = self.Entity.MovementComponent
@@ -734,6 +767,27 @@ script PlayerController extends Component
 			self._T.respawnTimer = nil
 			if isvalid(self.Entity) and self.IsDead then self:WakeInTown() end
 		end, self.DownedRespawnSeconds)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void TickDownedWatchdog()
+		-- 쓰러진 채 복구 경로가 끊긴 경우의 안전망(1초 주기 서버 타이머가 부른다).
+		-- ServerDie 는 단발 타이머(마을 귀환)·레이드 전멸 판정 한 번에 의존해서, 그 사이 어긋나면(맵 이동·인스턴스 파기·판정 경합 등)
+		-- 영구히 쓰러진 채 남았다. 일정 시간이 지나도 복구되지 않으면 여기서 다시 시도한다. 정상 경로는 이 시간 안에 끝난다.
+		local now = _UtilLogic.ElapsedSeconds
+		if self._T.DownedAt == nil then self._T.DownedAt = now end
+		local mapName = ""
+		if isvalid(self.Entity.CurrentMap) then mapName = self.Entity.CurrentMap.Name end
+		local inRaid = _BossRaidLogic ~= nil and _BossRaidLogic:IsActiveBossRoom(mapName)
+		if inRaid then
+			-- 활성 보스방: 전멸 판정을 놓쳤을 수 있으니 다시 본다(한 명이라도 서 있으면 아무 일도 없다).
+			if now - self._T.DownedAt > 2.0 then _BossRaidLogic:CheckRaidWipe(mapName) end
+			return
+		end
+		if self._T.respawnTimer ~= nil then return end
+		if now - self._T.DownedAt < self.DownedRespawnSeconds + 3.0 then return end
+		log("[DEATH] watchdog: stuck downed user=" .. tostring(self.Entity.PlayerComponent.UserId) .. " map=" .. mapName .. " -> town")
+		self:WakeInTown()
 	end
 
 	@ExecSpace("ServerOnly")
@@ -987,6 +1041,9 @@ script PlayerController extends Component
 	method void TryMine()
 		-- description: Attempts to trigger mining, placement, or consumable use on client-side.
 		if self.Entity ~= _UserService.LocalPlayer then return end
+		-- 모바일: 충전을 마치고 버튼을 뗄 때 따라오는 클릭 이벤트가 탭 평타를 또 치지 않게 막는다 (SetMobileAttackHold).
+		local suppress = self._T.SuppressTapUntil
+		if suppress ~= nil and _UtilLogic.ElapsedSeconds < suppress then return end
 		local inv = self.Entity:GetComponent("script.PlayerInventory")
 		local activeItem = ""
 		if isvalid(inv) then
@@ -1100,7 +1157,18 @@ script PlayerController extends Component
 		local key = event.key
 		
 		if key == KeyboardKey.LeftControl or key == KeyboardKey.RightControl then
-			self:TryMine()
+			-- 충전 폴링(UpdateCharge)의 홀드 시작 기준. 탭은 그대로 즉시 처리한다.
+			if self._T.AttackHeldSince == nil then
+				self._T.AttackHeldSince = _UtilLogic.ElapsedSeconds
+				self._T.ChargeChecked = nil
+			end
+			-- 충전 가능한 무기(마법봉·자연 무기)는 탭을 "뗄 때" 처리한다 — 누르는 순간엔 탭인지 홀드인지 모르기 때문이다.
+			-- 충전이 시작되지 않은 채 키를 떼면 UpdateCharge 가 그때 TryMine 을 부른다. 그 밖의 무기는 지금처럼 즉시 처리.
+			if self:ShouldDeferTap() then
+				self._T.DeferTap = true
+			else
+				self:TryMine()
+			end
 		elseif key == KeyboardKey.LeftAlt or key == KeyboardKey.RightAlt then
 			log("Visual Jump key (Alt) pressed.")
 			local movement = self.Entity.MovementComponent
@@ -1382,13 +1450,22 @@ script PlayerController extends Component
 		
 		-- Combat: if a monster is within the front attack range, attack in front instead of mining.
 		local playerPos = self.Entity.TransformComponent.WorldPosition
+		-- 원거리 평타 무기(WeaponAttackDataSet 에 Tap 행이 있는 무기 — 자연 무기)는 근접 상자 대신 탄을 쏜다. 전투 맵에서만.
+		local tapRow = nil
+		if self:IsCombatSkillMap() then
+			tapRow = self:GetWeaponAttackRow(self:GetEquippedWeaponType(), "Tap", 1)
+		end
 		local monsterEntity = self:FindMonsterInFront(currentMap, playerPos, self.LastDirectionX, self.LastDirectionY)
 		if isvalid(monsterEntity) then
-			local combat = self.Entity:GetComponent("script.PlayerCombat")
-			if isvalid(combat) then
-				---@type PlayerCombat
-				local pc = combat
-				pc:DoAttackInFront(Vector2(playerPos.x, playerPos.y), self.LastDirectionX, self.LastDirectionY)
+			if tapRow ~= nil then
+				self:FireWeaponProjectile(tapRow, self.LastDirectionX, self.LastDirectionY)
+			else
+				local combat = self.Entity:GetComponent("script.PlayerCombat")
+				if isvalid(combat) then
+					---@type PlayerCombat
+					local pc = combat
+					pc:DoAttackInFront(Vector2(playerPos.x, playerPos.y), self.LastDirectionX, self.LastDirectionY)
+				end
 			end
 			self:ClientPlayMineEffect(true, monsterEntity)
 			return
@@ -1433,7 +1510,228 @@ script PlayerController extends Component
 			-- Play air swing effect on all clients (attached to player)
 			self:ClientPlayMineEffect(false, nil)
 			log("No resource entity found at target cell " .. tostring(targetCell))
+			-- 자원도 몬스터도 없는 허공이면 원거리 평타는 그대로 발사한다 (몬스터가 근접 범위 밖일 수 있다).
+			if tapRow ~= nil then
+				self:FireWeaponProjectile(tapRow, self.LastDirectionX, self.LastDirectionY)
+			end
 		end
+	end
+
+	-- =========================================================================
+	-- 충전 평타 (마법봉 · 자연 무기) — docs/design/job-branch-redesign.md §3.4
+	-- 탭: OnKeyDown → TryMine (즉시 휘두르기·정령탄). 홀드: UpdateCharge 가 키를 폴링해 충전 시간을 재고,
+	-- 키를 떼면 서버에 발사(생명 펄스)를 요청한다. 서버는 자기 시계로 충전 시간을 다시 잰다(클라 보고값을 믿지 않는다).
+	-- 엔진 KeyHoldEvent 대신 IsKeyPressed 폴링을 쓴다(낚시 릴 홀드와 같은 패턴): 시작 지연을 직접 정할 수 있고 모바일 버튼 홀드와 한 경로가 된다.
+	-- =========================================================================
+
+	@ExecSpace("ClientOnly")
+	method boolean IsHandItemBlockingAttack()
+		-- 손에 든 퀵슬롯 아이템이 소비·설치·지형 편집용이면 Ctrl 은 그 용도다(TryMine 앞쪽 분기와 같은 기준). 충전하지 않는다.
+		local inv = self.Entity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return false end
+		---@type PlayerInventory
+		local p = inv
+		local slots = _HttpService:JSONDecode(p.QuickSlotsJson) or {}
+		local activeItem = slots[p.SelectedQuickSlotIndex] or ""
+		if activeItem == "" then return false end
+		local baseName = p:GetBaseItemName(activeItem)
+		local category = p:GetItemText(baseName, "Category")
+		if category == "consumable" or category == "furniture" then return true end
+		return p:GetItemText(baseName, "TerrainEditAction") ~= ""
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean ShouldDeferTap()
+		-- 탭을 뗄 때로 미룰지: 충전할 수 있는 상황(전투 맵 · 충전 단계가 있는 주무기 · 손 아이템이 다른 용도가 아님)일 때만.
+		-- 아니면 지금처럼 누르는 즉시 처리한다. 재충전 대기 중이어도 미룬다(뗄 때 탭으로 나간다).
+		if self.IsDead or self.IsSleeping or self.FishingState ~= "None" then return false end
+		if not self:IsCombatSkillMap() then return false end
+		if self:GetChargeStageFor(self:GetEquippedWeaponType(), 999) < 1 then return false end
+		return not self:IsHandItemBlockingAttack()
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean CanBeginCharge(number now)
+		-- 충전 가능 조건: 전투 맵 · 충전 단계가 있는 주무기 · 메인 메뉴가 닫힘 · 손 아이템이 다른 용도가 아님 · 생명 펄스 재충전 대기 중이 아님.
+		if self.IsDead or self.IsSleeping or self.FishingState ~= "None" then return false end
+		if not self:IsCombatSkillMap() then return false end
+		local mainMenu = _EntityService:GetEntityByPath("/ui/MainMenuGroup")
+		if isvalid(mainMenu) and mainMenu.Enable then return false end
+		local weaponType = self:GetEquippedWeaponType()
+		if self:GetChargeStageFor(weaponType, 999) < 1 then return false end
+		if self:IsHandItemBlockingAttack() then return false end
+		local row1 = self:GetWeaponAttackRow(weaponType, "Charge", 1)
+		if row1 ~= nil and self:SkillText(row1, "Kind") == "HealPulse" and now < (self._T.PulseReadyAt or 0) then
+			self:ShowMineFeedback("[생명 펄스] 재충전 중입니다.")
+			return false
+		end
+		return true
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BeginCharge(number now)
+		-- 충전 시작: 상태 기록 + 머리 위로 에너지가 모이는 반복 파티클(공식 BasicParticle — 리소스 불필요) + 서버에 기준점 통지.
+		self._T.ChargeActive = true
+		self._T.ChargeBegan = now
+		self._T.ChargeStage = 0
+		self._T.ChargeWeapon = self:GetEquippedWeaponType()
+		self._T.ChargeParticle = _ParticleService:PlayBasicParticleAttached(BasicParticleType.ChargeOrb, self.Entity, Vector3(0, 0.5, 0), 0, Vector3(1, 1, 1), true)
+		self:ServerRequestChargeStart()
+		log("[WEAPON] charge begin weapon=" .. tostring(self._T.ChargeWeapon))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void TickCharge(number now)
+		-- 충전 단계 갱신. 단계가 오를 때 한 번 터지는 원형 파동으로 "다음 단계 도달"을 알린다.
+		local stage = self:GetChargeStageFor(self._T.ChargeWeapon or "", now - (self._T.ChargeBegan or now))
+		if stage > (self._T.ChargeStage or 0) then
+			self._T.ChargeStage = stage
+			_ParticleService:PlayBasicParticleAttached(BasicParticleType.CircleBurst, self.Entity, Vector3(0, 0.5, 0), 0, Vector3(1, 1, 1), false)
+			log("[WEAPON] charge stage=" .. tostring(stage))
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void EndChargeVisual()
+		-- 반복 파티클 회수 (serial 은 BeginCharge 가 보관한다).
+		local serial = self._T.ChargeParticle
+		if serial ~= nil and serial ~= 0 then _ParticleService:RemoveParticle(serial) end
+		self._T.ChargeParticle = nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ReleaseCharge(number now)
+		-- 키를 뗐다: 1단계 이상 모였으면 서버에 발사(펄스)를 요청한다. 방향은 서버가 다시 정리한다.
+		local weaponType = self._T.ChargeWeapon or ""
+		local stage = self:GetChargeStageFor(weaponType, now - (self._T.ChargeBegan or now))
+		self:EndChargeVisual()
+		self._T.ChargeActive = false
+		self._T.ChargeStage = 0
+		if stage < 1 then
+			log("[WEAPON] charge cancelled before stage 1")
+			return
+		end
+		-- 생명 펄스: 서버와 같은 재충전 대기를 클라에서도 세어 다음 충전 시작 단계에서 막는다.
+		local row = self:GetWeaponAttackRow(weaponType, "Charge", stage)
+		if row ~= nil and self:SkillText(row, "Kind") == "HealPulse" then
+			self._T.PulseReadyAt = now + self:SkillNumber(row, "LockoutSeconds", 3)
+		end
+		self:ServerRequestChargeRelease(self.LastDirectionX, self.LastDirectionY)
+		log("[WEAPON] charge release weapon=" .. weaponType .. " stage=" .. tostring(stage))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void CancelCharge()
+		-- 스킬 시전·사망·수면·낚시·맵 이동으로 충전을 버린다(발사 없음). 서버의 시작 기록은 다음 시작 때 덮인다.
+		-- 뗄 때 처리하려던 탭도 함께 버린다(스킬을 쓴 뒤 뒤늦게 평타가 나가지 않게).
+		self._T.DeferTap = nil
+		if not self._T.ChargeActive then return end
+		self:EndChargeVisual()
+		self._T.ChargeActive = false
+		self._T.ChargeStage = 0
+		-- 키를 계속 누르고 있어도 같은 홀드에서는 다시 충전하지 않는다.
+		self._T.ChargeChecked = self._T.AttackHeldSince
+		log("[WEAPON] charge cancelled")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateCharge(number delta)
+		-- 공격키(Ctrl · 모바일 공격 버튼) 홀드 폴링. OnUpdate 에서 로컬 플레이어만 부른다.
+		-- 짧게 누르면 탭(OnKeyDown 의 TryMine)이고, ChargeStartDelay 이상 누르면 충전이 시작된다(충전 가능한 무기만).
+		local now = _UtilLogic.ElapsedSeconds
+		local holding = _InputService:IsKeyPressed(KeyboardKey.LeftControl)
+			or _InputService:IsKeyPressed(KeyboardKey.RightControl)
+			or self._T.MobileAttackHold == true
+		if not holding then
+			self._T.AttackHeldSince = nil
+			self._T.ChargeChecked = nil
+			local deferredTap = self._T.DeferTap
+			self._T.DeferTap = nil
+			if self._T.ChargeActive then
+				self:ReleaseCharge(now)
+			elseif deferredTap then
+				-- 충전으로 이어지지 않은 누름 = 탭. 뗀 지금 휘두른다(정령탄·근접 상자는 TryMine → RequestMine 이 정한다).
+				self:TryMine()
+			end
+			return
+		end
+		if self._T.AttackHeldSince == nil then self._T.AttackHeldSince = now end
+		if self._T.ChargeActive then
+			self:TickCharge(now)
+			return
+		end
+		-- 이 홀드에서는 한 번만 판정한다(충전이 안 되는 무기·장소에서 매 프레임 조회하지 않도록).
+		if self._T.ChargeChecked ~= self._T.AttackHeldSince and now - self._T.AttackHeldSince >= self.ChargeStartDelay then
+			self._T.ChargeChecked = self._T.AttackHeldSince
+			if self:CanBeginCharge(now) then self:BeginCharge(now) end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetMobileAttackHold(boolean holding)
+		-- UIHUDController 공격 버튼(BtnMine)의 Pressed/Released → 홀드 플래그. UpdateCharge 폴링이 소비한다(낚시 릴 홀드와 같은 패턴).
+		local now = _UtilLogic.ElapsedSeconds
+		if holding then
+			self._T.AttackHeldSince = now
+			self._T.ChargeChecked = nil
+		elseif self._T.ChargeActive then
+			-- 뗄 때 따라오는 클릭 이벤트가 충전 발사 직후 탭 평타를 또 치지 않게 막는다.
+			self._T.SuppressTapUntil = now + 0.35
+		end
+		self._T.MobileAttackHold = holding
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestChargeStart()
+		-- 충전 시작을 서버에 알린다: 서버 시계로 충전 시간을 재기 위한 기준점이다.
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		if self.IsDead or self.IsSleeping or self.FishingState ~= "None" then return end
+		if not self:IsCombatSkillMap() then return end
+		if self:GetChargeStageFor(self:GetEquippedWeaponType(), 999) < 1 then return end
+		self._T.ChargeStartAt = _UtilLogic.ServerElapsedSeconds
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestChargeRelease(integer dirX, integer dirY)
+		-- 충전 해제: 서버가 잰 충전 시간으로 단계를 정하고 마법탄 발사 또는 생명 펄스를 실행한다. 클라가 말한 단계는 받지 않는다.
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		if self.IsDead or self.IsSleeping or self.FishingState ~= "None" then return end
+		local startAt = self._T.ChargeStartAt
+		self._T.ChargeStartAt = nil
+		if startAt == nil then return end
+		if not self:IsCombatSkillMap() then return end
+		local now = _UtilLogic.ServerElapsedSeconds
+		if now - (self._T.LastChargeFireAt or -999) < self.ChargeMinInterval then return end
+		local held = now - startAt
+		local weaponType = self:GetEquippedWeaponType()
+		local stage = self:GetChargeStageFor(weaponType, held + self.ChargeTolerance)
+		if stage < 1 then return end
+		local row = self:GetWeaponAttackRow(weaponType, "Charge", stage)
+		if row == nil then return end
+		-- 방향은 서버에서 -1/0/1 로 정리한다(큰 클라이언트 벡터로 원거리 시전할 수 없게). 둘 다 0 이면 서버가 보관한 방향.
+		if dirX > 0 then dirX = 1 elseif dirX < 0 then dirX = -1 else dirX = 0 end
+		if dirY > 0 then dirY = 1 elseif dirY < 0 then dirY = -1 else dirY = 0 end
+		if dirX == 0 and dirY == 0 then
+			dirX = self.LastDirectionX
+			dirY = self.LastDirectionY
+		end
+		local kind = self:SkillText(row, "Kind")
+		if kind == "HealPulse" then
+			if now < (self._T.PulseReadyAt or 0) then
+				self:ClientShowMineFeedback("[생명 펄스] 재충전 중입니다.", playerComp.UserId)
+				return
+			end
+			self._T.PulseReadyAt = now + self:SkillNumber(row, "LockoutSeconds", 3)
+			self:DoHealPulse(row)
+		elseif kind == "Projectile" then
+			self:FireWeaponProjectile(row, dirX, dirY)
+		else
+			return
+		end
+		self._T.LastChargeFireAt = now
+		log("[WEAPON] charge fire weapon=" .. weaponType .. " stage=" .. tostring(stage) .. " held=" .. string.format("%.2f", held))
 	end
 
 	@ExecSpace("ServerOnly")
@@ -2271,9 +2569,25 @@ script PlayerController extends Component
 		-- + 도착 보호: 클라가 맵을 그리는 동안(전환 커버 아래) 몬스터에게 맞지 않게 한다.
 		if self:IsServer() then
 			self:GuardHomeBounds()
-			self._T.ArrivalImmuneUntil = _UtilLogic.ElapsedSeconds + self.ArrivalProtectSeconds
-			self.ArrivalProtected = true
-			self:ScheduleArrivalEnd(self.ArrivalProtectSeconds)
+			-- 도착 보호는 몬스터가 있는 전투 맵에서만 건다. 마을·영지는 보호할 대상이 없고, 게임 시작(슬롯 로드)처럼
+			-- 전환 커버 통지(ServerNotifyWarpRevealed)가 없는 진입에서는 ArrivalProtectSeconds 내내 깜빡이기만 했다(2026-10-02 제작자 보고).
+			local mapName = isvalid(enteredMap) and enteredMap.Name or ""
+			local combatMap = mapName ~= "" and mapName ~= "town" and mapName ~= "map01" and string.sub(mapName, 1, 5) ~= "Home_"
+			if combatMap then
+				self._T.ArrivalImmuneUntil = _UtilLogic.ElapsedSeconds + self.ArrivalProtectSeconds
+				self.ArrivalProtected = true
+				self:ScheduleArrivalEnd(self.ArrivalProtectSeconds)
+			else
+				self._T.ArrivalImmuneUntil = 0
+				self.ArrivalProtected = false
+				if self._T.arrivalEndTimer ~= nil then
+					_TimerService:ClearTimer(self._T.arrivalEndTimer)
+					self._T.arrivalEndTimer = nil
+				end
+			end
+		else
+			-- 클라: 맵을 옮기면 충전 중이던 평타 충전은 버린다 (파티클 회수·상태 초기화).
+			self:CancelCharge()
 		end
 	end
 
@@ -2659,10 +2973,7 @@ script PlayerController extends Component
 
 	@ExecSpace("Client")
 	method void ClientOpenMainMenu(string metaJson)
-		-- 슬롯 선택 화면 오픈 (spawnFade 유지).
-		if _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true then
-			return
-		end
+		-- 슬롯 선택 화면 오픈 (spawnFade 유지). 테스트 모드도 연다 — 메뉴가 배지를 띄우고 서버가 테스트 전용 슬롯을 준다.
 		local ent = _EntityService:GetEntityByPath("/ui/MainMenuGroup/Controller")
 		if not isvalid(ent) then
 			log_warning("[MAINMENU] Controller missing")
@@ -3164,6 +3475,8 @@ script PlayerController extends Component
 		end
 		
 		log("[SKILL] Requesting cast " .. skillId .. " (slot " .. slotIndex .. ") dir " .. self.LastDirectionX .. "," .. self.LastDirectionY)
+		-- 스킬을 쓰면 충전 중이던 평타 충전은 버린다 (사전 검사를 모두 통과해 실제로 시전하는 경우에만).
+		self:CancelCharge()
 		self:ServerRequestCastSkill(skillId, self.LastDirectionX, self.LastDirectionY)
 	end
 
@@ -3212,7 +3525,7 @@ script PlayerController extends Component
 		local skillType = castRow:GetItem("Type")
 		local effectRUID = castRow:GetItem("EffectRUID")
 		if (skillType or "") == "Passive" then return end
-		local supported = { Melee = true, Ultimate = true, Dash = true, Projectile = true, Trap = true, Field = true, Guard = true, HealAura = true, Buff = true }
+		local supported = { Melee = true, Ultimate = true, Dash = true, Projectile = true, Trap = true, Field = true, Guard = true, HealAura = true, Buff = true, Summon = true }
 		if not supported[skillType] then return end
 		if skillType ~= "HealAura" and skillType ~= "Guard" and skillType ~= "Dash" and skillType ~= "Buff" and not self:IsCombatSkillMap() then return end
 		if skillType == "Projectile" then
@@ -3235,6 +3548,20 @@ script PlayerController extends Component
 		self.Mana = math.max(0, self.Mana - manaCost)
 		self.CooldownMap[skillId] = now
 		self:ClientSyncCooldown(skillId, now)
+
+		-- 확정 치명 예약(NextCrit 버프 — 그림자 걸음): 피해 스킬을 시전하면 버프를 소모하고 이 시전의 타격 창 동안 모든 타격을 치명으로 만든다.
+		-- 창 = 지연 착탄 + 장판 지속 / 투사체 비행 시간 + 0.5초. 이 시전이 버프를 주는 스킬이어도 버프는 아래 ApplySkillBuffs 에서 걸리므로 자기 자신에게는 쓰이지 않는다.
+		-- 소환은 제외한다 — 소환수 공격에는 치명이 없고, 창이 소환 지속시간(수십 초)만큼 늘어나 버린다.
+		if self:IsDamageSkillRow(castRow) and skillType ~= "Summon" then
+			local buffsCrit = self.Entity:GetComponent("script.PlayerBuffs")
+			if isvalid(buffsCrit) and buffsCrit:GetStatAdd("NextCrit") > 0 then
+				buffsCrit:RemoveBuffsByStat("NextCrit")
+				local window = self:SkillNumber(castRow, "ArmDelay", 0) + self:SkillNumber(castRow, "Duration", 0)
+				if skillType == "Projectile" then window = self:SkillNumber(castRow, "ProjectileLife", 2) end
+				self._T.ForcedCrit = { skillId = castId, untilAt = now + math.max(0.5, window) + 0.5 }
+				log("[CRIT] forced crit reserved skill=" .. castId .. " window=" .. string.format("%.2f", math.max(0.5, window) + 0.5))
+			end
+		end
 
 		-- T70: 시전 모션 (CastAction CSV — MineState ActionStateChangedEvent 미러). 공란=생략.
 		local castAction = self:SkillText(castRow, "CastAction")
@@ -3269,8 +3596,10 @@ script PlayerController extends Component
 		elseif skillType == "Guard" then
 			self:StartGuard(castRow, damageMul)
 		elseif skillType == "Buff" then
-			-- 자가 강화: 효과는 BuffIds 가 전부 맡는다(아래 ApplySkillBuffs).
-			log("[SKILL] self buff " .. castId)
+			-- 자가 강화는 BuffIds 가 맡는다(아래 ApplySkillBuffs). 도발·아군 버프·몬스터 약화 같은 범위 효과는 행의 열이 있을 때만.
+			self:ExecuteBuffSkill(castId, castRow)
+		elseif skillType == "Summon" then
+			self:ExecuteSummonSkill(castId, castRow)
 		else
 			self:CreateSkillArea(castId, dirX, dirY)
 		end
@@ -3484,8 +3813,14 @@ script PlayerController extends Component
 		if not isvalid(buffs) then return end
 		local duration = self:SkillNumber(row, "Duration", 0)
 		if duration > 0 then duration = duration * self:GetBuffDurationScale() end
+		local buffDs = _DataService:GetTable("BuffDataSet")
 		for _, buffId in ipairs(self:SplitList(ids, "|")) do
 			if buffId ~= "" then
+				-- 슈퍼아머는 초 단위 정밀 창도 함께 연다: 버프 만료는 os.time(정수 초)이라 1초 남짓한 시전 슈퍼아머(쇠망치 회전·그림자 난도)가 0초로 끝날 수 있다.
+				local buffRow = buffDs ~= nil and buffDs:FindRow("BuffId", buffId) or nil
+				if duration > 0 and self:SkillText(buffRow, "StatKey") == "SuperArmor" then
+					self._T.SuperArmorUntil = math.max(tonumber(self._T.SuperArmorUntil) or 0, _UtilLogic.ElapsedSeconds + duration)
+				end
 				local ok = buffs:ApplyBuffFor(buffId, duration)
 				log("[SKILL-BUFF] " .. self:SkillText(row, "SkillId") .. " -> " .. buffId .. " ok=" .. tostring(ok) .. " dur=" .. string.format("%.1f", duration))
 			end
@@ -3499,6 +3834,179 @@ script PlayerController extends Component
 		self._T.GuardUntil = now + self:SkillNumber(row, "Duration", 6) * self:GetBuffDurationScale()
 		self._T.GuardReduction = self:SkillNumber(row, "StatusValue", 0)
 		self._T.GuardReflection = reflection
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ExecuteBuffSkill(string skillId, any row)
+		-- Type=Buff 의 범위 효과 (job-branch-redesign §7.3·§7.5). 자기 자신에게 거는 BuffIds 는 시전부의 ApplySkillBuffs 가 맡는다.
+		--   TauntRadius·TauntDuration : 반경 안 몬스터의 표적을 나로 고정(쇠망치 도발). 보스는 MonsterAI 가 무시한다.
+		--   BuffTarget=Allies·BuffRadius : 반경 안 다른 플레이어에게도 BuffIds 를 건다(야생의 고무).
+		--   Status + BuffRadius : 반경 안 몬스터에게 피해 없이 상태이상만 건다(야생의 고무 → 약화).
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return end
+		local center = self.Entity.TransformComponent.WorldPosition:ToVector2()
+		local combatMap = self:IsCombatSkillMap()
+		local tauntR = self:SkillNumber(row, "TauntRadius", 0)
+		local tauntS = self:SkillNumber(row, "TauntDuration", 0)
+		local radius = self:SkillNumber(row, "BuffRadius", 0)
+		local hasStatus = self:SkillText(row, "Status") ~= "" and radius > 0
+		local taunted = 0
+		local weakened = 0
+		if combatMap and ((tauntR > 0 and tauntS > 0) or hasStatus) then
+			for _, comp in ipairs(map:GetChildComponentsByTypeName("script.Monster", false)) do
+				---@type Monster
+				local monster = comp
+				local e = monster.Entity
+				if isvalid(e) and not monster.IsDead and monster.Hp > 0 then
+					local d = Vector2.Distance(center, e.TransformComponent.WorldPosition:ToVector2())
+					if tauntR > 0 and tauntS > 0 and d <= tauntR then
+						local ai = e:GetComponent("script.MonsterAI")
+						if isvalid(ai) then
+							---@type MonsterAI
+							local a = ai
+							a:SetForcedTarget(self.Entity, tauntS, 2)
+							taunted = taunted + 1
+						end
+					end
+					if hasStatus and d <= radius then
+						monster:ApplySkillStatus(skillId, self.Entity)
+						weakened = weakened + 1
+					end
+				end
+			end
+		end
+		local allies = 0
+		if self:SkillText(row, "BuffTarget") == "Allies" and radius > 0 then
+			for _, player in pairs(_UserService:GetUsersByMapName(map.Name)) do
+				if isvalid(player) and player ~= self.Entity then
+					local pc = player:GetComponent("script.PlayerController")
+					if isvalid(pc) and not pc.IsDead and Vector2.Distance(center, player.TransformComponent.WorldPosition:ToVector2()) <= radius then
+						self:ApplySkillBuffsTo(player, row)
+						allies = allies + 1
+					end
+				end
+			end
+		end
+		log("[SKILL] buff " .. skillId .. " taunted=" .. tostring(taunted) .. " allies=" .. tostring(allies) .. " status=" .. tostring(weakened))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplySkillBuffsTo(Entity player, any row)
+		-- 다른 플레이어에게 스킬 행의 BuffIds 를 건다(아군 버프). 지속시간 = 행 Duration × 시전자의 지속시간 배율.
+		local ids = self:SkillText(row, "BuffIds")
+		if ids == "" or not isvalid(player) then return end
+		local buffs = player:GetComponent("script.PlayerBuffs")
+		if not isvalid(buffs) then return end
+		local duration = self:SkillNumber(row, "Duration", 0)
+		if duration > 0 then duration = duration * self:GetBuffDurationScale() end
+		for _, buffId in ipairs(self:SplitList(ids, "|")) do
+			if buffId ~= "" then buffs:ApplyBuffFor(buffId, duration) end
+		end
+	end
+
+	method number GetSummonPowerScale()
+		-- 소환수 피해·체력 배율 = 1 + 무리의 우두머리(SummonPowerPct).
+		return 1 + math.max(0, self:GetPassiveBonus("SummonPowerPct"))
+	end
+
+	@ExecSpace("ServerOnly")
+	method integer ComputeSummonDamage(string skillId)
+		-- 소환수 1타 피해 = 시전 스킬의 계열 공격력 × 스킬 배율(레벨) × 소환수 배율. Summon.Attack 이 부른다.
+		local mul = self:GetEffectiveDamageMultiplier(skillId, self:GetSkillLevel(skillId)) * self:GetSummonPowerScale()
+		return self:ComputeSkillDamage(skillId, mul)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ExecuteSummonSkill(string skillId, any row)
+		-- 소환(Type=Summon, job-branch-redesign §7.4): SkillDataSet.SummonId → SummonDataSet 행의 모델을 내 앞에 스폰하고 script.Summon 을 붙인다.
+		-- 같은 스킬의 소환수는 MaxCount(+ MaxBonusStat 패시브 — 무리의 우두머리 SummonMax)까지. 넘치면 가장 오래된 것을 돌려보낸다.
+		local map = self.Entity.CurrentMap
+		local summonId = self:SkillText(row, "SummonId")
+		local sds = _DataService:GetTable("SummonDataSet")
+		local srow = sds ~= nil and sds:FindRow("SummonId", summonId) or nil
+		if not isvalid(map) or srow == nil then
+			log_warning("[SUMMON] missing SummonDataSet row: " .. tostring(summonId))
+			return
+		end
+		local modelName = self:SkillText(srow, "ModelName")
+		local modelId = _EntryService:GetModelIdByName(modelName)
+		if modelId == nil or modelId == "" then modelId = modelName end
+		if self._T.Summons == nil then self._T.Summons = {} end
+		local list = {}
+		for _, e in ipairs(self._T.Summons[skillId] or {}) do
+			if isvalid(e) then list[#list + 1] = e end
+		end
+		local maxCount = math.max(1, math.floor(self:SkillNumber(srow, "MaxCount", 1)))
+		local bonusStat = self:SkillText(srow, "MaxBonusStat")
+		if bonusStat ~= "" then maxCount = maxCount + math.floor(math.max(0, self:GetPassiveBonus(bonusStat)) + 0.0001) end
+		while #list >= maxCount do
+			local oldest = table.remove(list, 1)
+			local old = oldest:GetComponent("script.Summon")
+			if isvalid(old) then
+				---@type Summon
+				local o = old
+				o:Dismiss("replaced")
+			else
+				oldest:Destroy()
+			end
+		end
+		local pos = self.Entity.TransformComponent.WorldPosition
+		local spawnPos = Vector3(pos.x + self.LastDirectionX * 1.2, pos.y + self.LastDirectionY * 1.2, pos.z)
+		if self:IsObstacle(Vector2(spawnPos.x, spawnPos.y), 0.3, nil) then spawnPos = pos end
+		local e = _SpawnService:SpawnByModelId(modelId, "Summon_" .. summonId, spawnPos, map)
+		if not isvalid(e) then
+			log_warning("[SUMMON] spawn failed model=" .. tostring(modelName))
+			return
+		end
+		e:AddComponent("script.Summon")
+		local comp = e:GetComponent("script.Summon")
+		local playerComp = self.Entity.PlayerComponent
+		local hpBase = (playerComp ~= nil and playerComp.MaxHp or 100) * self:GetSummonPowerScale()
+		if not isvalid(comp) then
+			e:Destroy()
+			return
+		end
+		---@type Summon
+		local s = comp
+		if not s:Setup(self.Entity, skillId, summonId, self:SkillNumber(row, "Duration", 30), hpBase) then
+			e:Destroy()
+			return
+		end
+		list[#list + 1] = e
+		self._T.Summons[skillId] = list
+		log("[SUMMON] cast " .. skillId .. " id=" .. summonId .. " count=" .. tostring(#list) .. "/" .. tostring(maxCount))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void HealSummonsNear(Vector3 center, number radius, integer amount)
+		-- 내 소환수 중 center 반경 안에 있는 것을 회복한다(회복 오라·생명 펄스가 아군 소환수도 살린다).
+		if amount <= 0 or self._T.Summons == nil then return end
+		for _, list in pairs(self._T.Summons) do
+			for _, e in ipairs(list) do
+				if isvalid(e) and Vector2.Distance(e.TransformComponent.WorldPosition:ToVector2(), center:ToVector2()) <= radius then
+					local comp = e:GetComponent("script.Summon")
+					if isvalid(comp) then
+						---@type Summon
+						local s = comp
+						s:Heal(amount)
+					end
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void HealAllSummonsNear(Entity map, Vector3 center, number radius, integer amount)
+		-- 맵의 모든 플레이어 소환수 중 반경 안의 것을 회복한다.
+		if not isvalid(map) or amount <= 0 then return end
+		for _, player in pairs(_UserService:GetUsersByMapName(map.Name)) do
+			local pc = isvalid(player) and player:GetComponent("script.PlayerController") or nil
+			if isvalid(pc) then
+				---@type PlayerController
+				local controller = pc
+				controller:HealSummonsNear(center, radius, amount)
+			end
+		end
 	end
 
 	@ExecSpace("ServerOnly")
@@ -3554,6 +4062,43 @@ script PlayerController extends Component
 				end
 			end
 		end
+	end
+
+	method number GetCritChance()
+		-- 치명타 확률 = 기본 + 솜씨 × DexCritPerPoint + 패시브·장비(CritChance), 0 ~ MaxCritChance. PlayerCombat.CalcCritical 이 부른다.
+		local chance = self.BaseCritChance + self.StatDex * self.DexCritPerPoint + self:GetPassiveBonus("CritChance")
+		return math.max(0, math.min(self.MaxCritChance, chance))
+	end
+
+	method number GetCritDamageRate()
+		-- 치명타 피해 배율 = 기본 + 패시브·장비(CritDamage). PlayerCombat.GetCriticalDamageRate 가 부른다.
+		return self.BaseCritDamage + math.max(0, self:GetPassiveBonus("CritDamage"))
+	end
+
+	method number GetCritChanceFor(string skillId)
+		-- 이 타격의 치명 확률 = GetCritChance(상한 MaxCritChance) + 시전 스킬의 CritBonus(급소 찌르기·불씨 저격). 스킬 보너스는 상한 위로 얹고 최대 100%.
+		-- 소환 스킬(Type=Summon)의 타격 = 소환수 공격이라 치명이 없다(단순화, §7.1).
+		local chance = self:GetCritChance()
+		if skillId == nil or skillId == "" then return chance end
+		local ds = _DataService:GetTable("SkillDataSet")
+		if ds == nil then return chance end
+		local row = ds:FindRow("SkillId", skillId)
+		if self:SkillText(row, "Type") == "Summon" then return 0 end
+		return math.min(1, chance + math.max(0, self:SkillNumber(row, "CritBonus", 0)))
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsForcedCrit(string skillId)
+		-- 확정 치명(NextCrit 버프 — 그림자 걸음)을 이번 시전에 예약해 둔 스킬의 타격인가. 시전 때 버프를 소모하고 그 시전의 모든 타격(장판 틱·투사체 포함)에 적용한다.
+		local fc = self._T.ForcedCrit
+		if fc == nil or skillId == nil or skillId == "" then return false end
+		return fc.skillId == skillId and _UtilLogic.ElapsedSeconds < fc.untilAt
+	end
+
+	method number GetControlDurationScale()
+		-- 내가 건 상태이상(속박·기절·둔화·산성·방어력 감소) 지속 배율 = 1 + 교감 × SpiControlPerPoint + 패시브·장비(ControlDurationPct).
+		-- Monster.ApplySkillHit 이 상태이상 지속시간에 곱한다.
+		return 1 + self.StatSpi * self.SpiControlPerPoint + math.max(0, self:GetPassiveBonus("ControlDurationPct"))
 	end
 
 	method number GetTrinityBalance()
@@ -3613,8 +4158,8 @@ script PlayerController extends Component
 			end
 			cd = cd - buffs:GetStatAdd("GatherSpeed") * 0.05
 		end
-		-- 솜씨: 1 포인트당 채집 속도 +DexGatherPerPoint
-		cd = cd / (1 + self.StatDex * self.DexGatherPerPoint)
+		-- 힘: 1 포인트당 공격·채집 속도 +StrSpeedPerPoint (평타 간격도 이 쿨다운을 따른다 — 구 솜씨 효과를 힘으로 이관, 2026-10-01)
+		cd = cd / (1 + self.StatStr * self.StrSpeedPerPoint)
 		return math.max(0.2, cd)
 	end
 
@@ -3876,6 +4421,17 @@ script PlayerController extends Component
 		return 0
 	end
 
+	method number GetPowerStatPoints(string statKey)
+		-- 계열 공격력에 쓰는 포인트 = 분배 포인트 + 환산 포인트. 강철 체격(VitToStr)은 체력 포인트의 일부를 힘 계열로 더한다.
+		-- 캐릭터창의 분배 숫자(GetStatPoints)는 그대로 둔다 — 환산분은 계열 공격력 합계에만 보인다.
+		local pts = self:GetStatPoints(statKey)
+		if statKey == "STR" then
+			local ratio = self:GetPassiveBonus("VitToStr")
+			if ratio > 0 then pts = pts + math.floor(self.StatVit * ratio + 0.0001) end
+		end
+		return pts
+	end
+
 	method string GetStatLabel(string statKey)
 		if statKey == "STR" then return "힘" end
 		if statKey == "DEX" then return "솜씨" end
@@ -3896,7 +4452,7 @@ script PlayerController extends Component
 			base = c.BaseDamage
 		end
 		local lv = math.max(1, self.Level or 1)
-		local growth = (lv - 1) * self.LevelPowerGrowth + self:GetStatPoints(statKey) * self.StatPowerPerPoint
+		local growth = (lv - 1) * self.LevelPowerGrowth + self:GetPowerStatPoints(statKey) * self.StatPowerPerPoint
 		local buff = 0
 		local pct = 0
 		local buffs = self.Entity:GetComponent("script.PlayerBuffs")
@@ -3966,6 +4522,64 @@ script PlayerController extends Component
 		if self.Mana > maxMana then self.Mana = maxMana end
 	end
 
+	@ExecSpace("ServerOnly")
+	method any BuildProgressReset(string kind)
+		-- 선검증·후적용: 소모품 경로는 이 계획을 만든 뒤 1개 소모하고 Yield 없이 적용한다.
+		if kind ~= "AP" and kind ~= "JobSP" and kind ~= "All" then return nil end
+		local resetAp = (kind == "AP" or kind == "All")
+		local resetSp = (kind == "JobSP" or kind == "All")
+		local refundAp = 0
+		local refundSp = 0
+		local nextLevels = self.SkillLevelsJson
+		if resetAp then
+			refundAp = math.max(0, self.StatStr) + math.max(0, self.StatDex) + math.max(0, self.StatInt)
+				+ math.max(0, self.StatSpi) + math.max(0, self.StatVit)
+		end
+		if resetSp then
+			local ds = _DataService:GetTable("SkillDataSet")
+			if ds == nil then return nil end
+			local ok, levels = pcall(function() return _HttpService:JSONDecode(self.SkillLevelsJson) end)
+			if not ok or type(levels) ~= "table" then return nil end
+			for i = 1, ds:GetRowCount() do
+				local row = ds:FindRow("SkillId", ds:GetCell(i, "SkillId"))
+				local job = self:SkillText(row, "JobId")
+				if job == "" or job ~= self.JobId or self:SkillText(row, "JobVariantOf") ~= "" then continue end
+				local id = self:SkillText(row, "SkillId")
+				-- 최대 레벨을 줄인 패치에서도 구 레벨 전량 환급. SPCost는 이번 패치에서 변경하지 않는다.
+				local level = math.max(0, math.floor(tonumber(levels[id]) or 0))
+				local cost = self:SkillNumber(row, "SPCost", 1)
+				if cost < 0 or cost ~= math.floor(cost) then return nil end
+				refundSp = refundSp + level * cost
+				levels[id] = nil
+			end
+			nextLevels = _HttpService:JSONEncode(levels)
+		end
+		if kind ~= "All" and refundAp + refundSp <= 0 then return nil end
+		return { resetAp = resetAp, resetSp = resetSp, ap = refundAp, sp = refundSp, levels = nextLevels }
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplyProgressReset(any plan)
+		if plan == nil then return end
+		if plan.resetAp then
+			self.AP = self.AP + plan.ap
+			self.StatStr = 0
+			self.StatDex = 0
+			self.StatInt = 0
+			self.StatSpi = 0
+			self.StatVit = 0
+		end
+		if plan.resetSp then
+			self.SP = self.SP + plan.sp
+			self.SkillLevelsJson = plan.levels
+			self:SanitizeEquippedSkills()
+		end
+		self:ApplyDerivedStats()
+		local player = self.Entity.PlayerComponent
+		if plan.markDirty ~= false and player ~= nil and _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(player.UserId) end
+		log("[BUILD-RESET] AP=" .. tostring(plan.ap) .. " SP=" .. tostring(plan.sp) .. " job=" .. self.JobId)
+	end
+
 	@ExecSpace("Server")
 	method void ServerRequestAllocateStat(string statKey)
 		-- 캐릭터 정보창의 능력치 + 버튼. AP 1 을 해당 능력치에 넣는다.
@@ -4000,6 +4614,7 @@ script PlayerController extends Component
 		if row == nil then return "액티브" end
 		local typeStr = row:GetItem("Type") or ""
 		if typeStr == "Passive" then return "패시브" end
+		if typeStr == "Summon" then return "소환 스킬" end
 		local model = ""
 		local okM, rawM = pcall(function() return row:GetItem("DamageModel") end)
 		if okM and rawM ~= nil then model = tostring(rawM) end
@@ -4027,12 +4642,96 @@ script PlayerController extends Component
 		return model == "Physical" or model == "Magic" or model == "Throw"
 	end
 
+	method integer GetWeaponAttackFor(string statKey, string damageModel)
+		-- 무기 수치. 삼위일체는 장갑 방어력 환산(무기 공격력은 더하지 않는다), 마법 피해는 MagicAttack, 그 밖은 Attack.
+		-- 예전에는 계열(지능=MagicAttack)로 골랐지만, 계열과 피해 종류가 갈라진 뒤(예: 솜씨 계열 마법 스킬)에는 피해 종류(DamageModel)로 고른다.
+		if statKey == "TRI" then return self:GetGloveFistAttack() end
+		if damageModel == "Magic" then return self:GetGearStat("MagicAttack") end
+		return self:GetGearStat("Attack")
+	end
+
 	method integer GetSkillCore(any row)
-		-- 스킬 피해 코어 = 계열 공격력(무기 포함) + 장비 스킬 공격력 + 스킬 기본 위력(SkillPower).
+		-- 스킬 피해 코어 = 계열 공격력 + 무기 수치(DamageModel 기준) + 장비 스킬 공격력 + 스킬 기본 위력(SkillPower).
 		local stat = self:GetSkillScaleStat(row)
 		local skillPower = 0
 		if row ~= nil then skillPower = math.floor(self:SkillNumber(row, "SkillPower", 0)) end
-		return self:GetStatAttackTotal(stat) + self:GetGearStat("SkillAttack") + skillPower
+		return self:GetStatPower(stat) + self:GetWeaponAttackFor(stat, self:SkillText(row, "DamageModel")) + self:GetGearStat("SkillAttack") + skillPower
+	end
+
+	method string GetEquippedWeaponType()
+		-- 주무기의 평타 방식(item_dataset.WeaponType: Melee 기본 / Wand / Nature). 서버·클라 공용.
+		-- 직업 제한을 거친 실효 주무기(자동 주무기 포함) 기준이다.
+		local inv = self.Entity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return "Melee" end
+		---@type PlayerInventory
+		local p = inv
+		local key = p:GetGearKey("weapon")
+		if key == "" then return "Melee" end
+		local t = p:GetItemText(p:GetBaseItemName(key), "WeaponType")
+		if t == "" then return "Melee" end
+		return t
+	end
+
+	method table GetWeaponAttackList(string weaponType)
+		-- WeaponAttackDataSet 에서 이 무기 종류의 행을 { key, mode, stage, hold } 목록으로 캐시한다 (정적 데이터라 한 번만 읽는다).
+		local cache = self._T.WeaponAttackCache
+		if cache == nil then
+			cache = {}
+			self._T.WeaponAttackCache = cache
+		end
+		local list = cache[weaponType]
+		if list ~= nil then return list end
+		list = {}
+		local ds = _DataService:GetTable("WeaponAttackDataSet")
+		if ds ~= nil then
+			for i = 1, ds:GetRowCount() do
+				if ds:GetCell(i, "WeaponType") == weaponType then
+					list[#list + 1] = {
+						key = ds:GetCell(i, "Key"),
+						mode = ds:GetCell(i, "Mode"),
+						stage = math.floor(tonumber(ds:GetCell(i, "Stage")) or 1),
+						hold = tonumber(ds:GetCell(i, "HoldSeconds")) or 0,
+						-- 이 패시브(PassiveStat)를 배워야 쓰는 변형(투척 숙련 → 단검 탭 투척). 공란 = 항상.
+						req = ds:GetCell(i, "RequirePassive") or "",
+					}
+				end
+			end
+		end
+		cache[weaponType] = list
+		return list
+	end
+
+	method any GetWeaponAttackRow(string weaponType, string mode, integer stage)
+		-- 무기 종류·방식(Tap/Charge)·단계의 WeaponAttackDataSet 행. 없거나 RequirePassive 를 아직 배우지 않았으면 nil.
+		for _, e in ipairs(self:GetWeaponAttackList(weaponType)) do
+			if e.mode == mode and e.stage == stage and (e.req == "" or self:GetPassiveBonus(e.req) > 0) then
+				local ds = _DataService:GetTable("WeaponAttackDataSet")
+				if ds ~= nil then return ds:FindRow("Key", e.key) end
+			end
+		end
+		return nil
+	end
+
+	method integer GetChargeStageFor(string weaponType, number seconds)
+		-- 충전 시간(초)이 도달한 가장 높은 충전 단계. 1단계 미달이거나 충전 행이 없는 무기면 0. 서버·클라 공용.
+		local best = 0
+		local bestHold = -1
+		for _, e in ipairs(self:GetWeaponAttackList(weaponType)) do
+			if e.mode == "Charge" and e.hold <= seconds and e.hold > bestHold then
+				best = e.stage
+				bestHold = e.hold
+			end
+		end
+		return best
+	end
+
+	method integer ComputeWeaponAttackDamage(any row)
+		-- 무기 평타 변형의 피해(또는 회복량) = (계열 공격력 + 무기 수치) × 배율.
+		-- 평타라서 장비 SkillAttack 은 더하지 않는다 (SkillAttack = 평타를 뺀 모든 스킬).
+		local stat = self:SkillText(row, "Stat")
+		if stat == "" then stat = "STR" end
+		local weapon = self:GetWeaponAttackFor(stat, self:SkillText(row, "DamageModel"))
+		return math.floor((self:GetStatPower(stat) + weapon) * self:SkillNumber(row, "Multiplier", 1.0))
 	end
 
 	method string GetSkillDamageLine(any row)
@@ -4046,12 +4745,19 @@ script PlayerController extends Component
 		local mul = self:GetEffectiveDamageMultiplier(skillId, shownLevel)
 		local stat = self:GetSkillScaleStat(row)
 		local core = self:GetSkillCore(row)
-		local dmg = math.floor(core * mul)
+		local throwBonus = 0
+		if self:SkillText(row, "DamageModel") == "Throw" then throwBonus = self:GetPassiveBonus("ThrowDamagePct") end
+		local dmg = math.floor(core * mul * (1 + throwBonus))
 		local pct = math.floor(mul * 100 + 0.5)
 		local line = "피해: " .. self:GetStatLabel(stat) .. " 계열 공격력 기준 " .. tostring(pct) .. "%"
 		line = line .. "\n현재 1타 약 " .. tostring(dmg) .. " (위력 " .. tostring(core) .. " × " .. tostring(pct) .. "%"
 		if level < 1 then line = line .. ", Lv1 기준" end
 		line = line .. ")"
+		if throwBonus > 0 then line = line .. "\n투척 피해 보너스 +" .. tostring(math.floor(throwBonus * 100 + 0.5)) .. "%" end
+		local critBonus = self:SkillNumber(row, "CritBonus", 0)
+		if critBonus > 0 then
+			line = line .. "\n치명 확률 +" .. tostring(math.floor(critBonus * 100 + 0.5)) .. "% (현재 " .. tostring(math.floor(self:GetCritChanceFor(skillId) * 100 + 0.5)) .. "%)"
+		end
 		local per = self:SkillNumber(row, "DamagePerLevel", 0)
 		if per > 0 then
 			line = line .. "\n스킬 레벨당 배율 +" .. tostring(math.floor(per * 100 + 0.5)) .. "%"
@@ -4071,7 +4777,9 @@ script PlayerController extends Component
 		end
 		local stat = self:GetSkillScaleStat(row)
 		local core = self:GetSkillCore(row)
-		local dmg = math.floor(core * damageMul)
+		local throwBonus = 0
+		if self:SkillText(row, "DamageModel") == "Throw" then throwBonus = self:GetPassiveBonus("ThrowDamagePct") end
+		local dmg = math.floor(core * damageMul * (1 + throwBonus))
 		log("[DMG] skill=" .. tostring(skillId) .. " stat=" .. stat .. " core=" .. tostring(core)
 			.. " mul=" .. string.format("%.2f", damageMul) .. " -> " .. tostring(dmg))
 		return dmg
@@ -4159,6 +4867,53 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("ServerOnly")
+	method boolean SpawnPlayerProjectile(table spec)
+		-- 투사체 한 발 생성 (스킬·무기 평타 공용). spec 은 호출자가 자기 데이터셋 행에서 만든 값 묶음이다.
+		-- 행을 직접 넘기지 않는 이유: 열 이름이 데이터셋마다 달라 없는 열을 읽으면 LEA-3011 이 난다 (pcall 로도 로그는 남는다).
+		-- spec: name, skillId("" = 스킬이 아닌 평타), damage, dx, dy, ruid, tint(Color|nil), speed, life, visual, hitSize,
+		--       pierce, splashSize, splashMul, impactOnly, grow, hitRUID, hitScale
+		local map = self.Entity.CurrentMap
+		local modelId = _EntryService:GetModelIdByName("Projectile_Fireball")
+		if not isvalid(map) or modelId == nil or modelId == "" then return false end
+		local pos = self.Entity.TransformComponent.WorldPosition
+		local proj = _SpawnService:SpawnByModelId(modelId, "Projectile_" .. spec.name, Vector3(pos.x + spec.dx * 1.2, pos.y + spec.dy * 1.2, pos.z), map)
+		if not isvalid(proj) then return false end
+		local sprite = proj.SpriteRendererComponent
+		if isvalid(sprite) then
+			if spec.ruid ~= "" then sprite.SpriteRUID = spec.ruid end
+			-- 틴트는 곱연산이다(규칙 61) — 공식 리소스 하나를 색만 바꿔 여러 투사체로 쓴다.
+			if spec.tint ~= nil then sprite.Color = spec.tint end
+			sprite.IgnoreMapLayerCheck = true
+			sprite.SortingLayer = _RenderLayers.EntityLayer
+			sprite.OrderInLayer = 500
+			sprite.FlipX = spec.dx > 0
+		end
+		if not isvalid(proj.KinematicbodyComponent) then proj:AddComponent("KinematicbodyComponent") end
+		proj.KinematicbodyComponent.EnableJump = false
+		proj.KinematicbodyComponent.EnableShadow = false
+		proj.KinematicbodyComponent.EnableTileCollision = false
+		proj:AddComponent("script.Projectile")
+		local p = proj:GetComponent("script.Projectile")
+		if not isvalid(p) then
+			proj:Destroy()
+			return false
+		end
+		p:Initialize(self.Entity, Vector2(spec.dx, spec.dy), spec.damage, spec.speed, spec.hitRUID)
+		p.SkillId = spec.skillId
+		p.HitEffectScale = spec.hitScale
+		p.LifeTime = spec.life
+		-- VisualSize: 그림 배율만(판정 HitSize 와 분리).
+		p.VisualSize = spec.visual
+		p.HitSize = spec.hitSize
+		p.PierceCount = spec.pierce
+		p.SplashSize = spec.splashSize
+		p.SplashMultiplier = spec.splashMul
+		p.ImpactOnly = spec.impactOnly
+		p.Grow = spec.grow
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
 	method void ExecuteProjectileSkill(string skillId, number damageMul, integer dirX, integer dirY, string hitEffectRUID, number hitEffectScale)
 		local map = self.Entity.CurrentMap
 		local modelId = _EntryService:GetModelIdByName("Projectile_Fireball")
@@ -4167,48 +4922,123 @@ script PlayerController extends Component
 		if row == nil then return end
 		local count = math.max(1, math.min(9, math.floor(self:SkillNumber(row, "ProjectileCount", 1))))
 		local spread = math.rad(self:SkillNumber(row, "SpreadDegrees", 0))
-		local pos = self.Entity.TransformComponent.WorldPosition
 		local damage = self:ComputeSkillDamage(skillId, damageMul)
+		-- 발마다 같은 값(방향만 다르다). ProjectileScale 공란이면 ProjectileSize 를 그림 배율로도 쓴다.
+		local spec = {
+			name = skillId,
+			skillId = skillId,
+			damage = damage,
+			dx = 0,
+			dy = 0,
+			ruid = self:SkillText(row, "ProjectileRUID"),
+			tint = nil,
+			speed = self:SkillNumber(row, "ProjectileSpeed", 6),
+			life = self:SkillNumber(row, "ProjectileLife", 2),
+			visual = self:SkillNumber(row, "ProjectileScale", self:SkillNumber(row, "ProjectileSize", 2)),
+			hitSize = self:SkillNumber(row, "ProjectileSize", 1.6),
+			pierce = math.floor(self:SkillNumber(row, "PierceCount", 1)),
+			splashSize = self:SkillNumber(row, "SplashSize", 0),
+			splashMul = self:SkillNumber(row, "SplashMultiplier", 0),
+			impactOnly = self:SkillText(row, "ImpactOnly") == "true",
+			grow = self:SkillText(row, "GrowProjectile") == "true",
+			hitRUID = hitEffectRUID,
+			hitScale = hitEffectScale,
+		}
 		for i = 1, count do
 			local angle = count > 1 and (-spread * 0.5 + spread * (i - 1) / (count - 1)) or 0
-			local dx = dirX * math.cos(angle) - dirY * math.sin(angle)
-			local dy = dirX * math.sin(angle) + dirY * math.cos(angle)
-			local proj = _SpawnService:SpawnByModelId(modelId, "Projectile_" .. skillId, Vector3(pos.x + dx * 1.2, pos.y + dy * 1.2, pos.z), map)
-			if isvalid(proj) then
-				local sprite = proj.SpriteRendererComponent
-				if isvalid(sprite) then
-					local ruid = self:SkillText(row, "ProjectileRUID")
-					if ruid ~= "" then sprite.SpriteRUID = ruid end
-					sprite.IgnoreMapLayerCheck = true
-					sprite.SortingLayer = _RenderLayers.EntityLayer
-					sprite.OrderInLayer = 500
-					sprite.FlipX = dx > 0
-				end
-				if not isvalid(proj.KinematicbodyComponent) then proj:AddComponent("KinematicbodyComponent") end
-				proj.KinematicbodyComponent.EnableJump = false
-				proj.KinematicbodyComponent.EnableShadow = false
-				proj.KinematicbodyComponent.EnableTileCollision = false
-				proj:AddComponent("script.Projectile")
-				local p = proj:GetComponent("script.Projectile")
-				if isvalid(p) then
-					p:Initialize(self.Entity, Vector2(dx, dy), damage, self:SkillNumber(row, "ProjectileSpeed", 6), hitEffectRUID)
-					p.SkillId = skillId
-					p.HitEffectScale = hitEffectScale
-					p.LifeTime = self:SkillNumber(row, "ProjectileLife", 2)
-					-- ProjectileScale: 그림 배율만(판정 HitSize 와 분리). 공란이면 기존처럼 ProjectileSize 를 쓴다.
-					p.VisualSize = self:SkillNumber(row, "ProjectileScale", self:SkillNumber(row, "ProjectileSize", 2))
-					p.HitSize = self:SkillNumber(row, "ProjectileSize", 1.6)
-					p.PierceCount = math.floor(self:SkillNumber(row, "PierceCount", 1))
-					p.SplashSize = self:SkillNumber(row, "SplashSize", 0)
-					p.SplashMultiplier = self:SkillNumber(row, "SplashMultiplier", 0)
-					p.ImpactOnly = self:SkillText(row, "ImpactOnly") == "true"
-					p.Grow = self:SkillText(row, "GrowProjectile") == "true"
-				else
-					proj:Destroy()
+			spec.dx = dirX * math.cos(angle) - dirY * math.sin(angle)
+			spec.dy = dirX * math.sin(angle) + dirY * math.cos(angle)
+			self:SpawnPlayerProjectile(spec)
+		end
+		log("[SKILL] projectile skill=" .. skillId .. " count=" .. count)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void PlayWeaponAttackPresentation(any row, integer dirX, integer dirY, boolean atCaster)
+		-- 무기 평타 변형의 시전 모션·이펙트·사운드 (스킬 시전과 같은 장치). 열이 비어 있으면 그 항목은 건너뛴다.
+		local castAction = self:SkillText(row, "CastAction")
+		if castAction ~= "" then self:MulticastPlayCastAction(castAction) end
+		local fx = self:SkillText(row, "EffectRUID")
+		if fx ~= "" then
+			local pos = self.Entity.TransformComponent.WorldPosition
+			local off = 0.0
+			if not atCaster then off = self.SkillEffectForwardOffset end
+			self:MulticastPlayEffectEx(fx, Vector3(pos.x + dirX * off, pos.y + dirY * off, pos.z), dirX > 0, self:SkillNumber(row, "EffectScale", 1))
+		end
+		local snd = self:SkillText(row, "SoundRUID")
+		if snd ~= "" then self:MulticastPlaySkillSound(snd) end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void FireWeaponProjectile(any row, integer dirX, integer dirY)
+		-- 무기 평타 변형(WeaponAttackDataSet Kind=Projectile): 자연 무기 탭 정령탄 · 마법봉 충전탄.
+		-- 피해 = (계열 공격력 + 무기 수치) × 배율. 스킬이 아니므로 skillId 는 "" (상태이상·콤보·넉백 예외 없음 — 평타는 넉백을 준다).
+		local tint = nil
+		local tintText = self:SkillText(row, "ProjectileTint")
+		if tintText ~= "" then
+			local rgb = self:SplitList(tintText, "|")
+			tint = Color(tonumber(rgb[1]) or 1, tonumber(rgb[2]) or 1, tonumber(rgb[3]) or 1, 1)
+		end
+		local damage = self:ComputeWeaponAttackDamage(row)
+		-- DamageBonusStat: 이 변형에만 붙는 패시브 피해 보너스(투척 숙련 → BasicThrowDamagePct). 공란 = 없음.
+		local bonusStat = self:SkillText(row, "DamageBonusStat")
+		if bonusStat ~= "" then damage = math.floor(damage * (1 + math.max(0, self:GetPassiveBonus(bonusStat)))) end
+		local spec = {
+			name = "Basic",
+			skillId = "",
+			damage = damage,
+			dx = dirX,
+			dy = dirY,
+			ruid = self:SkillText(row, "ProjectileRUID"),
+			tint = tint,
+			speed = self:SkillNumber(row, "ProjectileSpeed", 8),
+			life = self:SkillNumber(row, "ProjectileLife", 0.7),
+			visual = self:SkillNumber(row, "ProjectileScale", self:SkillNumber(row, "ProjectileSize", 1.2)),
+			hitSize = self:SkillNumber(row, "ProjectileSize", 1.2),
+			pierce = math.floor(self:SkillNumber(row, "PierceCount", 1)),
+			splashSize = 0,
+			splashMul = 0,
+			impactOnly = false,
+			grow = false,
+			hitRUID = self:SkillText(row, "HitEffectRUID"),
+			hitScale = self:SkillNumber(row, "HitEffectScale", 1.0),
+		}
+		if not self:SpawnPlayerProjectile(spec) then return end
+		self:PlayWeaponAttackPresentation(row, dirX, dirY, false)
+		log("[WEAPON] shot " .. self:SkillText(row, "Key") .. " dmg=" .. tostring(damage))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void DoHealPulse(any row)
+		-- 자연 무기 충전 방출(WeaponAttackDataSet Kind=HealPulse): 반경 안의 아군(자신 포함)을 즉시 회복한다.
+		-- 회복량 = (계열 공격력 + 무기 수치) × 배율 × (1 + HealPowerPct). 지연 콜백이 없는 즉시 판정이다.
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return end
+		local radius = self:SkillNumber(row, "Radius", 3)
+		local center = self.Entity.TransformComponent.WorldPosition
+		local amount = math.floor(self:ComputeWeaponAttackDamage(row) * (1 + self:GetPassiveBonus("HealPowerPct")))
+		local healed = 0
+		for _, player in pairs(_UserService:GetUsersByMapName(map.Name)) do
+			local pc = player:GetComponent("script.PlayerController")
+			if isvalid(pc) and not pc.IsDead then
+				local p = player.TransformComponent.WorldPosition
+				if Vector2.Distance(p:ToVector2(), center:ToVector2()) <= radius then
+					local hp = player.PlayerComponent
+					if hp ~= nil then
+						hp.Hp = math.min(hp.MaxHp, hp.Hp + amount)
+						healed = healed + 1
+					end
 				end
 			end
 		end
-		log("[SKILL] projectile skill=" .. skillId .. " count=" .. count)
+		-- 소환수도 회복한다(§3.4 생명 펄스: 자신·다른 플레이어·소환수).
+		self:HealAllSummonsNear(map, center, radius, amount)
+		self:PlayWeaponAttackPresentation(row, self.LastDirectionX, self.LastDirectionY, true)
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp ~= nil then
+			self:ClientShowMineFeedback("[생명 펄스] 회복 " .. tostring(amount), playerComp.UserId)
+		end
+		log("[WEAPON] heal pulse amount=" .. tostring(amount) .. " radius=" .. tostring(radius) .. " healed=" .. tostring(healed))
 	end
 	@ExecSpace("Multicast")
 	method void MulticastPlayEffect(string effectRUID, Vector3 pos)
@@ -4353,7 +5183,10 @@ script PlayerController extends Component
 		local guardOn = now < (self._T.GuardUntil or 0)
 		if guardOn then damage = math.max(1, math.floor(damage * (1 - (self._T.GuardReduction or 0)))) end
 		-- 장비·주문 부여 DamageReductionPct(예: 철편 덧댐 룬), 최대 50%
-		local dmgRedPct = math.min(0.5, math.max(0, self:GetPassiveBonus("DamageReductionPct")))
+		-- 버프(쇠망치 도발 provoke_guard 등)의 같은 키도 더한다. 합산 상한 50%.
+		local buffsRed = self.Entity:GetComponent("script.PlayerBuffs")
+		local buffRed = isvalid(buffsRed) and buffsRed:GetStatAdd("DamageReductionPct") or 0
+		local dmgRedPct = math.min(0.5, math.max(0, self:GetPassiveBonus("DamageReductionPct") + buffRed))
 		if dmgRedPct > 0 then damage = math.max(1, math.floor(damage * (1 - dmgRedPct))) end
 		-- Apply damage to player HP
 		playerComp.Hp = math.max(0, playerComp.Hp - damage)
@@ -4388,6 +5221,7 @@ script PlayerController extends Component
 		local superArmor = false
 		local buffsKb = self.Entity:GetComponent("script.PlayerBuffs")
 		if isvalid(buffsKb) and buffsKb:GetStatAdd("SuperArmor") > 0 then superArmor = true end
+		if nowKb < (tonumber(self._T.SuperArmorUntil) or 0) then superArmor = true end
 		if superArmor then
 			log("Player " .. self.Entity.Name .. " hit for " .. damage .. " damage (super armor). HP remaining: " .. playerComp.Hp)
 			if playerComp.Hp <= 0 then
@@ -5107,6 +5941,14 @@ script PlayerController extends Component
 		local duration = self:SkillNumber(row, "Duration", 6)
 		local armDelay = self:SkillNumber(row, "ArmDelay", 0)
 		local kind = row:GetItem("Type")
+		-- 지속 장판(Field 이면서 지속시간 동안 여러 번 틱하는 것 — 산성 포션·대연성 진)은 촉매 연구(FieldDurationPct·FieldDamagePct)를 받는다.
+		-- 한 번만 터지는 지연 착탄(모루 낙하·불씨 결정·균열 각인)은 장판이 아니므로 제외한다.
+		local persistent = kind == "Field" and (duration - armDelay) > self:SkillNumber(row, "TickInterval", 1)
+		local fieldDamageMul = 1
+		if persistent then
+			duration = armDelay + (duration - armDelay) * (1 + math.max(0, self:GetPassiveBonus("FieldDurationPct")))
+			fieldDamageMul = 1 + math.max(0, self:GetPassiveBonus("FieldDamagePct"))
+		end
 		-- 장판 표시: SkillAreaMarker(반투명 원판 + 발광 테두리 + 착탄/남은 시간 채움). 원 반지름 = AreaSize/2 = 판정 반지름.
 		local marker = nil
 		local modelId = _EntryService:GetModelIdByName(self.SkillAreaMarkerModel)
@@ -5131,35 +5973,44 @@ script PlayerController extends Component
 			log_warning("[SKILL-AREA] marker model missing: " .. tostring(self.SkillAreaMarkerModel))
 		end
 		local now = _UtilLogic.ElapsedSeconds
-		self._T.SkillAreas[skillId] = { row = row, map = map, center = center, size = size, marker = marker, expires = now + duration, nextTick = now + armDelay, kind = kind }
-		log("[SKILL-AREA] create " .. skillId .. " kind=" .. tostring(kind) .. " r=" .. tostring(size * 0.5) .. " arm=" .. tostring(armDelay) .. " life=" .. tostring(duration))
+		self._T.SkillAreas[skillId] = { row = row, map = map, center = center, size = size, marker = marker, expires = now + duration, nextTick = now + armDelay, kind = kind, damageMul = fieldDamageMul }
+		log("[SKILL-AREA] create " .. skillId .. " kind=" .. tostring(kind) .. " r=" .. tostring(size * 0.5) .. " arm=" .. tostring(armDelay) .. " life=" .. string.format("%.2f", duration) .. " dmgMul=" .. string.format("%.2f", fieldDamageMul))
 	end
 
 	@ExecSpace("ServerOnly")
 	method void TickSkillAreas()
 		if self.IsDead then self:ClearSkillAreas() return end
 		local now = _UtilLogic.ElapsedSeconds
+		-- 틱 판정은 0.25초 타이머로 돈다. 예정 시각을 now 기준으로 다시 잡으면 타이머 오차로 0.25초 간격 틱(쇠망치 회전·그림자 난도)이 한 번씩 건너뛰어진다.
+		-- 그래서 예정 시각을 누적하고(밀렸으면 now 기준으로 재설정), 만료·틱 비교에 같은 여유(slack)를 둔다.
+		local slack = 0.02
 		for skillId, area in pairs(self._T.SkillAreas or {}) do
-			if now >= area.expires or area.map ~= self.Entity.CurrentMap then
+			if now + slack >= area.expires or area.map ~= self.Entity.CurrentMap then
 				if isvalid(area.marker) then area.marker:Destroy() end
 				self._T.SkillAreas[skillId] = nil
-			elseif now >= area.nextTick then
-				area.nextTick = now + math.max(0.25, self:SkillNumber(area.row, "TickInterval", 1))
+			elseif now + slack >= area.nextTick then
+				local interval = math.max(0.25, self:SkillNumber(area.row, "TickInterval", 1))
+				area.nextTick = area.nextTick + interval
+				if area.nextTick <= now then area.nextTick = now + interval end
 				if area.kind == "HealAura" then
+					-- 회복량: 그 스킬의 계열 능력치 1 포인트당 +HealPowerPerPoint. 패시브·장비(HealPowerPct)는 비율로 더한다.
+					local healStat = self:GetSkillScaleStat(area.row)
+					local heal = math.floor((self:SkillNumber(area.row, "HealPerTick", 4) + self:GetSkillLevel(skillId) * 2)
+						* (1 + self:GetStatPoints(healStat) * self.HealPowerPerPoint + self:GetPassiveBonus("HealPowerPct")))
 					for _, player in pairs(_UserService:GetUsersByMapName(area.map.Name)) do
 						local pc = player:GetComponent("script.PlayerController")
 						if isvalid(pc) and not pc.IsDead then
 							local p = player.TransformComponent.WorldPosition
 							if Vector2.Distance(p:ToVector2(), area.center:ToVector2()) <= area.size * 0.5 then
 								local hp = player.PlayerComponent
-								-- 교감: 1 포인트당 회복 효과 +SpiHealPerPoint
-								local heal = (self:SkillNumber(area.row, "HealPerTick", 4) + self:GetSkillLevel(skillId) * 2) * (1 + self.StatSpi * self.SpiHealPerPoint)
-								hp.Hp = math.min(hp.MaxHp, hp.Hp + math.floor(heal))
+								hp.Hp = math.min(hp.MaxHp, hp.Hp + heal)
 							end
 						end
 					end
+					-- 소환수도 회복한다 (job-branch-redesign §5.4 자연의 활력).
+					self:HealAllSummonsNear(area.map, area.center, area.size * 0.5, heal)
 				else
-					local hits = self:DamageSkillArea(skillId, area.center, area.size, 1)
+					local hits = self:DamageSkillArea(skillId, area.center, area.size, area.damageMul or 1)
 					if area.kind == "Trap" and hits > 0 then
 						area.expires = now
 						-- 덫 발동음: 시전음(SoundRUID)과 분리된 TriggerSoundRUID (데이터 주도)
