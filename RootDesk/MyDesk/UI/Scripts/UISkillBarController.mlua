@@ -130,11 +130,12 @@ script UISkillBarController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void HideTooltip()
-		-- description: Disable SkillTooltip panel.
+		-- description: 공용 툴팁(UITooltipLogic)을 닫는다. 구 SkillTooltip 패널은 쓰지 않지만 혹시 켜져 있으면 끈다.
 		local tip = self:ResolveTooltipRoot()
 		if isvalid(tip) then
 			tip.Enable = false
 		end
+		if _UITooltipLogic ~= nil then _UITooltipLogic:Hide("skillbar") end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -199,37 +200,23 @@ script UISkillBarController extends Component
 			end
 		end
 
-		local nameEnt = tip:GetChildByName("Name", true)
-		if isvalid(nameEnt) and isvalid(nameEnt.TextComponent) then
-			if locked then
-				nameEnt.TextComponent.Text = name .. " (잠김)"
-				nameEnt.TextComponent.FontColor = Color(0.55, 0.55, 0.55, 1.0)
-			else
-				nameEnt.TextComponent.Text = name
-				nameEnt.TextComponent.FontColor = Color(0.95, 0.76, 0.31, 1.0)
-			end
+		-- 공용 동적 툴팁으로 띄운다(설명이 길어도 창이 늘어난다). 구 고정 크기 SkillTooltip 패널은 끈다.
+		tip.Enable = false
+		local title = name
+		local titleColor = Color(0.95, 0.76, 0.31, 1.0)
+		if locked then
+			title = name .. " (잠김)"
+			titleColor = Color(0.55, 0.55, 0.55, 1.0)
 		end
-
-		local metaEnt = tip:GetChildByName("Meta", true)
-		if isvalid(metaEnt) and isvalid(metaEnt.TextComponent) then
-			local lvLabel = "Lv " .. tostring(level)
-			if locked then lvLabel = "미해금" end
-			metaEnt.TextComponent.Text = skType .. " · " .. lvLabel .. " · CD " .. string.format("%.1f", cd) .. "s"
+		local lvLabel = "Lv " .. tostring(level)
+		if locked then lvLabel = "미해금" end
+		local meta = skType .. " · " .. lvLabel .. " · 재사용 " .. string.format("%.1f", cd) .. "초"
+		if pc ~= nil then
+			meta = meta .. "\nMP " .. pc:SkillNumber(row, "ManaCost", 0) .. " · 기력 " .. (tonumber(row:GetItem("StaminaCost")) or 0)
 		end
-
-		if pc ~= nil and isvalid(metaEnt) and isvalid(metaEnt.TextComponent) then
-			metaEnt.TextComponent.Text = metaEnt.TextComponent.Text .. "\nMP " .. pc:SkillNumber(row, "ManaCost", 0) .. " · 기력 " .. (tonumber(row:GetItem("StaminaCost")) or 0)
+		if _UITooltipLogic ~= nil then
+			_UITooltipLogic:ShowAtCursor("skillbar", title, desc, meta, titleColor)
 		end
-		local descEnt = tip:GetChildByName("Desc", true)
-		if isvalid(descEnt) and isvalid(descEnt.TextComponent) then
-			descEnt.TextComponent.Text = desc
-		end
-
-		-- Keep tooltip above PC skill bar (bottom-center).
-		if isvalid(tip.UITransformComponent) then
-			tip.UITransformComponent.anchoredPosition = Vector2(0, 280)
-		end
-		tip.Enable = true
 	end
 
 	@ExecSpace("ClientOnly")

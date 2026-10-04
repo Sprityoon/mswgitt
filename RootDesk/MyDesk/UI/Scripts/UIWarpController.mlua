@@ -278,6 +278,8 @@ script UIWarpController extends Component
 				---@type PlayerController
 				local controller = pc
 				local targetMap = dest.mapName
+				-- 전환 연출 라벨이 실제 목적지를 알 수 있도록 먼저 적어 둔다(규칙 46 — 값은 프로퍼티로 전달).
+				controller.pendingWarpDestMap = targetMap
 				-- 덮기 → 이동: 커버가 실제로 그려진 뒤에 워프를 요청한다.
 				controller:ClientWarpWithCover(function()
 					controller:ServerRequestWarpTo(targetMap)

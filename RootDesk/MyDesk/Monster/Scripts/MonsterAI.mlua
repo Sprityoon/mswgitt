@@ -241,11 +241,11 @@ script MonsterAI extends Component
 		if newValue == true then
 			sprite.Color = Color(1.0, 0.55, 0.2, 1.0)
 		else
-			-- 예고 종료: 흰색이 아니라 스폰 시 기본 틴트(Monster.BaseTint)로 복귀
+			-- 예고 종료: 흰색이 아니라 평소 색(Monster.GetRestTint = 기본 틴트 × 상태이상 틴트)으로 복귀
 			-- GetMonster()는 ServerOnly 라 클라이언트 콜백에서 직접 조회한다
 			local m = self.Entity:GetComponent("script.Monster")
 			if isvalid(m) then
-				sprite.Color = m.BaseTint
+				sprite.Color = m:GetRestTint()
 			else
 				sprite.Color = Color(1.0, 1.0, 1.0, 1.0)
 			end

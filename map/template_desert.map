@@ -16,7 +16,7 @@
       {
         "id": "8ae44cdd-1696-40b5-936b-baecbd5bef27",
         "path": "/maps/template_desert",
-        "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent",
+        "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent,MOD.Core.PhysicsSimulatorComponent",
         "jsonString": {
           "name": "template_desert",
           "path": "/maps/template_desert",
@@ -47,6 +47,19 @@
             {
               "@type": "MOD.Core.FootholdComponent",
               "FootholdsByLayer": {},
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PhysicsSimulatorComponent",
+              "Gravity": {
+                "x": 0,
+                "y": 0
+              },
+              "Paused": false,
+              "WorldBounds": {
+                "x": 10000,
+                "y": 10000
+              },
               "Enable": true
             }
           ],

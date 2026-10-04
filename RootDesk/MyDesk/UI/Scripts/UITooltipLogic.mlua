@@ -1,0 +1,150 @@
+@Logic
+script UITooltipLogic extends Logic
+	-- 공용 동적 툴팁 (ui/TooltipGroup.ui). 내용 길이에 맞춰 크기를 계산하고, 커서 옆에 띄우되 화면 밖으로 나가면 반대쪽으로 접는다.
+	-- 쓰는 곳: 버프·디버프 아이콘(UIBuffBarController) · 스킬바(UISkillBarController) · 인벤토리 아이템(UIInventoryController).
+	-- 크기 계산은 TextGUIRendererComponent.GetPreferredWidth / GetPreferredHeight — 고정 크기 패널에 긴 설명이 넘치던 문제의 해법이다.
+	-- owner: 띄운 쪽 식별자. Hide(owner) 는 지금 떠 있는 것이 그 owner 의 툴팁일 때만 닫는다(다른 UI 의 닫기 신호가 남의 툴팁을 끄지 않게).
+
+	-- [바인딩] ui/TooltipGroup.ui — UIBuilder 가 UUID 를 주입한다.
+	property Entity tipPanel = "0ee5ce72-887a-45eb-bf9f-15694b64b8f1"
+	property TextGUIRendererComponent titleText = "3c8c48ba-8c68-4119-acba-bafef342f41f"
+	property TextGUIRendererComponent bodyText = "80543c5e-15be-4aca-94d1-876459aabd53"
+	property TextGUIRendererComponent footerText = "823bc49c-6921-4e51-bdac-aa1fa12b1edc"
+
+	-- [레이아웃] UI 픽셀(1920×1080 기준)
+	property number MinWidth = 260
+	property number MaxWidth = 460
+	property number Padding = 16
+	property number LineGap = 8
+	property number CursorOffset = 28
+	property number ScreenMargin = 8
+
+	@HideFromInspector property string CurrentOwner = ""
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 툴팁은 .ui 에서 Enable=false 로 저장돼 있다(규칙 30). 혹시 켜져 있으면 끈다.
+		if isvalid(self.tipPanel) then self.tipPanel.Enable = false end
+		log("[TOOLTIP] ready panel=" .. tostring(isvalid(self.tipPanel)))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowAtCursor(string owner, string title, string body, string footer, Color titleColor)
+		-- 마우스(터치) 위치 옆에 띄운다.
+		local screen = _InputService:GetCursorPosition()
+		local uiPos = _UILogic:ScreenToUIPosition(screen)
+		self:ShowAt(owner, title, body, footer, titleColor, uiPos)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowAt(string owner, string title, string body, string footer, Color titleColor, Vector2 uiPos)
+		-- uiPos(화면 중앙 원점 UI 좌표) 기준 오른쪽 아래에 띄운다. 넘치면 왼쪽/위로 접고, 끝까지 넘치면 화면 안으로 밀어 넣는다.
+		if not isvalid(self.tipPanel) or not isvalid(self.titleText) or not isvalid(self.bodyText) or not isvalid(self.footerText) then
+			log_warning("[TOOLTIP] binding missing — ui/TooltipGroup.ui 확인")
+			return
+		end
+		local pad = self.Padding
+		local minInner = self.MinWidth - pad * 2
+		local maxInner = self.MaxWidth - pad * 2
+
+		-- 1) 폭: 제목·본문·꼬리말의 줄별 한 줄 폭 중 가장 긴 것(최소~최대 사이). 최대보다 길면 그 폭에서 줄바꿈된다.
+		local inner = minInner
+		inner = math.max(inner, self:MeasureLines(self.titleText, title))
+		inner = math.max(inner, self:MeasureLines(self.bodyText, body))
+		inner = math.max(inner, self:MeasureLines(self.footerText, footer))
+		inner = math.min(maxInner, math.ceil(inner))
+
+		-- 2) 높이: 그 폭에서 실제로 필요한 높이.
+		local titleH = 0
+		local bodyH = 0
+		local footerH = 0
+		if title ~= "" then titleH = math.ceil(self.titleText:GetPreferredHeight(title, inner)) end
+		if body ~= "" then bodyH = math.ceil(self.bodyText:GetPreferredHeight(body, inner)) end
+		if footer ~= "" then footerH = math.ceil(self.footerText:GetPreferredHeight(footer, inner)) end
+
+		-- 3) 세로 배치(패널 왼쪽 위 기준, 아래로 음수).
+		local y = -pad
+		y = self:PlaceText(self.titleText, title, titleH, inner, y)
+		if titleH > 0 and (bodyH > 0 or footerH > 0) then y = y - self.LineGap end
+		y = self:PlaceText(self.bodyText, body, bodyH, inner, y)
+		if bodyH > 0 and footerH > 0 then y = y - self.LineGap end
+		y = self:PlaceText(self.footerText, footer, footerH, inner, y)
+		local width = inner + pad * 2
+		local height = -y + pad
+
+		self.titleText.Text = title
+		self.titleText.FontColor = titleColor
+		self.bodyText.Text = body
+		self.footerText.Text = footer
+
+		-- 4) 위치: 패널 피벗은 왼쪽 위(0,1). 오른쪽·아래로 넘치면 커서 반대편으로 접는다.
+		local halfW = 960 - self.ScreenMargin
+		local halfH = 540 - self.ScreenMargin
+		local x = uiPos.x + self.CursorOffset
+		local top = uiPos.y - self.CursorOffset
+		if x + width > halfW then x = uiPos.x - self.CursorOffset - width end
+		if top - height < -halfH then top = uiPos.y + self.CursorOffset + height end
+		x = math.max(-halfW, math.min(halfW - width, x))
+		top = math.max(-halfH + height, math.min(halfH, top))
+
+		local t = self.tipPanel.UITransformComponent
+		if isvalid(t) then
+			t.RectSize = Vector2(width, height)
+			t.anchoredPosition = Vector2(x, top)
+		end
+		self.CurrentOwner = owner
+		self.tipPanel.Enable = true
+	end
+
+	@ExecSpace("ClientOnly")
+	method number MeasureLines(TextGUIRendererComponent comp, string text)
+		-- 줄바꿈(\n)으로 나눈 각 줄의 한 줄 폭 중 최댓값. 빈 문자열은 0.
+		if text == nil or text == "" then return 0 end
+		local widest = 0
+		for line in string.gmatch(text .. "\n", "(.-)\n") do
+			if line ~= "" then
+				local w = comp:GetPreferredWidth(line)
+				if w > widest then widest = w end
+			end
+		end
+		return widest
+	end
+
+	@ExecSpace("ClientOnly")
+	method number PlaceText(TextGUIRendererComponent comp, string text, number h, number inner, number y)
+		-- 글자 엔티티를 (Padding, y) 에 inner×h 로 놓고 다음 y 를 돌려준다. 내용이 없으면 끈다.
+		local e = comp.Entity
+		if text == nil or text == "" or h <= 0 then
+			e.Enable = false
+			return y
+		end
+		e.Enable = true
+		local t = e.UITransformComponent
+		if isvalid(t) then
+			t.RectSize = Vector2(inner, h)
+			t.anchoredPosition = Vector2(self.Padding, y)
+		end
+		return y - h
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Hide(string owner)
+		-- 지금 떠 있는 것이 owner 의 툴팁일 때만 닫는다.
+		if self.CurrentOwner ~= owner then return end
+		self:HideAny()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void HideAny()
+		-- 누가 띄웠든 닫는다(창 전환 등).
+		self.CurrentOwner = ""
+		if isvalid(self.tipPanel) then self.tipPanel.Enable = false end
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsShownBy(string owner)
+		-- owner 의 툴팁이 떠 있는가.
+		return isvalid(self.tipPanel) and self.tipPanel.Enable == true and self.CurrentOwner == owner
+	end
+
+end

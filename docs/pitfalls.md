@@ -76,6 +76,9 @@
 | [62](#62-model-의-프로퍼티-값targettype-null이-같은-필드의-컴포넌트-값을-덮는다--둘-다-고쳐야-한다) | 모델 프로퍼티 값(`TargetType: null`)이 컴포넌트 값을 덮음 | Scale/RUID 를 바꿨는데 화면이 그대로 |
 | [63](#63-테스트-모드가-실제-세이브-슬롯에-저장하면-치트-결과가-진짜-진행도로-남는다--테스트-슬롯은-격리-대역101) | 테스트 모드 = 격리 슬롯(101~)에 저장 | 테스트 중 올린 레벨이 일반 플레이에 남음 (에러 0) |
 | [64](#64-무적은-피해만-막는다--몬스터가-무적-플레이어를-계속-노리면-무적이-끝나는-순간-맞는다) | 무적 중엔 표적에서도 제외 | 도착 무적이 끝나는 순간 몰려 있던 몬스터에게 맞음 (에러 0) |
+| [65](#65-공식-스킬-이펙트의-그림-방향피벗은-리소스마다-다르다--피벗-정렬-프레임을-합성해-보고-판정과-맞춘다) | 이펙트 원본 방향·피벗은 리소스마다 다름 → 합성해 보고 `EffectFacing` | 스킬 이펙트가 등 뒤로 뻗음 · 판정과 어긋남 (에러 0) |
+| [66](#66-모든-맵map-루트-엔티티에는-physicssimulatorcomponent가-정적으로-필수다--누락-시-맵-이동-때-lea-3004-폭주) | 맵 루트에 `PhysicsSimulatorComponent` 정적 필수 | 워프/진입 시 `LEA-3004 MissingComponent` 폭주 |
+| [67](#67-서버-상호작용-거리는-중심점이-아니라-트리거-박스-가장자리로-잰다--키운-오브젝트는-조용히-거부된다) | 서버 상호작용 거리 = 트리거 박스 가장자리 기준 | Scale 키운 낚시터에서 F 무반응 (로그 0) |
 
 ---
 
@@ -808,6 +811,22 @@ CSV 파일의 설명(`Description` 등) 텍스트에 문장 부호 쉼표(`,`)�
 - ✅ 무적 시간이 있는 상태(도착 보호 등)는 **표적 선정에서도 제외**한다 — `MonsterAI.IsTargetArrivalProtected`. 피해 무시만으로는 "무적 종료 시각"으로 피격을 미룰 뿐이다.
 - ✅ 같은 무적 표시(깜빡임)를 몬스터 없는 맵에 걸지 않는다. 전환 커버 통지가 없는 진입(슬롯 로드)에서는 최대 시간 내내 깜빡인다.
 
+### 65. 공식 스킬 이펙트의 그림 방향·피벗은 리소스마다 다르다 — 피벗 정렬 프레임을 합성해 보고 판정과 맞춘다
+
+스킬 시전 이펙트는 `PlayerController` 가 "원본은 왼쪽을 본다"고 가정해 오른쪽 시전 때 `FlipX` 하고, 피벗을 시전자 앞 `EffectOffset` 에 놓는다. 그런데 공식 리소스 중에는 **오른쪽을 보는 것**이 있고, 메이플 스킬 이펙트는 대부분 **피벗이 캐릭터 발밑**이라 앞으로 밀면 그만큼 그림이 앞으로 튀어 나간다. 전부 에러 없이 "이펙트 위치가 이상하다"로만 드러난다.
+
+- **실측 (2026-10-03, 리소스 프레임·피벗 합성)**: 맨주먹 파이터 정권 = 스크류 펀치 `4f97bf6a…` 는 피벗(캐릭터)에서 **오른쪽으로 약 3칸** 드릴이 뻗는 그림 → 왼쪽 규약으로 반전돼 양방향 모두 드릴이 등 뒤로 뻗었다. 붉은 너클 = 피스트 인레이지 `21f41a81…` 는 정상 왼쪽 그림인데, 장판(`Field`) 착탄 이펙트가 방향을 무시하고(`flipX=false`) 장판 중심에 찍혀 오른쪽 시전 때 플레이어 쪽으로 날아갔다. 같은 날 정권 판정 상자는 중심을 앞 2.4 로 민 3×3 이라 **몸 앞 0.9칸이 빈칸**(붙은 적 헛침)이었다. 인게임 확인은 제작자 Play 대기.
+- ✅ 새 방향성 이펙트를 고르면 `msw_resource_api.cjs get <clip>` 의 `payload.frames[].pivot`(x = 왼쪽에서, y = **아래에서**)으로 프레임을 피벗 정렬 합성해 **그림이 피벗 기준 어느 쪽으로 몇 칸 뻗는지** 본다. 오른쪽 그림이면 `SkillDataSet.EffectFacing=right`, 방향성(위·아래 시전 때 세울 것)이면 `left`/`right` 를 명시한다(공란 = 기존 동작: 왼쪽 가정·회전 없음).
+- ✅ **원본 이펙트는 배율 1 캐릭터(키 약 0.7칸) 기준이고 이 프로젝트 플레이어는 `DefaultPlayer` Scale 2.8(키 약 2칸)이다.** 피벗을 발밑에 그대로 두면 그림이 정강이 높이에 깔리고, 캐릭터를 감싸도록 그려진 꼬리가 등 뒤에서 튀어나온다(같은 날 후속 Play 피드백 "등 뒤에서 발사되는 느낌"). 팔에서 나가야 하는 이펙트는 꼬리 끝을 주먹(≈ 발 기준 앞 0.75·높이 0.9)에 맞춘다: `EffectOffset` = 0.75 + 꼬리 길이×배율, `EffectHeight` = 0.9 − 그림 중심선 높이×배율(`EffectHeight` 는 좌우 시전에만 적용).
+- ✅ 캐릭터를 감싸는 오라형 이펙트만 `EffectOffset 0`(시전자 자리)에 두고 `EffectScale` 로 길이를 판정 끝에 맞춘다. `Field` 의 방향성 착탄 이펙트도 장판 중심이 아니라 시전 위치 기준이다(`CreateSkillArea` 의 `fxPose`).
+### 66. 모든 맵(`.map`) 루트 엔티티에는 `PhysicsSimulatorComponent`가 정적으로 필수다 — 누락 시 맵 이동 때 `LEA-3004` 폭주
+
+플레이어가 `MoveToMapPosition(targetMap, ...)`으로 새 맵에 진입하거나 워프될 때, MSW 엔진은 해당 맵의 물리/충돌 연산을 위해 맵 엔티티(`/maps/{mapName}`)에서 `PhysicsSimulatorComponent`를 찾는다. 맵 파일(`.map`)에 이 컴포넌트가 누락되어 있으면 진입 즉시 서버와 클라이언트 콘솔에 `MissingComponent : {map}에 'PhysicsSimulatorComponent'가 없습니다.` (`LEA-3004`) 오류가 쏟아진다.
+
+- **실측 (2026-10-03)**: 사용자가 마을(`town`)로 워프를 시도했을 때 `PlayerController.ServerRequestWarpTo` 호출 시점에 서버와 클라이언트에서 `LEA-3004` 에러가 연속으로 폭주했다. 동적 영지 맵(`Home_<UserId>`)과 사냥터(`hunt01`)는 `ResourceSpawner.SpawnInitialResourcesForMap`에서 런타임에 `AddComponent("PhysicsSimulatorComponent")`를 실행해 주어 에러를 피했으나, 공유 마을인 `town.map`이나 보스방/대기실 템플릿 등 정적 맵들은 이 루틴을 타지 않아 엔진이 컴포넌트를 찾지 못했다.
+- ✅ **모든 맵(`.map`) 파일의 루트 엔티티에 `MOD.Core.PhysicsSimulatorComponent`를 정적으로 포함한다**: `MapBuilder.upsertComponent(rootPath, "MOD.Core.PhysicsSimulatorComponent", { "@type": "MOD.Core.PhysicsSimulatorComponent", "Gravity": { "x": 0, "y": 0 }, "Paused": false, "WorldBounds": { "x": 10000, "y": 10000 }, "Enable": true })`.
+- ✅ 탑다운 뷰에서는 중력에 의한 낙하가 없으므로 `Gravity`는 `Vector2(0, 0)`으로 둔다.
+
 ## 관련 문서
 
 - 절대 규칙 요약: [AGENTS.md](../AGENTS.md) §3
@@ -817,4 +836,11 @@ CSV 파일의 설명(`Description` 등) 텍스트에 문장 부호 쉼표(`,`)�
 - 리소스 검색 API 함정: [reference/resource-api-pitfalls.md](./reference/resource-api-pitfalls.md)
 - 사고별 원본 기록: [agents/reports/](./agents/reports/) (T번호별 보고서)
 
+### 67. 서버 상호작용 거리는 중심점이 아니라 트리거 박스 가장자리로 잰다 — 키운 오브젝트는 조용히 거부된다
+
+2026-10-05 실측: town 낚시터를 Scale 4.63 으로 키우자 F 낚시가 무반응. 클라 조준(`IsAimTargetCore`)은 `BoxSize × Scale` 트리거 박스(규칙 14)로 판정해 통과했지만, 서버 `ServerRequestFishingInteract` 는 **플레이어 ↔ 오브젝트 중심점 거리 ≤ 3.5** 로 검사했다. 박스가 10.5×7.2 유닛이 되자 가장자리에 서도 중심까지 3.6 이상 → 로그 없이 `return`.
+
+- ✅ 서버 거리 검사는 `_ObstacleQuery:GetColliderAABB` 박스의 **가장 가까운 점까지** 거리로 잰다(클라 조준과 같은 도형). 거부 경로에는 반드시 로그를 남긴다.
+- ❌ 중심점 거리 상수로 "충분히 가까움"을 판정하지 않는다 — 오브젝트 크기를 바꾸는 순간 깨진다.
+- 같은 사고에서: `YSortSprite` 는 Maker 의 `OrderInLayer` 를 무시하고 트리거 아랫변을 바닥선으로 쓴다. 바닥에 붙은 큰 물체(연못)는 `FlatGround=true` 로 Y정렬에서 뺀다.
 

@@ -4,6 +4,9 @@ script YSortSprite extends Component
 	property boolean Dynamic = false
 	property boolean IsUnit = false
 	property number SortYOffset = 0.0
+	-- 바닥에 붙은 평평한 물체(연못·물가·깔개 등): Y정렬 대신 엔티티 최저 순서로 고정 → 서 있는 나무·게시판·캐릭터가
+	-- 위치와 상관없이 항상 그 위에 그려진다. 크게 키운 연못은 트리거 아랫변이 바닥선이 되어 주변 물체를 덮기 때문 (2026-10-05).
+	property boolean FlatGround = false
 	property number _LastY = -999999
 
 	method void OnBeginPlay()
@@ -21,6 +24,11 @@ script YSortSprite extends Component
 		if _RenderLayers then
 			sprite.SortingLayer = _RenderLayers.EntityLayer
 			self._LastY = transform.WorldPosition.y
+			if self.FlatGround then
+				sprite.OrderInLayer = _RenderLayers.MinEntityOrder
+				log(string.format("[YSORT] flat-ground entity=%s order=%d", tostring(self.Entity.Name), sprite.OrderInLayer))
+				return
+			end
 			sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(self.Entity, self.SortYOffset)
 		end
 	end

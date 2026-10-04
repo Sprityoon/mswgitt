@@ -1,0 +1,53 @@
+{
+  "sheet": [
+    256,
+    256
+  ],
+  "tile": [
+    64,
+    64
+  ],
+  "order": "N1 E2 S4 W8 masks 0..15 row-major",
+  "frontFaceMasks": [
+    0,
+    1,
+    2,
+    3,
+    8,
+    9,
+    10,
+    11
+  ],
+  "frontFaceY": [
+    29,
+    63
+  ],
+  "bands": {
+    "lip": [
+      29,
+      34
+    ],
+    "plaster": [
+      35,
+      53
+    ],
+    "stone": [
+      54,
+      62
+    ],
+    "bottom": [
+      63,
+      63
+    ]
+  },
+  "trimWidth": 3,
+  "horizontalCompatibleEdgePairs": 16,
+  "verticalCompatibleDarkEdgePairs": 16,
+  "opaquePixels": 65536,
+  "unusedMagentaPixels": 0,
+  "note": "All tiles fully occupied as requested; no unused areas.",
+  "makerRefresh": "refresh 검증 보류(MCP 미연결)",
+  "runtime": "런타임 검증 보류(제작자 수행)",
+  "deliveredPngVerified": true,
+  "offlinePreview": "rectangle room + T junction + crossing; preview_room.png"
+}

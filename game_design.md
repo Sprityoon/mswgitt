@@ -280,6 +280,8 @@ graph TD
 
 ### 3.7. 자원 리스폰 & 건축 점유 시스템 (Resource Respawn & Build Occupancy) — ✅ 구현 완료
 
+> **자유 건축 확장 (2026-10-05, 설계 승인·격리 시제품 작성)**: 기존 배치/점유 기반 위에 바닥·벽을 조합하는 영지 건축을 설계한다. 바닥과 일반 벽은 타일 우선, 문·작업대·가구는 오브젝트. `building_test`에 내부 5×5 방·타일 벽·F 개폐 문 시제품을 작성했다(정적 검사·refresh ok, build 로그 갱신 미확인, 제작자 Play 대기). 바닥 위 가구 공존을 위한 지면/설치물 점유 분리와 정식 아트·설치·철거·저장은 아직 미구현. 작은 방의 충돌·가림 확인 후 후속 제작을 진행한다. 상세: [새 건축 설계](./docs/design/building-system.md), [시험 확인표](./docs/design/building-prototype-checklist.md), 진행 상태: [tasks.md](./docs/tasks.md).
+
 - **리스폰 주기**: 채집으로 파괴된 자원 엔티티는 파괴 시점으로부터 설정된 대기 시간(GrownGrass: 5분, Stone: 30분, Tree: 1시간, Big Stone: 2시간 등) 경과 후 동일 셀에 리스폰됩니다.
   - **타임스탬프 기반 판정**: 파괴 시각(epoch) 기록 기반으로 판정하며, `(현재 시각 - 파괴 시각) >= RespawnDuration`인 셀을 일괄 리스폰 처리합니다.
   - **주기 스캔**: 10초 주기의 `TickResourceRespawn` 타이머로 만기 셀을 점진 리스폰 처리합니다.

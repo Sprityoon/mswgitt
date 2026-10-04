@@ -54,6 +54,11 @@ script PlayerController extends Component
 	@Sync
 	property Entity ActivePortal = nil
 
+	-- 전환 연출에 표시할 실제 목적지 맵 이름. 호출부가 ClientWarpWithCover 호출 직전에 채워 두면
+	-- UIHUDController.pendingWarpDestMap 으로 그대로 전달해 출발지 추정만으로 라벨을 잘못 붙이지 않게 한다
+	-- (규칙 46 — ClientWarpWithCover/BeginWarpTransition 인자 수는 고정, 값은 프로퍼티로 전달한다).
+	property string pendingWarpDestMap = ""
+
 	property number LastMineTime = 0.0
 
 	property number KnockbackSpeed = 16.0
@@ -224,6 +229,8 @@ script PlayerController extends Component
 
 	@Sync
 	property Entity ActiveFishingSpot = nil
+	-- 낚시터 트리거 박스 가장자리에서 이 거리(유닛) 안이면 서버가 낚시 요청을 받는다 (조준 거리 1.8 + 여유)
+	property number FishingReachFromEdge = 2.5
 
 	-- T64: 낚시 숙련 레벨/경험치 (영속 — PersistenceManager)
 	@Sync
@@ -532,21 +539,22 @@ script PlayerController extends Component
 
 		-- description: Monitor player movement inputs to track last facing direction and drive movement.
 		-- Handle visual IFrame flashing (translucent blinking) — 피격 i-frame 과 도착 무적 모두 같은 깜빡임.
-		if self.IFrameTimer > 0 or self.ArrivalProtected then
-			local avatar = self.Entity.AvatarRendererComponent
-			if isvalid(avatar) then
+		-- 버프·디버프 틴트(PlayerBuffs.GetVisualTint)도 여기서 같이 칠한다 — 내 아바타 색을 쓰는 곳은 이 한 곳이다.
+		local avatar = self.Entity.AvatarRendererComponent
+		if isvalid(avatar) then
+			local alpha = 1.0
+			if self.IFrameTimer > 0 or self.ArrivalProtected then
 				-- Blink visual every 0.1s
 				local sec = math.floor(_UtilLogic.ElapsedSeconds * 10)
-				if sec % 2 == 0 then
-					avatar:SetAlpha(0.4)
-				else
-					avatar:SetAlpha(0.8)
-				end
+				if sec % 2 == 0 then alpha = 0.4 else alpha = 0.8 end
 			end
-		else
-			local avatar = self.Entity.AvatarRendererComponent
-			if isvalid(avatar) then
-				avatar:SetAlpha(1.0)
+			local tint = Color(1, 1, 1, 1)
+			local buffComp = self.Entity:GetComponent("script.PlayerBuffs")
+			if isvalid(buffComp) then tint = buffComp:GetVisualTint() end
+			local colorKey = string.format("%.2f|%.2f|%.2f|%.2f", tint.r, tint.g, tint.b, alpha)
+			if colorKey ~= self._T.AvatarColorKey then
+				self._T.AvatarColorKey = colorKey
+				avatar:SetColor(tint.r, tint.g, tint.b, alpha)
 			end
 		end
 		
@@ -2734,6 +2742,12 @@ script PlayerController extends Component
 				self:ServerRequestWarp()
 			else
 				-- 덮기 → 이동: 커버가 실제로 그려진 뒤에 워프를 요청한다.
+				-- 실제 목적지(고정 포탈의 TargetMapName — "Home" 그대로도 ResolveWarpLabel 이 인식한다)를
+				-- 미리 적어 둔다. 이게 없던 2026-10-03 버전은 fromMap만으로 추정해 마을/사냥터 ↔ 내 영지
+				-- 귀환 라벨이 거꾸로 붙었다(2026-10-04 수정).
+				if isvalid(portalGate) then
+					self.pendingWarpDestMap = portalGate.TargetMapName
+				end
 				self:ClientWarpWithCover(function()
 					self:ServerRequestWarp()
 				end)
@@ -2751,6 +2765,9 @@ script PlayerController extends Component
 	method void ClientWarpWithCover(any request)
 		-- 포탈 이동 전환: HUD 커버를 먼저 그리고, 다 덮인 뒤 request()(워프 RPC)를 호출한다.
 		-- HUD 컨트롤러를 못 찾으면 연출 없이 즉시 요청한다(이동이 막히지 않게).
+		-- 호출부가 직전에 적어 둔 pendingWarpDestMap(실제 목적지)을 HUD 쪽 같은 이름 프로퍼티로 그대로 넘긴다.
+		local destMap = self.pendingWarpDestMap
+		self.pendingWarpDestMap = ""
 		local hudGroup = _EntityService:GetEntityByPath("/ui/HUDGroup")
 		local ctrl = nil
 		if isvalid(hudGroup) then
@@ -2762,6 +2779,7 @@ script PlayerController extends Component
 		if isvalid(ctrl) then
 			---@type UIHUDController
 			local c = ctrl
+			c.pendingWarpDestMap = destMap
 			c:BeginWarpTransition(request)
 		elseif request ~= nil then
 			request()
@@ -3585,10 +3603,15 @@ script PlayerController extends Component
 			ch.PendingSkillId = castId
 		end
 
+		-- 시전 순간의 위치 (돌진처럼 시전 중 위치가 바뀌는 스킬의 EffectAnchor=start 이펙트용).
+		local castStartPos = self.Entity.TransformComponent.WorldPosition
 		if skillType == "Melee" then
-			self:ExecuteAreaDamageSkill(castId, damageMul, Vector2(dirX, dirY), self:SkillNumber(castRow, "AreaSize", 3), self:SkillNumber(castRow, "AreaReach", 1.6))
+			-- 판정 상자: 앞쪽 길이 AreaSize × 좌우 폭 AreaWidth(공란 = AreaSize, 정사각), 중심은 시전자 앞 AreaReach.
+			local meleeLength = self:SkillNumber(castRow, "AreaSize", 3)
+			self:ExecuteAreaDamageSkill(castId, damageMul, Vector2(dirX, dirY), meleeLength, self:SkillNumber(castRow, "AreaReach", 1.6), self:SkillNumber(castRow, "AreaWidth", meleeLength))
 		elseif skillType == "Ultimate" then
-			self:ExecuteAreaDamageSkill(castId, damageMul, Vector2(0, 0), self:SkillNumber(castRow, "AreaSize", 8), 0.0)
+			local ultimateSize = self:SkillNumber(castRow, "AreaSize", 8)
+			self:ExecuteAreaDamageSkill(castId, damageMul, Vector2(0, 0), ultimateSize, 0.0, ultimateSize)
 		elseif skillType == "Dash" then
 			self:ExecuteDashSkill(castId, dirX, dirY, damageMul)
 		elseif skillType == "Projectile" then
@@ -3623,10 +3646,24 @@ script PlayerController extends Component
 			-- T66: 전방 오프셋 + 좌우 플립 (CSV EffectOffset/EffectScale 또는 프로퍼티 폴백)
 			local offset = self:SkillNumber(castRow, "EffectOffset", self.SkillEffectForwardOffset)
 			local scale = self:SkillNumber(castRow, "EffectScale", self.SkillEffectScale)
+			-- EffectAnchor: 공란 = 시전 뒤 현재 위치, start = 시전 순간 위치(돌진 출발점에서 팡), follow = 시전자에 붙어 따라다님.
+			local fxAnchor = self:SkillText(castRow, "EffectAnchor")
 			local myPos = self.Entity.TransformComponent.WorldPosition
-			local fxPos = Vector3(myPos.x + dirX * offset, myPos.y + dirY * offset, myPos.z)
-			self:MulticastPlayEffectEx(effectRUID, fxPos, dirX > 0, scale)
-			log("[T66][FX] cast skill=" .. castId .. " ruid=" .. tostring(effectRUID) .. " offset=" .. tostring(offset))
+			if fxAnchor == "start" then myPos = castStartPos end
+			local fxHeight = self:GetSkillEffectHeight(castRow, dirX)
+			local fxPos = Vector3(myPos.x + dirX * offset, myPos.y + dirY * offset + fxHeight, myPos.z)
+			-- EffectFacing: 원본 그림이 보는 방향(공란·left = 왼쪽, right = 오른쪽). 지정된 방향성 이펙트는 위·아래 시전 때 세워서 튼다.
+			local fxFlip = self:IsSkillEffectFlipX(castRow, dirX)
+			local fxRot = self:GetSkillEffectRotation(castRow, dirX, dirY)
+			-- EffectPlayRate(공란 1) · EffectEndFrame(공란 = 끝까지): 긴 루프형 클립을 짧게 끊어 "팡" 하고 끝나게 한다.
+			local fxRate = self:SkillNumber(castRow, "EffectPlayRate", 1)
+			local fxEnd = math.floor(self:SkillNumber(castRow, "EffectEndFrame", -1))
+			if fxAnchor == "follow" then
+				self:MulticastPlayEffectFollow(effectRUID, fxFlip, scale, fxHeight, fxRate, fxEnd)
+			else
+				self:MulticastPlayEffectDir(effectRUID, fxPos, fxFlip, scale, fxRot, fxRate, fxEnd)
+			end
+			log("[T66][FX] cast skill=" .. castId .. " ruid=" .. tostring(effectRUID) .. " anchor=" .. fxAnchor .. " offset=" .. tostring(offset) .. " flip=" .. tostring(fxFlip) .. " rot=" .. tostring(fxRot))
 		end
 		-- T46: SoundRUID 시전 사운드 (데이터 주도)
 		local soundRUID = castRow:GetItem("SoundRUID")
@@ -4786,9 +4823,10 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("ServerOnly")
-	method void ExecuteAreaDamageSkill(string skillId, number damageMul, Vector2 dir, number boxSize, number reach)
+	method void ExecuteAreaDamageSkill(string skillId, number damageMul, Vector2 dir, number boxSize, number reach, number width)
 		-- Melee / Ultimate: emit a damage box (ahead of the player by `reach`, or centered when reach == 0)
 		-- that only hits monster HitBoxes, reusing PlayerCombat's CalcDamage / IsAttackTarget path.
+		-- boxSize = 시전 방향 길이, width = 좌우 폭 (같으면 정사각). 방향이 없으면(Ultimate) 정사각.
 		local combat = self.Entity:GetComponent("script.PlayerCombat")
 		if not isvalid(combat) then return end
 		---@type PlayerCombat
@@ -4797,13 +4835,19 @@ script PlayerController extends Component
 		local finalDmg = self:ComputeSkillDamage(skillId, damageMul)
 		local myPos = self.Entity.TransformComponent.WorldPosition
 		local center = Vector2(myPos.x + dir.x * reach, myPos.y + dir.y * reach)
-		local shape = BoxShape(center, Vector2(boxSize, boxSize), 0)
+		local size = Vector2(boxSize, boxSize)
+		if dir.x ~= 0 then
+			size = Vector2(boxSize, width)
+		elseif dir.y ~= 0 then
+			size = Vector2(width, boxSize)
+		end
+		local shape = BoxShape(center, size, 0)
 		
 		local prev = c.PendingDamage
 		c.PendingDamage = finalDmg
 		c:AttackFast(shape, nil, CollisionGroups.HitBox)
 		c.PendingDamage = prev
-		log("[SKILL] Area damage " .. finalDmg .. " box " .. boxSize .. " at (" .. string.format("%.1f, %.1f", center.x, center.y) .. ")")
+		log("[SKILL] Area damage " .. finalDmg .. " box " .. string.format("%.1fx%.1f", size.x, size.y) .. " at (" .. string.format("%.1f, %.1f", center.x, center.y) .. ")")
 	end
 
 	@ExecSpace("ServerOnly")
@@ -4850,10 +4894,13 @@ script PlayerController extends Component
 				---@type PlayerCombat
 				local c = combat
 				local finalDmg = self:ComputeSkillDamage(skillId, mul)
-				local minX = math.min(currentPos.x, finalPos.x) - 1.2
-				local maxX = math.max(currentPos.x, finalPos.x) + 1.2
-				local minY = math.min(currentPos.y, finalPos.y) - 1.2
-				local maxY = math.max(currentPos.y, finalPos.y) + 1.2
+				-- 경로 판정 여유 = AreaWidth / 2 (공란 2.4 → 기존 1.2). 경로 양옆과 앞뒤에 같은 여유를 둔다.
+				local dashRow = _DataService:GetTable("SkillDataSet"):FindRow("SkillId", skillId)
+				local margin = math.max(0.5, self:SkillNumber(dashRow, "AreaWidth", 2.4) * 0.5)
+				local minX = math.min(currentPos.x, finalPos.x) - margin
+				local maxX = math.max(currentPos.x, finalPos.x) + margin
+				local minY = math.min(currentPos.y, finalPos.y) - margin
+				local maxY = math.max(currentPos.y, finalPos.y) + margin
 				local center = Vector2((minX + maxX) * 0.5, (minY + maxY) * 0.5)
 				local size = Vector2(math.max(1.5, maxX - minX), math.max(1.5, maxY - minY))
 				local prev = c.PendingDamage
@@ -5048,14 +5095,42 @@ script PlayerController extends Component
 
 	@ExecSpace("Multicast")
 	method void MulticastPlayEffectEx(string effectRUID, Vector3 pos, boolean flipX, number scale)
-		-- T70: 클라만 재생. full 옵션 → min(IgnoreMapLayerCheck만) → none 폴백.
-		-- 시그니처 유지(Monster.mlua 호출 호환). EffectService.d.mlua options 키 실확인.
+		-- T70: 클라만 재생. 시그니처 유지(Monster·Summon·Projectile 호출 호환 — 규칙 46). 회전이 필요하면 MulticastPlayEffectDir.
+		self:PlayEffectLocal(effectRUID, pos, flipX, scale, 0.0, 1.0, -1)
+	end
+
+	@ExecSpace("Multicast")
+	method void MulticastPlayEffectDir(string effectRUID, Vector3 pos, boolean flipX, number scale, number zRotation, number playRate, integer endFrame)
+		-- 방향성 스킬 이펙트: 좌우 반전 + Z 회전(도, 반시계 +). 위·아래 시전 때 가로 그림을 세운다. PlayerController 내부 전용.
+		self:PlayEffectLocal(effectRUID, pos, flipX, scale, zRotation, playRate, endFrame)
+	end
+
+	@ExecSpace("Multicast")
+	method void MulticastPlayEffectFollow(string effectRUID, boolean flipX, number scale, number height, number playRate, integer endFrame)
+		-- 시전자에 붙어 따라다니는 이펙트(EffectAnchor=follow). 부모(플레이어) Scale 이 곱해지므로 로컬 값은 나눠서 넘긴다.
+		if effectRUID == nil or effectRUID == "" then return end
+		if not self:IsClient() then return end
+		local ps = self.Entity.TransformComponent.Scale
+		local sx = math.max(0.01, math.abs(ps.x))
+		local sy = math.max(0.01, math.abs(ps.y))
+		local s = scale
+		if s == nil or s <= 0 then s = 1.0 end
+		local opts = { IgnoreMapLayerCheck = true, SortingLayer = _RenderLayers.EntityLayer, OrderInLayer = 500, FlipX = flipX == true }
+		if playRate ~= nil and playRate > 0 and playRate ~= 1 then opts.PlayRate = playRate end
+		if endFrame ~= nil and endFrame >= 0 then opts.EndFrameIndex = endFrame end
+		local serial = _EffectService:PlayEffectAttached(effectRUID, self.Entity, Vector3(0, height / sy, 0), 0.0, Vector3(s / sx, s / sy, 1), false, opts)
+		log("[T71][FX] variant=follow serial=" .. tostring(serial) .. " ruid=" .. effectRUID)
+	end
+
+	method void PlayEffectLocal(string effectRUID, Vector3 pos, boolean flipX, number scale, number zRotation, number playRate, integer endFrame)
+		-- 클라만 재생. full 옵션 → min(IgnoreMapLayerCheck만) → none 폴백. EffectService.d.mlua options 키 실확인.
 		-- T71(지휘자 런타임 실측 2026-07-18): instigator=nil이면 클라 생성이 조용히 실패(serial=0).
 		-- 반드시 유효 엔티티(self.Entity)를 넘길 것 — SpawnByModelId parent nil 금지(핵심 규칙 4)와 동계열 함정.
 		if effectRUID == nil or effectRUID == "" then return end
 		if not self:IsClient() then return end
 		local s = scale
 		if s == nil or s <= 0 then s = 1.0 end
+		local rot = zRotation or 0.0
 		local scaleVec = Vector3(s, s, s)
 		local fullOpts = {
 			IgnoreMapLayerCheck = true,
@@ -5063,18 +5138,52 @@ script PlayerController extends Component
 			OrderInLayer = 500,
 			FlipX = flipX == true,
 		}
-		local serial = _EffectService:PlayEffect(effectRUID, self.Entity, pos, 0.0, scaleVec, false, fullOpts)
+		-- 재생 속도·끝 프레임은 지정됐을 때만 옵션에 넣는다(기본 호출은 예전과 같은 옵션).
+		if playRate ~= nil and playRate > 0 and playRate ~= 1 then fullOpts.PlayRate = playRate end
+		if endFrame ~= nil and endFrame >= 0 then fullOpts.EndFrameIndex = endFrame end
+		local serial = _EffectService:PlayEffect(effectRUID, self.Entity, pos, rot, scaleVec, false, fullOpts)
 		log("[T71][FX] variant=full serial=" .. tostring(serial) .. " ruid=" .. effectRUID)
 		if serial ~= nil and serial ~= 0 then return end
 		local minOpts = { IgnoreMapLayerCheck = true }
-		serial = _EffectService:PlayEffect(effectRUID, self.Entity, pos, 0.0, scaleVec, false, minOpts)
+		serial = _EffectService:PlayEffect(effectRUID, self.Entity, pos, rot, scaleVec, false, minOpts)
 		log("[T71][FX] variant=min serial=" .. tostring(serial) .. " ruid=" .. effectRUID)
 		if serial ~= nil and serial ~= 0 then return end
-		serial = _EffectService:PlayEffect(effectRUID, self.Entity, pos, 0.0, scaleVec, false, nil)
+		serial = _EffectService:PlayEffect(effectRUID, self.Entity, pos, rot, scaleVec, false, nil)
 		log("[T71][FX] variant=none serial=" .. tostring(serial) .. " ruid=" .. effectRUID)
 		if serial == nil or serial == 0 then
 			log_warning("[T71][FX] ALL-FAIL ruid=" .. effectRUID)
 		end
+	end
+
+	method boolean IsSkillEffectFlipX(any row, integer dirX)
+		-- 스킬 이펙트 좌우 반전 여부. EffectFacing 공란·left = 원본이 왼쪽을 본다(오른쪽 시전 때 반전),
+		-- right = 원본이 오른쪽을 본다(왼쪽 시전 때 반전). 공식 리소스 대부분은 왼쪽이지만 예외가 있다(스크류 펀치 — 규칙 65).
+		if self:SkillText(row, "EffectFacing") == "right" then
+			return dirX < 0
+		end
+		return dirX > 0
+	end
+
+	method number GetSkillEffectHeight(any row, integer dirX)
+		-- 좌우 시전 때 이펙트 피벗을 들어 올리는 높이(월드 유닛, EffectHeight 공란 = 0).
+		-- 원본 이펙트는 배율 1 캐릭터(키 약 0.7칸) 기준이라, 배율 2.8 플레이어(키 약 2칸)의 팔 높이에 맞추려면 올려야 한다.
+		-- 위·아래 시전은 그림을 세우므로(GetSkillEffectRotation) 올리지 않는다.
+		if dirX == 0 then return 0.0 end
+		return self:SkillNumber(row, "EffectHeight", 0)
+	end
+
+	method number GetSkillEffectRotation(any row, integer dirX, integer dirY)
+		-- 방향성 이펙트(EffectFacing 지정)만 위·아래 시전 때 가로 그림을 시전 방향으로 세운다. 도 단위, 반시계 +.
+		-- 공란이면 기존처럼 회전하지 않는다(대칭형 이펙트가 대부분이라 일괄 회전하지 않는다).
+		local facing = self:SkillText(row, "EffectFacing")
+		if facing == "" or dirX ~= 0 or dirY == 0 then return 0.0 end
+		local up = dirY > 0
+		if facing == "right" then
+			if up then return 90.0 end
+			return -90.0
+		end
+		if up then return -90.0 end
+		return 90.0
 	end
 
 	@ExecSpace("Multicast")
@@ -5576,10 +5685,25 @@ script PlayerController extends Component
 		if not isvalid(spot) then return end
 		
 		if isvalid(self.Entity.TransformComponent) and isvalid(spotEnt.TransformComponent) then
+			-- 거리 = 트리거 박스(BoxSize × Scale) 가장자리까지. 중심점 거리는 크게 키운 연못에서 가장자리에 서도
+			-- 3.5 를 넘어 요청이 조용히 버려졌다 — 클라 조준(IsAimTargetCore)도 같은 박스를 쓴다 (2026-10-05).
 			local myPos = self.Entity.TransformComponent.WorldPosition
-			local spotPos = spotEnt.TransformComponent.WorldPosition
-			local dist = Vector2.Distance(Vector2(myPos.x, myPos.y), Vector2(spotPos.x, spotPos.y))
-			if dist > 3.5 then return end
+			local box = { minX = 0, maxX = 0, minY = 0, maxY = 0 }
+			local dist = 0
+			local limit = 3.5
+			if _ObstacleQuery:GetColliderAABB(spotEnt, box) then
+				local nx = math.max(box.minX, math.min(myPos.x, box.maxX))
+				local ny = math.max(box.minY, math.min(myPos.y, box.maxY))
+				dist = Vector2.Distance(Vector2(myPos.x, myPos.y), Vector2(nx, ny))
+				limit = self.FishingReachFromEdge
+			else
+				local spotPos = spotEnt.TransformComponent.WorldPosition
+				dist = Vector2.Distance(Vector2(myPos.x, myPos.y), Vector2(spotPos.x, spotPos.y))
+			end
+			if dist > limit then
+				log(string.format("[FISHING] reject: too far spot=%s dist=%.2f limit=%.2f", tostring(spotEnt.Name), dist, limit))
+				return
+			end
 		end
 		
 		if not self:IsEquippedFishingRod() then
@@ -5941,6 +6065,17 @@ script PlayerController extends Component
 		local duration = self:SkillNumber(row, "Duration", 6)
 		local armDelay = self:SkillNumber(row, "ArmDelay", 0)
 		local kind = row:GetItem("Type")
+		-- 방향성 착탄 이펙트(EffectFacing 지정 — 붉은 너클의 일격): 원본 피벗이 시전자 자리라, 장판 중심이 아니라
+		-- 시전 위치 + 방향 × EffectOffset 에서 시전 방향에 맞춰 터뜨린다. 공란이면 기존처럼 장판 중심·반전 없음.
+		local fxPose = nil
+		if self:SkillText(row, "EffectFacing") ~= "" then
+			local fxOffset = self:SkillNumber(row, "EffectOffset", 0)
+			fxPose = {
+				pos = Vector3(pos.x + dirX * fxOffset, pos.y + dirY * fxOffset + self:GetSkillEffectHeight(row, dirX), pos.z),
+				flip = self:IsSkillEffectFlipX(row, dirX),
+				rot = self:GetSkillEffectRotation(row, dirX, dirY),
+			}
+		end
 		-- 지속 장판(Field 이면서 지속시간 동안 여러 번 틱하는 것 — 산성 포션·대연성 진)은 촉매 연구(FieldDurationPct·FieldDamagePct)를 받는다.
 		-- 한 번만 터지는 지연 착탄(모루 낙하·불씨 결정·균열 각인)은 장판이 아니므로 제외한다.
 		local persistent = kind == "Field" and (duration - armDelay) > self:SkillNumber(row, "TickInterval", 1)
@@ -5973,7 +6108,7 @@ script PlayerController extends Component
 			log_warning("[SKILL-AREA] marker model missing: " .. tostring(self.SkillAreaMarkerModel))
 		end
 		local now = _UtilLogic.ElapsedSeconds
-		self._T.SkillAreas[skillId] = { row = row, map = map, center = center, size = size, marker = marker, expires = now + duration, nextTick = now + armDelay, kind = kind, damageMul = fieldDamageMul }
+		self._T.SkillAreas[skillId] = { row = row, map = map, center = center, size = size, marker = marker, expires = now + duration, nextTick = now + armDelay, kind = kind, damageMul = fieldDamageMul, fxPose = fxPose }
 		log("[SKILL-AREA] create " .. skillId .. " kind=" .. tostring(kind) .. " r=" .. tostring(size * 0.5) .. " arm=" .. tostring(armDelay) .. " life=" .. string.format("%.2f", duration) .. " dmgMul=" .. string.format("%.2f", fieldDamageMul))
 	end
 
@@ -6020,7 +6155,14 @@ script PlayerController extends Component
 					end
 				end
 				local fx = self:SkillText(area.row, "EffectRUID")
-				if fx ~= "" and area.kind ~= "Trap" then self:MulticastPlayEffectEx(fx, area.center, false, self:SkillNumber(area.row, "EffectScale", 1)) end
+				if fx ~= "" and area.kind ~= "Trap" then
+					local pose = area.fxPose
+					if pose ~= nil then
+						self:MulticastPlayEffectDir(fx, pose.pos, pose.flip, self:SkillNumber(area.row, "EffectScale", 1), pose.rot, 1.0, -1)
+					else
+						self:MulticastPlayEffectEx(fx, area.center, false, self:SkillNumber(area.row, "EffectScale", 1))
+					end
+				end
 			end
 		end
 	end

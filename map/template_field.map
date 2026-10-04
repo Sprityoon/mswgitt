@@ -16,7 +16,7 @@
       {
         "id": "bf8cc34e-0fae-4e0d-b005-3ce647804870",
         "path": "/maps/template_field",
-        "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent",
+        "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent,MOD.Core.PhysicsSimulatorComponent",
         "jsonString": {
           "name": "template_field",
           "path": "/maps/template_field",
@@ -47,6 +47,19 @@
             {
               "@type": "MOD.Core.FootholdComponent",
               "FootholdsByLayer": {},
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PhysicsSimulatorComponent",
+              "Gravity": {
+                "x": 0,
+                "y": 0
+              },
+              "Paused": false,
+              "WorldBounds": {
+                "x": 10000,
+                "y": 10000
+              },
               "Enable": true
             }
           ],
@@ -103040,7 +103053,7 @@
                     "x": 15,
                     "y": -19
                   },
-                  "tileIndex": 3
+                  "tileIndex": 210
                 },
                 {
                   "type": 0,
@@ -103368,7 +103381,7 @@
                     "x": -22,
                     "y": -17
                   },
-                  "tileIndex": 17
+                  "tileIndex": 212
                 },
                 {
                   "type": 0,
@@ -103840,7 +103853,7 @@
                     "x": 12,
                     "y": -16
                   },
-                  "tileIndex": 15
+                  "tileIndex": 211
                 },
                 {
                   "type": 0,
@@ -105112,7 +105125,7 @@
                     "x": -19,
                     "y": -12
                   },
-                  "tileIndex": 1
+                  "tileIndex": 209
                 },
                 {
                   "type": 0,
@@ -105944,7 +105957,7 @@
                     "x": -12,
                     "y": -9
                   },
-                  "tileIndex": 17
+                  "tileIndex": 212
                 },
                 {
                   "type": 0,
@@ -112280,7 +112293,7 @@
                     "x": -12,
                     "y": 9
                   },
-                  "tileIndex": 3
+                  "tileIndex": 210
                 },
                 {
                   "type": 0,
@@ -112288,7 +112301,7 @@
                     "x": -9,
                     "y": 9
                   },
-                  "tileIndex": 1
+                  "tileIndex": 209
                 },
                 {
                   "type": 0,
@@ -113176,7 +113189,7 @@
                     "x": 19,
                     "y": 12
                   },
-                  "tileIndex": 17
+                  "tileIndex": 212
                 },
                 {
                   "type": 0,
@@ -115152,7 +115165,7 @@
                     "x": 19,
                     "y": 17
                   },
-                  "tileIndex": 3
+                  "tileIndex": 210
                 },
                 {
                   "type": 0,
@@ -115160,7 +115173,7 @@
                     "x": 22,
                     "y": 17
                   },
-                  "tileIndex": 1
+                  "tileIndex": 209
                 },
                 {
                   "type": 0,

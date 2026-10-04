@@ -144,6 +144,9 @@ script ResourceSpawner extends Logic
 	method integer TileNameToMask(string name)
 		-- L2 잔디 / L1 흙 패밀리 타일명 → 2×2 마스크. 미지 타일은 -1.
 		if name == nil or name == "" then return -1 end
+		-- 무작위 변형(TileVariantDataSet — 예: GrassLTRound)은 원본 타일의 마스크로 읽는다.
+		local variantBase = self:GetTileVariantBase(name)
+		if variantBase ~= "" then name = variantBase end
 		if name == "FullGrass" then return 0 end
 		if name == "GrassT" or name == "SoilT" or name == "Soil_T" or name == "GrassSand_T" or name == "WetRim_T" or name == "WetRimT" or name == "SoilSand_T" or name == "WaterT" then return 12 end       -- TL|TR
 		if name == "GrassD" or name == "SoilD" or name == "Soil_D" or name == "GrassSand_D" or name == "WetRim_D" or name == "WetRimD" or name == "SoilSand_D" or name == "WaterD" then return 3 end        -- BL|BR
@@ -208,6 +211,68 @@ script ResourceSpawner extends Logic
 		if mask == 6 then return "SubGrassLTRD" end  -- TL|BR 대각
 		if mask == 9 then return "SubGrassRTLD" end  -- TR|BL 대각
 		return "FullGrass"
+	end
+
+	-- ── 타일 무작위 변형 (2026-10-04 — 둥근 볼록 모서리 Grass{LT|RT|LD|RD}Round) ──────────────
+	-- TileVariantDataSet(BaseTile, VariantTile, Enabled) 한 곳에서 관리한다. 원본 + Enabled 변형 중
+	-- 하나를 셀 좌표 해시로 고른다 → 같은 셀은 서버 재계산·세이브 복원·오프라인 맵 도구에서 항상 같은 타일.
+	-- Enabled=false 행도 역변환(GetTileVariantBase)에는 쓴다: 맵에 이미 칠해진 변형을 편집 가능하게.
+	-- 🔴 VariantTile 이 wall.tileset 에 등록되기 전에 Enabled=true 로 바꾸지 말 것 (등록 안 된 이름 SetTile).
+
+	method void EnsureTileVariantCache()
+		-- TileVariantDataSet 을 한 번 읽어 base→변형 목록 / 변형→base 캐시를 만든다.
+		if self._T.TileVariantList ~= nil then return end
+		local list = {}
+		local reverse = {}
+		local ds = _DataService:GetTable("TileVariantDataSet")
+		if ds ~= nil then
+			for i = 1, ds:GetRowCount() do
+				local base = ds:GetCell(i, "BaseTile") or ""
+				local variant = ds:GetCell(i, "VariantTile") or ""
+				local enabled = string.lower(ds:GetCell(i, "Enabled") or "") == "true"
+				if base ~= "" and variant ~= "" then
+					reverse[variant] = base
+					if enabled then
+						if list[base] == nil then list[base] = {} end
+						table.insert(list[base], variant)
+					end
+				end
+			end
+		end
+		self._T.TileVariantList = list
+		self._T.TileVariantBase = reverse
+		log(string.format("[TILE-VARIANT] cache built bases=%d", self:CountTableKeys(list)))
+	end
+
+	method integer CountTableKeys(table t)
+		-- 테이블 키 개수 (로그용).
+		local n = 0
+		for _, _ in pairs(t) do n = n + 1 end
+		return n
+	end
+
+	method string GetTileVariantBase(string name)
+		-- 변형 타일명이면 원본 타일명, 아니면 "".
+		self:EnsureTileVariantCache()
+		return self._T.TileVariantBase[name] or ""
+	end
+
+	method integer TileVariantHash(integer x, integer y)
+		-- 셀 좌표 결정적 해시 (0..65520). scripts/apply_tile_variants.cjs 의 variantHash 와 수식이 같아야 한다.
+		local a = (x * 7919 + y * 104729 + 12345) % 65521
+		local b = (a * a + x * 31 + y * 17) % 65521
+		return b // 7
+	end
+
+	method string ResolveTileVariant(string baseName, integer x, integer y)
+		-- 원본 타일명 → (원본 + Enabled 변형) 중 셀 해시로 하나. 변형이 없으면 원본 그대로.
+		if baseName == nil or baseName == "" then return baseName end
+		self:EnsureTileVariantCache()
+		local variants = self._T.TileVariantList[baseName]
+		if variants == nil or #variants == 0 then return baseName end
+		local pick = self:TileVariantHash(x, y) % (#variants + 1)
+		if pick == 0 then return baseName end
+		return variants[pick]
 	end
 
 	method string MaskToSoilTileName(integer mask)
@@ -861,7 +926,7 @@ script ResourceSpawner extends Logic
 		if mask == 15 then
 			tilemap2:RemoveTile(x, y)
 		else
-			tilemap2:SetTile(self:MaskToTileName(mask), x, y)
+			tilemap2:SetTile(self:ResolveTileVariant(self:MaskToTileName(mask), x, y), x, y)
 		end
 	end
 
@@ -1532,7 +1597,7 @@ script ResourceSpawner extends Logic
 		for ax, col in pairs(grassMask) do
 			for ay, isGrass in pairs(col) do
 				if isGrass then
-					tilemap2:SetTile(self:ComputeGrassTileName(grassAt, ax, ay), ax, ay)
+					tilemap2:SetTile(self:ResolveTileVariant(self:ComputeGrassTileName(grassAt, ax, ay), ax, ay), ax, ay)
 					count = count + 1
 				end
 			end
@@ -2420,7 +2485,7 @@ script ResourceSpawner extends Logic
 					tilemap1:SetTile("Soil", x, y)
 
 					if grassCacheAt(x, y) then
-						local grassName = self:ComputeGrassTileName(grassCacheAt, x, y)
+						local grassName = self:ResolveTileVariant(self:ComputeGrassTileName(grassCacheAt, x, y), x, y)
 						tilemap2:SetTile(grassName, x, y)
 						if self:IsGrassEdgeTileName(grassName) then
 							choice = "Soil"

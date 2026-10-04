@@ -38,6 +38,10 @@ script Monster extends Component
 	-- (구형은 무조건 흰색으로 되돌려 "어둡게 스폰된 몬스터가 맞으면 원래 색으로 돌아오는" 현상이 났다.)
 	@Sync @HideFromInspector property Color BaseTint = Color(1, 1, 1, 1)
 
+	-- 지금 걸린 상태이상 중 시각 표시가 있는 것(StatusVisualDataSet)을 우선순위 순으로 쉼표로 이은 값.
+	-- 상태이상 자체(_T.SkillStatuses)는 서버 전용이라, 클라 연출(머리 위 이펙트·틴트)은 이 값만 본다.
+	@Sync @HideFromInspector property string StatusVisual = ""
+
 	-- 드롭 테이블만 다른 SourceId 로 갈아끼운다 (레이드 난이도별 보상). 공란이면 MonsterId 를 쓴다.
 	-- MonsterId 자체를 바꾸지 않는 이유: 퀘스트 Kill 조건·도감 집계 키가 MonsterId 이기 때문이다.
 	property string DropSourceOverride = ""
@@ -51,6 +55,148 @@ script Monster extends Component
 		local skinSetting = self.Entity.DamageSkinSettingComponent
 		if isvalid(skinSetting) then
 			skinSetting.DamageSkinId = DataRef(self.DamageSkinRUID)
+		end
+		-- 늦게 들어온 클라는 OnSyncProperty 없이 현재 값만 받으므로 시작할 때 한 번 그린다.
+		if self:IsClient() then
+			self:ApplyStatusVisualClient()
+		end
+	end
+
+	method void OnEndPlay()
+		-- 머리 위 상태이상 이펙트 정리(클라).
+		if self:IsClient() then
+			self:ClearStatusVisualClient()
+		end
+		if self._T.StatusTimer ~= nil then
+			_TimerService:ClearTimer(self._T.StatusTimer)
+			self._T.StatusTimer = nil
+		end
+	end
+
+	method table GetStatusVisualRows()
+		-- StatusVisualDataSet 캐시: StatusKey → { priority, name, tint(Color), effect, scale }. 서버·클라 공용.
+		if self._T.StatusRows ~= nil then return self._T.StatusRows end
+		local rows = {}
+		local ds = _DataService:GetTable("StatusVisualDataSet")
+		if ds ~= nil then
+			for i = 1, ds:GetRowCount() do
+				local key = tostring(ds:GetCell(i, "StatusKey") or "")
+				if key ~= "" then
+					local tint = Color(1, 1, 1, 1)
+					local parts = {}
+					for s in string.gmatch(tostring(ds:GetCell(i, "Tint") or ""), "[^|]+") do parts[#parts + 1] = tonumber(s) or 1 end
+					if #parts >= 3 then tint = Color(parts[1], parts[2], parts[3], 1) end
+					rows[key] = {
+						priority = tonumber(ds:GetCell(i, "Priority")) or 99,
+						name = tostring(ds:GetCell(i, "DisplayName") or key),
+						tint = tint,
+						effect = tostring(ds:GetCell(i, "EffectRUID") or ""),
+						scale = tonumber(ds:GetCell(i, "EffectScale")) or 1,
+					}
+				end
+			end
+		end
+		self._T.StatusRows = rows
+		return rows
+	end
+
+	method table SplitStatusVisual()
+		-- StatusVisual("Stun,Slow") → { "Stun", "Slow" }
+		local keys = {}
+		for s in string.gmatch(tostring(self.StatusVisual or ""), "[^,]+") do keys[#keys + 1] = s end
+		return keys
+	end
+
+	method Color GetRestTint()
+		-- 평소 색 = 스폰 기본 틴트(BaseTint) × 가장 우선인 상태이상 틴트. 피격 플래시·공격 예고가 끝나면 이 색으로 돌아온다.
+		local base = self.BaseTint
+		local keys = self:SplitStatusVisual()
+		if #keys == 0 then return base end
+		local row = self:GetStatusVisualRows()[keys[1]]
+		if row == nil then return base end
+		return Color(base.r * row.tint.r, base.g * row.tint.g, base.b * row.tint.b, base.a)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RefreshStatusVisual()
+		-- 지금 걸린 상태이상으로 StatusVisual(@Sync)과 평소 색을 다시 맞추고, 가장 빨리 끝나는 상태에 맞춰 다음 갱신을 예약한다.
+		local rows = self:GetStatusVisualRows()
+		local now = _UtilLogic.ElapsedSeconds
+		local active = {}
+		local nextExpire = nil
+		if not self.IsDead then
+			for key, st in pairs(self._T.SkillStatuses or {}) do
+				if st ~= nil and st.expires > now and rows[key] ~= nil then
+					active[#active + 1] = key
+					if nextExpire == nil or st.expires < nextExpire then nextExpire = st.expires end
+				end
+			end
+		end
+		table.sort(active, function(a, b) return rows[a].priority < rows[b].priority end)
+		local joined = table.concat(active, ",")
+		if joined ~= self.StatusVisual then
+			self.StatusVisual = joined
+			-- 피격 플래시 중이면 플래시가 끝날 때 복귀 색을 칠한다(FlashHit).
+			local sprite = self.Entity.SpriteRendererComponent
+			if isvalid(sprite) and (self._T.FlashUntil or 0) <= now then
+				sprite.Color = self:GetRestTint()
+			end
+			log("[STATUS-FX] " .. self:GetMonsterId() .. " visual=" .. (joined == "" and "-" or joined))
+		end
+		if self._T.StatusTimer ~= nil then
+			_TimerService:ClearTimer(self._T.StatusTimer)
+			self._T.StatusTimer = nil
+		end
+		if nextExpire ~= nil then
+			self._T.StatusTimer = _TimerService:SetTimerOnce(function()
+				self._T.StatusTimer = nil
+				if isvalid(self.Entity) then self:RefreshStatusVisual() end
+			end, math.max(0.05, nextExpire - now + 0.02))
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnSyncProperty(string propertyName, any newValue)
+		-- 상태이상 표시가 바뀌면 머리 위 이펙트를 다시 붙인다.
+		if propertyName == "StatusVisual" then
+			self:ApplyStatusVisualClient()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ClearStatusVisualClient()
+		-- 붙여 둔 루프 이펙트를 모두 뗀다.
+		for _, serial in pairs(self._T.StatusFx or {}) do
+			if serial ~= nil and serial ~= 0 then _EffectService:RemoveEffect(serial) end
+		end
+		self._T.StatusFx = {}
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyStatusVisualClient()
+		-- 머리 위(피격 박스 윗변)에 상태이상 루프 이펙트를 최대 3개, 우선순위 순으로 가로로 붙인다.
+		-- 부모(몬스터) Scale 이 곱해지므로 로컬 위치·배율은 나눠서 넘긴다. 피격 박스는 로컬 단위다(규칙 14).
+		self:ClearStatusVisualClient()
+		if self.IsDead then return end
+		local keys = self:SplitStatusVisual()
+		if #keys == 0 then return end
+		local rows = self:GetStatusVisualRows()
+		local ts = self.Entity.TransformComponent.Scale
+		local sx = math.max(0.01, math.abs(ts.x))
+		local sy = math.max(0.01, math.abs(ts.y))
+		local headY = 1.0 / sy
+		local hit = self.Entity.HitComponent
+		if isvalid(hit) then headY = hit.ColliderOffset.y + hit.BoxSize.y * 0.5 end
+		local shown = math.min(3, #keys)
+		local opts = { IgnoreMapLayerCheck = true, SortingLayer = _RenderLayers.EntityLayer, OrderInLayer = 600 }
+		for i = 1, shown do
+			local row = rows[keys[i]]
+			if row ~= nil and row.effect ~= "" then
+				local x = (i - (shown + 1) * 0.5) * (0.9 / sx)
+				local s = row.scale
+				local serial = _EffectService:PlayEffectAttached(row.effect, self.Entity, Vector3(x, headY + 0.35 / sy, 0), 0, Vector3(s / sx, s / sy, 1), true, opts)
+				self._T.StatusFx[keys[i]] = serial
+			end
 		end
 	end
 
@@ -66,6 +212,8 @@ script Monster extends Component
 	method void Dead()
 		-- Flags death, drives the DEAD state, then hides/destroys (or keeps for respawn).
 		self.IsDead = true
+		-- 죽으면 상태이상 표시(머리 위 이펙트·틴트)를 걷는다.
+		self:RefreshStatusVisual()
 		local sc = self.Entity.StateComponent
 		if isvalid(sc) then sc:ChangeState("DEAD") end
 
@@ -358,6 +506,7 @@ script Monster extends Component
 		-- Restores visibility/HP and returns to IDLE (only used when RespawnOn = true).
 		self.IsDead = false
 		self._T.SkillStatuses = {}
+		self:RefreshStatusVisual()
 		self.LastAttacker = nil
 		self.Entity:SetVisible(true)
 		self.Entity:SetEnable(true)
@@ -439,9 +588,11 @@ script Monster extends Component
 		local sprite = self.Entity.SpriteRendererComponent
 		if not isvalid(sprite) then return end
 		sprite.Color = Color(1, 0.4, 0.4, 1)
+		self._T.FlashUntil = _UtilLogic.ElapsedSeconds + 0.1
 		_TimerService:SetTimerOnce(function()
+			-- 복귀 색 = 기본 틴트 × 상태이상 틴트(GetRestTint).
 			local s = self.Entity.SpriteRendererComponent
-			if isvalid(s) then s.Color = self.BaseTint end
+			if isvalid(s) then s.Color = self:GetRestTint() end
 		end, 0.1)
 	end
 
@@ -547,6 +698,8 @@ script Monster extends Component
 			self._T.SkillStatuses["Slow"] = { expires = _UtilLogic.ElapsedSeconds + self.GearSlowDuration * pc:GetControlDurationScale(), value = v, stacks = 1 }
 		end
 		self:ApplySkillStatus(skillId, attacker)
+		-- 장비 둔화처럼 ApplySkillStatus 밖에서 건 상태도 표시에 반영한다.
+		self:RefreshStatusVisual()
 	end
 
 	@ExecSpace("ServerOnly")
@@ -580,6 +733,7 @@ script Monster extends Component
 		local stacks = math.min(maxStacks, (old ~= nil and old.stacks or 0) + 1)
 		self._T.SkillStatuses[key] = { expires = _UtilLogic.ElapsedSeconds + duration, value = value, stacks = stacks }
 		log("[SKILL-STATUS] " .. self:GetMonsterId() .. " " .. key .. " stacks=" .. stacks)
+		self:RefreshStatusVisual()
 	end
 
 end

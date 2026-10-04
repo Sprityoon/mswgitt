@@ -1,0 +1,35 @@
+{
+  "master": [
+    1024,
+    1024
+  ],
+  "game_sheet": [
+    256,
+    256
+  ],
+  "tile": [
+    64,
+    64
+  ],
+  "order": "N1 E2 S4 W8, masks 0..15",
+  "face_height": 35,
+  "trim_width": 3,
+  "front_masks": [
+    0,
+    1,
+    2,
+    3,
+    8,
+    9,
+    10,
+    11
+  ],
+  "opaque": true,
+  "rendering": "imagegen-painted materials, crop/placement only, Lanczos size conversion",
+  "palette_reduction": false,
+  "pixelization": false,
+  "vector_drawing": false,
+  "shared_edge_precision": "master endpoint equality; 64px antialiasing may mix edge colors",
+  "maker": "refresh 검증 보류(MCP 미연결)",
+  "runtime": "런타임 검증 보류(제작자 수행)"
+}

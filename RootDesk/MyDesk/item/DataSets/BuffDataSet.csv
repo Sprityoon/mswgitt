@@ -1,21 +1,22 @@
-BuffId,DisplayName,StatKey,ModifierType,Value,Duration,IconRUID,StackRule
-gather_boost_small,가벼운 집중,GatherSpeed,mult,1.25,60,f0bce7f800f140559f35a12a93de9c9e,refresh
-move_boost_small,가벼운 발걸음,MoveSpeed,mult,1.15,45,f0bce7f800f140559f35a12a93de9c9e,refresh
-gather_boost_big,강한 집중,GatherSpeed,mult,1.5,120,f0bce7f800f140559f35a12a93de9c9e,refresh
-atk_boost_small,가벼운 투지,AttackPower,mult,1.25,60,1b1ccb37d5de4ae5837fad85c54a8e58,refresh
-frost_slow,빙결 둔화,MoveSpeed,mult,0.55,3,086cb115636d4aaa91de07559b28c374,refresh
-snow_field_slow,눈더미 둔화,MoveSpeed,mult,0.6,2,086cb115636d4aaa91de07559b28c374,refresh
-fist_shout_atk,기합: 공격력,AttackPct,add,0.15,12,fc799caaec864d98955815cdab4e33d1,refresh
-fist_shout_move,기합: 이동 속도,MoveSpeed,mult,1.15,12,fc799caaec864d98955815cdab4e33d1,refresh
-fist_shout_speed,기합: 공격 속도,GatherSpeed,mult,1.15,12,fc799caaec864d98955815cdab4e33d1,refresh
-fist_aura_follow,오라 피스트: 추가타,FollowUpHit,add,0.6,12,51d21754397c424c88e1a562ce2b3962,refresh
-fist_aura_stamina,오라 피스트: 기력 흡수,HitStaminaGain,add,5,12,51d21754397c424c88e1a562ce2b3962,refresh
-fist_iron_armor,강철 피부: 슈퍼아머,SuperArmor,add,1,8,52162587bc534b9385af8c77513d93d4,refresh
-fist_step_empower,인파이트 스텝: 강타 준비,NextHitBonus,add,0.5,3,5e32ce05d92b456a8b3c6e25b42d8b7a,refresh
-fist_second_wind_armor,불굴의 투혼: 슈퍼아머,SuperArmor,add,1,4,d1608479766c4b2592825d3cb2f4c072,refresh
-shadow_step_crit,그림자 걸음: 확정 치명,NextCrit,add,1,3,7267e6033de3427eb77d4f051bdbafb7,refresh
-shadow_step_move,그림자 걸음: 이동 속도,MoveSpeed,mult,1.2,3,7267e6033de3427eb77d4f051bdbafb7,refresh
-skill_channel_armor,시전 슈퍼아머,SuperArmor,add,1,2,52162587bc534b9385af8c77513d93d4,refresh
-provoke_guard,쇠망치 도발: 피해 감소,DamageReductionPct,add,0.25,6,62d6471a6b97411483329b7345dc2e0e,refresh
-rally_atk,야생의 고무: 공격력,AttackPct,add,0.15,8,a4cbb59314fd4bff89db8ea4f0148fe3,refresh
-rally_move,야생의 고무: 이동 속도,MoveSpeed,mult,1.1,8,a4cbb59314fd4bff89db8ea4f0148fe3,refresh
+BuffId,DisplayName,StatKey,ModifierType,Value,Duration,IconRUID,StackRule,Description,IsDebuff,Tint
+gather_boost_small,가벼운 집중,GatherSpeed,mult,1.25,60,f0bce7f800f140559f35a12a93de9c9e,refresh,채집 속도가 25% 빨라집니다.,,
+move_boost_small,가벼운 발걸음,MoveSpeed,mult,1.15,45,f0bce7f800f140559f35a12a93de9c9e,refresh,이동 속도가 15% 빨라집니다.,,
+gather_boost_big,강한 집중,GatherSpeed,mult,1.5,120,f0bce7f800f140559f35a12a93de9c9e,refresh,채집 속도가 50% 빨라집니다.,,
+atk_boost_small,가벼운 투지,AttackPower,mult,1.25,60,1b1ccb37d5de4ae5837fad85c54a8e58,refresh,공격력이 25% 오릅니다.,,
+frost_slow,빙결 둔화,MoveSpeed,mult,0.55,3,086cb115636d4aaa91de07559b28c374,refresh,몸이 얼어붙어 이동 속도가 45% 느려집니다.,true,0.62|0.82|1
+snow_field_slow,눈더미 둔화,MoveSpeed,mult,0.6,2,086cb115636d4aaa91de07559b28c374,refresh,눈더미에 발이 빠져 이동 속도가 40% 느려집니다. 눈더미를 벗어나면 풀립니다.,true,0.8|0.9|1
+fist_shout_atk,기합: 공격력,AttackPct,add,0.15,12,fc799caaec864d98955815cdab4e33d1,refresh,공격력이 15% 오릅니다.,,1|0.84|0.72
+fist_shout_move,기합: 이동 속도,MoveSpeed,mult,1.15,12,fc799caaec864d98955815cdab4e33d1,refresh,이동 속도가 15% 빨라집니다.,,
+fist_shout_speed,기합: 공격 속도,GatherSpeed,mult,1.15,12,fc799caaec864d98955815cdab4e33d1,refresh,공격·채집 속도가 15% 빨라집니다.,,
+fist_shout_stamina,기합: 기력 회복,StaminaRegen,mult,4,12,fc799caaec864d98955815cdab4e33d1,refresh,기력 회복 속도가 4배가 됩니다.,,
+fist_aura_follow,오라 피스트: 추가타,FollowUpHit,add,0.6,12,51d21754397c424c88e1a562ce2b3962,refresh,평타(Ctrl)가 60% 위력의 추가타를 한 번 더 날립니다.,,
+fist_aura_stamina,오라 피스트: 기력 흡수,HitStaminaGain,add,5,12,51d21754397c424c88e1a562ce2b3962,refresh,평타를 칠 때마다 기력을 5 회복합니다.,,
+fist_iron_armor,강철 피부: 슈퍼아머,SuperArmor,add,1,8,52162587bc534b9385af8c77513d93d4,refresh,근육이 강철처럼 굳어 넉백·경직을 무시합니다.,,0.82|0.86|0.95
+fist_step_empower,인파이트 스텝: 강타 준비,NextHitBonus,add,0.5,3,5e32ce05d92b456a8b3c6e25b42d8b7a,refresh,다음 평타의 피해가 50% 증가합니다. 평타를 치면 사라집니다.,,
+fist_second_wind_armor,불굴의 투혼: 슈퍼아머,SuperArmor,add,1,4,d1608479766c4b2592825d3cb2f4c072,refresh,불굴의 투혼으로 넉백·경직을 무시합니다.,,1|0.95|0.72
+shadow_step_crit,그림자 걸음: 확정 치명,NextCrit,add,1,3,7267e6033de3427eb77d4f051bdbafb7,refresh,다음 피해 스킬이 반드시 치명타로 들어갑니다.,,
+shadow_step_move,그림자 걸음: 이동 속도,MoveSpeed,mult,1.2,3,7267e6033de3427eb77d4f051bdbafb7,refresh,이동 속도가 20% 빨라집니다.,,
+skill_channel_armor,시전 슈퍼아머,SuperArmor,add,1,2,52162587bc534b9385af8c77513d93d4,refresh,시전하는 동안 넉백·경직을 무시합니다.,,
+provoke_guard,쇠망치 도발: 피해 감소,DamageReductionPct,add,0.25,6,62d6471a6b97411483329b7345dc2e0e,refresh,받는 피해가 25% 줄어듭니다.,,
+rally_atk,야생의 고무: 공격력,AttackPct,add,0.15,8,a4cbb59314fd4bff89db8ea4f0148fe3,refresh,야생의 고무 — 공격력이 15% 오릅니다.,,
+rally_move,야생의 고무: 이동 속도,MoveSpeed,mult,1.1,8,a4cbb59314fd4bff89db8ea4f0148fe3,refresh,야생의 고무 — 이동 속도가 10% 빨라집니다.,,

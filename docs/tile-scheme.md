@@ -55,6 +55,17 @@
 
 > 2026-10-01 제작자 요청으로 `tileimg/new grass` 아트로 15종 교체 완료. 기존 그룹 리소스 RUID·팔레트 순서·이름·마스크·충돌 설정은 유지한다. `12.png`가 RTLD이며 LTRD는 정확한 픽셀 좌우 반전이다. 파일 대응·갱신 버전·원격 픽셀 검증은 해당 폴더의 `replacement-manifest.json`·`replacement-results.json`·`verification-results.json`, 제작자 Play 항목은 [tasks.md](./tasks.md) 참조.
 
+### L2 무작위 변형 — 둥근 볼록 모서리 4종 (⚖️ 2026-10-04)
+
+볼록 모서리 `Grass{LT|RT|LD|RD}` 는 같은 마스크의 **둥근 변형** `Grass{LT|RT|LD|RD}Round` 와 **셀 좌표 해시로 반반** 섞인다. 대체가 아니라 교대.
+
+- 단일 소스 = `RootDesk/MyDesk/MapObjects/DataSets/TileVariantDataSet.csv` (`BaseTile, VariantTile, Enabled`). 다른 타일 변형도 행만 추가하면 된다.
+- 해시 수식은 런타임 `ResourceSpawner.TileVariantHash` 와 오프라인 `scripts/apply_tile_variants.cjs` 의 `variantHash` **두 곳이 같아야 한다** — 같은 셀은 편집·세이브 복원·정적 맵에서 항상 같은 변형.
+- 읽기: `TileNameToMask` 는 변형 이름을 원본 마스크로 되돌린다(`Enabled=false` 행도 역변환에 사용). 미니맵·`IsGrassEdgeTileName` 은 접두어/접미어 판정이라 `...Round` 를 원본과 똑같이 분류한다.
+- 쓰기: 런타임 `SetCellMaskExact`(호미·삽) · 절차 지형 · `AutotileGrassLayer`. 정적 맵(.map)은 `node scripts/apply_tile_variants.cjs --apply`(L2 `tileIndex` 숫자만 치환, Maker 저장 형식 보존, 자가검사 내장).
+- 원본 그림: `tileimg/new grass/14~17.png`(제작자, 보존) → 등록용 `tileimg/new grass/round/Grass*Round.png`. **14번은 6px, 16번은 2px 왼쪽으로 밀려 그려져** 오른쪽 이웃과 흙 틈이 생겨서 수평 이동만 했다(`round/round-manifest.json` 에 가장자리 실측).
+- 🔴 `wall.tileset` 에 4종이 등록되기 전에는 `Enabled=false` 유지 — 등록 안 된 이름을 `SetTile` 하면 그 칸이 빈다.
+
 ### L0 물 프린지 패밀리 = 15종 (2026-08-28 도입, 2026-08-29 대각 2종 추가)
 `Water`(중심 수면) + `Water{T|D|L|R|LT|RT|LD|RD}` 8 + `Water*Corner` 4 + `Water{LTRD|RTLD}` 2 (퍼즐식 여집합)
 

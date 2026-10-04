@@ -16,7 +16,7 @@
       {
         "id": "4a4079b5-f4eb-4b9d-9fbe-a0bf6efb95b8",
         "path": "/maps/field_earth",
-        "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent",
+        "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent,MOD.Core.PhysicsSimulatorComponent",
         "jsonString": {
           "name": "field_earth",
           "path": "/maps/field_earth",
@@ -47,6 +47,19 @@
             {
               "@type": "MOD.Core.FootholdComponent",
               "FootholdsByLayer": {},
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PhysicsSimulatorComponent",
+              "Gravity": {
+                "x": 0,
+                "y": 0
+              },
+              "Paused": false,
+              "WorldBounds": {
+                "x": 10000,
+                "y": 10000
+              },
               "Enable": true
             }
           ],
@@ -29488,7 +29501,7 @@
                     "x": -22,
                     "y": -18
                   },
-                  "tileIndex": 17
+                  "tileIndex": 212
                 },
                 {
                   "type": 0,
@@ -29496,7 +29509,7 @@
                     "x": -19,
                     "y": -18
                   },
-                  "tileIndex": 15
+                  "tileIndex": 211
                 },
                 {
                   "type": 0,
@@ -30328,7 +30341,7 @@
                     "x": 7,
                     "y": -16
                   },
-                  "tileIndex": 15
+                  "tileIndex": 211
                 },
                 {
                   "type": 0,
@@ -31728,7 +31741,7 @@
                     "x": -19,
                     "y": -12
                   },
-                  "tileIndex": 1
+                  "tileIndex": 209
                 },
                 {
                   "type": 0,
@@ -31912,7 +31925,7 @@
                     "x": 4,
                     "y": -12
                   },
-                  "tileIndex": 3
+                  "tileIndex": 210
                 },
                 {
                   "type": 0,
@@ -32704,7 +32717,7 @@
                     "x": -3,
                     "y": -9
                   },
-                  "tileIndex": 17
+                  "tileIndex": 212
                 },
                 {
                   "type": 0,
@@ -33928,7 +33941,7 @@
                     "x": -3,
                     "y": -6
                   },
-                  "tileIndex": 3
+                  "tileIndex": 210
                 },
                 {
                   "type": 0,
@@ -35832,7 +35845,7 @@
                     "x": -12,
                     "y": 0
                   },
-                  "tileIndex": 15
+                  "tileIndex": 211
                 },
                 {
                   "type": 0,
@@ -35944,7 +35957,7 @@
                     "x": 11,
                     "y": 0
                   },
-                  "tileIndex": 17
+                  "tileIndex": 212
                 },
                 {
                   "type": 0,
@@ -38024,7 +38037,7 @@
                     "x": -17,
                     "y": 6
                   },
-                  "tileIndex": 1
+                  "tileIndex": 209
                 },
                 {
                   "type": 0,
@@ -38544,7 +38557,7 @@
                     "x": 11,
                     "y": 7
                   },
-                  "tileIndex": 3
+                  "tileIndex": 210
                 },
                 {
                   "type": 0,
@@ -39192,7 +39205,7 @@
                     "x": -3,
                     "y": 10
                   },
-                  "tileIndex": 15
+                  "tileIndex": 211
                 },
                 {
                   "type": 0,
@@ -40944,7 +40957,7 @@
                     "x": -3,
                     "y": 14
                   },
-                  "tileIndex": 1
+                  "tileIndex": 209
                 },
                 {
                   "type": 0,
@@ -42704,7 +42717,7 @@
                     "x": -1,
                     "y": 19
                   },
-                  "tileIndex": 15
+                  "tileIndex": 211
                 },
                 {
                   "type": 0,
@@ -43088,7 +43101,7 @@
                     "x": 10,
                     "y": 20
                   },
-                  "tileIndex": 1
+                  "tileIndex": 209
                 },
                 {
                   "type": 0,
@@ -44120,7 +44133,7 @@
                     "x": 15,
                     "y": 23
                   },
-                  "tileIndex": 17
+                  "tileIndex": 212
                 },
                 {
                   "type": 0,

@@ -14,12 +14,86 @@ script PlayerBuffs extends Component
 		self._tickAccum = 0.0
 	end
 
-	@ExecSpace("ServerOnly")
 	method void OnUpdate(number delta)
-		self._tickAccum = self._tickAccum + delta
-		if self._tickAccum < 0.5 then return end
-		self._tickAccum = 0.0
-		self:ExpireBuffs()
+		-- 서버: 0.5초마다 만료 정리. 클라: 다른 플레이어 아바타에 버프·디버프 틴트를 칠한다
+		-- (내 캐릭터는 PlayerController 의 깜빡임 처리부가 알파와 함께 칠한다 — 아바타 색은 쓰는 곳을 하나로 둔다).
+		if self:IsServer() then
+			self._tickAccum = self._tickAccum + delta
+			if self._tickAccum < 0.5 then return end
+			self._tickAccum = 0.0
+			self:ExpireBuffs()
+			return
+		end
+		self:UpdateRemoteTint(delta)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateRemoteTint(number delta)
+		-- 다른 플레이어만 처리한다. 값이 바뀔 때만 SetColor 를 부른다.
+		local lp = _UserService.LocalPlayer
+		if isvalid(lp) and lp == self.Entity then return end
+		self._T.TintAccum = (self._T.TintAccum or 0) + delta
+		if self._T.TintAccum < 0.2 then return end
+		self._T.TintAccum = 0
+		local avatar = self.Entity.AvatarRendererComponent
+		if not isvalid(avatar) then return end
+		local t = self:GetVisualTint()
+		local key = string.format("%.2f|%.2f|%.2f", t.r, t.g, t.b)
+		if key == self._T.TintKey then return end
+		self._T.TintKey = key
+		avatar:SetColor(t.r, t.g, t.b, 1.0)
+	end
+
+	method any GetBuffMeta(string buffId)
+		-- BuffDataSet 의 표시용 열(Description·IsDebuff·Tint)을 버프마다 한 번만 읽어 둔다.
+		if self._T.BuffMeta == nil then self._T.BuffMeta = {} end
+		local cached = self._T.BuffMeta[buffId]
+		if cached ~= nil then return cached end
+		local meta = { description = "", isDebuff = false, tint = nil }
+		local ds = _DataService:GetTable("BuffDataSet")
+		local row = ds ~= nil and ds:FindRow("BuffId", buffId) or nil
+		if row ~= nil then
+			local okD, d = pcall(function() return row:GetItem("Description") end)
+			if okD and d ~= nil then meta.description = tostring(d) end
+			local okB, b = pcall(function() return row:GetItem("IsDebuff") end)
+			meta.isDebuff = okB and tostring(b or "") == "true"
+			local okT, t = pcall(function() return row:GetItem("Tint") end)
+			if okT and t ~= nil and tostring(t) ~= "" then
+				local parts = {}
+				for s in string.gmatch(tostring(t), "[^|]+") do parts[#parts + 1] = tonumber(s) or 1 end
+				if #parts >= 3 then meta.tint = Color(parts[1], parts[2], parts[3], 1) end
+			end
+		end
+		self._T.BuffMeta[buffId] = meta
+		return meta
+	end
+
+	method Color GetVisualTint()
+		-- 아바타 틴트: 디버프 틴트가 버프 틴트보다 먼저다. 둘 다 없으면 흰색(원래 색).
+		-- 내 캐릭터는 매 프레임 묻는다 — 버프 목록과 초가 그대로면 지난 결과를 쓴다.
+		local now = os.time()
+		local cacheKey = tostring(self.ActiveBuffsJson) .. "@" .. tostring(now)
+		if self._T.TintCacheKey == cacheKey and self._T.TintCache ~= nil then return self._T.TintCache end
+		local result = self:ComputeVisualTint(now)
+		self._T.TintCacheKey = cacheKey
+		self._T.TintCache = result
+		return result
+	end
+
+	method Color ComputeVisualTint(integer now)
+		-- GetVisualTint 본체(캐시 미스일 때만).
+		local buffTint = nil
+		for _, b in ipairs(self:DecodeBuffs()) do
+			if (tonumber(b.expireAt) or 0) > now then
+				local meta = self:GetBuffMeta(tostring(b.buffId))
+				if meta.tint ~= nil then
+					if meta.isDebuff then return meta.tint end
+					if buffTint == nil then buffTint = meta.tint end
+				end
+			end
+		end
+		if buffTint ~= nil then return buffTint end
+		return Color(1, 1, 1, 1)
 	end
 
 	method table DecodeBuffs()
@@ -71,6 +145,7 @@ script PlayerBuffs extends Component
 				end
 				-- refresh
 				b.expireAt = expireAt
+				b.duration = duration
 				b.statKey = row:GetItem("StatKey") or ""
 				b.modifierType = row:GetItem("ModifierType") or "add"
 				b.value = tonumber(row:GetItem("Value")) or 0
@@ -84,6 +159,7 @@ script PlayerBuffs extends Component
 			table.insert(list, {
 				buffId = buffId,
 				expireAt = expireAt,
+				duration = duration,
 				statKey = row:GetItem("StatKey") or "",
 				modifierType = row:GetItem("ModifierType") or "add",
 				value = tonumber(row:GetItem("Value")) or 0,
@@ -196,18 +272,26 @@ script PlayerBuffs extends Component
 	end
 
 	method table GetActiveBuffsForUI()
-		-- 클라 HUD용: 만료 전 버프 목록.
+		-- 클라 HUD용: 만료 전 버프 목록. duration 은 쿨타임식 남은 시간 오버레이의 분모(구 세이브·구 데이터는 remain 으로 대체).
 		local list = self:DecodeBuffs()
 		local now = os.time()
 		local out = {}
 		for _, b in ipairs(list) do
 			local exp = tonumber(b.expireAt) or 0
 			if exp > now then
+				local meta = self:GetBuffMeta(tostring(b.buffId))
+				local remain = exp - now
+				local duration = tonumber(b.duration) or remain
+				if duration < remain then duration = remain end
 				table.insert(out, {
 					buffId = b.buffId,
 					displayName = b.displayName or b.buffId,
 					iconRuid = b.iconRuid or "",
-					remain = exp - now,
+					remain = remain,
+					expireAt = exp,
+					duration = duration,
+					description = meta.description,
+					isDebuff = meta.isDebuff,
 				})
 			end
 		end

@@ -1,0 +1,21 @@
+Create a new refined hand-painted 2D RPG wall texture atlas using IMAGE 1 AS THE EXACT LAYOUT TEMPLATE and IMAGE 2 ONLY AS PAINTING STYLE. Image1 has the correct 4x4 square-cell geometry, top-dark/face proportion and trim placement. Image2 supplies the softer painted wood, plaster and stone look but ITS GEOMETRY IS WRONG, DO NOT COPY ITS GRID OR ROW HEIGHTS.
+
+Painting: finely hand-painted MapleStory-like cozy RPG materials, natural subtle wood grain, softly varied cream plaster and pale irregular stone, supple dark-brown outlines, upper-left light. NO pixel blocks, dither, polygon mosaic, vector flat fills, sterile diagram strokes or photorealistic/3D render. Reduce coarse faceted brush daubs from image2 into more delicate blended shading. Dark top must be quiet nearly-black warm brown, not visible diagonal planks or strong broad mottling.
+
+Square full-bleed 1024x1024 composition with EXACTLY four EQUAL 256px-high rows and four EQUAL 256px-wide columns. This represents sixteen logical 64x64 tiles. Absolutely no other row heights, gutters, framing, black gridlines or labels. All tile cells fully filled. A connected edge has no dark separator, no post, no seam, no vertical timber or joint beam.
+
+ABSOLUTE ROW GEOMETRY:
+Row1 occupies y0..255: upper y0..115 is DARK TOP (45.3%); lower y116..255 is FRONT FACE (54.7%).
+Row2 occupies y256..511: ALL DARK TOP, no front face.
+Row3 occupies y512..767: upper y512..627 is DARK TOP (45.3%); lower y628..767 is FRONT FACE (54.7%). DO NOT put row3 face at its upper edge.
+Row4 occupies y768..1023: ALL DARK TOP, no front face.
+Front face band heights identical in row1 and row3: 24px warm wood lip, 76px creamy plaster, 36px stone base, 4px bottom dark brown contour. No vertical divisions between horizontally connected faces. Do not outline each tile or separate them. Keep their common horizontal bands at exactly the same height.
+
+Thin light-wood trim width12px in this 1024 layout (3px per logical tile). Only the absent N/E/W neighbor edges receive trim. No S trim ever. Every dark top touching another wall must run flush to the shared edge with NO dark outline or seam.
+Cell trim placement, left to right:
+Row1: N+E+W trim; E+W trim; N+W trim; W trim. Face below in each.
+Row2: N+E+W trim; E+W trim; N+W trim; W trim. Full-height dark top in each.
+Row3: N+E trim; E trim; N trim; NO TRIM. Face below in each.
+Row4: N+E trim; E trim; N trim; NO TRIM. Full-height dark top in each.
+The north-edge trim means the top border of THAT cell only. Vertical trims run only along the dark-top part, never through the cream face as posts. Bottom-right tile is entirely nearly-black warm brown, no trim or border. Corners formed only by surface continuity.
+Retain the layout from image1; render it freshly in refined painted style from image2.

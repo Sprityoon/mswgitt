@@ -1,0 +1,806 @@
+{
+  "Id": "",
+  "GameId": "",
+  "EntryKey": "map://building_test",
+  "ContentType": "x-mod/map",
+  "Content": "",
+  "Usage": 0,
+  "UsePublish": 1,
+  "UseService": 0,
+  "CoreVersion": "26.7.0.0",
+  "StudioVersion": "0.1.0.0",
+  "DynamicLoading": 0,
+  "ContentProto": {
+    "Use": "Binary",
+    "Entities": [
+      {
+        "id": "7c769fa9-9e69-4b1e-924e-6e1382e1fb4c",
+        "path": "/maps/building_test",
+        "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent,MOD.Core.PhysicsSimulatorComponent,script.BuildingRoomPrototype",
+        "jsonString": {
+          "name": "building_test",
+          "path": "/maps/building_test",
+          "nameEditable": false,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 0,
+          "pathConstraints": "//",
+          "revision": 0,
+          "modelId": null,
+          "@components": [
+            {
+              "@type": "MOD.Core.MapComponent",
+              "AirAccelerationXFactor": 1,
+              "AirDecelerationXFactor": 1,
+              "FallSpeedMaxXFactor": 1,
+              "FallSpeedMaxYFactor": 1,
+              "Gravity": 0,
+              "IsInstanceMap": false,
+              "TileMapMode": 1,
+              "WalkAccelerationFactor": 1,
+              "WalkDrag": 1,
+              "Enable": true,
+              "UseCustomBound": true,
+              "LeftBottom": {
+                "x": -9,
+                "y": -9
+              },
+              "RightTop": {
+                "x": 9,
+                "y": 9
+              }
+            },
+            {
+              "@type": "MOD.Core.FootholdComponent",
+              "FootholdsByLayer": {},
+              "Enable": true
+            },
+            {
+              "Gravity": {
+                "x": 0,
+                "y": 0
+              },
+              "Paused": false,
+              "WorldBounds": {
+                "x": 10000,
+                "y": 10000
+              },
+              "Enable": true,
+              "@type": "MOD.Core.PhysicsSimulatorComponent"
+            },
+            {
+              "GroundLayer": "1b026ba0-3b27-4246-9f1c-e27fac718fdb",
+              "FloorLayer": "a8dbace6-c3e2-4dcb-bb2b-a28e57194f15",
+              "WallLayer": "1b387ae7-3a0d-4b5e-9ef1-012e0b557238",
+              "DoorVisual": "1a195666-d1d0-4c88-9564-7f62d1ccadab",
+              "GroundTileName": "FullGrass",
+              "FloorTileName": "Baram_167",
+              "WallTileName": "Big Wall",
+              "GroundHalfSize": 8,
+              "RoomHalfSize": 3,
+              "InteractDistance": 2.5,
+              "CloseSafetyPadding": 0.3,
+              "ToggleCooldown": 0.25,
+              "@type": "script.BuildingRoomPrototype"
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "f63a90e7-a233-431c-b49a-cf84026c1302",
+        "path": "/maps/building_test/Background",
+        "componentNames": "MOD.Core.BackgroundComponent",
+        "jsonString": {
+          "name": "Background",
+          "path": "/maps/building_test/Background",
+          "nameEditable": false,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 0,
+          "pathConstraints": "///",
+          "revision": 0,
+          "modelId": null,
+          "@components": [
+            {
+              "@type": "MOD.Core.BackgroundComponent",
+              "SolidColor": {
+                "r": 0.549019635,
+                "g": 0.34117648,
+                "b": 0.164705887,
+                "a": 1
+              },
+              "TemplateRUID": "794ad8421e2543d8a6d2c70307637450",
+              "Type": 2,
+              "WebUrl": "",
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "78a03a73-7e44-4a1a-a9cd-82dbf2aa25f1",
+        "path": "/maps/building_test/PrototypeLayer0",
+        "componentNames": "MOD.Core.MapLayerComponent",
+        "jsonString": {
+          "name": "PrototypeLayer0",
+          "path": "/maps/building_test/PrototypeLayer0",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 2,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypemaplayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.MapLayerComponent",
+              "Enable": true,
+              "MapLayerName": "Layer1",
+              "LayerSortOrder": 0,
+              "IsVisible": true,
+              "Locked": false
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypemaplayer",
+            "sub_entity_id": null,
+            "root_entity_id": "78a03a73-7e44-4a1a-a9cd-82dbf2aa25f1",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "1b026ba0-3b27-4246-9f1c-e27fac718fdb",
+        "path": "/maps/building_test/RectTileMap",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
+        "jsonString": {
+          "name": "RectTileMap",
+          "path": "/maps/building_test/RectTileMap",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 3,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypetilelayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.RectTileMapComponent",
+              "Enable": true,
+              "GridSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1,
+                "y": 1
+              },
+              "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
+              "OrderInLayer": 1,
+              "SortingLayer": "MapLayer0"
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypetilelayer",
+            "sub_entity_id": null,
+            "root_entity_id": "1b026ba0-3b27-4246-9f1c-e27fac718fdb",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "7d682a28-1db3-46ad-a964-4533b71357b3",
+        "path": "/maps/building_test/PrototypeLayer1",
+        "componentNames": "MOD.Core.MapLayerComponent",
+        "jsonString": {
+          "name": "PrototypeLayer1",
+          "path": "/maps/building_test/PrototypeLayer1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 4,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypemaplayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.MapLayerComponent",
+              "Enable": true,
+              "MapLayerName": "Layer2",
+              "LayerSortOrder": 1,
+              "IsVisible": true,
+              "Locked": false
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypemaplayer",
+            "sub_entity_id": null,
+            "root_entity_id": "7d682a28-1db3-46ad-a964-4533b71357b3",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "ee214698-a78e-4a98-8420-226514c03f6d",
+        "path": "/maps/building_test/RectTileMap2",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
+        "jsonString": {
+          "name": "RectTileMap2",
+          "path": "/maps/building_test/RectTileMap2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 5,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypetilelayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.RectTileMapComponent",
+              "Enable": true,
+              "GridSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1,
+                "y": 1
+              },
+              "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
+              "OrderInLayer": 1,
+              "SortingLayer": "MapLayer1"
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypetilelayer",
+            "sub_entity_id": null,
+            "root_entity_id": "ee214698-a78e-4a98-8420-226514c03f6d",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "68b045b1-8f5e-43ee-a672-2627e586c3ed",
+        "path": "/maps/building_test/PrototypeLayer2",
+        "componentNames": "MOD.Core.MapLayerComponent",
+        "jsonString": {
+          "name": "PrototypeLayer2",
+          "path": "/maps/building_test/PrototypeLayer2",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 6,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypemaplayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.MapLayerComponent",
+              "Enable": true,
+              "MapLayerName": "Layer3",
+              "LayerSortOrder": 2,
+              "IsVisible": true,
+              "Locked": false
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypemaplayer",
+            "sub_entity_id": null,
+            "root_entity_id": "68b045b1-8f5e-43ee-a672-2627e586c3ed",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "4e5cd096-208f-4a91-b0a1-58598f677991",
+        "path": "/maps/building_test/RectTileMap0",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
+        "jsonString": {
+          "name": "RectTileMap0",
+          "path": "/maps/building_test/RectTileMap0",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 7,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypetilelayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.RectTileMapComponent",
+              "Enable": true,
+              "GridSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1,
+                "y": 1
+              },
+              "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
+              "OrderInLayer": 1,
+              "SortingLayer": "MapLayer2"
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypetilelayer",
+            "sub_entity_id": null,
+            "root_entity_id": "4e5cd096-208f-4a91-b0a1-58598f677991",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "8cf56989-c18f-4354-95c2-9a4ecd0a7fa8",
+        "path": "/maps/building_test/PrototypeLayer3",
+        "componentNames": "MOD.Core.MapLayerComponent",
+        "jsonString": {
+          "name": "PrototypeLayer3",
+          "path": "/maps/building_test/PrototypeLayer3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 8,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypemaplayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.MapLayerComponent",
+              "Enable": true,
+              "MapLayerName": "Layer4",
+              "LayerSortOrder": 3,
+              "IsVisible": true,
+              "Locked": false
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypemaplayer",
+            "sub_entity_id": null,
+            "root_entity_id": "8cf56989-c18f-4354-95c2-9a4ecd0a7fa8",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "a8dbace6-c3e2-4dcb-bb2b-a28e57194f15",
+        "path": "/maps/building_test/RectTileMap3",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
+        "jsonString": {
+          "name": "RectTileMap3",
+          "path": "/maps/building_test/RectTileMap3",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 9,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypetilelayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.RectTileMapComponent",
+              "Enable": true,
+              "GridSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1,
+                "y": 1
+              },
+              "TileSetRUID": "tileset://7e240dde-c5fe-4d2e-ad41-0a80f4b3ec7d",
+              "OrderInLayer": 1,
+              "SortingLayer": "MapLayer3"
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypetilelayer",
+            "sub_entity_id": null,
+            "root_entity_id": "a8dbace6-c3e2-4dcb-bb2b-a28e57194f15",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "acd4cc63-2efe-45a0-9311-8186026f3d34",
+        "path": "/maps/building_test/PrototypeLayer4",
+        "componentNames": "MOD.Core.MapLayerComponent",
+        "jsonString": {
+          "name": "PrototypeLayer4",
+          "path": "/maps/building_test/PrototypeLayer4",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 10,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypemaplayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.MapLayerComponent",
+              "Enable": true,
+              "MapLayerName": "Layer5",
+              "LayerSortOrder": 4,
+              "IsVisible": true,
+              "Locked": false
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypemaplayer",
+            "sub_entity_id": null,
+            "root_entity_id": "acd4cc63-2efe-45a0-9311-8186026f3d34",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "1b387ae7-3a0d-4b5e-9ef1-012e0b557238",
+        "path": "/maps/building_test/RectTileMap4",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
+        "jsonString": {
+          "name": "RectTileMap4",
+          "path": "/maps/building_test/RectTileMap4",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 11,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypetilelayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.RectTileMapComponent",
+              "Enable": true,
+              "GridSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1,
+                "y": 1
+              },
+              "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
+              "OrderInLayer": 1,
+              "SortingLayer": "MapLayer4"
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypetilelayer",
+            "sub_entity_id": null,
+            "root_entity_id": "1b387ae7-3a0d-4b5e-9ef1-012e0b557238",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "0794ee6d-9ba5-46cc-a11d-365c95d393ef",
+        "path": "/maps/building_test/PrototypeLayer5",
+        "componentNames": "MOD.Core.MapLayerComponent",
+        "jsonString": {
+          "name": "PrototypeLayer5",
+          "path": "/maps/building_test/PrototypeLayer5",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 12,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypemaplayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.MapLayerComponent",
+              "Enable": true,
+              "MapLayerName": "Layer6",
+              "LayerSortOrder": 5,
+              "IsVisible": true,
+              "Locked": false
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypemaplayer",
+            "sub_entity_id": null,
+            "root_entity_id": "0794ee6d-9ba5-46cc-a11d-365c95d393ef",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "92a7631d-0f94-4bca-ba14-f33e59f2378e",
+        "path": "/maps/building_test/RectTileMap5",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.RectTileMapComponent",
+        "jsonString": {
+          "name": "RectTileMap5",
+          "path": "/maps/building_test/RectTileMap5",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 13,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypetilelayer",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.RectTileMapComponent",
+              "Enable": true,
+              "GridSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1,
+                "y": 1
+              },
+              "TileSetRUID": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
+              "OrderInLayer": 1,
+              "SortingLayer": "MapLayer5"
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypetilelayer",
+            "sub_entity_id": null,
+            "root_entity_id": "92a7631d-0f94-4bca-ba14-f33e59f2378e",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "1a195666-d1d0-4c88-9564-7f62d1ccadab",
+        "path": "/maps/building_test/PrototypeDoor",
+        "componentNames": "MOD.Core.TransformComponent",
+        "jsonString": {
+          "name": "PrototypeDoor",
+          "path": "/maps/building_test/PrototypeDoor",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 14,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "buildingprototypedoor",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0.5,
+                "y": -2.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              },
+              "Enable": true
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypedoor",
+            "sub_entity_id": null,
+            "root_entity_id": "1a195666-d1d0-4c88-9564-7f62d1ccadab",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "e5532f64-634f-489d-9a46-a0ba0470948d",
+        "path": "/maps/building_test/PrototypeDoor/Panel",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent",
+        "jsonString": {
+          "name": "Panel",
+          "path": "/maps/building_test/PrototypeDoor/Panel",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 17,
+          "pathConstraints": "////",
+          "revision": 1,
+          "modelId": "d7d58985-6a73-499c-9f70-738081b1aa35",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": -0.34,
+                "y": -0.28,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 2,
+                "y": 2,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "222a3bc317844763ab817f9f0553a26e",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5",
+              "IgnoreMapLayerCheck": true
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "buildingprototypedoor",
+            "sub_entity_id": "d7d58985-6a73-499c-9f70-738081b1aa35",
+            "root_entity_id": "1a195666-d1d0-4c88-9564-7f62d1ccadab",
+            "replaced_model_id": null
+          }
+        }
+      }
+    ]
+  }
+}

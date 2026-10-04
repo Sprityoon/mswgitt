@@ -16,7 +16,7 @@
       {
         "id": "e860e5dd-bba2-4905-9c3b-a97715c22342",
         "path": "/maps/template_rocky",
-        "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent",
+        "componentNames": "MOD.Core.MapComponent,MOD.Core.FootholdComponent,MOD.Core.PhysicsSimulatorComponent",
         "jsonString": {
           "name": "template_rocky",
           "path": "/maps/template_rocky",
@@ -47,6 +47,19 @@
             {
               "@type": "MOD.Core.FootholdComponent",
               "FootholdsByLayer": {},
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PhysicsSimulatorComponent",
+              "Gravity": {
+                "x": 0,
+                "y": 0
+              },
+              "Paused": false,
+              "WorldBounds": {
+                "x": 10000,
+                "y": 10000
+              },
               "Enable": true
             }
           ],

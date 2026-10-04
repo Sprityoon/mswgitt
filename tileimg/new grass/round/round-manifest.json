@@ -1,0 +1,129 @@
+{
+  "note": "둥근 볼록 모서리 변형 4종 (2026-10-04). 원본 14~17.png 는 보존. 가장자리 = 알파>127 연속 구간",
+  "tiles": [
+    {
+      "name": "GrassLTRound",
+      "source": "tileimg/new grass/14.png",
+      "shiftX": 6,
+      "baseTile": "GrassLT",
+      "edges": {
+        "L": null,
+        "R": [
+          17,
+          63
+        ],
+        "T": null,
+        "B": [
+          18,
+          63
+        ]
+      },
+      "baseEdges": {
+        "L": null,
+        "R": [
+          18,
+          63
+        ],
+        "T": null,
+        "B": [
+          18,
+          63
+        ]
+      },
+      "sha256": "d71f800cafa9bceca8f0f72d2865327db62b0d58918570871f257096ccc1aea6"
+    },
+    {
+      "name": "GrassRTRound",
+      "source": "tileimg/new grass/15.png",
+      "shiftX": 0,
+      "baseTile": "GrassRT",
+      "edges": {
+        "L": [
+          17,
+          63
+        ],
+        "R": null,
+        "T": null,
+        "B": [
+          0,
+          45
+        ]
+      },
+      "baseEdges": {
+        "L": [
+          17,
+          63
+        ],
+        "R": null,
+        "T": null,
+        "B": [
+          0,
+          45
+        ]
+      },
+      "sha256": "c9bb4d0a7c17cdad82cb6b21f0b931e0f59dd65c6b066e529772e4a1536499f1"
+    },
+    {
+      "name": "GrassLDRound",
+      "source": "tileimg/new grass/16.png",
+      "shiftX": 2,
+      "baseTile": "GrassLD",
+      "edges": {
+        "L": null,
+        "R": [
+          0,
+          46
+        ],
+        "T": [
+          15,
+          63
+        ],
+        "B": null
+      },
+      "baseEdges": {
+        "L": null,
+        "R": [
+          0,
+          47
+        ],
+        "T": [
+          17,
+          63
+        ],
+        "B": null
+      },
+      "sha256": "be96d917546494e0eb3a9fa665c4bb347850a799655ac9b9e9044727c09a727d"
+    },
+    {
+      "name": "GrassRDRound",
+      "source": "tileimg/new grass/17.png",
+      "shiftX": 0,
+      "baseTile": "GrassRD",
+      "edges": {
+        "L": [
+          0,
+          46
+        ],
+        "R": null,
+        "T": [
+          0,
+          48
+        ],
+        "B": null
+      },
+      "baseEdges": {
+        "L": [
+          0,
+          46
+        ],
+        "R": null,
+        "T": [
+          0,
+          48
+        ],
+        "B": null
+      },
+      "sha256": "6464ae3115616c36525a4df1dfe6004ae16bdbad662e729ff1442041f4331606"
+    }
+  ]
+}

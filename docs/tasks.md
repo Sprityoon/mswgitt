@@ -1,5 +1,304 @@
 # 작업 목록 (Tasks)
 
+## [마을/아트] 헛간지기 토리의 헛간(House_WoodTower) 정면 2.5D 탑다운 RPG 뷰 리디자인 (2026-10-05) — 에셋 생성·보고서 완료 · Maker 등록 완료 · 모델 교체 대기
+
+- **제작자 요청**: 헛간(`House_WoodTower`, RUID `0c4b4594c66c48e4a44e6e1ff4db8056`)의 기존 45도 쿼터뷰 구도 왜곡 교정. 버섯집 형태가 아닌 정통 목조 농가 헛간 컨셉 유지.
+- **분석 및 문제점**:
+  - 기존 에셋은 우상단으로 기울어진 45도 아이소메트릭 사투시 뷰로, 정면 탑다운 RPG 시점의 대장간/연구소/마리 상점과 시각적 이질감 발생.
+  - 접지선이 대각선으로 형성되어 캐릭터 및 바닥 타일과의 접지 어색함.
+- **제작 및 구현**:
+  - `image-to-pixel` 워크플로우에 따라 정면 2.5D 탑다운 시점의 정통 붉은 판자벽 목조 농가 헛간 디자인.
+  - 상징 요소 반영: 지붕 꼭대기 황동 수탉 풍향계, 2층 건초 다락창과 하역 로프 도르래, 1층 대형 X자 버팀대 목조 미닫이문, 우측 건초더미 및 목제 사료통, 좌측 통나무 울타리 펜스.
+  - 완벽한 수평 접지선(바닥 여백 2px) 및 대장간/연구소 기준과 1:1 일치하는 356×248 캔버스 규격 정합(BBox 275×238, 피벗 0.5, 0.0).
+- **산출물**:
+  - 최종 스프라이트: `docs/design/art/barn/barn_front_clean.png` (356×248 RGBA)
+  - 도트 텍스처: `barn_front_dot1.png`, `barn_front_dot2.png`
+  - 4종 건물 비교 시트: `docs/design/art/barn/preview_barn_comparison.png` (기존 쿼터뷰 vs 신규 정면 헛간 vs 대장간 vs 마리 상점)
+  - 파이프라인 스크립트: `process_barn.py`, `make_barn_comparison.py`
+  - 상세 보고서: `docs/design/art/barn/barn_report.md`
+  - Maker 스프라이트: `RootDesk/MyDesk/barn_front_clean.sprite` (제작자 수동 등록 완료)
+- **검증**:
+  - 캔버스 규격(356×248), BBox(275×238), 하단 여백(2px), 수평 접지선 검증 통과.
+  - `maker_refresh_workspace` ok.
+
+## [마을/아트] 마리의 노점상(Building_Shop) 버섯집 의상·꾸미기 상점 신규 제작 (2026-10-05) — 에셋 생성·보고서 완료 · Maker 등록 완료 · 모델 교체 대기
+
+- **제작자 요청**:
+  1. 마리의 노점상(`Building_Shop`) 건물을 연구소(`researchlab_front_clean.png`) 및 대장간처럼 버섯집 형태로 재제작.
+  2. 연구소와 차별화하여 의복/꾸미기 전문 샵 테마 반영(가위/실타래 등).
+  3. 좌우로 과도하게 넓지 않게 정면 컴팩트 배치, 포션병 배제, 굴뚝 배제.
+- **제작 및 구현**:
+  - 붉은 점박이 버섯갓 지붕 중앙에 황동 재단 가위와 실타래 엠블럼 간판 배치.
+  - 좌측: 민트색 원피스 마네킹과 뜨개질 털실 바구니 배치.
+  - 우측: 정면형 목제 쇼케이스 가판대 위에 페더 모자, 손거울, 리본 선물상자 배치.
+  - 굴뚝을 완전히 제거하여 갓 높이(y205)를 연구소 갓 높이와 일치시킴.
+  - 356×248 캔버스 규격 정합(BBox 265×205, 하단 접지 2px, 피벗 0.5, 0.0).
+- **산출물**:
+  - 최종 스프라이트: `docs/design/art/mari_shop/mari_shop_front_clean.png` (356×248 RGBA)
+  - 도트 텍스처: `mari_shop_front_dot1.png`, `mari_shop_front_dot2.png`
+  - 비교 시트: `docs/design/art/mari_shop/preview_mari_shop_comparison.png`
+  - 파이프라인 스크립트: `process_mari_shop.py`, `make_comparison_preview.py`
+  - 상세 보고서: `docs/design/art/mari_shop/mari_shop_report.md`
+  - Maker 스프라이트: `RootDesk/MyDesk/mari_shop_front_clean.sprite` (제작자 수동 등록 완료)
+- **검증**:
+  - 캔버스 규격(356×248), BBox(265×205), 피벗 일치, 굴뚝 제거 확인.
+  - `maker_refresh_workspace` ok.
+
+## [마을/모델] 마을 배치 RUID 기준으로 MapObject 모델 SpriteRUID 동기화 (2026-10-05) — 모델 6건 수정 · refresh ok · build 로그 갱신 미확인
+
+- 제작자 요청: 마을에 배치된 건축물과 MapObject 모델의 RUID 불일치 → 마을 값 기준으로 모델 수정.
+- 방법: `town.map` 인스턴스 SpriteRUID ↔ `MapObjects/Models` 38개 모델의 컴포넌트 값(`SpriteRendererComponent.SpriteRUID`)을 ModelBuilder 로 비교(같은 이름 프로퍼티 덮어쓰기 값 없음 확인, 규칙 62). 일치 31 / 불일치 6 / 비대상 1(`Tree2` — 컴포넌트·값이 비어 있는 공식 맵오브젝트 참조 모델).
+- **수정 6건** (`value(..., "SpriteRUID", ..., "string")`, validate 통과, 재읽기 확인): `Building_ResearchLab` 7b4b24…→178a10f8… · `BulletinBoard` 7b4b24…→55735623… · `Building_Fountain` 130141b2…→e7f0b801… · `House_MushroomA` 70993f0d…→3521937a… · `House_WoodTower` d6027217…→0c4b4594… · `Animal_Cat` 0332ffea…→f89583f2…. (ResearchLab·BulletinBoard 는 같은 임시 RUID 를 쓰고 있었다.)
+- 범위 밖(미수정): NPC·Furniture 모델, 스크립트 프로퍼티 기본값의 RUID, 다른 맵의 인스턴스 값. `Prop_LampPost.model` 은 git 에 변경 표시가 있으나 이번 작업이 아님(이미 일치).
+- 검증: refresh ok(05:48) · build 로그는 05:09:48 스냅샷 그대로(`.model` 값만 변경 → 재빌드 없음) → **build 로그 갱신 미확인**. **런타임 검증 보류(제작자 수행)**: 영지·사냥터 등 이 모델을 스폰/배치하는 곳에서 마을과 같은 그림이 나오는지.
+
+## [건축/아트] 코어키퍼 문법의 연속 윗면·남쪽 앞면 벽 16종 (2026-10-05) — PNG 완료 · 정적/목업 검증 · 등록 대기
+
+- **손그림 질감 개정(제작자: 픽셀·벡터 느낌 완화, 이미지 생성 모델 사용)**: `wall_painted_64/`에 내장 imagegen 2회로 만든 재질을 사용한 1024px 마스터 및 256px 게임 시트 생성. 모델이 그린 재질을 자르고 배치해 16마스크·35px 앞면·3px 테두리 규격 유지, 색상 제한·PXG·도트화 없음. 마스터/게임 크기 시각 대조, 치수·알파·공통 앞면·완전 연결 윗면 검사 통과. LANCZOS 색 혼합이 있어 기존 PXG 경계 검증 결과는 승계하지 않음; 실제 게임 조립 검증 대기. **refresh 검증 보류(MCP 미연결)** · **런타임 검증 보류(제작자 수행)**.
+- 참조 파일의 첨부 경로 오류를 프로젝트 절대경로로 해결: `코어키퍼_참고용.png`(구조), `woodland_64/tileset_64.png`(재질).
+- 산출물: `docs/design/art/building/wall_topface_64/` — `wall_16_64.png`(256×256, 각 64×64, 4×4, 마스크 N1/E2/S4/W8 0~15), 4배 확대, PXG·재현 스크립트, 생성 원본·프롬프트, 사각형 방/T자/십자 목업, 검증 JSON·README. 내장 imagegen 2회 후 공통 부품을 PXG에서 정리·조립.
+- 구조: 빈 N/E/W 변에만 3px 밝은 나무 테두리, 연결된 변은 어두운 윗면만 연속. S 없는 8칸은 y29~63 공통 앞면(목재/회벽/돌받침), S 있는 8칸은 전체 윗면. 기둥·접합 보 없음. 모든 칸이 벽으로 채워져 빈 마젠타 영역 0개.
+- 검증: 전체/개별 치수·불투명·띠 위치, 호환 좌우 경계 16쌍/남북 윗면 경계 16쌍, 실제 PNG 재검사 및 `pixeltool check` 통과. 생성·픽셀 정리·최종 목업의 시각 비평 수행.
+- **refresh 검증 보류(MCP 미연결)**. **런타임 검증 보류(제작자 수행)**. 게임 등록·코드·맵·타일셋 교체는 미수행.
+
+## [마을/낚시] 키운 낚시터가 주변 나무·게시판을 덮음 + 상호작용 불가 (2026-10-05) — 코드·맵 수정 · refresh Error=0 · 런타임 검증 보류
+
+- **맵 적용 (05:11, 제작자 town 편집 완료 후)**: MapBuilder `patchComponent` 로 town `FishingSpot` 의 `script.YSortSprite.FlatGround = true`. 의미 단위 비교 결과 변경 1건(파일은 빌더 재직렬화로 LF·정수 표기). 백업 `scratch/town-before-flatground-20261005.map`. refresh ok 후에도 값 유지.
+
+- 제작자 제보: town 손배치 중 낚시터 근처 나무·게시판이 낚시터 위로 나와야 하는데 인게임에선 밑으로 들어감(OrderInLayer 무시) / 낚시터를 키운 뒤 상호작용 안 됨.
+- **원인 1 (정렬)**: `YSortSprite.ApplyYSort` 가 시작 시 `OrderInLayer` 를 항상 Y값으로 덮어씀 → Maker 수동 값 무시. 바닥선 = 트리거 아랫변(`BoxSize × Scale`) 인데 town `FishingSpot` 은 Scale 4.63 → 박스 10.5×7.2 유닛, 아랫변 y≈−14 → 그 북쪽 물체가 전부 뒤로 정렬.
+- **원인 2 (상호작용)**: 클라 조준(`IsAimTargetCore`)은 스케일 반영 트리거 박스로 통과하지만, 서버 `PlayerController.ServerRequestFishingInteract` 는 **중심점 거리 ≤ 3.5** 로 판정 → 키운 연못 가장자리에서도 3.6 이상이라 로그 없이 거부.
+- **수정**: `YSortSprite.FlatGround`(기본 false) — 켜면 `RenderLayers.MinEntityOrder` 고정(기존 "밟는 가구" 규약과 동일), `[YSORT] flat-ground` 로그. 서버 낚시 거리 = 트리거 AABB 가장자리까지(`_ObstacleQuery:GetColliderAABB`) ≤ 신규 `PlayerController.FishingReachFromEdge`(2.5), 박스 없으면 기존 중심 3.5. 거부 시 `[FISHING] reject: too far` 로그.
+- town.map 은 제작자가 Maker 에서 편집 중이라 파일 수정 안 함(규칙 11) → **제작자가 town `FishingSpot` 의 `YSortSprite.FlatGround` 체크 후 저장**.
+- 검증: refresh ok(05:10) · build **05:09:48 = PlayerController 저장(05:09:46) 직후** Error 0 / Warning 9(기존) / Info 849. **런타임 검증 보류(제작자 수행)**: 나무·게시판이 연못 위로 그려지는지, 연못 가장자리 사방에서 F 낚시 시작되는지, 먼 곳에선 `reject` 로그.
+
+## [조경/아트] 마을 나무 18종 및 소품 9종 에셋 추출, 모델 생성 및 공유 마을(town.map) 실배치 (2026-10-05) — 모델·맵 적용 완료 · refresh ok · build Error 0
+
+- **작업 개요**:
+  - 사용자 제공 "나무 종류 모음" 시트에서 **총 27종(나무 18종 + 소품 9종)**의 에셋을 컬러 언블렌딩(Color Unmatting) 및 플러드필 알파 디매팅 알고리즘으로 투명 배경 PNG 추출 완료.
+  - 사용자의 MSW Maker 리소스 등록 완료에 따라, 27종의 `.sprite` RUID를 매핑하여 `RootDesk/MyDesk/MapObjects/Models/` 아래에 **27종의 맵 오브젝트 `.model`** 생성 완료.
+  - 나무 18종 전체 및 소품 일부(그루터기, 쓰러진 통나무, 이끼 바위, 덩굴 고목)에 자원 채집 컴포넌트(`ResourceReaction`, `ResourceOccupiedArea`, `PhysicsColliderComponent`, `TriggerComponent`, `YSortSprite`)를 탑재하여 벌목/채광 자원(Wood/Stone/Apple 드랍)으로 즉시 활용 가능하도록 구축.
+  - 통행형 소품(덤불, 꽃풀, 풀, 작은 꽃, 낙엽)은 캐릭터 이동을 방해하지 않도록 콜라이더 없이 `script.YSortSprite`로 앞뒤 겹침 처리.
+  - 공유 마을 [`map/town.map`](file:///d:/메이플월도/map/town.map)의 **(X: 24, Y: 24) 부근 수목원/쇼케이스 구역**에 27종 전체를 1개씩 정갈하게 그리드 배치 완료 (엔티티 53개 → 80개).
+- **관련 문서**:
+  - 상세 명세서 및 가이드: [`docs/design/art/trees/collection/README.md`](file:///d:/메이플월도/docs/design/art/trees/collection/README.md)
+  - 종합 쇼케이스: [`docs/design/art/trees/collection/preview_extracted_showcase.png`](file:///d:/메이플월도/docs/design/art/trees/collection/preview_extracted_showcase.png)
+  - 인게임 잔디 타일 실배치 목업: [`docs/design/art/trees/collection/preview_ingame_mockup.png`](file:///d:/메이플월도/docs/design/art/trees/collection/preview_ingame_mockup.png)
+- **검증**:
+  - `ModelBuilder` 27종 유효성 검사 결함 0.
+  - `MapBuilder` 27종 엔티티 배치 및 멱등성 검증 완료.
+  - `maker_refresh_workspace` ok.
+  - `maker_logs(kind="build")` Error 0 / Warning 9(기존) / Info 849.
+- **런타임 검증 보류(제작자 수행)**:
+  - MSW Maker에서 `town` 맵 (24, 24) 구역에 27개 에셋이 정상적으로 표시되는지 확인.
+  - Ctrl(채집) 키를 눌러 기본 나무/사과나무/그루터기 등에서 자원(Wood/Apple)이 드랍되는지 확인.
+
+## [지형/아트] 둥근 볼록 모서리 프린지 4종 무작위 교대 (2026-10-04) — 등록·적용 완료 · 런타임 검증 보류
+
+- **적용 (22:58)**: 제작자가 `round/GrassRound_strip.png`(256×64, 4칸)로 `wall.tileset` 에 등록 — 인덱스 209~212 `GrassLTRound`·`GrassRTRound`·`GrassLDRound`·`GrassRDRound`, 전부 `IsCollidable=false` 확인. `TileVariantDataSet` 4행 `Enabled=true`(Maker 가 refresh 때 CSV 를 LF 로 재저장해 둔 것 확인). `apply_tile_variants.cjs --apply` → field_earth 16 · map01 10 · template_boss 2 · template_field 10 · template_raid_lobby 6 · town 45칸 변경(desert·rocky·snow 볼록 모서리 0). 백업 `scratch/tile-variants-before-20261004/`. 재실행 9맵 모두 변경 0, `maker_refresh_workspace` ok 후에도 유지(Maker 원복 없음). build 로그는 21:54:40 스냅샷 그대로(스크립트 변경 없음 → 재빌드 없음, Error 0 / Warning 9 기존).
+
+- 제작자 요청: `tileimg/new grass/14~17.png` 새 프린지 4종을 기존 모서리 프린지 4종과 **번갈아 무작위로** 적용(대체 아님).
+- **판정**: 4종은 볼록 모서리 `GrassLT/RT/LD/RD` 의 둥근 변형. 가장자리 알파 실측 — 15(`GrassRT`)·17(`GrassRD`)은 기존과 정확히 일치, **14는 6px·16은 2px 왼쪽으로 밀려** 오른쪽 이웃(`GrassT`/`GrassD`)과 흙 틈 발생(합성 확인). 원본은 그대로 두고 수평 이동만 한 등록용 `tileimg/new grass/round/Grass{LT|RT|LD|RD}Round.png` 생성(이동 후 가장자리 차이 1~2px = 풀잎 끝).
+- **구현**: 신규 `TileVariantDataSet`(`MapObjects/DataSets`, BOM·CRLF, 4행 `Enabled=false`). `ResourceSpawner` — `TileNameToMask` 가 변형을 원본 마스크로 역변환, `ResolveTileVariant`(셀 좌표 결정적 해시 `TileVariantHash`, 원본 포함 균등 선택)를 `SetCellMaskExact`·절차 지형·`AutotileGrassLayer` 쓰기 경로에 적용, 캐시 생성 시 `[TILE-VARIANT] cache built bases=N` 로그. `fix_water_fringe.cjs` 이름→마스크 표에 4종 추가. 정적 맵용 `scripts/apply_tile_variants.cjs`(dry-run 기본).
+- **검증**: LSP 오류 0. 정적 맵 스크립트는 임시 사본(가짜 등록 타일셋 + Enabled=true)으로 map01·town·template_field 적용 → 재실행 변경 0(멱등) → Enabled=false 되돌림 시 원본과 바이트 동일. 분포: town 볼록 모서리 79칸 중 둥근 45칸, map01 20칸 중 10칸 — 대략 반반. `maker_refresh_workspace` ok(21:56:51) · build **21:54:40 = ResourceSpawner 저장(21:54:38) 직후** → Error 0 / Warning 9(18:29:05 기존 MonsterAI·Monster LWA-4012, 신규 0) / Info 849.
+- **남은 순서**: ① 제작자 Maker 에서 `wall.tileset` 에 `GrassLTRound`·`GrassRTRound`·`GrassLDRound`·`GrassRDRound` 등록(`round/` 폴더 PNG, 통행 가능) → ② `TileVariantDataSet` `Enabled=true` → ③ Maker 저장 후 `node scripts/apply_tile_variants.cjs --apply`(정적 9맵) → refresh.
+- **런타임 검증 보류(제작자 수행)**: 등록·적용 후 볼록 모서리가 둥근/각진 것이 섞여 보이는지, 둥근 모서리 옆에서 호미·삽 편집이 정상인지(역변환), 재접속 후 같은 칸이 같은 모양인지.
+
+## [영지/포탈] 영지 포탈 상호작용 범위가 아래로 과도 (2026-10-04) — 모델 수정 · refresh ok · build 로그 갱신 미확인
+
+- 제작자 제보: 영지 포탈 인식 범위가 아래 방향으로 지나치게 넓음(마을 정상, 사냥터 미확인).
+- **원인**: 인식은 `PortalGate` 의 `TriggerEnter/Leave`(+ F 조준 판정 `IsAimTargetCore` 가 같은 트리거 AABB 사용). 같은 포탈 스프라이트(`aba58d…`, Scale 2)인데 트리거가 달랐다.
+  | 위치 | BoxSize × Scale | ColliderOffset | 기준점 아래로 |
+  |---|---|---|---|
+  | 마을 `PortalToHome`(맵 인스턴스) | 0.85×0.85 → 1.7×1.7 | (0.015, 0.345)×2 = 위로 0.69 | ≈0.16 |
+  | 사냥터 템플릿 포탈 3종(맵 인스턴스) | 1×1.25 → 2×2.5 | 0 | 1.25 |
+  | **영지 `Furniture_Portal.model`**(`ResourceSpawner` 가 스폰) | **2×3 → 4×6** | **없음(0)** | **3.0 (300px)** |
+- **수정**: `Furniture_Portal.model` 트리거를 마을 포탈과 동일하게 — `BoxSize (0.85, 0.85)` · `ColliderOffset (0.015, 0.345)` (ModelBuilder). 마을·사냥터 포탈은 같은 모델 ID 지만 맵 인스턴스에 자기 값이 박혀 있어 영향 없음. 트리거는 가구 배치 칸 계산에 쓰이지 않음(배치는 `GridToEntity`).
+- 사냥터 템플릿 포탈(아래로 1.25)은 제보 전이라 손대지 않음 — 확인 후 필요 시 같은 값으로 맞출 것.
+- **검증**: `maker_refresh_workspace` ok · build 로그는 06:08:16 스냅샷 그대로(`.model` 단독 변경이라 재빌드 없음) → **build 로그 갱신 미확인**.
+- **런타임 검증 보류(제작자 수행)**: 영지 포탈 바로 아래를 지나갈 때 "포탈 이용하기"가 뜨지 않고, 포탈 앞(발밑)에서는 정상으로 뜨는지. 이미 설치돼 있던 포탈도 다시 들어가면 새 값으로 스폰되는지.
+
+## [건축] 자유 건축 시스템 재설계 (2026-10-05) — 설계 v2 확정 · 1단계 아트 완료 · 제작자 타일 등록 대기
+
+- **⚖️ 제작자 확정 (2026-10-05)**: 칸 안 낮은 벽 / woodland_64 부품 재조립 / 세로벽 = 기둥|회벽|기둥(남쪽 끝만 좁은 앞면).
+- **1단계 아트**: `docs/design/art/building/woodland_64/connect/` — 벽 16종(`BuildWoodWall00~15`, 마스크 N1 E2 S4 W8) + `BuildDoorBlock`(투명 충돌용) + 바닥 4종(테두리 제거) = 21칸 등록용 스트립 `BuildWood_strip.png` + 순서표 + 목업. 자가비평 3회(세로벽 폭 · 벽 칸 바닥 · 회벽 이음 자국). 등록·코드 변경 없음.
+- **다음**: 제작자 Maker 등록(`wall.tileset`, 1~17번 충돌 / 18~21번 통행) → 2단계 레이어·데이터.
+- **⚖️ 벽 문법 개정 (코어키퍼 스크린샷 분석)**: 벽 = ① 검은 윗면(벽끼리는 경계 없이 이어짐, 빈 칸 쪽 변에만 밝은 테두리 — 모서리·T자 자동 해결) ② 남쪽이 빈 칸에만 윗면 아래 앞면. 기둥·보 토막 방식(woodland 생성물·재조립본) 폐기. 생성 프롬프트 `docs/design/art/building/wall_tileset_prompt_ck.md`(4×4 = 16마스크, 칸별 규칙 + 실패 시 부품 조립 대안). 설계 v2 §3 개정 표기.
+- **wall_16_64 검토 (2026-10-05)**: `docs/design/art/building/wall_connections_64/` (4×4 = 마스크 순서). 좌우 이음 64쌍 완벽·위아래 색 차이 0, 목업에서 **사각형 방·ㄱ자·T자·십자·문 구멍 모두 연결 성공**. 결함: 남쪽 연결 꺾임·T·십자 6칸의 떠 있는 짧은 기둥, 외딴 벽이 가는 토막 → `review/fixed/` 수정본(원본 보존) + `review/REVIEW.md` + 목업 전·후. 제작자 채택 결정 대기.
+- **(폐기) 재조립본**: 제작자 "ㄱ자 조인트가 없어 사각형 박스가 안 됨" — 재조립본의 모서리가 기둥 묶음이라 꺾임으로 읽히지 않음. 원본 그림체를 유지한 **연결 타일셋 재생성 프롬프트** 작성: `woodland_64/connect_tileset_prompt.md`(4×4 칸 = 16연결, 단면 일치·앞면 아랫변·칸 안에서 끝남·마젠타 배경만 제한). 재조립본 등록은 보류, 새 생성본을 받으면 같은 검사·목업·스트립 절차로 처리.
+
+- **설계 v2 (제작자: "시제품은 폐기, 따로 설계")**: [building-system-v2.md](./design/building-system-v2.md). woodland_64 실측 — 바닥 8종은 가장자리 2~3px 검은 테두리(격자선), 벽 토막은 양 끝 기둥·가장자리 미접촉(이어 붙이면 이중 기둥·틈, 조립 시험 `woodland_64/assembly_test_asis.png`) → 연결 세트 아님. 제안: **칸 안 낮은 벽 + 4방향 마스크 16종 타일**(벽 오브젝트 0, 타일을 항상 캐릭터 아래에 그려도 앞뒤 정합), 아트는 woodland_64 부품 재조립, 바닥/설치물 점유 분리(`BuildCells`), 세이브 신규 필드 `homeBuild`, 신규 레이어 `RectTileMap7`(맵 내 일반 타일맵 — 시제품의 사용자 모델 타일맵 `LEA-3035` 회피). 코드·맵·데이터 변경 없음.
+
+- 제작자 요청에 따라 이전 건축 설계·진행 기록·아트(v1~v5, 생성 원본·목업·합성 스크립트 183개 파일)를 프로젝트에서 제거했다. 임시 복구 사본: `C:/Users/mh566/AppData/Local/Temp/msw-building-reset-20261005-7a863962/`(이전 설계서 포함). 구 건축 작업으로 삭제한 `RecipeDataSet.csv`의 기존 `Wood Floor` 레시피를 복원했다. 기존 아이템·가구·배치·점유·저장 기능은 재설계 기반으로 유지한다.
+- **제작자 확정**: 벽·바닥을 한 칸씩 조합하는 자유 건축. 벽을 칸마다 오브젝트로 둘 때의 자원 부담 우려를 반영하여 **바닥·일반 벽은 타일 우선**, 문·작업대·가구는 상호작용 오브젝트로 설계한다. 성능 우위의 정도·한계 수량은 미측정.
+- 설계: [building-system.md](./design/building-system.md). 핵심: 바닥과 위 설치물의 점유 분리, 기존 영지 권한·저장 연동, 변경 셀 주변만 연결 갱신, 아트 양산 전 작은 방으로 충돌·가림 확인.
+- **조사 근거**: `PlayerInventory.ServerRequestPlace`는 바닥·가구 모두 `GridToEntity` 점유를 검사하며, `ResourceSpawner.AddPlacedTile`도 같은 셀 슬롯을 차지한다. 현재 흐름을 그대로 사용하면 바닥 위 가구 배치가 거부된다. 새 바닥은 독립 지면 기록이 필요하다. `RectTileMapComponent` 정렬 값은 타일맵 단위이므로 개별 벽과 아바타의 Y정렬을 지원한다고 가정하지 않는다.
+- **시제품 구현**: 제작자 설계 승인 후 `BuildingRoomPrototype.mlua` + native-only 모델 3종 + `map/building_test.map` 생성. 내부 5×5/바닥 49칸/일반 벽 23칸/문 1개, 런타임 이름 기반 타일 배치, F 문 개폐, 서버 요청자·맵·거리·조준·쿨다운 검사, 문틈 플레이어의 발 위치로 닫힘 거부. 맵 컨트롤러 1개, 벽별 엔티티·Trigger·OnUpdate 없음. Maker Play + 기존 테스트 모드로 제한. 기존 영지·점유·세이브·아이템·레시피 값은 이번 시제품 작업에서 수정하지 않았다. 임시 그림이며 높은 벽 Y정렬/자동 가림은 아직 아니다.
+- **진입 설정 (02:09)**: 제작자 지시에 따라 `TestModeConfig.TargetMap = "building_test"` 설정 완료(`DevTools/Scripts/TestModeConfig.mlua`, 이전 값: `"template_field"`).
+- **시험 해제·아트 전환**: 제작자 Play(02:32:44)에서 시험 맵의 사용자 모델 타일맵 6개에 `LEA-3035`가 각각 발생. 이후 제작자가 수리 대신 시험 해제와 타일셋 제작을 요청했다. `EnableTestMode=false`, `TargetMap="template_field"`로 복원하여 시험 진입을 해제했다. 시험 맵/모델은 보존하되 수리·확장하지 않는다. TestModeConfig LSP Error 0 / Warning 0, Maker refresh ok, build 04:26:17 Error 0 / Warning 9(기존) / Info 849. 런타임 검증 보류(제작자 수행).
+- **신규 아트**: `docs/design/art/building/woodland_64/`에 목재·회벽·돌받침 타일 시안 32개(64×64px), 512×256px 시트, 확대 미리보기, PXG 원본·생성 원본·프롬프트·검수 README. 게임 리소스 등록/교체 없음. 치수·알파 검증과 시각 비평 2회; 자동 연결·반복 경계는 미검증.
+- **16종 벽 연결 아트 추가**: 제작자가 기존 시트를 정확한 그림체 참조로 첨부하여 새 4×4 벽 연결 시트를 요청했다. `wall_connections_64/`에 256×256px 시트·개별 64×64px PNG 16개·4배 확대·PXG/재현 스크립트·생성 원본/프롬프트/README 저장. 연결 순서는 N=1/E=2/S=4/W=8 마스크0~15 순서. 이미지 생성 2회 후 픽셀 원본에서 연결 경계를 정리했다. 공통 좌우/남북 단면·42px 세로 폭·하단 정렬·치수·불투명 #FF00FF 배경 검사 통과. 게임 등록/교체 없음, 실제 Maker 조립 검증 보류(제작자 수행).
+- **검증**: LSP Error 0 / Warning 0, CJS 구문 및 `create_building_prototype.cjs --check` 통과(엔티티 16, 6개 타일맵/레이어 인접·UUID·참조·타일셋·물리 설정 검사), 모델 3종 validate 결함 0, 신규 `.codeblock` 생성 확인. **02:09:29 Maker refresh ok**. build 로그 **02:09:31(저장 직후 타임스탬프 일치) Error 0 / Warning 9(기존) / Info 849**. **런타임 검증 보류(제작자 수행)**.
+- **재개 조건**: 제작자가 건축 구현을 다시 요청하기 전까지 시험 맵 수리·점유 분리·설치/철거/저장 구현은 진행하지 않는다. 아트 방향부터 검토한다. 기존 건축 아트 재사용/등록 대기는 모두 폐기.
+
+## [맵/시스템] 맵 이동 시 `PhysicsSimulatorComponent` 누락 에러(LEA-3004) 수정 (2026-10-03) — 맵 전체 패치 완료 · refresh Error=0
+
+- 제작자 제보: 마을(`town`)로 워프할 때 서버와 클라이언트에서 `LEA-3004 MissingComponent: town에 'PhysicsSimulatorComponent'가 없습니다.` 에러가 연속으로 폭주함.
+- **원인 분석**:
+  - `MoveToMapPosition`으로 맵 이동 시, MSW 엔진이 해당 맵의 물리/충돌 연산을 위해 맵 엔티티에서 `PhysicsSimulatorComponent`를 요구함.
+  - 동적 영지 맵(`Home_<UserId>`)과 사냥터(`hunt01`)는 `SpawnInitialResourcesForMap`에서 런타임에 `AddComponent("PhysicsSimulatorComponent")`를 실행해 주어 에러가 발생하지 않았음.
+  - 반면 공유 마을인 `town.map`이나 보스방/대기실 템플릿 등 정적 맵들은 이 루틴을 타지 않아 맵 파일 자체에 컴포넌트가 누락된 상태였음.
+- **작업 내용**:
+  - `MapBuilder`를 통해 `map/town.map`을 비롯한 프로젝트 내 모든 맵 템플릿 9종(`town`, `map01`, `template_field`, `template_boss`, `template_raid_lobby`, `template_desert`, `template_rocky`, `template_snow`, `field_earth`)의 루트 엔티티에 `MOD.Core.PhysicsSimulatorComponent` (`Gravity: Vector2(0, 0)`, `Paused: false`, `WorldBounds: Vector2(10000, 10000)`, `Enable: true`)를 정적으로 영구 등록.
+  - 함정 사전 [pitfalls.md](./pitfalls.md)에 규칙 66으로 정식 등록.
+- **검증**: `maker_refresh_workspace` ok → 빌드 **06:05:34 Error 0 / Warning 9(기존) / Info 848**.
+- **런타임 검증 보류(제작자 수행)**: 마을 포탈 및 웨이포인트 워프 시 `LEA-3004 MissingComponent` 오류가 완전히 해소되었는지 확인.
+
+## [UI/로딩] 맵 이동 로딩 화면 코지 우드 & 양피지 지도 리디자인 (2026-10-03) — 코드·UI 완료 · refresh Error=0
+
+- 제작자 요청: 맵 이동 시 나타나는 단색 검은 화면(`TransitionGroup.ui / Cover`) 대신, 칙칙하지 않고 아기자기한 코지 감성의 디자인 적용 (콘셉트 A 채택).
+- **작업 내용**:
+  1. `ui/TransitionGroup.ui`:
+     - `Cover`의 단색 검정 단일 텍스트를 제거하고 웜 다크 비네트 배경으로 전환.
+     - 중앙 `MapContainer`: 앤틱 우드 프레임(`25e9e89579644202805f535d038a9edb`) + 따뜻한 양피지(`c24adedc9faa457daf4e4aae7cd663bb`) 1020×580 크기 배치.
+     - 양피지 위 타이틀 `MAPLE CRAFT`, 서브타이틀, 점선 경로선(`TrailLine`), 시작점(🚩 영지)과 도착점(사냥터 🏰).
+     - 중앙 마스코트: 주황버섯 스프라이트(`a95cfed2c8fe4d2cb64cbb62db051f92`) 70×70 배치.
+     - 하단 `TipPlate`: 840×80 원목 프레임 팁 플레이트 + 골드 뱃지(`[ 모험 팁 ]`) + 아이보리 팁 텍스트(`TipContent`).
+     - `ui_lint`: 0 errors, 0 warnings (완전 clean).
+  2. `RootDesk/MyDesk/UI/Scripts/UIHUDController.mlua`:
+     - `BeginWarpTransition`: 맵 이동 시작 시 10종의 실전 생존/전투/제작 팁(`tips`) 중 무작위 1종을 `TipContent`에 자동 선정 노출.
+     - `warpTimer` 60 FPS 틱: 주황버섯 마스코트가 점선 트랙을 따라 좌우로 산책하며 통통 튀는 바운스 홉 애니메이션 실시간 구동.
+     - 새 맵 도착(`phase == "settle"`) 시 상태 텍스트를 "목적지에 도착했습니다! 주변을 살피는 중..."으로 전환.
+- **후속 피드백 개선 (2026-10-03)**:
+  1. **동적 출발지·도착지 라벨**: 고정 "영지 - 사냥터" 대신, `fromMap`에 따라 `[🚩 내 영지] ↔ [마을 광장 🏡]`, `[🏡 마을 광장] ↔ [사냥터 & 모험지 🌲]`, `[🛡️ 레이드 대기실] ↔ [보스 결투장 ⚔️]` 등으로 지능형 동적 매핑 (규칙 46 시그니처 보존).
+  2. **주황버섯 시선 반전 (`FlipX = true`)**: 메이플 원본 스프라이트(좌측 응시)를 수평 반전하여 목적지(우측)를 씩씩하게 바라보도록 교정.
+  3. **등속 전진 홉 & 도착 뜀박질 모션**: 사인파 양 끝 감속(멈칫거림)을 제거하고, 출발선(-190)에서 도착선(190)으로 일정하게 통통 튀며 전진하는 홉 루프와 도착 후(`phase == "settle"`) 목적지 핀 앞에서 제자리 점프하는 연출로 고도화.
+- **검증**: `ui_lint ui/TransitionGroup.ui` 0 error/0 warning · `maker_refresh_workspace` ok → 빌드 **06:13:45 Error 0 / Warning 9(기존) / Info 848**.
+- **런타임 검증 보류(제작자 수행)**: 맵 이동 시 출발지-도착지 라벨이 동적으로 매핑되고, 주황버섯이 오른쪽을 보며 통통 전진하다가 도착 후 제자리 점프하는지 확인.
+- **2026-10-04 끊김 완화 (제작자 피드백: "엔진 로딩 랙으로 주황버섯이 멈췄다 움직임")**:
+  - 원인: 마스코트 위치를 벽시계(`now - startAt`)로 계산 → 맵 로딩으로 메인 스레드가 멈춘 뒤 한 번에 건너뛰고, 도착 후 ~2.2초 초당 ~7프레임 구간(2026-09-25 실측)에선 홉 주기(0.3초)가 샘플링 간격보다 짧아 높이가 무작위로 튐. 도착 순간 현재 위치 → 190 으로 순간이동도 있었음.
+  - `UIHUDController.BeginWarpTransition`: 애니메이션 전용 시계 `animT`(틱당 최대 `WarpAnimMaxStep`=0.034초 진행)로 교체 — 끊겨도 멈춘 자리에서 이어 걷고, 저프레임 구간은 순간이동 대신 느린 동작으로 보임. 도착 시 현재 위치에서 도착선까지 마저 걸어간 뒤 제자리 점프. 페이드·도착·안정 판정은 기존 벽시계 그대로. `[WARPFX] reveal` 로그에 `maxGap`(최대 프레임 간격)·`stalls`(0.1초 초과 프레임 수) 추가.
+  - 한계: 엔진이 메인 스레드를 완전히 막는 동안엔 화면 전체가 갱신되지 않으므로 스크립트·엔진 애니메이션 모두 멈춤 자체는 없앨 수 없음 — 개선 범위는 "멈춘 뒤 튀는 것"과 저프레임 구간의 지터.
+  - **검증**: LSP Error 0 / Warning 0 · `maker_refresh_workspace` ok → 빌드 **05:49:15 Error 0 / Warning 9(기존, 04:58:09) / Info 848**.
+  - **런타임 검증 보류(제작자 수행)**: 포탈 이동 시 주황버섯이 멈춘 뒤 순간이동하지 않고 이어 걷는지, 도착 후 도착선까지 걸어가 점프하는지 · `[WARPFX] reveal ... maxGap= stalls=` 로 끊김 규모 확인.
+  - **제작자 Play 결과**: 애니메이션은 부드러워짐. 그러나 버섯이 중간쯤일 때 맵이 걷힘(저프레임 구간에서 animT 가 느리게 흘러 안정 판정이 먼저 남) + 출발/도착 글자가 작음.
+- **2026-10-04 2차 (버섯 도착 후 공개 · 라벨 확대)**:
+  - `UIHUDController`: 반복 걷기 루프 폐기 → 출발 라벨(-250)에서 걷기 시작, 도착 전엔 `WarpMascotWaitX`(120)에서 제자리 홉 대기, 도착 후 `WarpMascotArriveSpeed`(420px/s)로 도착 라벨(250)까지 걸어가 점프. **공개 조건에 "마스코트가 도착 라벨에 닿고 `WarpMascotCelebrateSeconds`(0.35) 뛰었음" 추가**(기존 최소 유지·프레임 안정 조건과 AND, `WarpMaxHoldSeconds` 5초는 그대로 상한). 경로 값은 전부 property(`WarpMascotStartX/EndX/WaitX/WalkSpeed/ArriveSpeed/CelebrateSeconds`). `[WARPFX] reveal` 로그에 `mascotDone`·`arriveX` 추가. 예상 대가: 도착 후 프레임 안정 뒤 최대 ~1초 더 덮임.
+  - `ui/TransitionGroup.ui` (UIBuilder `patch`/`patchComponent`만 — 3개 엔티티): `StartPoint`/`EndPoint` 100×32 fs14 갈색 글자 → **250×56 원목 명패**(TipPlate 와 같은 프레임 `25e9e895…` Sliced, 진한 원목색 + 그림자) **+ 크림 fs24 Bold**, 트레일 양 끝 아래 (±250, -30). 글자·배경 한 엔티티(규칙 50). `StatusText` (0,-35) fs16 → (0,-110) 560×36 fs18 (라벨과 겹침 회피). 생성 스크립트 `scripts/patch_transition_loading.cjs` 도 같은 값으로 갱신.
+    - 첫 시도로 생성 스크립트 전체를 재실행했더니 Maker 가 재직렬화해 둔 나머지 9개 엔티티까지 빌더 형태(컴포넌트 순서·`Position`/`Rotation`)로 바뀜 → 백업으로 복원 후 위 3개만 패치.
+  - **검증**: LSP Error 0 / Warning 0 · `ui_lint` clean · DataRef 중첩 0건 · 가려진 텍스트 없음(`scripts/check_ui_*.cjs` 는 다른 PC 절대경로 `C:/minho/메이플월드` 를 require 해서 경로만 바꾼 임시 사본으로 실행) · **refresh 검증 보류** — Maker 가 Play 중이라 `maker_refresh_workspace` 거부(`unavailable`).
+  - **런타임 검증 보류(제작자 수행)**: Play 중지 → refresh 후 포탈 이동: ① 버섯이 출발 명패 위에서 출발해 도착 명패 위까지 가서 뛴 뒤에 화면이 걷히는지 ② 명패 글자가 잘 보이는지(이모지 글리프 포함) ③ `[WARPFX] reveal ... mascotDone=true` 와 `held` 증가폭.
+- **2026-10-04 3차 (제작자 제보: "마을→내영지" · "사냥터→내영지" 귀환 라벨 오류)** — 코드 완료 · refresh Error=0:
+  - **원인**: 출발·도착 라벨을 **출발 맵(`fromMap`)만으로 추정**하고 있었다. 이 프로젝트 이동 토폴로지는 마을 ↔ 내 영지 ↔ 사냥터(마을·사냥터 직통 없음)인데, 추정 로직은 "`fromMap`이 마을이면 목적지는 항상 사냥터", "`fromMap`이 사냥터면 목적지는 항상 마을"로 고정해 둬서, **마을→내영지**·**사냥터→내영지** 귀환에서 도착 라벨이 거꾸로(사냥터/마을)로 표시됐다. 부수 발견: 기존 분기 순서상 `raid` 접두사 검사가 `raidlobby` 접두사보다 먼저라 "레이드 대기실" 분기가 원천적으로 도달 불가능했다(덤으로 수정).
+  - **수정**: 메서드 시그니처는 그대로 두고(규칙 46) **실제 목적지를 프로퍼티로 전달**하는 경로 추가.
+    - `PlayerController`: 신규 `property string pendingWarpDestMap`. `TryUsePortal`(고정 포탈 분기)이 `portalGate.TargetMapName`(클라에서도 `@Sync` 로 읽힘)을 호출 직전 대입. `ClientWarpWithCover` 가 이 값을 `UIHUDController.pendingWarpDestMap` 으로 그대로 전달(비우기 포함).
+    - `UIHUDController`: 신규 `property string pendingWarpDestMap` + 신규 `ResolveWarpLabel(mapName)` — 영지/마을/사냥터(hunt·field·rocky·desert·snow 전 바이옴)/보스/대기실 카테고리 판정을 출발·도착 공통 함수로 통합(대기실 접두사를 보스보다 먼저 검사해 사장돼 있던 분기도 복구). `BeginWarpTransition`: `destMap` 이 있으면 그 카테고리로 도착 라벨을 정확히 표시, 없을 때만(레거시 호출) 기존 출발지 기반 추정으로 완화.
+    - 목적지를 아는 호출부 3곳도 호출 직전 대입: `UIWarpController.OnSlotClick`(`dest.mapName`), `UIBossContentsController`(카테고리 문자열 `"raidlobby"`), `UIRaidDifficultyController`(`"raid"`) — 둘 다 `ResolveWarpLabel` 이 접두사만 보므로 실제 인스턴스 맵 이름 없이도 정확하다.
+    - 영지 내 `TerritoryPortal`(하위 영지 이동) 분기는 대응 스크립트 파일이 저장소에 없는 사장된 참조라 손대지 않음(범위 밖).
+  - **검증**: LSP Error 0 / Warning 0(4개 파일 전부) · `maker_refresh_workspace` ok → 빌드 **06:08:16 Error 0 / Warning 9(기존, 몬스터 모델 — 이번 변경과 무관) / Info 849**.
+  - **런타임 검증 보류(제작자 수행)**: 마을→내영지, 사냥터→내영지, 영지→마을, 영지→사냥터, 영지 웨이포인트 목록 선택, 보스 대기실·보스방 입장 각각에서 출발·도착 라벨이 실제 경로와 일치하는지 확인.
+
+## [UI/전투] 버프·디버프 아이콘 줄 · 공용 동적 툴팁 · 몬스터 상태이상 연출 · 인파이트 스텝 출발 이펙트 (2026-10-03) — 코드·UI 완료 · 런타임 검증 보류
+
+- 제작자 요청: ① 인파이트 스텝 회오리가 도착 지점에 남는다 → 출발 지점에서 팡 / 따라다님 ② 버프·디버프를 글자 대신 메이플식 아이콘으로, 플레이어·몬스터는 틴트·이펙트로 ③ 아이콘에 스킬 쿨타임처럼 남은 시간, 마우스를 올리면 설명 ④ 설명이 길면 넘치는 문제 — 내용에 맞춰 크기·위치가 바뀌는 창(아이템 포함). 상시 정책: [design-policy.md](./design-policy.md) "버프·디버프 표시 & 공용 툴팁".
+- **① 인파이트 스텝**: `SkillDataSet` 신규 열 `EffectAnchor`(공란=시전 뒤 위치 · `start`=시전 순간 위치 · `follow`=시전자에 붙어 따라다님, 부모 Scale 보정) · `EffectPlayRate` · `EffectEndFrame`. 인파이트 스텝 = `start` · 1.8배속 · 0~14프레임(회오리 한 바퀴 — 프레임 피벗이 15프레임 주기). `MulticastPlayEffectDir` 에 재생 속도·끝 프레임 인자 추가(내부 전용), `MulticastPlayEffectFollow` 신설. `MulticastPlayEffectEx` 시그니처 유지(규칙 46).
+- **② 몬스터 상태이상**: 신규 `Monster/DataSets/StatusVisualDataSet`(+.userdataset): 기절(별) · 속박(사슬 STOP) · 산성(녹색 해골 불꽃) · 둔화(달팽이) · 균열(붉은 깨진 방패) · 갑주 파쇄(금 간 방패) · 약화(보라 하향 화살표) — 공식 클립을 피벗 정렬 합성으로 육안 선정. `Monster`: `@Sync StatusVisual`(우선순위 순 활성 상태 키) · `RefreshStatusVisual`(적용·만료·사망·리스폰 때, 가장 빠른 만료에 맞춘 단일 타이머) · `GetRestTint`(기본 틴트 × 최우선 상태 틴트 — 피격 플래시·`MonsterAI` 공격 예고 복귀색) · 클라 `ApplyStatusVisualClient`(피격 박스 윗변 위에 루프 이펙트 최대 3개, `PlayEffectAttached` + 부모 Scale 보정, `OnEndPlay` 정리). `HitComponent.BoxOffset`(deprecated) 대신 `ColliderOffset`.
+- **② 플레이어 틴트**: `BuffDataSet` +`Description`·`IsDebuff`·`Tint` 열(21행 전부 설명). 빙결·눈더미 둔화 = 디버프(푸른 틴트), 기합 공격력 · 강철 피부 · 불굴의 투혼 = 약한 버프 틴트. `PlayerBuffs.GetVisualTint`(디버프 우선, 버프목록+초 단위 캐시) — 내 캐릭터는 `PlayerController` 깜빡임 처리부가 `SetColor(틴트, 알파)` 로 함께 칠하고(구 `SetAlpha` 대체, 값이 바뀔 때만), 다른 플레이어는 `PlayerBuffs` 클라 `OnUpdate` 가 칠한다.
+- **③ 버프 아이콘 줄**: `HUDGroup/BuffIcons`(`script.UIBuffBarController`) + `BuffSlot1~10`(52px 버튼 → Icon · Elapsed(Filled Radial360, 검정 60%) · Time 순서 — 규칙 47·50). 미니맵 왼쪽 16px(우상단 -398,-45)에서 왼쪽으로. 같은 아이콘 버프는 한 칸(제목 = 표시 이름의 ":" 앞부분, 본문 = 효과 줄들). 디버프 칸 붉게. 호버 = 툴팁(남은 시간 실시간 갱신), 탭 = 3초 툴팁. `PlayerBuffs` 가 버프마다 `duration` 을 저장(오버레이 분모). 구 텍스트 `BuffBar` 는 끈 채 둔다(`UIHUDController.UpdateBuffBar`).
+- **④ 공용 툴팁**: 신규 `ui/TooltipGroup.ui`(그룹 순서 6 · `BlocksRaycasts=false` · `Tip` 은 `.ui` 에서 Enable=false) + 신규 `@Logic UITooltipLogic` — `GetPreferredWidth`(줄별 최대)로 폭(260~460), `GetPreferredHeight` 로 높이를 정하고 커서 오른쪽 아래, 넘치면 왼쪽/위로 접고 화면 안으로 고정. owner 별 `Hide`. **스킬바 툴팁**도 이것으로 전환(구 고정 `SkillTooltip` 패널은 끔). **인벤토리 상세 카드**(버리기 버튼 포함)는 `LayoutDetailCard` 가 설명 높이를 재서 카드를 아래로 늘린다(위쪽 끝 고정, 창 높이 상한) — `.ui` 무수정, 규칙 10 에 따라 `Bg` RectSize 도 직접 맞춤.
+- **검증**: LSP 변경 9스크립트 Error 0 / Warning 0(Info = 기존 동적 호출 노이즈) · 데이터 `check_dataset_columns` 불일치 0 · `check_skill_quest_pipeline` 결함 없음 · ui_lint: TooltipGroup clean, HUDGroup 신규 경고 = L007 10건(버프 칸 52px < 88px — 메이플식 작은 아이콘 의도) · DataRef 이중 래핑 0 · 가려진 텍스트 0(HUD·Tooltip, 경로 패치 사본으로 실행) · refresh ok → 빌드 **05:30:19(마지막 `.mlua` 저장 05:30:01 직후) Error 0 / Info 848**, Warning 9(Monster 저장 때 재출력된 기존 LWA-4012) · 신규 `.codeblock` 2종(UITooltipLogic · UIBuffBarController) 생성 · refresh 후 `.ui` 엔티티·바인딩 유지 확인(규칙 11).
+- **런타임 검증 보류(제작자 수행)** — 로그 태그 `[TOOLTIP]` · `[BUFF-BAR]` · `[STATUS-FX]` · `[T71][FX] variant=follow`
+  1. **인파이트 스텝**: 회오리가 출발 지점에서 짧게 팡 하고 끝나는지(너무 짧거나 길면 `EffectPlayRate`·`EffectEndFrame`, 따라다니게 하려면 `EffectAnchor=follow`).
+  2. **버프 아이콘**: 기합 → 미니맵 왼쪽에 아이콘 1칸(4효과 묶음), 시간이 지나며 시계방향으로 어두워지고 초가 줄어드는지 · 마우스를 올리면 "기합" 툴팁에 효과 4줄 + 남은 시간 · 빙결/눈더미 둔화는 붉은 칸 + "디버프" + 캐릭터가 푸르게.
+  3. **툴팁 크기**: 긴 스킬 설명(불굴의 투혼 등)에서 창이 늘어나 글자가 밖으로 안 나가는지, 화면 오른쪽·아래 끝에서 반대쪽으로 접히는지, 툴팁이 버튼 호버를 가로채지 않는지.
+  4. **인벤토리**: 설명이 긴 아이템 클릭 시 상세 카드가 아래로 늘어나고 버리기 버튼이 글자와 겹치지 않는지.
+  5. **몬스터**: 정권(기절)·덫(속박)·산성 포션·둔화 장비·균열 각인·갑주 파쇄타·야생의 고무를 맞은 몬스터 머리 위 이펙트 위치·크기, 틴트, 피격 플래시 뒤 틴트 복귀, 상태가 끝나면 이펙트·틴트가 사라지는지, 죽을 때 정리되는지. **이펙트가 몸에 파묻히거나 너무 크면 `StatusVisualDataSet.EffectScale`** 로 조정.
+  6. **UI 미학(규칙 6)**: 버프 줄·툴팁의 톤이 기존 나무 HUD 와 어울리는지 — 스크린샷 확인 전까지 미완.
+- **알려진 한계**: 버프 남은 시간은 기존처럼 서버 `os.time()` 기준 만료 시각을 클라 시계로 계산한다(기기 시계가 크게 어긋나면 초가 틀릴 수 있음 — 0~지속시간으로 클램프). 몬스터 상태이상 이펙트는 상태 목록이 바뀔 때마다 다시 붙어 처음부터 재생된다. 인벤토리 칸 호버 툴팁은 이번 범위가 아니다(클릭 상세 카드만 동적화).
+
+## [DevTools/퀘스트] 테스트 모드 퀘스트 넘기기 F12 / Shift+F12 (2026-10-03) — 코드 완료 · 런타임 검증 보류
+
+- 제작자 요청: 테스트 모드에서 퀘스트를 빠르게 넘기는 방법. ⚖️ 제작자 선택: 두 방식 모두(F12 / Shift+F12).
+- **F12 = 보고 준비**: 진행 중 퀘스트마다 ① 지참(`Have`) 조건 아이템을 목표 수량까지 지급(보유량 재평가로 진행도가 찬다) ② `ConsumeItems` 부족분 지급 ③ 나머지 조건 진행도를 목표치로 → `SyncValuesChanged`·저장 dirty. 초록 "!" 가 뜨면 NPC 에게 보고(대사·보상·전직 실제 경로 확인). 보고 NPC 없는 퀘스트는 `TryCompleteReadyQuests` 로 평소처럼 즉시 완료.
+- **Shift+F12 = 즉시 완료**: 같은 준비 뒤 `PlayerQuest.CompleteQuests` 로 완료. 보상·전직·다음 퀘스트 자동 수락은 정식 경로와 같다. 연쇄 퀘스트는 누를 때마다 한 단계씩 넘어간다.
+- 대상은 **수락된(진행 중) 퀘스트만**이다(NPC 에게 먼저 수락). 레벨·직업 자격 미달은 건너뛰고 안내한다(F7 로 레벨업). 저장은 테스트 슬롯 격리(규칙 63) 그대로.
+- **코드**: `DevTools/Scripts/TestModeConfig.mlua` 만 수정(치트는 이 파일에만 두는 규약). `RequestSkipQuests`(Server RPC, 얇게) → `SkipQuestsFor`(ServerOnly 본체 — 규칙 53). Shift 판정은 `_InputService:IsKeyPressed`(규칙 35). 키 목록 HUD 는 `.ui` 무수정 — F10/F11 을 한 줄로 합쳐 8줄 유지.
+- **알려진 한계**: F12 로 채운 State 조건(예: 343 "기합 배우기")은 다음 인벤 변동 때 실제 상태로 재평가돼 0 으로 돌아갈 수 있다 → Shift+F12 를 쓰거나 실제로 배운다.
+- **검증**: LSP Error 0 / Warning 0(Info 13 = `GetComponent` 동적 호출 노이즈 LIA-1114/1115) · refresh ok → 빌드 **05:07:13(저장 05:07:12 직후) Error 0 / Info 847**, Warning 9(04:02:09 기존). 신규 `.mlua` 없음.
+- **런타임 검증 보류(제작자 수행)**: ① F6 키 목록에 F12 줄 표시 ② 퀘스트 수락 후 F12 → 피드백 "보고 준비 n건", 퀘스트창 진행도 가득, NPC 초록 "!" → 보고 정상(로그 `[TESTMODE] quest skip instant=false`) ③ Shift+F12 → 즉시 완료·보상·다음 퀘스트 자동 수락(`instant=true`) ④ 342(전직)처럼 젤리가 필요한 퀘스트에서 젤리 지급 후 보고·전직 ⑤ 레벨 미달 퀘스트는 "자격 미달" 안내.
+- ⚠️ 작업 트리의 `EnableTestMode = true` 는 이번 작업 이전부터 있던 미커밋 변경이다(커밋 전 확인 필요).
+
+## [직업/히든] 맨주먹 파이터 — 촌장 권유 1회로 · 정권·붉은 너클 판정/이펙트 교정 · 기합 기력 회복 ×4 (2026-10-03) — 코드 완료 · 런타임 검증 보류
+
+- 제작자 피드백: ① 촌장 권유를 수락해도 다음 권유가 또 들어온다 ② 이펙트 위치와 스킬 판정이 생각보다 작다 ③ 기합이 기력 충전 속도를 확 올려 주면 좋겠다. 설계 갱신 [hidden_job_barefist_fighter.md](./design/hidden_job_barefist_fighter.md) §7.2·§7.3, 함정 [pitfalls 규칙 65](./pitfalls.md).
+- **① 원인**: 341(히든 제안)과 342(전직 시험)가 같은 "젤리 지참" 조건으로 **수락을 두 번** 받았다(341 수락 → 보고 → 342 제안 수락 → 보고). **수정(데이터만)**: 341 `Disable=O`(퀘스트·조건 행), 342 = 선행 107 · `RequiredHaveItems=Large Slime Jelly:1`(주황 "!") · 보상 SP 6·경험치 450(두 퀘스트 합) · 설명 갱신. 대사 16행 → 342 한 흐름 13행(제안 6쪽에 타 직업 시험 포기 경고 포함 · 수락/거절 · 진행 · 보고 4쪽). 흐름: 제안 → **수락 1번** → 다시 말 걸기 → 전직. ⚖️ 342 는 Lv6 이라 Lv4~5 에서는 주황 "!" 가 더 이상 뜨지 않는다(전직 레벨 자체는 같음). 341 진행 중이던 세이브의 341 기록은 데이터가 없어 무시된다(퀘스트 코드 전부 `GetData` nil 가드 확인).
+- **② 원인 (리소스 프레임·피벗 합성 실측)**: 정권 판정 = 3×3 정사각 중심 앞 2.4 → **몸 앞 0.9칸 빈칸**(붙은 적 헛침). 정권 이펙트 스크류 펀치는 **오른쪽을 보는** 원본인데 왼쪽 규약으로 반전 + 앞 1.5 배치 → 양방향 모두 드릴이 등 뒤로. 붉은 너클은 원 반지름 1.1(앞 0.5~2.7)이고 착탄 이펙트가 방향 무시·장판 중심이라 오른쪽 시전 때 거꾸로. **수정**: `SkillDataSet` 신규 열 `AreaWidth`(Melee 좌우 폭 · Dash 경로 여유 = 폭/2, 공란 = 기존) · `EffectFacing`(원본 그림 방향 left/right, 지정 시 위·아래 시전 때 90° 세움, 공란 = 기존). 정권 앞 0~4.5 × 폭 3 · 이펙트 피벗=캐릭터·배율 1.4·`right` / 인파이트 스텝 경로 ±1.5 / 붉은 너클 반지름 1.7 · 이펙트 시전 위치에서 시전 방향(`left`).
+- **③**: `BuffDataSet` `fist_shout_stamina`(`StaminaRegen` mult 4, 12초 — 초당 2 → 8, 기존 `GetBuffedStaminaRegen` 소비) → 기합 `BuffIds` 에 추가, 설명 갱신.
+- **코드** `PlayerController`(내부 전용 메서드만 시그니처 변경): `ExecuteAreaDamageSkill` +width 인자(호출 2곳) · `ExecuteDashSkill` 여유 = `AreaWidth/2` · 시전 이펙트 `IsSkillEffectFlipX`/`GetSkillEffectRotation` → 신규 `MulticastPlayEffectDir` · `CreateSkillArea` `fxPose` → `TickSkillAreas` 방향성 착탄. `MulticastPlayEffectEx` 는 시그니처 유지(Monster·Summon·Projectile 호출 — 규칙 46), 본문을 공용 `PlayEffectLocal` 로 옮김(동작 동일). `EffectFacing` 공란인 다른 직업 스킬은 반전·회전·위치 모두 기존과 같다.
+
+| 원장 | 증거 | 상태 |
+|---|---|---|
+| DATA-01~04 | 기존 `SkillDataSet`·`BuffDataSet` 재사용, 열 2개 추가(54행 전부 `,,` 확장, CRLF·BOM 없음 유지). `check_dataset_columns` 불일치 0 · `check_skill_quest_pipeline` 결함 없음 · `check_job_branches` PASS | 정적 PASS · 런타임 로드 BLOCKED |
+| PAP-01~04 | 시전 모션(`CastAction swingO2`)·시전 잠금 경로 무변경. 시전 이펙트 반전·회전·위치만 데이터 주도로 변경(로그 `[T66][FX] ... flip= rot=`) | 구현 · 런타임 BLOCKED |
+| PAJ-01~04 | 즉시 판정 경로(`AttackFast` 상자 / `CircleShape` 장판) 그대로, 도형 크기만 변경. 로그 `[SKILL] Area damage ... box 4.5x3.0` · `[T66][DASH] box=` · `[SKILL-AREA] create red_knuckle ... r=1.7` | 구현 · 런타임 BLOCKED |
+| MHP-01~04 | 피격·사망 연출 코드 무변경 | 해당 변경 없음 · 런타임 BLOCKED |
+
+- **검증**: LSP `PlayerController` clean(진단 0) · 데이터 검사 3종 위와 같음 · `maker_refresh_workspace` ok(04:54) → 빌드 **04:53:18(마지막 `.mlua` 저장 04:53:16 직후) Error 0 / Info 834**, Warning 9 = 04:02:09 기존 몬스터 모델 LWA-4012(기준선 그대로). refresh 뒤 새 빌드 로그는 갱신되지 않았다(규칙 22) — 데이터(CSV 04:51)는 빌드 로그 대상이 아니다. 이후 04:56:40 빈 줄 들여쓰기만 원복 저장(로직 무변경, LSP clean) → 04:57 refresh ok, **최종 저장분 build 로그 갱신 미확인**(여전히 04:53:18 스냅샷). 신규 `.mlua` 없음. `.ui`·`.map`·`.model` 변경 없음.
+- **런타임 검증 보류(제작자 수행) — Play 체크리스트**
+  1. **전직**: 무직 Lv6+ · 대형 슬라임 젤리 지참 → 촌장 주황 "!" → 제안 6쪽(마지막 두 쪽에 포기 경고) → 수락 → 수락 대사 → 다시 말 걸면 보고 4쪽 + 전직(가죽 장갑 · SP 6) → 343 자동 수락. **두 번째 권유가 없어야 한다.** 거절하면 다시 주황 "!".
+  2. **정권**: 몸에 붙은 적도 맞는지, 앞 약 4.5칸까지 닿는지(`box 4.5x3.0`). 드릴이 시전 방향으로 뻗고 끝 임팩트가 판정 끝 근처인지. 위·아래 시전 때 드릴이 그 방향으로 서는지 — **반대로 서면 회전 부호 문제**(엔진 회전 방향 미확인)이니 알려 주세요.
+  3. **인파이트 스텝**: 경로 옆 1.5칸 적도 맞는지. **붉은 너클**: 예고 원이 커졌는지(반지름 1.7), 주먹 연타가 시전 방향으로 원 끝까지 가는지(좌·우 모두).
+  4. **기합**: 버프 바에 "기합: 기력 회복", 12초 동안 기력이 초당 약 8 차는지(정권 연타 유지 가능 체감). 배율은 `BuffDataSet` 한 칸으로 조정.
+  5. 다른 직업 스킬 이펙트(파워 스트라이크·슬래시 블러스트·장판류)가 이전과 같은지.
+- **후속 (같은 날, 제작자 Play 피드백 "드릴이 팔이 아니라 등 뒤에서 발사되는 느낌" · "휘두르는 모션")**:
+  - 원인 ① 원본 이펙트는 배율 1 캐릭터(키 약 0.7칸) 기준이다. 우리 플레이어는 `DefaultPlayer` Scale **2.8**(ModelBuilder 확인, 키 약 2칸)이다. 그래서 드릴 꼬리가 피벗 뒤 0.85×배율(배율 1.4면 등 뒤 1.2칸)에서 시작하고, 드릴 중심선이 발 위 0.35칸(정강이 높이)에 그려졌다.
+  - 원인 ② 정권 `CastAction` 이 `swingO2`(위에서 내려치는 한손 휘두르기)였다.
+  - 수정 ① `SkillDataSet` 신규 열 `EffectHeight`: 좌우 시전 때 이펙트 피벗을 올리는 높이(월드 유닛, 공란 0, 위·아래 시전은 미적용). 코드는 `GetSkillEffectHeight` 를 시전 이펙트와 방향성 장판 이펙트에 적용한다.
+  - 수정 ② 정권 = `EffectOffset 1.7` · `EffectScale 1.1` · `EffectHeight 0.6` · `CastAction stabO1`(한손 찌르기 — 팔을 앞으로 곧게 내지르는 메이플 기본 몸 동작). 계산 근거는 `stabO1` 주먹 ≈ 발 기준 앞 28px·위 32px × 2.8 = 앞 0.75·높이 0.9이다. 그 위치에 꼬리 끝(앞 1.7 − 0.85×1.1 ≈ 0.76)과 드릴 중심선(0.6 + 0.25×1.1 ≈ 0.88)을 맞췄다. 드릴 앞부분은 ≈ 3.8, 임팩트 중심은 ≈ 4.6 으로 판정 끝 4.5 와 맞는다. 판정은 변경 없음.
+  - 아바타 리소스 API 에 프레임별 손 위치가 없어 주먹 위치는 메이플 표준 체형 추정값이다 — 인게임으로 미세 조정이 필요하면 `EffectOffset`(앞뒤)·`EffectHeight`(높이) 두 칸만 바꾸면 된다.
+  - **검증**: LSP clean · 데이터 검사 불일치 0 / 결함 없음 · refresh ok(05:02) → 빌드 **05:02:11(마지막 `.mlua` 저장 05:02:09 직후) Error 0 / Info 834**, Warning 9(04:02:09 기존). 직전의 공백 원복분도 이 빌드로 포함 확인.
+  - **런타임 검증 보류(제작자 수행)**: 좌·우 정권 때 팔을 앞으로 내지르는 모션인지, 드릴이 주먹 언저리에서 시작해 앞으로 뻗는지, 높이가 팔과 맞는지. 위·아래 시전은 별도 확인.
+
+## [카메라/시점] 기본 카메라 시점 95% 미세 조정 (ZoomRatio: 49.5 ➡️ 47.0) (2026-10-03) — 코드/설정 완료 · refresh Error=0
+
+- 제작자 요청: 49.5 배율 상태에서 95% 수준으로 소폭 축소 미세 조정 (47.0).
+- **작업 내용**:
+  1. `Global/DefaultPlayer.model`: `CameraComponent.ZoomRatio`를 `49.5`에서 `47.0`으로 갱신 (ModelBuilder 적용).
+  2. `RootDesk/MyDesk/UI/DataSets/MapCameraDataSet.csv`: 모든 맵(Home, town, template_field, template_boss, default)의 `DefaultZoomRatio`를 `47.0`으로 갱신.
+  3. `RootDesk/MyDesk/UI/Scripts/UIMinimapController.mlua`: `defaultZoomRatio` 프로퍼티 및 `GetDefaultZoomRatio` 폴백 기본값을 `47.0`으로 일치.
+  4. `docs/design-policy.md`: 기본 카메라 줌 정책 항목을 `ZoomRatio = 47.0`으로 갱신.
+- **검증**: `maker_refresh_workspace` ok → 빌드 Error 0 / Warning 9(기존 베이스라인).
+- **런타임 검증 보류(제작자 수행)**: Play 모드 진입 시 시야각이 적절한지 확인.
+
+## [마을/아트] 헛간지기 토리의 헛간(Barn) 신규 제작 & 정면 2.5D 탑다운 구도 교정 및 투명화 완료 (2026-10-05) — 아트 납품 완료 · Maker 임포트 대기
+
+- 제작자 요청: 헛간지기 헛간(`House_WoodTower` / `0c4b4594c66c48e4a44e6e1ff4db8056`)의 45도 비스듬한 쿼터뷰 왜곡을 교정하고, 버섯집이 아닌 정통 목조 헛간 컨셉에 맞춰 신규 제작.
+- **디자인 & 정합**: 버섯집 완전 배제. 정통 목조 농가 헛간 (따뜻한 주황-적갈색 목조 기와 헛간 지붕, 수탉 풍향계, 삼각 다락 창문과 로프 고리, X자 크로스 브레이스 목조 미닫이문, 우측 황금빛 건초더미와 펜스, 좌측 원목 가축 사료통).
+- **구도 완벽 교정**: 비스듬히 틀어져 있던 시점을 대장간/연구소/상점과 100% 동일한 **정면 2.5D 탑다운 RPG 뷰**로 전면 교정하여 완벽한 수평 접지 달성.
+- **규격 1:1 통일**: 표준 마을 건물 규격(`356 × 248 px`, 바운딩 박스 `275 × 238 px`, 하단 접지 여백 2px, 피벗 `0.5, 0.0`).
+- **세부 투명화 완벽 처리**: 우측 펜스 창살 사이사이, 좌측 건초 상자 틈새 등 내부 고립 영역 정밀 투명(`Alpha=0`) 관통 처리 및 `#4a2a1c` 디프린지 AA 마감.
+- **산출물**:
+  - 스프라이트: [docs/design/art/barn/barn_front_clean.png](./design/art/barn/barn_front_clean.png) (356×248 RGBA, BBox 275×238)
+  - 도트 마감본: `barn_front_dot1.png`, `barn_front_dot2.png`
+  - 검증 시트: [docs/design/art/barn/preview_barn_comparison.png](./design/art/barn/preview_barn_comparison.png) (이전 쿼터뷰 헛간 vs 신규 정면 헛간 vs 대장간 vs 마리 상점 4종 비교)
+  - 보고서: [docs/design/art/barn/barn_report.md](./design/art/barn/barn_report.md)
+  - 처리 파이프라인: `process_barn.py`, `make_barn_comparison.py`
+- **인게임 교체 대기**: Maker 임포트 후 RUID 발급 대기 (규칙 45 준수).
+
+## [마을/아트] 마리의 의상·꾸미기 상점(Marie's Boutique) 버섯 건물 신규 제작 & 정면 탑다운 구도 및 투명화 완료 (2026-10-05) — 아트 납품 완료 · Maker 임포트 대기
+
+- 제작자 피드백 반영: 굴뚝 및 연기 완전 제거 + 좌우 폭 압축(313px → 265px) 및 포션병 완전 배제. 부티크 샵에 어울리는 매끄럽고 둥근 버섯 갓과 정면 컴팩트 배치로 연구소(265×238) 및 대장간과 완벽한 볼륨 균형 달성.
+- **디자인 & 정합**: 메이플스토리 헤네시스풍 붉은 버섯 갓 지붕(하얀 도트, 굴뚝 완전 배제) + 재단 가위/실타래 엠블럼 + 좌측 패치워크 원피스 마네킹과 털실 바구니 + 우측 모자(베레모, 밀짚 페도라), 앤틱 거울, 선물 상자가 진열된 스트라이프 어닝 가판대(포션 일체 없음).
+- **규격 1:1 완벽 통일**: 대장간 및 연구소와 동일 규격(`356 × 248 px`, 바운딩 박스 `265 × 205 px`, 지붕 꼭대기 높이 연구소 갓 높이와 일치, 하단 접지 여백 2px, 피벗 `0.5, 0.0`).
+- **세부 투명화 완벽 처리**: 가판대 차양 아래 거울/모자 사이 빈 공간(8357px), 마네킹 삼발이 다리 사이 등 21개 고립 영역 정밀 투명(`Alpha=0`) 관통 처리 및 `#4a2a1c` 디프린지 AA 마감.
+- **산출물**:
+  - 스프라이트: [docs/design/art/mari_shop/mari_shop_front_clean.png](./design/art/mari_shop/mari_shop_front_clean.png) (356×248 RGBA, BBox 265×205)
+  - 도트 마감본: `mari_shop_front_dot1.png`, `mari_shop_front_dot2.png`
+  - 검증 시트: [docs/design/art/mari_shop/preview_mari_shop_comparison.png](./design/art/mari_shop/preview_mari_shop_comparison.png) (대장간 vs 연구소 vs 마리 의상실 3종 비교)
+  - 보고서: [docs/design/art/mari_shop/mari_shop_report.md](./design/art/mari_shop/mari_shop_report.md)
+  - 처리 파이프라인: `process_mari_shop.py`, `make_comparison_preview.py`
+- **인게임 교체 대기**: Maker 임포트 후 RUID 발급 대기 (규칙 45 준수).
+
 ## [마을/아트] 버섯 연구소(Research Lab) 건물 신규 제작 & 정면 탑다운 구도 및 투명화 완료 (2026-10-02) — 아트 납품 완료 · Maker 임포트 대기
 
 - 제작자 요청: 마을 건물 아트 교체(버섯 테마). 1순위 타겟 연구소(ResearchLab), 기준 규격 대장간(`ruid: 3cf6b9e903e645c295fadfa6bb0548b0`, 356×248 px).

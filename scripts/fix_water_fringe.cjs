@@ -103,6 +103,8 @@ function tileNameToMask(name) {
     FullGrass: 0,
     GrassT: 12, GrassD: 3, GrassL: 5, GrassR: 10,
     GrassLT: 13, GrassRT: 14, GrassLD: 7, GrassRD: 11,
+    // 무작위 변형 (TileVariantDataSet — 원본과 같은 마스크)
+    GrassLTRound: 13, GrassRTRound: 14, GrassLDRound: 7, GrassRDRound: 11,
     GrassLTCorner: 4, GrassRTCorner: 8, GrassLDCorner: 1, GrassRDCorner: 2,
     SubGrassLTRD: 6, SubGrassRTLD: 9,
     WaterLTRD: 6, WaterRTLD: 9,

@@ -374,6 +374,9 @@ script UIBossContentsController extends Component
 		if pc ~= nil then
 			---@type PlayerController
 			local c = pc
+			-- 목적지는 실제 대기실 맵 이름이 아니라 카테고리 문자열("raidlobby")만으로도 충분하다
+			-- (ResolveWarpLabel 은 접두사만 본다). 규칙 46 — 값은 프로퍼티로 전달.
+			c.pendingWarpDestMap = "raidlobby"
 			c:ClientWarpWithCover(request)
 		else
 			request()

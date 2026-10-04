@@ -1,0 +1,32 @@
+Create a production-ready pixel art WALL TILESET, a square sheet with exactly 4 columns and 4 rows, 16 square cells, no gutters and NO visible grid or labels. Final logical dimensions 256x256 px, each tile 64x64; if rendered enlarged, use exact integer nearest-neighbor pixel enlargement only. Reference image 1 is ONLY wall structure: Core Keeper dark continuous flat wall tops, no separate posts. Reference image 2 is ONLY art style/materials: warm honey brown wood, cream plaster, pale beige stone, dark brown outlines and upper-left light. DO NOT copy reference 2's posts, pillars, wall fragments or black empty gaps.
+
+ALL 16 TILES OCCUPY THEIR ENTIRE 64x64 CELL. NO cutouts, holes, empty center, floor, perspective side face or gutters. Every tile is a full solid square. Magenta #FF00FF only if any unused empty pixels exist, but there should be NONE since the whole tile is wall. Never paint magenta lines to separate tiles.
+
+Two layers: TOP is flat nearly-black warm dark brown #20150F seen from straight overhead with very sparse subtle low-contrast texture. No strong plank grooves. Shared connected edges MUST have zero border, zero black outline, zero seams, zero beams, zero posts. Top extends flush to tile edges. TRIM is a light wooden strip exactly 2-3 logical pixels thick, flat, only on an N/E/W edge that does NOT have a wall neighbor. Never trim a connected edge. Corners/T-junctions/crossings are solely continuous dark surface. Never draw upright pillars, supports, structural beams, nails on trim or plus-shaped decoration.
+
+FACE appears ONLY if SOUTH neighbor is empty: logical y=29..63, exactly 35px high, spans full tile width, bottom flush at y=63. Top surface is then y=0..28. Face bands IDENTICAL in every face tile: narrow horizontal warm wooden lip y=29..34; cream plaster y=35..53; pale stone baseboard y=54..62; 1px dark brown bottom edge y=63. Sparse handcrafted plaster/stone texture like reference 2. NO vertical timbers or posts within face. Face ends with a clean thin vertical edge only where east or west neighbor is empty, but adjacent face tiles continue seamlessly with no vertical seam. If S neighbor IS a wall, absolutely NO plaster, stone, lip or front face anywhere: entire 64x64 square is dark top, except trim on absent N/E/W edges.
+
+EXACT CELL CONTENTS, each line lists existing wall neighbors; DO NOT infer them from adjacent sheet cells, these are independently selectable tiles:
+Row 1, left to right:
+1 none: top north+east+west trim; face bottom 35px.
+2 N: east+west trim only; face bottom 35px.
+3 E: north+west trim only; face bottom 35px.
+4 N+E: west trim only; face bottom 35px.
+Row 2:
+5 S: full-height dark top; north+east+west trim.
+6 N+S: full-height dark top; east+west trim.
+7 E+S: full-height dark top; north+west trim.
+8 N+E+S: full-height dark top; west trim.
+Row 3:
+9 W: north+east trim only; face bottom 35px.
+10 N+W: east trim only; face bottom 35px.
+11 E+W: north trim only; face bottom 35px.
+12 N+E+W: NO N/E/W trim; face bottom 35px.
+Row 4:
+13 S+W: full-height dark top; north+east trim.
+14 N+S+W: full-height dark top; east trim.
+15 E+S+W: full-height dark top; north trim.
+16 N+E+S+W: full-height dark top, NO TRIM at all, no face.
+
+Use the SAME seamless periodic subtle dark top texture across all tiles and same face band heights/material texture across all eight face tiles. No exterior outline on connected edges. Strict crisp pixel art, no antialiasing, blur, gradients, bevel perspective, cast shadows, drop shadows, camera depth, text, objects, symbols or decorations. Nothing outside any tile.
+CORRECTION TO THE PROVIDED DRAFT: Preserve the exact material palette but fix these critical defects. The draft has artificial black gridlines at every 64px tile boundary, vertical outlines between connected faces, top trims too thick and the front face only ~50% high. Remove ALL those black gridlines/borders/gutters on connected edges. Face must start at EXACTLY y29 and end at y63 in each logical 64 tile. Use ONE identical periodic face pattern in all eight face tiles; no edge shadow or line on the connected side. Make top/left/right wood trim 3 logical px, not 4+. At the four edges of fully-connected tile bottom-right, continuous dark field with no outline at all. Final image is square 256x256 logical pixels, a precise 4x4 equal-cell array filling canvas, shown at an integer enlargement if necessary. Never frame or separate the cells. The connected sides must run flush up to the cell edge with no darker boundary. Repeat exact row neighbor states from original prompt. Row3 col4 has NO top/side wooden trim. Row4 col4 is seamless very dark brown only.

@@ -1,0 +1,179 @@
+@Component
+script BuildingRoomPrototype extends Component
+
+	-- 격리된 Maker 시험 맵 전용. 영지 점유·아이템·저장에는 연결하지 않는다.
+	property Entity GroundLayer = ""
+	property Entity FloorLayer = ""
+	property Entity WallLayer = ""
+	property Entity DoorVisual = ""
+	property string GroundTileName = "FullGrass"
+	property string FloorTileName = "Baram_167"
+	property string WallTileName = "Big Wall"
+	property integer GroundHalfSize = 8
+	property integer RoomHalfSize = 3
+	property number InteractDistance = 2.5
+	property number CloseSafetyPadding = 0.3
+	property number ToggleCooldown = 0.25
+	property number LastToggleAt = -1
+	property any KeyListener = nil
+	@Sync
+	property boolean Ready = false
+	@Sync
+	property boolean DoorOpen = false
+
+	method void OnBeginPlay()
+		-- Maker + 기존 테스트 모드에서만 시험 방을 생성하고 입력을 연결한다.
+		if not self:IsPrototypeEnabled() then return end
+		if self:IsServer() then
+			self.Ready = false
+			self.DoorOpen = false
+			self.LastToggleAt = -1
+			self:BuildRoom()
+		else
+			self.KeyListener = _InputService:ConnectEvent(KeyDownEvent, self.OnKeyDown)
+			log("[BUILD-PROTOTYPE] client input armed; F = door (aim required)")
+		end
+	end
+
+	method boolean IsPrototypeEnabled()
+		-- 출시 월드에서 시험 지형 생성이나 문 RPC를 실행하지 않는다.
+		return Environment:IsMakerPlay() and _TestModeConfig ~= nil and _TestModeConfig.EnableTestMode == true
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BuildRoom()
+		-- 내부 5×5 + 한 칸 두께 벽 테두리. 타일은 런타임 이름 API로만 놓는다.
+		if not isvalid(self.GroundLayer) or not isvalid(self.FloorLayer) or not isvalid(self.WallLayer) or not isvalid(self.DoorVisual) then
+			log_error("[BUILD-PROTOTYPE] missing entity binding")
+			return
+		end
+		local ground = self.GroundLayer.RectTileMapComponent
+		local floor = self.FloorLayer.RectTileMapComponent
+		local wall = self.WallLayer.RectTileMapComponent
+		if not isvalid(ground) or not isvalid(floor) or not isvalid(wall) then
+			log_error("[BUILD-PROTOTYPE] missing tilemap component")
+			return
+		end
+		if self.RoomHalfSize < 2 or self.RoomHalfSize > self.GroundHalfSize - 2 then
+			log_error("[BUILD-PROTOTYPE] invalid room dimensions")
+			return
+		end
+		ground:Clear()
+		floor:Clear()
+		wall:Clear()
+		local extent = self.GroundHalfSize
+		ground:BoxFill(self.GroundTileName, Vector2Int(-extent, -extent), Vector2Int(extent, extent))
+		local half = self.RoomHalfSize
+		floor:BoxFill(self.FloorTileName, Vector2Int(-half, -half), Vector2Int(half, half))
+		for x = -half, half do
+			for y = -half, half do
+				if math.abs(x) == half or math.abs(y) == half then
+					wall:SetTile(self.WallTileName, x, y)
+				end
+			end
+		end
+		local doorCell = wall:ToCellPosition(self.DoorVisual.TransformComponent.WorldPosition)
+		if doorCell.x ~= 0 or doorCell.y ~= -half then
+			log_error("[BUILD-PROTOTYPE] door must match south-center wall cell")
+			return
+		end
+		local floorInfo = floor:GetTile(0, 0)
+		local wallInfo = wall:GetTile(0, half)
+		local doorInfo = wall:GetTile(doorCell)
+		local expectedFloor = (half * 2 + 1) * (half * 2 + 1)
+		local expectedWall = half * 8
+		if floorInfo == nil or floorInfo.Name ~= self.FloorTileName or floorInfo.IsCollidable or wallInfo == nil or wallInfo.Name ~= self.WallTileName or not wallInfo.IsCollidable or doorInfo == nil or floor.TileCount ~= expectedFloor or wall.TileCount ~= expectedWall then
+			log_error("[BUILD-PROTOTYPE] tile readback failed; ready=false")
+			return
+		end
+		self.DoorVisual:SetVisible(true)
+		self.Ready = true
+		log("[BUILD-PROTOTYPE] ready floor=" .. tostring(floor.TileCount) .. " wall=" .. tostring(wall.TileCount - 1) .. " door=1; no per-wall entities")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnKeyDown(KeyDownEvent event)
+		-- 기존 플레이어의 조준 규약을 재사용한다. 새 전역 조작키를 만들지 않는다.
+		if event.key ~= KeyboardKey.F or not self.Ready or not self:IsPrototypeEnabled() then return end
+		local player = _UserService.LocalPlayer
+		if not isvalid(player) or player.CurrentMap ~= self.Entity then return end
+		if not isvalid(self.DoorVisual) then return end
+		---@type PlayerController
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) or not pc:IsAimTarget(self.DoorVisual) then return end
+		self:RequestToggleDoor()
+	end
+
+	@ExecSpace("Server")
+	method void RequestToggleDoor()
+		-- 요청 유저는 서버가 제공한 senderUserId로 찾고 검증은 서버에서 수행한다.
+		if not self.Ready or not self:IsPrototypeEnabled() then return end
+		local player = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(player) or player.CurrentMap ~= self.Entity then return end
+		self:ToggleDoorFor(player)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ToggleDoorFor(Entity player)
+		-- 거리·조준·연속 요청·문틈 점유를 검사한 뒤 문 한 셀만 변경한다.
+		if not isvalid(self.DoorVisual) or not isvalid(self.WallLayer) then return end
+		local wall = self.WallLayer.RectTileMapComponent
+		if not isvalid(wall) then return end
+		local pos = player.TransformComponent.WorldPosition
+		local doorPos = self.DoorVisual.TransformComponent.WorldPosition
+		local dx, dy = pos.x - doorPos.x, pos.y - doorPos.y
+		if dx * dx + dy * dy > self.InteractDistance * self.InteractDistance then return end
+		---@type PlayerController
+		local pc = player:GetComponent("script.PlayerController")
+		if not isvalid(pc) or not pc:IsAimTargetCore(self.DoorVisual, false) then return end
+		local now = _UtilLogic.ServerElapsedSeconds
+		if self.LastToggleAt >= 0 and now - self.LastToggleAt < self.ToggleCooldown then return end
+		local doorCell = wall:ToCellPosition(doorPos)
+		if self.DoorOpen and self:IsDoorwayOccupied(wall) then
+			log("[BUILD-PROTOTYPE] close blocked: player in doorway")
+			return
+		end
+		if self.DoorOpen then
+			wall:SetTile(self.WallTileName, doorCell)
+		else
+			wall:RemoveTile(doorCell)
+		end
+		local info = wall:GetTile(doorCell)
+		local opened = info == nil
+		if opened == self.DoorOpen or (not opened and (info.Name ~= self.WallTileName or not info.IsCollidable)) then
+			log_error("[BUILD-PROTOTYPE] door tile readback failed; state unchanged")
+			return
+		end
+		self.LastToggleAt = now
+		self.DoorOpen = opened
+		self.DoorVisual:SetVisible(not opened)
+		log("[BUILD-PROTOTYPE] door=" .. tostring(opened and "open" or "closed") .. " wallTiles=" .. tostring(wall.TileCount))
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsDoorwayOccupied(RectTileMapComponent wall)
+		-- 셀 중심만 보지 않고 발 위치를 0.3셀 여유가 있는 문 셀 AABB와 비교한다.
+		local center = self.DoorVisual.TransformComponent.WorldPosition
+		local hx = wall.GridSize.x * 0.5 + self.CloseSafetyPadding
+		local hy = wall.GridSize.y * 0.5 + self.CloseSafetyPadding
+		local users = _UserService:GetUsersByMapComponent(self.Entity.MapComponent) or {}
+		for _, user in ipairs(users) do
+			if isvalid(user) and isvalid(user.KinematicbodyComponent) then
+				local foot = user.KinematicbodyComponent:GetWorldGroundPosition()
+				if math.abs(foot.x - center.x) <= hx and math.abs(foot.y - center.y) <= hy then
+					return true
+				end
+			end
+		end
+		return false
+	end
+
+	method void OnEndPlay()
+		-- 연결된 입력 핸들러를 해제한다. 타이머·프레임 반복 작업은 사용하지 않는다.
+		if self:IsClient() and self.KeyListener ~= nil then
+			_InputService:DisconnectEvent(KeyDownEvent, self.KeyListener)
+			self.KeyListener = nil
+		end
+	end
+
+end

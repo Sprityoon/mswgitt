@@ -1,0 +1,218 @@
+@Component
+script UIBuffBarController extends Component
+	-- HUD 버프·디버프 아이콘 줄 (HUDGroup/BuffIcons). 미니맵 왼쪽에서 왼쪽으로 쌓인다(BuffSlot1 = 미니맵 쪽).
+	-- 같은 아이콘을 쓰는 버프(한 스킬이 거는 여러 효과 — 예: 기합 4종)는 아이콘 하나로 묶고, 툴팁에 효과를 줄별로 보여 준다.
+	-- 남은 시간: 스킬 쿨타임처럼 방사형 오버레이 — 지난 만큼 어두워진다 + 남은 초. 디버프는 칸이 붉다.
+	-- 데이터: PlayerBuffs.GetActiveBuffsForUI (BuffDataSet.Description · IsDebuff · IconRUID).
+
+	property integer SlotCount = 10
+	property number RefreshInterval = 0.1
+	property Color BuffSlotColor = Color(0.13, 0.16, 0.12, 0.95)
+	property Color DebuffSlotColor = Color(0.42, 0.10, 0.08, 0.95)
+	property Color BuffTitleColor = Color(0.95, 0.76, 0.31, 1)
+	property Color DebuffTitleColor = Color(1.0, 0.45, 0.38, 1)
+	-- 모바일 탭으로 띄운 툴팁은 호버 해제가 없으므로 이 시간 뒤에 닫는다.
+	property number TapTooltipSeconds = 3.0
+
+	@HideFromInspector property number refreshAccum = 0
+	@HideFromInspector property integer hoverSlot = 0
+	@HideFromInspector property number tapTooltipUntil = 0
+	@HideFromInspector property table slotGroups = {}
+	@HideFromInspector property table hoverHandlers = {}
+	@HideFromInspector property table clickHandlers = {}
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 칸마다 호버(툴팁)·클릭(모바일 툴팁) 연결. 처음엔 모두 숨긴다.
+		self.slotGroups = {}
+		for i = 1, self.SlotCount do
+			local slot = self:GetSlot(i)
+			if isvalid(slot) then
+				slot.Enable = false
+				local idx = i
+				self.hoverHandlers[i] = slot:ConnectEvent(ButtonStateChangeEvent, function(ev)
+					self:OnSlotHoverState(idx, ev)
+				end)
+				self.clickHandlers[i] = slot:ConnectEvent(ButtonClickEvent, function()
+					self.hoverSlot = idx
+					self.tapTooltipUntil = _UtilLogic.ElapsedSeconds + self.TapTooltipSeconds
+					self:ShowTooltipForSlot(idx)
+				end)
+			else
+				log_warning("[BUFF-BAR] BuffSlot" .. tostring(i) .. " missing")
+			end
+		end
+		log("[BUFF-BAR] ready slots=" .. tostring(self.SlotCount))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 이벤트 해제 + 툴팁 닫기.
+		for i = 1, self.SlotCount do
+			local slot = self:GetSlot(i)
+			if isvalid(slot) then
+				if self.hoverHandlers[i] ~= nil then slot:DisconnectEvent(ButtonStateChangeEvent, self.hoverHandlers[i]) end
+				if self.clickHandlers[i] ~= nil then slot:DisconnectEvent(ButtonClickEvent, self.clickHandlers[i]) end
+			end
+		end
+		self.hoverHandlers = {}
+		self.clickHandlers = {}
+		if _UITooltipLogic ~= nil then _UITooltipLogic:Hide("buffbar") end
+	end
+
+	@ExecSpace("ClientOnly")
+	method Entity GetSlot(integer index)
+		-- BuffSlot<i> (BuffIcons 의 자식).
+		return self.Entity:GetChildByName("BuffSlot" .. tostring(index), false)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- RefreshInterval 마다 아이콘·남은 시간을 다시 그린다.
+		self.refreshAccum = self.refreshAccum + delta
+		if self.refreshAccum < self.RefreshInterval then return end
+		self.refreshAccum = 0
+		self:Refresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method table BuildGroups()
+		-- 활성 버프를 아이콘 기준으로 묶는다. 순서 = 먼저 걸린 순(목록 순서). 묶음의 남은 시간은 가장 늦게 끝나는 효과 기준.
+		local groups = {}
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return groups end
+		local buffs = lp:GetComponent("script.PlayerBuffs")
+		if not isvalid(buffs) then return groups end
+		local index = {}
+		for _, b in ipairs(buffs:GetActiveBuffsForUI()) do
+			local key = tostring(b.iconRuid or "")
+			if key == "" then key = "id:" .. tostring(b.buffId) end
+			local g = index[key]
+			if g == nil then
+				g = { icon = tostring(b.iconRuid or ""), names = {}, lines = {}, remain = 0, duration = 1, expireAt = 0, isDebuff = false }
+				index[key] = g
+				groups[#groups + 1] = g
+			end
+			g.names[#g.names + 1] = tostring(b.displayName or "")
+			local desc = tostring(b.description or "")
+			if desc ~= "" then g.lines[#g.lines + 1] = desc end
+			if b.isDebuff == true then g.isDebuff = true end
+			if (tonumber(b.expireAt) or 0) >= g.expireAt then
+				g.expireAt = tonumber(b.expireAt) or 0
+				g.remain = tonumber(b.remain) or 0
+				g.duration = math.max(1, tonumber(b.duration) or 1)
+			end
+		end
+		return groups
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GroupTitle(table g)
+		-- "기합: 공격력" · "기합: 이동 속도" → "기합". 하나뿐이면 표시 이름 그대로.
+		local first = g.names[1] or ""
+		if #g.names <= 1 then return first end
+		local prefix = string.match(first, "^(.-):") or ""
+		if prefix ~= "" then return prefix end
+		return first
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Refresh()
+		-- 칸 채우기: 아이콘 · 칸 색(디버프 붉게) · 경과 오버레이 · 남은 초. 남는 칸은 끈다.
+		local groups = self:BuildGroups()
+		self.slotGroups = groups
+		for i = 1, self.SlotCount do
+			local slot = self:GetSlot(i)
+			if isvalid(slot) then
+				local g = groups[i]
+				if g == nil then
+					if slot.Enable then slot.Enable = false end
+				else
+					if not slot.Enable then slot.Enable = true end
+					local bg = slot.SpriteGUIRendererComponent
+					if isvalid(bg) then
+						if g.isDebuff then bg.Color = self.DebuffSlotColor else bg.Color = self.BuffSlotColor end
+					end
+					local icon = slot:GetChildByName("Icon", false)
+					if isvalid(icon) and isvalid(icon.SpriteGUIRendererComponent) then
+						icon.SpriteGUIRendererComponent.ImageRUID = g.icon
+					end
+					local overlay = slot:GetChildByName("Elapsed", false)
+					if isvalid(overlay) and isvalid(overlay.SpriteGUIRendererComponent) then
+						local spr = overlay.SpriteGUIRendererComponent
+						spr.Type = ImageType.Filled
+						spr.FillMethod = FillMethodType.Radial360
+						spr.FillOrigin = 2 -- Top
+						spr.FillClockWise = true
+						spr.FillAmount = math.min(1.0, math.max(0.0, 1.0 - g.remain / g.duration))
+					end
+					local timeEnt = slot:GetChildByName("Time", false)
+					if isvalid(timeEnt) and isvalid(timeEnt.TextGUIRendererComponent) then
+						timeEnt.TextGUIRendererComponent.Text = self:FormatRemain(g.remain)
+					end
+				end
+			end
+		end
+		-- 툴팁: 보고 있는 칸이 사라지면 닫고, 남아 있으면 남은 시간을 갱신한다. 탭으로 띄운 것은 시간이 지나면 닫는다.
+		if self.hoverSlot > 0 then
+			local tapExpired = self.tapTooltipUntil > 0 and _UtilLogic.ElapsedSeconds > self.tapTooltipUntil
+			if groups[self.hoverSlot] == nil or tapExpired then
+				self.hoverSlot = 0
+				self.tapTooltipUntil = 0
+				if _UITooltipLogic ~= nil then _UITooltipLogic:Hide("buffbar") end
+			elseif _UITooltipLogic ~= nil and _UITooltipLogic:IsShownBy("buffbar") then
+				self:ShowTooltipForSlot(self.hoverSlot)
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method string FormatRemain(number remain)
+		-- 60초 이상은 분, 그 아래는 초.
+		local r = math.max(0, math.floor(remain + 0.5))
+		if r >= 60 then return tostring(math.floor(r / 60)) .. "m" end
+		return tostring(r)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnSlotHoverState(integer slotIndex, ButtonStateChangeEvent ev)
+		-- PC 호버: 들어오면 툴팁, 나가면 닫기(스킬바와 같은 방식).
+		if ev == nil then return end
+		if ev.state == ButtonState.Hover then
+			self.hoverSlot = slotIndex
+			self.tapTooltipUntil = 0
+			self:ShowTooltipForSlot(slotIndex)
+		elseif ev.state == ButtonState.Normal or ev.state == ButtonState.Released then
+			if self.hoverSlot == slotIndex and self.tapTooltipUntil <= 0 then
+				self.hoverSlot = 0
+				if _UITooltipLogic ~= nil then _UITooltipLogic:Hide("buffbar") end
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowTooltipForSlot(integer slotIndex)
+		-- 제목 = 버프 이름(묶음은 공통 이름), 본문 = 효과 설명 줄들, 꼬리말 = 버프/디버프 · 남은 시간.
+		if _UITooltipLogic == nil then return end
+		local g = self.slotGroups[slotIndex]
+		if g == nil then return end
+		local body = ""
+		if #g.lines == 1 then
+			body = g.lines[1]
+		else
+			for _, line in ipairs(g.lines) do
+				if body ~= "" then body = body .. "\n" end
+				body = body .. "· " .. line
+			end
+		end
+		local kind = "버프"
+		local color = self.BuffTitleColor
+		if g.isDebuff then
+			kind = "디버프"
+			color = self.DebuffTitleColor
+		end
+		local footer = kind .. " · 남은 시간 " .. tostring(math.max(0, math.floor(g.remain + 0.5))) .. "초"
+		_UITooltipLogic:ShowAtCursor("buffbar", self:GroupTitle(g), body, footer, color)
+	end
+
+end

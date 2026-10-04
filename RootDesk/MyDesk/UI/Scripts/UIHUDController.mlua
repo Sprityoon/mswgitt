@@ -23,6 +23,20 @@ script UIHUDController extends Component
 	property number WarpTimeoutSeconds = 6.0
 	property number WarpMaxHoldSeconds = 5.0
 	property number WarpFadeOutSeconds = 0.25
+	-- 마스코트 애니메이션 시계는 틱당 최대 이만큼만 진행한다 — 맵 로딩으로 프레임이 끊겨도 순간이동·홉 위상 튐 없이
+	-- 멈춘 자리에서 이어 움직이게(벽시계 기준이면 끊김 뒤 한 번에 건너뛰고, 초당 ~7프레임 구간에선 홉이 무작위로 튄다).
+	property number WarpAnimMaxStep = 0.034
+	-- 마스코트 경로(UI px, TransitionGroup 의 StartPoint/EndPoint 라벨 x 와 맞춘다): 도착 전엔 WaitX 에서 제자리 홉으로 기다리고,
+	-- 도착 후 ArriveSpeed 로 EndX 까지 걸어가 CelebrateSeconds 만큼 뛴 뒤에 화면을 걷는다(WarpMaxHoldSeconds 가 상한).
+	property number WarpMascotStartX = -250
+	property number WarpMascotEndX = 250
+	property number WarpMascotWaitX = 120
+	property number WarpMascotWalkSpeed = 160
+	property number WarpMascotArriveSpeed = 420
+	property number WarpMascotCelebrateSeconds = 0.35
+	-- 실제 목적지 맵 이름. PlayerController.ClientWarpWithCover 가 호출 직전에 채워 넣는다(규칙 46 — 메서드
+	-- 인자 수 고정, 값은 프로퍼티로 전달). 비어 있으면(레거시 호출) fromMap 기반 추정으로 완화한다.
+	property string pendingWarpDestMap = ""
 	-- 서버가 이동을 거절했을 때(보스 입장 조건 미달 등) 타임아웃까지 기다리지 않고 바로 걷기 위한 플래그.
 	property boolean warpCancelPending = false
 
@@ -665,29 +679,9 @@ script UIHUDController extends Component
 	@ExecSpace("ClientOnly")
 	method void UpdateBuffBar(Entity player)
 		-- T16: 활성 버프 텍스트 (아이콘 바 간이판).
-		if not self.playHudReady then return end
-		local bar = _EntityService:GetEntityByPath("/ui/HUDGroup/BuffBar")
-		if not isvalid(bar) then return end
-		local textEnt = bar:GetChildByName("Text")
-		if not isvalid(textEnt) or not isvalid(textEnt.TextComponent) then return end
-		local buffs = player:GetComponent("script.PlayerBuffs")
-		if not isvalid(buffs) then
-			textEnt.TextComponent.Text = ""
-			bar.Enable = false
-			return
-		end
-		local list = buffs:GetActiveBuffsForUI()
-		if #list == 0 then
-			textEnt.TextComponent.Text = ""
-			bar.Enable = false
-			return
-		end
-		bar.Enable = true
-		local parts = {}
-		for _, b in ipairs(list) do
-			table.insert(parts, tostring(b.displayName) .. " " .. tostring(b.remain) .. "s")
-		end
-		textEnt.TextComponent.Text = table.concat(parts, "  ·  ")
+		-- 2026-10-03: 버프·디버프는 아이콘 줄(HUDGroup/BuffIcons · UIBuffBarController)로 옮겼다. 구 텍스트 바는 끈 채로 둔다.
+		local oldBar = _EntityService:GetEntityByPath("/ui/HUDGroup/BuffBar")
+		if isvalid(oldBar) and oldBar.Enable then oldBar.Enable = false end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -1034,6 +1028,29 @@ script UIHUDController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method table ResolveWarpLabel(string mapName)
+		-- 맵 이름을 영지/마을/사냥터/보스/대기실 카테고리로 분류해 전환 연출 라벨·아이콘을 돌려준다(출발·도착 공통).
+		-- raidlobby 접두사가 "raid" 접두사의 부분 집합이라 대기실 분기를 반드시 먼저 검사한다(과거 순서는 늘 보스 결투장으로 오판됐다).
+		if mapName == nil or mapName == "" then
+			return { name = "", icon = "" }
+		end
+		if string.sub(mapName, 1, 5) == "Home_" or mapName == "Home" or mapName == "map01" then
+			return { name = "내 영지", icon = "🚩" }
+		elseif mapName == "town" or mapName == "plaza" then
+			return { name = "마을 광장", icon = "🏡" }
+		elseif string.sub(mapName, 1, 9) == "raidlobby" or mapName == "template_raid_lobby" then
+			return { name = "레이드 대기실", icon = "🛡️" }
+		elseif string.sub(mapName, 1, 4) == "raid" or mapName == "boss" or mapName == "template_boss" then
+			return { name = "보스 결투장", icon = "⚔️" }
+		elseif string.sub(mapName, 1, 4) == "hunt" or string.sub(mapName, 1, 5) == "field" or mapName == "template_field"
+			or string.sub(mapName, 1, 5) == "rocky" or string.sub(mapName, 1, 6) == "desert" or string.sub(mapName, 1, 4) == "snow"
+			or mapName == "template_rocky" or mapName == "template_desert" or mapName == "template_snow" then
+			return { name = "사냥터", icon = "🌲" }
+		end
+		return { name = "", icon = "" }
+	end
+
+	@ExecSpace("ClientOnly")
 	method void BeginWarpTransition(any onCovered)
 		-- 포탈 이동 전환: ① 커버를 WarpFadeInSeconds 에 걸쳐 덮고 WarpCoverHoldTicks 틱 더 그린 뒤 onCovered()(워프 요청)
 		-- ② 로컬 플레이어 맵이 바뀌면 ③ 프레임이 안정될 때까지 유지 ④ WarpFadeOutSeconds 에 걸쳐 걷고 서버에 해제 통지.
@@ -1058,6 +1075,84 @@ script UIHUDController extends Component
 		cover.Enable = true
 		self.warpCancelPending = false
 
+		-- [Concept A] 출발지 & 도착지 명칭 결정 (2026-10-04 수정 — fromMap만으로 추정하던 방식은
+		-- "마을→내영지"·"사냥터→내영지" 귀환을 항상 "...→사냥터/마을"로 잘못 표시했다. 실제 목적지는
+		-- PlayerController.ClientWarpWithCover 가 pendingWarpDestMap 에 적어 전달한다(규칙 46 — 메서드
+		-- 인자 수는 고정, 값은 프로퍼티로). 못 받은 레거시 호출만 출발지 기반 추정으로 완화한다.
+		local destMap = self.pendingWarpDestMap
+		self.pendingWarpDestMap = ""
+
+		local fromInfo = self:ResolveWarpLabel(fromMap)
+		local toInfo = nil
+		if destMap ~= "" then toInfo = self:ResolveWarpLabel(destMap) end
+
+		local startName = "🚩 출발지"
+		if fromInfo.name ~= "" then startName = fromInfo.icon .. " " .. fromInfo.name end
+
+		local endName = "목적지 🏰"
+		if toInfo ~= nil and toInfo.name ~= "" then
+			endName = toInfo.name .. " " .. toInfo.icon
+		elseif fromInfo.name == "내 영지" then
+			endName = "마을 광장 🏡"
+		elseif fromInfo.name == "마을 광장" then
+			endName = "사냥터 & 모험지 🌲"
+		elseif fromInfo.name == "사냥터" then
+			endName = "마을 광장 🏡"
+		elseif fromInfo.name == "보스 결투장" then
+			endName = "마을 광장 🏡"
+		elseif fromInfo.name == "레이드 대기실" then
+			endName = "보스 결투장 ⚔️"
+		end
+
+		local mapContainer = cover:GetChildByName("MapContainer", true)
+		if isvalid(mapContainer) then
+			local startPoint = mapContainer:GetChildByName("StartPoint", true)
+			if isvalid(startPoint) and isvalid(startPoint.TextGUIRendererComponent) then
+				startPoint.TextGUIRendererComponent.Text = startName
+			end
+			local endPoint = mapContainer:GetChildByName("EndPoint", true)
+			if isvalid(endPoint) and isvalid(endPoint.TextGUIRendererComponent) then
+				endPoint.TextGUIRendererComponent.Text = endName
+			end
+			local st = mapContainer:GetChildByName("StatusText", true)
+			if isvalid(st) and isvalid(st.TextGUIRendererComponent) then
+				st.TextGUIRendererComponent.Text = "지도를 확인하며 이동 중..."
+			end
+		end
+
+		-- [Concept A] 마스코트: 메이플 기본 스프라이트(좌측 응시)를 반전하여 오른쪽(목적지)을 보며 전진
+		local mascot = cover:GetChildByName("Mascot", true)
+		if isvalid(mascot) and isvalid(mascot.SpriteGUIRendererComponent) then
+			mascot.SpriteGUIRendererComponent.FlipX = true
+		end
+
+		-- [Concept A] 모험 팁 랜덤 선정
+		local tipPlate = cover:GetChildByName("TipPlate", true)
+		if isvalid(tipPlate) then
+			local tipContent = tipPlate:GetChildByName("TipContent", true)
+			if isvalid(tipContent) and isvalid(tipContent.TextGUIRendererComponent) then
+				local tips = {
+					"밤이 되면 필드 몬스터의 공격력이 상승합니다. 화로를 설치해 안전 구역을 확보하세요!",
+					"대장간 모루에서는 장착 중인 무기와 방어구의 강화 및 속성 인챈트가 가능합니다.",
+					"낚시로 낚은 물고기는 요리 솥에서 스태미나를 대폭 회복하는 요리로 만들 수 있습니다.",
+					"사냥터 3구역(hunt03) 깊은 곳에는 고대 보스의 대기실 게이트가 숨겨져 있습니다.",
+					"영지에 밭을 갈고 씨앗을 심으면 시간이 지나 신선한 농작물을 수확할 수 있습니다.",
+					"F 키로 주변의 NPC, 작업대, 포탈, 보관함 등 다양한 오브젝트와 상호작용합니다.",
+					"인벤토리가 가득 찼다면 영지에 나무 보관함을 제작하여 자원을 안전하게 보관하세요.",
+					"Alt 키를 누르면 제자리에서 가볍게 점프합니다. 낮은 장애물이나 프롭을 뛰어넘어 보세요!",
+					"동물 우리에 가축을 기르고 매일 먹이를 주면 유용한 축산 생산물을 얻을 수 있습니다.",
+					"Tab 키를 누르면 미니맵 전경 조망 모드로 전환되어 맵 전체를 한눈에 볼 수 있습니다."
+				}
+				tipContent.TextGUIRendererComponent.Text = tips[math.random(1, #tips)]
+			end
+		end
+
+		local statusTextComp = nil
+		if isvalid(mapContainer) then
+			local st = mapContainer:GetChildByName("StatusText", true)
+			if isvalid(st) then statusTextComp = st.TextGUIRendererComponent end
+		end
+
 		local phase = "in"
 		local startAt = _UtilLogic.ElapsedSeconds
 		local lastAt = startAt
@@ -1068,7 +1163,14 @@ script UIHUDController extends Component
 		local arrivedTick = 0
 		local stable = 0
 		local outStart = -1
-		log("[WARPFX] begin from=" .. fromMap)
+		local animT = 0
+		local arriveAnimT = 0
+		local arriveX = self.WarpMascotStartX
+		local mascotX = self.WarpMascotStartX
+		local reachAnimT = -1
+		local maxGap = 0
+		local stalls = 0
+		log("[WARPFX] begin from=" .. fromMap .. " dest=" .. endName)
 
 		self.warpTimer = _TimerService:SetTimerRepeat(function()
 			if not isvalid(cover) or not isvalid(cg) then
@@ -1082,6 +1184,28 @@ script UIHUDController extends Component
 			local now = _UtilLogic.ElapsedSeconds
 			local dt = now - lastAt
 			lastAt = now
+			if dt > maxGap then maxGap = dt end
+			if dt > 0.1 then stalls = stalls + 1 end
+			animT = animT + math.min(dt, self.WarpAnimMaxStep)
+
+			-- [Concept A] 마스코트: 출발 라벨 위에서 출발해 도착 전엔 WarpMascotWaitX 앞에서 제자리 홉으로 기다리고,
+			-- 도착 후 WarpMascotArriveSpeed 로 도착 라벨 위까지 마저 걸어가 점프 — animT 로 구동(끊겨도 순간이동 없음).
+			-- 화면은 마스코트가 도착 라벨에 닿고 WarpMascotCelebrateSeconds 만큼 뛴 뒤에 걷힌다(settle 판정 참고).
+			if isvalid(mascot) and isvalid(mascot.UITransformComponent) then
+				local hopPhase = animT * self.WarpMascotWalkSpeed / 380 * math.pi * 8
+				if arrivedAt >= 0 then
+					mascotX = math.min(self.WarpMascotEndX, arriveX + (animT - arriveAnimT) * self.WarpMascotArriveSpeed)
+				else
+					mascotX = math.min(self.WarpMascotWaitX, self.WarpMascotStartX + animT * self.WarpMascotWalkSpeed)
+				end
+				if mascotX >= self.WarpMascotEndX then
+					if reachAnimT < 0 then reachAnimT = animT end
+					hopPhase = (animT - reachAnimT) * 12
+				end
+				mascot.UITransformComponent.anchoredPosition = Vector2(mascotX, 45 + math.abs(math.sin(hopPhase)) * 14)
+			else
+				reachAnimT = 0 -- 마스코트가 없으면 공개 판정을 막지 않는다
+			end
 
 			if phase == "in" then
 				local fadeIn = self.WarpFadeInSeconds
@@ -1105,7 +1229,12 @@ script UIHUDController extends Component
 					phase = "settle"
 					arrivedAt = now
 					arrivedTick = ticks
+					arriveAnimT = animT
+					arriveX = mascotX
 					stable = 0
+					if isvalid(statusTextComp) then
+						statusTextComp.Text = "목적지에 도착했습니다! 주변을 살피는 중..."
+					end
 					log("[WARPFX] arrived map=" .. cur .. " after " .. string.format("%.2f", now - requestedAt) .. "s")
 				elseif self.warpCancelPending then
 					log("[WARPFX] cancelled by server — reveal")
@@ -1124,9 +1253,11 @@ script UIHUDController extends Component
 					stable = 0
 				end
 				local held = now - arrivedAt
-				if (held >= self.WarpMinHoldSeconds and stable >= self.WarpStableTicks) or held >= self.WarpMaxHoldSeconds then
+				local mascotDone = reachAnimT >= 0 and animT - reachAnimT >= self.WarpMascotCelebrateSeconds
+				if (held >= self.WarpMinHoldSeconds and stable >= self.WarpStableTicks and mascotDone) or held >= self.WarpMaxHoldSeconds then
 					log("[WARPFX] reveal held=" .. string.format("%.2f", held) .. " ticksSinceArrive=" .. tostring(ticks - arrivedTick)
-						.. " stable=" .. tostring(stable))
+						.. " stable=" .. tostring(stable) .. " maxGap=" .. string.format("%.2f", maxGap) .. " stalls=" .. tostring(stalls)
+						.. " mascotDone=" .. tostring(mascotDone) .. " arriveX=" .. string.format("%.0f", arriveX))
 					phase = "out"
 					outStart = now
 					self:NotifyWarpRevealed()

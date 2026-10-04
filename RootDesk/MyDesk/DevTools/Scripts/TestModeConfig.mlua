@@ -52,6 +52,9 @@ script TestModeConfig extends Logic
 	--   F9 : 리소스 프리뷰 툴 토글      (UIPreviewToolController)
 	--   F10 : 날씨 순환 — WeatherDataSet 행 순서대로 (맑음 → 비 → 안개 → …), TestWeatherHoldSeconds 동안 유지
 	--   F11 : 낮/밤 전환 — 월드 시간을 한밤중(TestNightTime) 또는 한낮(TestDayTime)으로 옮긴다
+	--   F12 : 진행 중 퀘스트를 보고 직전까지 채운다 — 조건 진행도 + 지참·제출 물건 지급. NPC 보고(대사·보상·전직)는 직접 한다
+	--   Shift+F12 : 진행 중 퀘스트를 NPC 없이 즉시 완료 (정식 PlayerQuest.CompleteQuests 경로 — 보상·전직·다음 퀘스트 자동 수락 그대로)
+	--        ※ 수락 전 퀘스트는 대상이 아니다(NPC에게 먼저 수락). 레벨·직업 자격이 안 되면 건너뛴다 — F7 로 레벨을 맞출 것
 	--   F2/F3/F4 : 랭킹 샘플 UI        (RankingBasic/Sample/RankingSampleUILogic)
 	-- ⚠ F9 와 F2~F4 는 원래 게이트가 없어 출시본에서도 열렸다. 각 스크립트에 EnableTestMode
 	--   가드를 넣어 막았으므로, 키를 추가/제거하면 아래 도움말 문구도 같이 고칠 것.
@@ -110,8 +113,8 @@ script TestModeConfig extends Logic
 			.. "F7            레벨업 +" .. tostring(self.GrantLevelCount) .. "\n"
 			.. "F8            SP +" .. tostring(self.GrantSPAmount) .. "\n"
 			.. "F9            리소스 프리뷰\n"
-			.. "F10           날씨 순환 (맑음/비/안개)\n"
-			.. "F11           낮/밤 전환\n"
+			.. "F10 / F11     날씨 순환 · 낮/밤 전환\n"
+			.. "F12           퀘스트 보고 준비 (Shift: 즉시 완료)\n"
 			.. "F2 / F3 / F4  랭킹 샘플"
 	end
 
@@ -120,7 +123,7 @@ script TestModeConfig extends Logic
 		-- 로그 한 줄용 요약(개행 없는 형태).
 		return "F5 레이드 대기실 · F6 목록 · F7 레벨업 +" .. tostring(self.GrantLevelCount)
 			.. " · F8 SP +" .. tostring(self.GrantSPAmount)
-			.. " · F9 리소스 프리뷰 · F10 날씨 순환 · F11 낮/밤 · F2/F3/F4 랭킹 샘플"
+			.. " · F9 리소스 프리뷰 · F10 날씨 순환 · F11 낮/밤 · F12 퀘스트 보고 준비(Shift 즉시 완료) · F2/F3/F4 랭킹 샘플"
 	end
 
 	@ExecSpace("ClientOnly")
@@ -177,7 +180,111 @@ script TestModeConfig extends Logic
 			self:RequestCycleWeather()
 		elseif event.key == KeyboardKey.F11 then
 			self:RequestToggleNight()
+		elseif event.key == KeyboardKey.F12 then
+			-- Shift 를 같이 누르면 즉시 완료. _InputService 에는 IsKeyDown 이 없다(규칙 35) — IsKeyPressed.
+			local instant = _InputService:IsKeyPressed(KeyboardKey.LeftShift) or _InputService:IsKeyPressed(KeyboardKey.RightShift)
+			self:RequestSkipQuests(instant)
 		end
+	end
+
+	@ExecSpace("Server")
+	method void RequestSkipQuests(boolean instant)
+		-- 테스트 모드 전용 퀘스트 넘기기 요청. 본체는 ServerOnly 메서드에 둔다(RPC 본문 사용자 타입 주석 금지 — 규칙 53).
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+		local userEntity = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(userEntity) then return end
+		self:SkipQuestsFor(userEntity, instant)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SkipQuestsFor(Entity userEntity, boolean instant)
+		-- 진행 중 퀘스트를 보고 직전까지 채운다. 지참(Have) 조건·제출 물건(ConsumeItems)은 실제로 아이템을 지급해 채우고
+		-- (인벤 변동이 보유량 재평가를 태운다), 나머지 조건은 진행도를 목표치로 맞춘다. 직접 대입 대신 정식 완료 경로를 쓰므로
+		-- instant 일 때도 보상·전직·다음 퀘스트 자동 수락이 실제와 같다.
+		-- 한계: State 조건(예: 스킬 배우기)은 다음 인벤 변동 때 실제 상태로 재평가돼 0 으로 돌아갈 수 있다 → 그때는 Shift+F12.
+		if _QuestDataSetLogic == nil then return end
+		local pq = userEntity:GetComponent("script.PlayerQuest")
+		local inv = userEntity:GetComponent("script.PlayerInventory")
+		local pc = userEntity:GetComponent("script.PlayerController")
+		if not isvalid(pq) or not isvalid(inv) then return end
+		local userId = userEntity.PlayerComponent.UserId
+
+		-- 완료 처리 중 진행 목록이 바뀌므로 먼저 복사한다.
+		local ids = {}
+		for id, on in pairs(pq.ProgressingIdTable) do
+			if on == true then ids[#ids + 1] = id end
+		end
+		table.sort(ids)
+		if #ids == 0 then
+			if isvalid(pc) then pc:ShowMineFeedback("[TEST] 진행 중인 퀘스트가 없습니다 (NPC에게 먼저 수락)", userId) end
+			return
+		end
+
+		local readyIds = {}
+		local blocked = 0
+		for _, id in ipairs(ids) do
+			local data = _QuestDataSetLogic:GetData(id)
+			local userData = pq.UserDataTable[id]
+			if data == nil or userData == nil then continue end
+			if not data:IsPlayerEligible(userEntity, true) then
+				blocked = blocked + 1
+				log("[TESTMODE] quest skip blocked id=" .. tostring(id) .. " reason=" .. data:GetEligibilityBlockText(userEntity, true))
+				continue
+			end
+			-- 1) 지참 조건: 그 아이템을 목표 수량까지 지급한다(진행도는 보유량에서 다시 계산된다).
+			local conds = data.ConditionDatas or {}
+			for i = 1, #conds do
+				local cond = conds[i]
+				if cond ~= nil and cond.CountMode == "Have" then
+					local acd = cond.ConditionData
+					local okT, target = pcall(function() return acd.Target end)
+					local itemName = (okT and target ~= nil) and tostring(target) or ""
+					local missing = cond.Value - inv:GetItemCount(itemName)
+					if itemName ~= "" and missing > 0 then inv:AddItem(itemName, missing) end
+				end
+			end
+			-- 2) 보고 때 넘길 물건: 모자란 만큼 지급한다.
+			local consume = data.ConsumeItems or {}
+			for i = 1, #consume do
+				local itemName = consume[i][1]
+				local need = consume[i][2]
+				if itemName ~= nil and itemName ~= "" and need ~= nil then
+					local missing = need - inv:GetItemCount(itemName)
+					if missing > 0 then inv:AddItem(itemName, missing) end
+				end
+			end
+			-- 3) 나머지 조건(처치·채집 횟수·배우기 등): 진행도를 목표치로 맞춘다.
+			for i = 1, #conds do
+				local cond = conds[i]
+				if cond ~= nil and cond.CountMode ~= "Have" then
+					userData.Values[i] = cond.Value
+				end
+			end
+			readyIds[#readyIds + 1] = id
+		end
+
+		if #readyIds > 0 then
+			local idValuesTable = {}
+			for _, id in ipairs(readyIds) do
+				idValuesTable[id] = pq.UserDataTable[id].Values
+			end
+			pq:MarkSaveDirty()
+			pq:SyncValuesChanged(idValuesTable, userId)
+		end
+
+		local message = ""
+		if instant then
+			pq:CompleteQuests(readyIds)
+			message = "[TEST] 퀘스트 즉시 완료 " .. tostring(#readyIds) .. "건"
+		else
+			-- 보고 NPC 가 없는 퀘스트(온보딩)는 평소처럼 조건 충족 즉시 완료된다.
+			pq:TryCompleteReadyQuests()
+			message = "[TEST] 퀘스트 보고 준비 " .. tostring(#readyIds) .. "건 — NPC에게 보고하세요"
+		end
+		if blocked > 0 then message = message .. " (자격 미달 " .. tostring(blocked) .. "건: F7 레벨업)" end
+		if isvalid(pc) then pc:ShowMineFeedback(message, userId) end
+		log("[TESTMODE] quest skip instant=" .. tostring(instant) .. " ready=" .. tostring(#readyIds) .. " blocked=" .. tostring(blocked) .. " user=" .. tostring(userId))
 	end
 
 	@ExecSpace("ClientOnly")

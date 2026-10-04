@@ -951,6 +951,59 @@ script UIInventoryController extends Component
 			end
 			self.tooltipCount.Text = "보유: " .. count .. suffix
 		end
+		self:LayoutDetailCard()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LayoutDetailCard()
+		-- 상세 카드(Tooltip)를 설명 길이에 맞춰 늘린다: 위에서부터 이름 → 보유 → 설명 → 버리기 버튼.
+		-- 설명 높이는 그 글자 컴포넌트의 GetPreferredHeight 로 잰다(고정 154px 칸에 긴 설명이 넘치던 문제).
+		-- 규칙 10: stretch 자식(Bg)은 부모를 따라 늘어나지 않으므로 RectSize 를 직접 맞춘다. 카드 위쪽 끝은 원래 자리(+180)에 고정.
+		if not isvalid(self.tooltipPanel) or not isvalid(self.tooltipDesc) then return end
+		local width = 260
+		local innerW = 228
+		local pad = 14
+		local gap = 8
+		local nameH = 40
+		local countH = 28
+		local btnH = 88
+		local descText = self.tooltipDesc.Text or ""
+		local descH = 40
+		if descText ~= "" then
+			descH = math.max(40, math.ceil(self.tooltipDesc:GetPreferredHeight(descText, innerW)) + 6)
+		end
+		-- 인벤토리 창(700) 안에 들어오게 상한을 둔다.
+		local maxDescH = 680 - (pad * 2 + nameH + countH + btnH + gap * 3)
+		if descH > maxDescH then descH = maxDescH end
+		local height = pad * 2 + nameH + countH + descH + btnH + gap * 3
+		local function place(ent, y, w, h)
+			if not isvalid(ent) then return end
+			local t = ent.UITransformComponent
+			if isvalid(t) then
+				t.RectSize = Vector2(w, h)
+				t.anchoredPosition = Vector2(0, y)
+			end
+		end
+		local top = height * 0.5
+		local nameY = top - pad - nameH * 0.5
+		local countY = nameY - nameH * 0.5 - gap - countH * 0.5
+		local descY = countY - countH * 0.5 - gap - descH * 0.5
+		local btnY = descY - descH * 0.5 - gap - btnH * 0.5
+		place(self.tooltipName.Entity, nameY, innerW, nameH)
+		place(self.tooltipCount.Entity, countY, innerW, countH)
+		place(self.tooltipDesc.Entity, descY, innerW, descH)
+		local discardBtn = self.tooltipPanel:GetChildByName("BtnDiscard", false)
+		place(discardBtn, btnY, 200, btnH)
+		local cardT = self.tooltipPanel.UITransformComponent
+		if isvalid(cardT) then
+			cardT.RectSize = Vector2(width, height)
+			-- 위쪽 끝을 원래 카드(높이 360)의 위쪽 끝(+180)에 맞춘다 — 길어지면 아래로 자란다.
+			cardT.anchoredPosition = Vector2(cardT.anchoredPosition.x, 180 - height * 0.5)
+		end
+		local bg = self.tooltipPanel:GetChildByName("Bg", false)
+		if isvalid(bg) and isvalid(bg.UITransformComponent) then
+			bg.UITransformComponent.RectSize = Vector2(width, height)
+		end
 	end
 
 	@ExecSpace("ClientOnly")

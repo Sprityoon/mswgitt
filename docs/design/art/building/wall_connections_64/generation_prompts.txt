@@ -1,0 +1,43 @@
+BUILT-IN IMAGE GENERATION: ORIGINAL STYLE REFERENCE ATTACHED
+
+Use case: stylized-concept. Asset type: exact modular RPG wall autotile atlas.
+The attached tileset is an EXACT ART STYLE REFERENCE, not a layout to copy. Draw a NEW wall tileset with EXACTLY the same pixel-art treatment: warm brown wooden beams with small dark iron nail heads, cream plaster panels, light beige stone base, dark brown colored outlines, organic tiny stepped shading, warm upper-left light, top-down 3/4 RPG view. No floors, windows, doors, furniture or whole houses. Pixel art, not vector, not photorealistic, not an isometric diorama.
+
+Canvas: EXACTLY 4 columns x 4 rows of equal square cells, NO gaps, margins, gridlines, labels, text or shadows on the background. Logical canvas 256x256 pixels, each logical tile 64x64 pixels. Render at 1024x1024 as an EXACT 4x nearest-neighbor enlargement of the logical pixel art if a larger output is necessary. All artwork lies exactly within these sixteen cells.
+Background: one flat opaque SOLID #FF00FF magenta at EVERY location not occupied by wall. Absolutely NO transparent alpha, checkerboard, gradients, texture or background shadows. Magenta does not appear in the wall artwork.
+
+Connections: screen NORTH means top cell edge, EAST means right edge, SOUTH means bottom edge, WEST means left edge. Use FOUR-CARDINAL RECTANGULAR GRID, never diagonal directions. Every cell has a central wall joint. Add ONLY the listed arms. Endpoint of every present arm is flush at its corresponding cell edge; absent arms must not reach that edge. This order is exact and important, all 16 masks appear once:
+Row 1 left->right: [none: isolated short pillar], [N only: north wall terminating here], [E only: east-going wall end], [N+E: north-east corner].
+Row 2: [S only: south-going wall end], [N+S: continuous north-south straight], [E+S: east-south corner], [N+E+S: T with NO west arm].
+Row 3: [W only: west-going wall end], [N+W: north-west corner], [E+W: continuous east-west straight], [N+E+W: T with NO south arm].
+Row 4: [S+W: south-west corner], [N+S+W: T with NO east arm], [E+S+W: T with NO north arm], [N+E+S+W: four-way cross].
+
+Construction is identical in EVERY cell, so neighbors join:
+- Horizontal E-W wall front face has horizontal top wooden beam, cream plaster panel, pale stone base. Front face occupies about 80% of cell height, starting about logical y=13, bottom of stone exactly at logical y=63. Its beam/plaster/stone bands align at identical y coordinates in every tile.
+- Vertical N-S wall is a narrow overhead column about 2/3 cell width, centered horizontally (logical x about 11..52), showing wooden post edges and plaster between, constant width and x-position in all cells.
+- Connected EAST/WEST edges must have only continuous beam/plaster/stone cross section, NO terminal post or dark outline on the connecting edge. Connected NORTH/SOUTH edges must have matching overhead column cross section at the identical x range, NO terminal cap or outline across that edge.
+- An arm that stops does have a visible wooden end post. A vertical wall that does NOT continue SOUTH ends with a short front plaster-and-stone face at the cell bottom.
+- Corners, Ts, and cross are ONE clean joint, not several isolated mini walls. The horizontal face and vertical overhead column meet at a SINGLE shared corner post; NO doubled posts, detached arms, seams or floating bits.
+- Cell 1 is just one centered short timber/plaster/stone pillar, magenta all around except its base at bottom.
+- Cell 6 must reach top and bottom and no left/right edge. Cell 11 must reach left/right and no top edge. Cell 16 must have FOUR fully joined arms, including a clearly present south arm. Do NOT substitute a straight or T for the cross.
+- Nothing extends into a neighboring cell, no artwork clipped across boundaries beyond the intended flush connected faces.
+Use the reference's exact rich handcrafted wood grain and chipped cream stone clusters, but keep a consistent 1-logical-pixel density. No labels or numbers.
+
+GEOMETRY CORRECTION: ORIGINAL REFERENCE + FIRST GENERATED ATLAS ATTACHED
+
+Correct the new 4x4 wall tileset in image 2. Image 1 is the original EXACT STYLE reference. Keep image2's warm brown grain, nails, creamy plaster and stone pixel-art rendering, and opaque flat #FF00FF background. Do NOT change to another style. Output EXACTLY a 4x4 equal square cell atlas with no gutters, cell borders, margins, text. Logical 256x256, tile64px; nearest-neighbor enlarged pixel art.
+
+FIX GEOMETRY, not palette:
+1. Absolutely ZERO empty strip along the bottom of each cell: every front stone foot MUST end on that cell's final pixel row, not float above it. All horizontal front faces span logical y=13..63, wooden band y=13..25, plaster26..49, stone50..63. Bands match across all sixteen cells. Do NOT let differing timber posts move these bands.
+2. NORTH-SOUTH COLUMN width MUST be 42 logical pixels (2/3 cell width), centered x=11..52. Current image2 makes it too skinny. At a north connection the overhead wooden/plaster strip reaches row0. At a SOUTH connection continue the overhead wood/plaster column all the way to row63 WITHOUT terminal front plaster face or stone cap blocking the continuation. The north and south connection cross-sections must MATCH so vertically repeated tile6 is seamless.
+3. ALL east/west connected edges use beam/plaster/stone bands identically. No dark outline or terminal vertical post on a joined cell edge. No separating vertical line at atlas cell borders.
+4. Tile11 (row3 col3) is a simple uninterrupted horizontal wall, remove the middle post. Tile16 is a REAL FOUR-WAY junction with visibly continuous north, south, east, west arms; not another north-facing T. Distinguish all Ts.
+5. Tile5 (row2 col1) is SOUTH ONLY: column starts near its central joint and extends to its BOTTOM EDGE. It must NOT be another isolated capped pillar. Tile7 E+S, tile8 N+E+S, tile13 W+S, tile14 N+W+S, tile15 E+W+S, tile16 N+E+W+S all need this same CLEAR overhead south arm reaching bottom, not just stone bases that look like endings.
+6. Tile2 (row1 col2) is NORTH ONLY with overhead column from top ending into a short front stone foot at bottom; tile3 E only, tile9 W only stop with one central post. Each joint has one clean post only; no doubled posts.
+
+EXACT order left->right, top->bottom (N=top, E=right, S=bottom, W=left):
+ROW1: none | N | E | N+E.
+ROW2: S | N+S | E+S | N+E+S.
+ROW3: W | N+W | E+W | N+E+W.
+ROW4: S+W | N+S+W | E+S+W | N+E+S+W.
+Only these arms, screen-aligned horizontal/vertical. Do not rotate or rearrange cells. Image1's same rich clean handmade pixel clusters, no blur, no isometric diagonals. Background one solid opaque #FF00FF wherever not wall.
