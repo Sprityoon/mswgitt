@@ -1135,6 +1135,12 @@ script PersistenceManager extends Logic
 			_ResourceSpawner:LoadDestroyedResourcesFromJson(mapName, destRaw)
 			pcall(function() _ResourceSpawner:ReconstructWorldPlacementsForMap(map) end)
 
+			-- 건축(homeBuild): 설치물 재구성 뒤 — 로그인 때 스폰된 자원이 집 칸에 있으면 걷어내고 칸을 다시 칠한다.
+			if _BuildingManager ~= nil then
+				local buildRaw = data.homeBuild or "[]"
+				pcall(function() _BuildingManager:RestoreForMap(map, buildRaw) end)
+			end
+
 			-- T19: 가축 복원 (가구 재구성 이후)
 			local animalsRaw = data.homeAnimals or "[]"
 			self:ReconstructHomeAnimals(map, animalsRaw, userId)
@@ -1278,6 +1284,10 @@ script PersistenceManager extends Logic
 
 			_ResourceSpawner:LoadDestroyedResourcesFromJson(mapName, "[]")
 			_ResourceSpawner:ReconstructWorldPlacementsForMap(map)
+			-- 새 캐릭터: 같은 홈맵에 다른 슬롯의 건축 흔적이 남지 않게 비운다.
+			if _BuildingManager ~= nil then
+				_BuildingManager:RestoreForMap(map, "[]")
+			end
 		end
 
 		-- [TESTMODE] 신규 플레이어 분기 폴백: 테스트 모드 활성화 시 지정된 목표 맵으로 워프
@@ -1478,6 +1488,10 @@ script PersistenceManager extends Logic
 
 		-- Retrieve home map placements and destroyed resources to save to player user data
 		local tilesJson = _ResourceSpawner:GetPlacedTilesJson(mapName)
+		local buildJson = "[]"
+		if _BuildingManager ~= nil then
+			buildJson = _BuildingManager:GetBuildJson(mapName)
+		end
 		local furnRaw = _ResourceSpawner:GetPlacedFurnitureJson(mapName)
 		local furnList = {}
 		if furnRaw ~= nil and furnRaw ~= "" then
@@ -1648,6 +1662,7 @@ script PersistenceManager extends Logic
 			homeFurniture = furnJson,
 			homeTerrainEdits = _ResourceSpawner:GetTerrainEditsJson(mapName) or "[]",
 			homeDestroyedResources = destJson or "[]",
+			homeBuild = buildJson or "[]",
 			homeAnimals = animalsJson,
 			guestPermissions = permJson
 		}
@@ -2170,6 +2185,9 @@ script PersistenceManager extends Logic
 		_ResourceSpawner:SetPlacedFurnitureJson(mapName, self:GetDefaultFurnitureJson(inv))
 		_ResourceSpawner:SetTerrainEditsJson(mapName, "[]")
 		_ResourceSpawner:LoadDestroyedResourcesFromJson(mapName, "[]")
+		if _BuildingManager ~= nil then
+			_BuildingManager:SetBuildJson(mapName, "[]")
+		end
 		self.LastHomePos[userId] = { x = 0.0, y = -22.0 }
 		self.PendingHomeWarp[userId] = true
 		log("[SLOT] new estate seeded for " .. userId)

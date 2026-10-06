@@ -1,0 +1,487 @@
+{
+ "style": "Cabin",
+ "tileSize": 64,
+ "count": 48,
+ "tiles": [
+  {
+   "order": 0,
+   "name": "Cabin_top_outer_TL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    0,
+    0
+   ]
+  },
+  {
+   "order": 1,
+   "name": "Cabin_top_edge_T",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    1,
+    0
+   ]
+  },
+  {
+   "order": 2,
+   "name": "Cabin_top_outer_TR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    2,
+    0
+   ]
+  },
+  {
+   "order": 3,
+   "name": "Cabin_top_edge_L",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    3,
+    0
+   ]
+  },
+  {
+   "order": 4,
+   "name": "Cabin_top_fill",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    4,
+    0
+   ]
+  },
+  {
+   "order": 5,
+   "name": "Cabin_top_edge_R",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    5,
+    0
+   ]
+  },
+  {
+   "order": 6,
+   "name": "Cabin_top_nub_TL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    6,
+    0
+   ]
+  },
+  {
+   "order": 7,
+   "name": "Cabin_top_nub_TR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    7,
+    0
+   ]
+  },
+  {
+   "order": 8,
+   "name": "Cabin_face_INT_U_L",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    0,
+    1
+   ]
+  },
+  {
+   "order": 9,
+   "name": "Cabin_face_INT_U_M",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    1,
+    1
+   ]
+  },
+  {
+   "order": 10,
+   "name": "Cabin_face_INT_U_R",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    3,
+    1
+   ]
+  },
+  {
+   "order": 11,
+   "name": "Cabin_face_INT_D_L",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    0,
+    2
+   ]
+  },
+  {
+   "order": 12,
+   "name": "Cabin_face_INT_D_M",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    1,
+    2
+   ]
+  },
+  {
+   "order": 13,
+   "name": "Cabin_face_INT_D_R",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    3,
+    2
+   ]
+  },
+  {
+   "order": 14,
+   "name": "Cabin_face_EXT_U_L",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    4,
+    1
+   ]
+  },
+  {
+   "order": 15,
+   "name": "Cabin_face_EXT_U_M",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    5,
+    1
+   ]
+  },
+  {
+   "order": 16,
+   "name": "Cabin_face_EXT_U_R",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    7,
+    1
+   ]
+  },
+  {
+   "order": 17,
+   "name": "Cabin_face_EXT_D_L",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    4,
+    2
+   ]
+  },
+  {
+   "order": 18,
+   "name": "Cabin_face_EXT_D_M",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    5,
+    2
+   ]
+  },
+  {
+   "order": 19,
+   "name": "Cabin_face_EXT_D_R",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    7,
+    2
+   ]
+  },
+  {
+   "order": 20,
+   "name": "Cabin_door_INT_closed_TL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    0,
+    3
+   ]
+  },
+  {
+   "order": 21,
+   "name": "Cabin_door_INT_closed_TR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    1,
+    3
+   ]
+  },
+  {
+   "order": 22,
+   "name": "Cabin_door_INT_closed_BL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    0,
+    4
+   ]
+  },
+  {
+   "order": 23,
+   "name": "Cabin_door_INT_closed_BR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    1,
+    4
+   ]
+  },
+  {
+   "order": 24,
+   "name": "Cabin_door_INT_open_TL",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    2,
+    3
+   ]
+  },
+  {
+   "order": 25,
+   "name": "Cabin_door_INT_open_TR",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    3,
+    3
+   ]
+  },
+  {
+   "order": 26,
+   "name": "Cabin_door_INT_open_BL",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    2,
+    4
+   ]
+  },
+  {
+   "order": 27,
+   "name": "Cabin_door_INT_open_BR",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    3,
+    4
+   ]
+  },
+  {
+   "order": 28,
+   "name": "Cabin_door_EXT_closed_TL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    4,
+    3
+   ]
+  },
+  {
+   "order": 29,
+   "name": "Cabin_door_EXT_closed_TR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    5,
+    3
+   ]
+  },
+  {
+   "order": 30,
+   "name": "Cabin_door_EXT_closed_BL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    4,
+    4
+   ]
+  },
+  {
+   "order": 31,
+   "name": "Cabin_door_EXT_closed_BR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    5,
+    4
+   ]
+  },
+  {
+   "order": 32,
+   "name": "Cabin_door_EXT_open_TL",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    6,
+    3
+   ]
+  },
+  {
+   "order": 33,
+   "name": "Cabin_door_EXT_open_TR",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    7,
+    3
+   ]
+  },
+  {
+   "order": 34,
+   "name": "Cabin_door_EXT_open_BL",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    6,
+    4
+   ]
+  },
+  {
+   "order": 35,
+   "name": "Cabin_door_EXT_open_BR",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    7,
+    4
+   ]
+  },
+  {
+   "order": 36,
+   "name": "Cabin_window_INT_TL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    0,
+    5
+   ]
+  },
+  {
+   "order": 37,
+   "name": "Cabin_window_INT_TR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    1,
+    5
+   ]
+  },
+  {
+   "order": 38,
+   "name": "Cabin_window_INT_BL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    0,
+    6
+   ]
+  },
+  {
+   "order": 39,
+   "name": "Cabin_window_INT_BR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    1,
+    6
+   ]
+  },
+  {
+   "order": 40,
+   "name": "Cabin_window_EXT_TL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    2,
+    5
+   ]
+  },
+  {
+   "order": 41,
+   "name": "Cabin_window_EXT_TR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    3,
+    5
+   ]
+  },
+  {
+   "order": 42,
+   "name": "Cabin_window_EXT_BL",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    2,
+    6
+   ]
+  },
+  {
+   "order": 43,
+   "name": "Cabin_window_EXT_BR",
+   "IsCollidable": true,
+   "layer": "RectTileMap7 (구조물·막힘)",
+   "sheet": [
+    3,
+    6
+   ]
+  },
+  {
+   "order": 44,
+   "name": "Cabin_floor1",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    4,
+    5
+   ]
+  },
+  {
+   "order": 45,
+   "name": "Cabin_floor2",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    5,
+    5
+   ]
+  },
+  {
+   "order": 46,
+   "name": "Cabin_floor3",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    6,
+    5
+   ]
+  },
+  {
+   "order": 47,
+   "name": "Cabin_floor4",
+   "IsCollidable": false,
+   "layer": "RectTileMap3 (바닥·통행)",
+   "sheet": [
+    7,
+    5
+   ]
+  }
+ ]
+}

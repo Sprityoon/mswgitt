@@ -1,0 +1,333 @@
+{
+ "tile_px": 64,
+ "unit_px": 128,
+ "trim_px": 12,
+ "face_bands_unit_y": [
+  [
+   "TRIM",
+   0,
+   11
+  ],
+  [
+   "CROWN",
+   12,
+   15
+  ],
+  [
+   "MAIN",
+   16,
+   83
+  ],
+  [
+   "RAIL",
+   84,
+   89
+  ],
+  [
+   "WAIN",
+   90,
+   119
+  ],
+  [
+   "BASE",
+   120,
+   127
+  ]
+ ],
+ "zones": {
+  "TOP": {
+   "color": "#262633",
+   "desc": "벽 윗면 — 위에서 본 벽 덩어리(레퍼런스의 검은 영역). 아주 어둡게, 이음매 없이"
+  },
+  "TRIM": {
+   "color": "#E0913F",
+   "desc": "트림 — 윗면 가장자리 나무 몰딩. 방·바깥과 맞닿는 변과 앞면 맨 위에 두른다"
+  },
+  "CROWN": {
+   "color": "#7B4A2B",
+   "desc": "앞면 맨 위 그늘(크라운 몰딩) 4px"
+  },
+  "INT_MAIN": {
+   "color": "#F0D2B0",
+   "desc": "내벽 상단 — 벽지·회벽·벽돌 등 실내 벽면"
+  },
+  "INT_RAIL": {
+   "color": "#8A5A30",
+   "desc": "내벽 체어레일(가로 몰딩)"
+  },
+  "INT_WAIN": {
+   "color": "#C0905F",
+   "desc": "내벽 하단 징두리 판자"
+  },
+  "INT_BASE": {
+   "color": "#4F321D",
+   "desc": "내벽 걸레받이 — 바닥과 맞닿는 선"
+  },
+  "EXT_MAIN": {
+   "color": "#A8C8DC",
+   "desc": "외벽 상단 — 판자·통나무 사이딩"
+  },
+  "EXT_RAIL": {
+   "color": "#5E6B78",
+   "desc": "외벽 띠장(가로 보)"
+  },
+  "EXT_WAIN": {
+   "color": "#9C9C9C",
+   "desc": "외벽 하단 — 돌 기초"
+  },
+  "EXT_BASE": {
+   "color": "#555555",
+   "desc": "외벽 기초 아랫단 — 땅과 맞닿는 선"
+  },
+  "DOOR_FRAME": {
+   "color": "#6B4226",
+   "desc": "문틀(양 기둥 + 상인방)"
+  },
+  "DOOR_LEAF": {
+   "color": "#C47A45",
+   "desc": "문짝"
+  },
+  "OPENING": {
+   "color": "#141418",
+   "desc": "열린 문 너머(어두운 안쪽)"
+  },
+  "THRESHOLD": {
+   "color": "#A88058",
+   "desc": "문지방(바닥과 이어짐)"
+  },
+  "WIN_FRAME": {
+   "color": "#5C3A20",
+   "desc": "창틀"
+  },
+  "GLASS": {
+   "color": "#9FD6F0",
+   "desc": "유리"
+  },
+  "SILL": {
+   "color": "#B5804A",
+   "desc": "창턱"
+  },
+  "FLOOR1": {
+   "color": "#D2AE82",
+   "desc": "바닥 1 (기본)"
+  },
+  "FLOOR2": {
+   "color": "#C9A579",
+   "desc": "바닥 2 (변형)"
+  },
+  "FLOOR3": {
+   "color": "#DAB68A",
+   "desc": "바닥 3 (변형)"
+  },
+  "FLOOR4": {
+   "color": "#C29E72",
+   "desc": "바닥 4 (변형)"
+  }
+ },
+ "sheet_tiles": {
+  "top_outer_TL": {
+   "col": 0,
+   "row": 0,
+   "w": 1,
+   "h": 1
+  },
+  "top_edge_T": {
+   "col": 1,
+   "row": 0,
+   "w": 1,
+   "h": 1
+  },
+  "top_outer_TR": {
+   "col": 2,
+   "row": 0,
+   "w": 1,
+   "h": 1
+  },
+  "top_edge_L": {
+   "col": 3,
+   "row": 0,
+   "w": 1,
+   "h": 1
+  },
+  "top_fill": {
+   "col": 4,
+   "row": 0,
+   "w": 1,
+   "h": 1
+  },
+  "top_edge_R": {
+   "col": 5,
+   "row": 0,
+   "w": 1,
+   "h": 1
+  },
+  "top_nub_TL": {
+   "col": 6,
+   "row": 0,
+   "w": 1,
+   "h": 1
+  },
+  "top_nub_TR": {
+   "col": 7,
+   "row": 0,
+   "w": 1,
+   "h": 1
+  },
+  "face_INT_U_L": {
+   "col": 0,
+   "row": 1,
+   "w": 1,
+   "h": 1
+  },
+  "face_INT_U_M": {
+   "col": 1,
+   "row": 1,
+   "w": 1,
+   "h": 1
+  },
+  "face_INT_U_M2": {
+   "col": 2,
+   "row": 1,
+   "w": 1,
+   "h": 1
+  },
+  "face_INT_U_R": {
+   "col": 3,
+   "row": 1,
+   "w": 1,
+   "h": 1
+  },
+  "face_INT_D_L": {
+   "col": 0,
+   "row": 2,
+   "w": 1,
+   "h": 1
+  },
+  "face_INT_D_M": {
+   "col": 1,
+   "row": 2,
+   "w": 1,
+   "h": 1
+  },
+  "face_INT_D_M2": {
+   "col": 2,
+   "row": 2,
+   "w": 1,
+   "h": 1
+  },
+  "face_INT_D_R": {
+   "col": 3,
+   "row": 2,
+   "w": 1,
+   "h": 1
+  },
+  "face_EXT_U_L": {
+   "col": 4,
+   "row": 1,
+   "w": 1,
+   "h": 1
+  },
+  "face_EXT_U_M": {
+   "col": 5,
+   "row": 1,
+   "w": 1,
+   "h": 1
+  },
+  "face_EXT_U_M2": {
+   "col": 6,
+   "row": 1,
+   "w": 1,
+   "h": 1
+  },
+  "face_EXT_U_R": {
+   "col": 7,
+   "row": 1,
+   "w": 1,
+   "h": 1
+  },
+  "face_EXT_D_L": {
+   "col": 4,
+   "row": 2,
+   "w": 1,
+   "h": 1
+  },
+  "face_EXT_D_M": {
+   "col": 5,
+   "row": 2,
+   "w": 1,
+   "h": 1
+  },
+  "face_EXT_D_M2": {
+   "col": 6,
+   "row": 2,
+   "w": 1,
+   "h": 1
+  },
+  "face_EXT_D_R": {
+   "col": 7,
+   "row": 2,
+   "w": 1,
+   "h": 1
+  },
+  "door_INT_closed": {
+   "col": 0,
+   "row": 3,
+   "w": 2,
+   "h": 2
+  },
+  "door_INT_open": {
+   "col": 2,
+   "row": 3,
+   "w": 2,
+   "h": 2
+  },
+  "door_EXT_closed": {
+   "col": 4,
+   "row": 3,
+   "w": 2,
+   "h": 2
+  },
+  "door_EXT_open": {
+   "col": 6,
+   "row": 3,
+   "w": 2,
+   "h": 2
+  },
+  "window_INT": {
+   "col": 0,
+   "row": 5,
+   "w": 2,
+   "h": 2
+  },
+  "window_EXT": {
+   "col": 2,
+   "row": 5,
+   "w": 2,
+   "h": 2
+  },
+  "floor1": {
+   "col": 4,
+   "row": 5,
+   "w": 1,
+   "h": 1
+  },
+  "floor2": {
+   "col": 5,
+   "row": 5,
+   "w": 1,
+   "h": 1
+  },
+  "floor3": {
+   "col": 6,
+   "row": 5,
+   "w": 1,
+   "h": 1
+  },
+  "floor4": {
+   "col": 7,
+   "row": 5,
+   "w": 1,
+   "h": 1
+  }
+ }
+}

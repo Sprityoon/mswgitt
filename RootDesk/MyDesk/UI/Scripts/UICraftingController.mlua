@@ -80,6 +80,10 @@ script UICraftingController extends Component
 
 	property number LastToggleTime = 0
 
+	-- 건축 테이블(BuildingTable)이 연 창이면 true — 레시피 소스가 BuildingManager.RecipeTableName 이고
+	-- 제작 요청은 PlayerInventory:ServerRequestBuildCraft(테이블 근접 검증)로 간다.
+	property boolean buildMode = false
+
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
 		self.Entity.Enable = false
@@ -100,9 +104,13 @@ script UICraftingController extends Component
 		-- Builds self.recipes (and self.recipeOrder) from RecipeDataSet rows. Tier/Category/Unlock* CSV 주도.
 		self.recipes = {}
 		self.recipeOrder = {}
-		local ds = _DataService:GetTable("RecipeDataSet")
+		local tableName = "RecipeDataSet"
+		if self.buildMode and _BuildingManager ~= nil then
+			tableName = _BuildingManager.RecipeTableName
+		end
+		local ds = _DataService:GetTable(tableName)
 		if ds == nil then
-			log_error("UICraftingController: RecipeDataSet not found.")
+			log_error("UICraftingController: " .. tableName .. " not found.")
 			return
 		end
 		
@@ -140,9 +148,14 @@ script UICraftingController extends Component
 				category = category,
 				unlockId = unlockId,
 				unlockHint = unlockHint,
+				outputCount = 1,
 				ingredients = {}
 			}
-		
+			-- 건축 제작법만 OutputCount 열이 있다(바닥 2장 등). RecipeDataSet 에서 읽으면 LEA-3011 이 남으므로 모드로 가른다.
+			if self.buildMode then
+				entry.outputCount = math.max(1, math.floor(tonumber(ds:GetCell(i, "OutputCount")) or 1))
+			end
+
 			local ing1Name = ds:GetCell(i, "Ing1Name") or ""
 			local ing1Count = tonumber(ds:GetCell(i, "Ing1Count")) or 0
 			local ing2Name = ds:GetCell(i, "Ing2Name") or ""
@@ -158,7 +171,7 @@ script UICraftingController extends Component
 			self.recipes[recipeName] = entry
 			table.insert(self.recipeOrder, recipeName)
 		end
-		log("UICraftingController: Loaded " .. rowCount .. " recipes from RecipeDataSet.")
+		log("UICraftingController: Loaded " .. rowCount .. " recipes from " .. tableName .. ".")
 	end
 
 	@ExecSpace("ClientOnly")
@@ -445,6 +458,8 @@ script UICraftingController extends Component
 		if catVal == "consumable" then return "소모품" end
 		if catVal == "part" then return "강화 파츠" end
 		if catVal == "misc" then return "기타" end
+		if catVal == "blueprint" then return "설계도" end
+		if catVal == "piece" then return "건축 부품" end
 		return catVal
 	end
 
@@ -483,7 +498,7 @@ script UICraftingController extends Component
 				local nameText = item:GetChildByName("Name").TextComponent
 				if isvalid(nameText) then
 					if unlocked then
-						nameText.Text = self:GetItemDisplayName(recipe.name)
+						nameText.Text = self:GetItemDisplayName(recipe.name) .. self:GetOutputSuffix(recipe.name)
 						local rarity = self:GetItemRarity(recipe.name)
 						nameText.FontColor = self:GetRarityColor(rarity)
 					else
@@ -556,7 +571,39 @@ script UICraftingController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void Open()
-		-- description: Opens the crafting popup and resets crafting state.
+		-- description: Opens the crafting popup (일반 제작). 건축 모드였다면 레시피 소스를 RecipeDataSet 으로 되돌린다.
+		if self.buildMode then
+			self.buildMode = false
+			self.selectedTierIndex = 1
+			self.selectedCategoryIndex = 1
+			self:LoadRecipes()
+		end
+		self:OpenCurrent()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenBuild()
+		-- 건축 테이블(BuildingTable)이 여는 창: 같은 팝업에 건축 제작법(BuildingManager.RecipeTableName)을 띄운다.
+		if not self.buildMode then
+			self.buildMode = true
+			self.selectedTierIndex = 1
+			self.selectedCategoryIndex = 1
+			self:LoadRecipes()
+		end
+		self:OpenCurrent()
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetOutputSuffix(string recipeName)
+		-- 한 번에 여러 개 나오는 제작법이면 " ×N" (건축 바닥 등).
+		local r = self.recipes[recipeName]
+		if r == nil or r.outputCount == nil or r.outputCount <= 1 then return "" end
+		return " ×" .. tostring(r.outputCount)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenCurrent()
+		-- description: 현재 레시피 소스(일반/건축) 그대로 팝업을 연다 (Open/OpenBuild 공용 본문).
 		self.isCrafting = false
 		self.Entity.Enable = true
 		local transform = self.Entity.UITransformComponent
@@ -651,7 +698,7 @@ script UICraftingController extends Component
 		if not recipe then return end
 		
 		if isvalid(self.detailName) then
-			self.detailName.Text = self:GetItemDisplayName(recipe.name)
+			self.detailName.Text = self:GetItemDisplayName(recipe.name) .. self:GetOutputSuffix(recipe.name)
 			local rarity = self:GetItemRarity(recipe.name)
 			self.detailName.FontColor = self:GetRarityColor(rarity)
 		end
@@ -808,8 +855,12 @@ script UICraftingController extends Component
 		if canCraft then
 			self.isCrafting = true
 			self:UpdateDetails()
-			log("Requesting craft for " .. recipe.name)
-			inv:ServerRequestCraft(recipe.name)
+			log("Requesting craft for " .. recipe.name .. " buildMode=" .. tostring(self.buildMode))
+			if self.buildMode then
+				inv:ServerRequestBuildCraft(recipe.name)
+			else
+				inv:ServerRequestCraft(recipe.name)
+			end
 		end
 	end
 

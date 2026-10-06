@@ -1,0 +1,85 @@
+@Component
+script BuildingTable extends Component
+
+	-- 건축 테이블: F / BtnInteract → 제작 창을 건축 모드(BuildRecipeDataSet)로 연다.
+	-- BlacksmithAnvil 과 같은 패턴 (T59 이중 연결: KeyDown F + InteractRequestEvent 브리지, T67 조준 게이트).
+	-- 서버 제작 검증은 PlayerInventory:ServerRequestBuildCraft → BuildingManager:IsNearBuildingTable.
+
+	property any keyHandler = nil
+	property any interactRequestHandler = nil
+	-- T67: 조준 footprint (셀) — Trigger 가 있으면 Trigger AABB 가 우선한다(T82).
+	property integer AimFootprintW = 2
+	property integer AimFootprintH = 2
+
+	-- 조준 가이드 라벨 (PlayerController:ReadInteractLabel이 읽음)
+	property string InteractLabel = "건축하기"
+	property string PopupPath = "/ui/PopupGroup/CraftingPopup"
+
+	method void OnBeginPlay()
+		-- 클라: F KeyDown + InteractRequestEvent 구독.
+		if self:IsClient() then
+			self.keyHandler = _InputService:ConnectEvent(KeyDownEvent, self.OnKeyDown)
+			local lp = _UserService.LocalPlayer
+			if isvalid(lp) then
+				-- LEA-4002: ClientOnly 메서드에 커스텀 Event 타입 파라미터 불가 → 클로저 구독.
+				self.interactRequestHandler = lp:ConnectEvent(InteractRequestEvent, function()
+					self:TryInteract()
+				end)
+			else
+				log_warning("[BuildTable] LocalPlayer nil — InteractRequestEvent not connected")
+			end
+		end
+	end
+
+	method void OnEndPlay()
+		-- 핸들러 해제.
+		if self:IsClient() then
+			if self.keyHandler ~= nil then
+				_InputService:DisconnectEvent(KeyDownEvent, self.keyHandler)
+				self.keyHandler = nil
+			end
+			if self.interactRequestHandler ~= nil then
+				local lp = _UserService.LocalPlayer
+				if isvalid(lp) then
+					lp:DisconnectEvent(InteractRequestEvent, self.interactRequestHandler)
+				end
+				self.interactRequestHandler = nil
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnKeyDown(KeyDownEvent event)
+		-- F 키 → TryInteract.
+		if event.key ~= KeyboardKey.F then return end
+		self:TryInteract()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void TryInteract()
+		-- 조준선 게이트 후 건축 제작 창 토글 (이미 건축 모드로 열려 있으면 닫는다).
+		local localPlayer = _UserService.LocalPlayer
+		if not isvalid(localPlayer) then return end
+		local pc = localPlayer:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		if not pc:IsAimTarget(self.Entity) then return end
+		local popup = _EntityService:GetEntityByPath(self.PopupPath)
+		if not isvalid(popup) then
+			log_error("[BuildTable] CraftingPopup not found at " .. self.PopupPath)
+			return
+		end
+		---@type UICraftingController
+		local ctrl = popup:GetComponent("script.UICraftingController")
+		if not isvalid(ctrl) then
+			log_error("[BuildTable] UICraftingController missing on CraftingPopup")
+			return
+		end
+		if popup.Enable and ctrl.buildMode and ctrl.TargetScale > 0.9 then
+			ctrl:Close()
+		else
+			ctrl:OpenBuild()
+		end
+		log("[BuildTable] toggle popup buildMode=" .. tostring(ctrl.buildMode))
+	end
+
+end

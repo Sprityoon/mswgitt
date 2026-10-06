@@ -6,10 +6,13 @@ script ObstacleQuery extends Logic
 
 	-- 맵별 Layer-4(RectTileMap4) 캐시. 값 = RectTileMapComponent 또는 nil.
 	property table WallLayerByMap = {}
+	-- 맵별 건축 구조물 레이어(BuildingManager.WallLayerName) 캐시.
+	property table BuildLayerByMap = {}
 
 	method boolean IsWallAt(Entity mover, Vector2 checkPos)
 		-- Layer-4 위 **Big Wall**만 벽. L4에 잘못 쌓인 잔디/프린지/물은 벽이 아니다
 		-- (2026-08-07: 잔디·프린지는 L2 전용 — L4에 있으면 ObstacleQuery가 전부 벽으로 오판해 통행 불가).
+		-- + 건축 구조물 레이어의 타일도 벽이다(IsBuildWallAt).
 		if not isvalid(mover) then return false end
 		local map = mover.CurrentMap
 		if not isvalid(map) then
@@ -29,14 +32,39 @@ script ObstacleQuery extends Logic
 				self.WallLayerByMap[mapName] = wallLayer
 			else
 				self.WallLayerByMap[mapName] = nil
-				return false
+				wallLayer = nil
 			end
 		end
-		local cell = wallLayer:ToCellPosition(Vector3(checkPos.x, checkPos.y, 0))
+		if wallLayer ~= nil then
+			local cell = wallLayer:ToCellPosition(Vector3(checkPos.x, checkPos.y, 0))
+			if cell ~= nil then
+				local info = wallLayer:GetTile(cell)
+				if info ~= nil and info.Name == "Big Wall" then return true end
+			end
+		end
+		return self:IsBuildWallAt(map, checkPos)
+	end
+
+	method boolean IsBuildWallAt(Entity map, Vector2 checkPos)
+		-- 건축 구조물 레이어의 타일은 전부 막힘(열린 문은 바닥 레이어로 옮겨 칠한다 — BuildingManager:PaintUnit).
+		-- 엔진 타일 충돌이 걷기를 막고, 이 판정은 대시·넉백처럼 위치를 바로 옮기는 경로가 벽을 넘지 않게 한다.
+		if _BuildingManager == nil then return false end
+		if self.BuildLayerByMap == nil then self.BuildLayerByMap = {} end
+		local mapName = map.Name
+		local layer = self.BuildLayerByMap[mapName]
+		if layer == false then return false end   -- 레이어 없는 맵(마을·사냥터) — 매 프레임 이름 검색을 피한다
+		if layer == nil or not isvalid(layer) then
+			local ent = map:GetChildByName(_BuildingManager.WallLayerName)
+			if not isvalid(ent) or not isvalid(ent.RectTileMapComponent) then
+				self.BuildLayerByMap[mapName] = false
+				return false
+			end
+			layer = ent.RectTileMapComponent
+			self.BuildLayerByMap[mapName] = layer
+		end
+		local cell = layer:ToCellPosition(Vector3(checkPos.x, checkPos.y, 0))
 		if cell == nil then return false end
-		local info = wallLayer:GetTile(cell)
-		if info == nil then return false end
-		return info.Name == "Big Wall"
+		return layer:GetTile(cell) ~= nil
 	end
 
 	method boolean IsBlockingOverlapEntity(Entity mover, Entity entity)

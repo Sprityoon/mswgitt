@@ -281,6 +281,7 @@ script UICollectionController extends Component
 		if catVal == "resource" then return "자원" end
 		if catVal == "consumable" then return "소모품" end
 		if catVal == "misc" then return "기타" end
+		if catVal == "build" then return "건축" end
 		return catVal
 	end
 

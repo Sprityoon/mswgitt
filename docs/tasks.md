@@ -1,5 +1,46 @@
 # 작업 목록 (Tasks)
 
+## [건축] 건축 테이블 · 기본형 오두막 설계도 · 부품 수정 구현 (2026-10-06) — 코드·데이터·모델·맵 완료 · refresh ok · build Error 0 · 타일 등록 대기 · 런타임 검증 보류
+
+- **제작자 요청**: "`template_painted_imagegen_v2.png` 이렇게 입혀놨어 한번 검증하고 건축 시스템을 구현까지 해볼까. '건축 테이블'을 이용해서 건축 … 일정한 건물 양식을 주고 '기본형' 건물을 먼저 지을 수 있는 형태, 그리고 이후 수정하는건 플레이어의 몫으로."
+- **채색본 v2 검증·정규화**: 1341×1173(512×448 의 약 2.62배, 정수배 아님) · 아래로 갈수록 최대 20px(1x 기준) 위로 밀림(트림 −6 · 레일 −11 · 문 행 −9 · 바닥 행 −20) · 문 상인방이 트림 위치 · 예약 칸 투명 경계에 붉은 테. → `docs/design/art/building/wall_template_2x2/snap_painted.py` 가 v2 를 **재질 원본으로만** 쓰고 템플릿 규격으로 다시 짬 → `template_painted_v2_snapped.png`(512×448, 알파 = `template_blank.png`). `build_template.py --check` 통과(돌 기초 이음 수치 27.4 는 줄눈 위치에서 자른 거짓 양성 — 4배 반복 시각 확인), `--compose` 조립 23종.
+- **구현** (사양 단일 소스: [building-system-v2.md §10](./design/building-system-v2.md)):
+  - 신규 `RootDesk/MyDesk/Building/Scripts/BuildingManager.mlua`(서버 칸 상태 · 2×2 벽 문법 · 설치/검증 · 철거·드롭 · 문 · 저장/복원 · 조준 칸 단일 소스) · `BuildingTable.mlua`(F → 제작 창 건축 모드).
+  - 신규 데이터 `RootDesk/MyDesk/Building/DataSets/` `BuildPieceDataSet` · `BuildRecipeDataSet` · `BlueprintDataSet`. `item_dataset` 6행(`Building Table`, `Basic Cabin Blueprint`, `Cabin Wall/Floor/Door/Window`) · `RecipeDataSet` 1행(건축 테이블 = 나무 15 + 돌 5).
+  - 신규 모델 `RootDesk/MyDesk/Furniture/Models/Furniture_BuildingTable.model`(ModelBuilder — 조리 냄비 복제, 공식 목공 작업대 `877cf45e82074a698ca6e04c32f26aef`).
+  - `map/map01.map` 에 구조물 레이어 `RectTileMap7`(MapLayer4, displayOrder 33, MapBuilder). 백업 `scratch/map01-before-buildlayer-20261005.map`, 전·후 구조 비교 의미 변경 0.
+  - 기존 스크립트 9개 연결(인자 수 변경 없음): PlayerController · PlayerInventory · ResourceSpawner · TileDurabilityManager · PersistenceManager(`homeBuild`) · ObstacleQuery · UICraftingController · UIInventoryController · UICollectionController.
+- **타일 등록 자료**: `docs/design/art/building/wall_template_2x2/register/` — `Cabin_strip.png`(48칸) · `cabin-tiles.json` · 이름표 시트 · 낱장 · 아이콘 후보 4 · `README.md`. `export_cabin_tiles.py` 가 런타임 문법을 그대로 옮겨 기본형 오두막(문 닫힘/열림)·확장 예시를 조립해 사용 타일 24종이 모두 등록 목록 안임을 확인(`verify_*.png`).
+- **코드 리뷰 보완**: 설치 바닥 타일이 건축 바닥을 덮어쓰던 경로 차단(`ServerRequestPlace` isTile 분기) · 가구가 올라간 바닥 철거 거부(`BuildingManager.TryHitFloor`). `@Logic` 의 `self._T` 는 `ResourceSpawner.EnsureBiomeDatasetsCached`(2026-06 부터 영지 자원 스폰마다 실행)에서 이미 쓰이는 패턴이라 유지.
+- **검증**: LSP — 신규·수정 `.mlua` 11개 Error 0 · `scripts/check_dataset_columns.cjs` 불일치 0(새 테이블 열은 CSV 헤더와 수동 대조) · `.codeblock` 2개 생성 확인 · Maker refresh ok · 최종 build **10-06 02:25:03**(마지막 `.mlua` 저장 02:25:02 직후 — 타임스탬프 일치) Error 0 / Warning 9(기존 LWA-4012, 10-05 20:02) / Info 857 · 모델·맵 refresh(02:15) 뒤 normal 로그 0건. **런타임 검증 보류(제작자 수행)**.
+- **제작자 작업**: ① `register/README.md` 대로 wall.tileset 에 48칸 등록(이름·IsCollidable) ② Maker 레이어 트리에서 `RectTileMap7` `Invalid layer` 여부 확인 ③ §10.5 Play 체크리스트.
+
+## [건축/아트] 템플릿에 참조 이미지의 메이플풍 질감 재작업 (2026-10-05) — 채색 참고본 저장 · 등록 규격 미충족
+
+- 제작자 요청: `template_blank.png`와 `template_guide.png`의 배치에 `generated_maple_raw.png` 화풍·질감 적용, 기존 `template_painted.png` 개선. 첨부 경로 오류는 프로젝트 절대경로로 이미지 4종을 열어 해결.
+- 내장 `image_gen` 2회 편집: 나뭇결·벽지·돌 기초·문 철물·유리 표현 재작업, 내벽 하단 목재 및 어두운 연속 윗면 재질 구분. 기존 파일 보존. 가이드는 영역 설명용으로 사용.
+- 산출물: `docs/design/art/building/wall_template_2x2/template_painted_imagegen_v2.png` 및 같은 폴더 `imagegen_style_transfer_prompt.md`(프롬프트·비평·검증 범위).
+- 검증: 시각 대조 2회, PNG 읽기/치수/알파 검사, 복사 SHA256 일치. 출력 **1341×1173 RGBA**로 512×448 원본 또는 정수 배수와 불일치; 상대 좌표 기준 이진 알파 불일치 14,070px, 부분 알파 1,454,846px. **정확한 픽셀 마스크·띠 경계·타일 주기·조립 통과를 주장하지 않음. 게임 등록용 규격 보정 필요.**
+- **refresh 검증 보류(MCP 미연결)** · **런타임 검증 보류(제작자 수행)**. 게임 등록·코드·모델·맵 변경 없음.
+
+## [건축/아트] 2×2 타일셋 템플릿(wall_template_2x2) 메이플풍 질감 리디자인 및 가옥 조립 검증 완료 (2026-10-05~06) — template_painted.png 완성 · build_template --check 및 --compose 통과
+
+- **제작자 요청**: 중간 생성물인 `generated_maple_raw.png`의 따뜻한 메이플 감성 손그림 질감(통나무 사이딩, 몽글몽글한 자연석 돌담, 원목 힌지 문, 창문, 플로럴 벽지, 마루 바닥)이 마음에 드나 타일 규격을 벗어나고 마젠타 가이드라인/글자 오염이 발생한 문제를 해결하여 정규 템플릿에 안착시킬 것을 요청.
+- **구현 및 칠하기 규칙 적용**:
+  - `docs/design/art/building/wall_template_2x2/paint_template.py` 전면 개정 (v6):
+    1. **피스별 분할 추출 (Piecewise Extraction)**: 통 리사이즈를 피하고 각 부위(지붕 슬레이트 석재, 상단 통나무/꽃벽지, 하단 돌담, 문 4종, 창문 2종, 바닥 4종)의 텍스처를 마젠타 선 안쪽에서 고해상도로 정밀 크롭.
+    2. **방향성 인페인팅 (Directional Inpainting)**: 문·창문 중심을 관통하는 핑크색 십자선(cx, cy) 좌표를 타겟팅하여 나뭇결/살대 방향 선형 보간으로 핑크 픽셀 잔여 0개 소거. 상단 텍스트 오염은 글자가 없는 순수 원목 보(Beam) 및 돌 블록으로 대체.
+    3. **64px 주기 완벽 심리스 (Seamless Tiling)**: $x=0$과 $x=63$의 경계 픽셀을 완벽 일치시켜 가로 이음매 색 차이(`seam diff`) 0.0 달성. 윗면 돌 블록과 바닥 타일은 상하좌우(사방) 심리스 처리.
+    4. **512×448 규격 및 투명 영역 100% 동기화**: `template_blank.png` 알파 마스크를 씌워 16,384개 투명 픽셀 일치.
+- **산출물**:
+  - `docs/design/art/building/wall_template_2x2/template_painted.png` (512×448 RGBA 메이플풍 완성 시트)
+  - `docs/design/art/building/wall_template_2x2/paint_template.py` (질감 렌더링/인페인팅/합성 스크립트)
+  - `docs/design/art/building/wall_template_2x2/preview_house_painted.png` (2688×1280 실제 게임 배율 가옥 조립 검증 목업)
+- **검증**:
+  - `build_template.py --check template_painted.png`: 투명/불투명 오차 0px (100% PASS), 가로 이음매 색차 0.0 (100% PASS), 세로 자연 음영 경계 통과.
+  - `build_template.py --compose template_painted.png`: 23종 타일 조합으로 가옥 조립 검증 통과 (실내외 벽체, 바닥, 문, 창, ㄱ자 코너 등 조화로운 비주얼 확인).
+  - `maker_refresh_workspace`: status ok.
+
 ## [마을/맵] 마을(town.map) 식생·소품 데코레이션(나무·가로등·덤불·잔디 등) 추가 배치 및 오브젝트 트랜스폼 정밀 조정 (2026-10-05) — 맵 저장 완료
 
 - **작업 내용**:
@@ -129,10 +170,13 @@
 
 ## [건축] 자유 건축 시스템 재설계 (2026-10-05) — 설계 v2 확정 · 1단계 아트 완료 · 제작자 타일 등록 대기
 
+- **→ 2026-10-06 구현 완료**: 맨 위 "[건축] 건축 테이블 · 기본형 오두막 설계도 · 부품 수정 구현" 항목과 설계 v2 §10 이 현행. 아래의 `BuildWood*` 16마스크·`BuildDoorBlock` 등록 대기는 폐기(개정 3 의 `Cabin_*` 48칸으로 대체).
 - **⚖️ 제작자 확정 (2026-10-05)**: 칸 안 낮은 벽 / woodland_64 부품 재조립 / 세로벽 = 기둥|회벽|기둥(남쪽 끝만 좁은 앞면).
 - **1단계 아트**: `docs/design/art/building/woodland_64/connect/` — 벽 16종(`BuildWoodWall00~15`, 마스크 N1 E2 S4 W8) + `BuildDoorBlock`(투명 충돌용) + 바닥 4종(테두리 제거) = 21칸 등록용 스트립 `BuildWood_strip.png` + 순서표 + 목업. 자가비평 3회(세로벽 폭 · 벽 칸 바닥 · 회벽 이음 자국). 등록·코드 변경 없음.
 - **다음**: 제작자 Maker 등록(`wall.tileset`, 1~17번 충돌 / 18~21번 통행) → 2단계 레이어·데이터.
 - **⚖️ 벽 문법 개정 (코어키퍼 스크린샷 분석)**: 벽 = ① 검은 윗면(벽끼리는 경계 없이 이어짐, 빈 칸 쪽 변에만 밝은 테두리 — 모서리·T자 자동 해결) ② 남쪽이 빈 칸에만 윗면 아래 앞면. 기둥·보 토막 방식(woodland 생성물·재조립본) 폐기. 생성 프롬프트 `docs/design/art/building/wall_tileset_prompt_ck.md`(4×4 = 16마스크, 칸별 규칙 + 실패 시 부품 조립 대안). 설계 v2 §3 개정 표기.
+- **타일셋 템플릿 (2026-10-05, 개정 3)**: 제작자 스타듀풍 실내 레퍼런스 → 앞면 칸 = 2×2 전체(키 높이), 남쪽 바닥 유무로 내벽/외벽 자동, 윗면 칸 = 어두운 덩어리 + 트림. `docs/design/art/building/wall_template_2x2/` — `template_blank.png`(512×448, 영역 22색, 칠할 원본) · `template_guide.png`(범례) · `preview_house.png`(예시 집: 방 2 + 복도, 칸막이 T자·개구부, 내벽 문·창, 외벽 열린 문, 두께 2칸 ㄱ자 2개, 외딴 기둥, 담 — 사용 23종) · `zones.json` · `build_template.py`(`--check` 영역·이음 검사, `--compose` 칠한 시트 조립 — 가짜 질감으로 경로 시험 통과) · README(칠하기 규칙 7 + 이미지 모델 프롬프트). 질감 작업 대기.
+- **⚖️ 벽 = 칸당 64px 타일 2×2 사분면 방식 (2026-10-05)**: 위 2장 윗면 / 아래 2장 앞면(남쪽 빈 칸) — 사분면별 모서리 이웃 3개로 선택, 고유 타일 13장으로 8방향 47조합. 개념 검증 `docs/design/art/building/wall_2x2_concept/`(임시 그림) — 방·T·문 구멍·2×2 덩어리·외딴 벽 정합. 설계 v2 §3 개정 2.
 - **wall_16_64 검토 (2026-10-05)**: `docs/design/art/building/wall_connections_64/` (4×4 = 마스크 순서). 좌우 이음 64쌍 완벽·위아래 색 차이 0, 목업에서 **사각형 방·ㄱ자·T자·십자·문 구멍 모두 연결 성공**. 결함: 남쪽 연결 꺾임·T·십자 6칸의 떠 있는 짧은 기둥, 외딴 벽이 가는 토막 → `review/fixed/` 수정본(원본 보존) + `review/REVIEW.md` + 목업 전·후. 제작자 채택 결정 대기.
 - **(폐기) 재조립본**: 제작자 "ㄱ자 조인트가 없어 사각형 박스가 안 됨" — 재조립본의 모서리가 기둥 묶음이라 꺾임으로 읽히지 않음. 원본 그림체를 유지한 **연결 타일셋 재생성 프롬프트** 작성: `woodland_64/connect_tileset_prompt.md`(4×4 칸 = 16연결, 단면 일치·앞면 아랫변·칸 안에서 끝남·마젠타 배경만 제한). 재조립본 등록은 보류, 새 생성본을 받으면 같은 검사·목업·스트립 절차로 처리.
 

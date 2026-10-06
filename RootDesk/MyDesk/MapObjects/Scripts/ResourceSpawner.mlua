@@ -900,10 +900,14 @@ script ResourceSpawner extends Logic
 	end
 
 	method boolean IsGridOccupied(string mapName, integer x, integer y)
-		-- 자원/가구/설치 타일 점유 여부.
+		-- 자원/가구/설치 타일/건축 칸 점유 여부.
 		local key = x .. "_" .. y
 		local occ = self:GetGridToEntity(mapName)[key]
-		return occ ~= nil and (occ.isTile == true or occ.isFurniture == true or isvalid(occ.entity))
+		if occ ~= nil and (occ.isTile == true or occ.isFurniture == true or occ.isBuild == true or isvalid(occ.entity)) then
+			return true
+		end
+		-- 건축 바닥은 GridToEntity 밖(위에 가구를 놓아야 한다) — 지형 편집이 집 바닥을 파지 않게 따로 본다.
+		return _BuildingManager ~= nil and _BuildingManager:IsBuildCell(mapName, x, y)
 	end
 
 	method integer GetCellMask(any tilemap2, any tilemap1, integer x, integer y)
@@ -2666,7 +2670,8 @@ script ResourceSpawner extends Logic
 			for nx = xMin, xMax do
 				for ny = yMin, yMax do
 					local gKey = math.floor(nx) .. "_" .. math.floor(ny)
-					if gridToEntity[gKey] ~= nil then
+					-- 건축 칸(바닥 포함)에도 자원을 스폰하지 않는다 — 바닥은 GridToEntity 밖이라 따로 본다.
+					if gridToEntity[gKey] ~= nil or (_BuildingManager ~= nil and _BuildingManager:IsBuildCell(mapName, math.floor(nx), math.floor(ny))) then
 						canPlace = false
 						break
 					end
@@ -2851,14 +2856,14 @@ script ResourceSpawner extends Logic
 		end
 
 		-- 청크 안에 남은 무효 점유 기록 정리(흡입으로 움직인 자연 드롭·이미 파괴된 자원이 남긴 칸).
-		-- 타일·가구 기록(isTile/isFurniture)은 엔티티가 없어도 유효하므로 건드리지 않는다.
+		-- 타일·가구·건축 기록(isTile/isFurniture/isBuild)은 엔티티가 없어도 유효하므로 건드리지 않는다.
 		do
 			local cs = self.MacroCellSize
 			for gx = cx * cs, cx * cs + cs - 1 do
 				for gy = cy * cs, cy * cs + cs - 1 do
 					local gKey = gx .. "_" .. gy
 					local occ = gridToEntity[gKey]
-					if occ ~= nil and occ.isTile ~= true and occ.isFurniture ~= true and not isvalid(occ.entity) then
+					if occ ~= nil and occ.isTile ~= true and occ.isFurniture ~= true and occ.isBuild ~= true and not isvalid(occ.entity) then
 						gridToEntity[gKey] = nil
 					end
 				end
@@ -3121,6 +3126,16 @@ script ResourceSpawner extends Logic
 				item.x = cellX
 				item.y = cellY
 
+				-- 건축물 둘레(BuildingManager.RespawnClearRadius)의 자원은 다시 자라지 않는다 — 여러 칸 자원이 집을 뚫지 않게.
+				if _BuildingManager ~= nil and _BuildingManager:IsNearBuild(mapName, cellX, cellY) then
+					table.remove(destroyedResources, i)
+					if string.sub(mapName, 1, 5) == "Home_" and _PersistenceManager then
+						_PersistenceManager:MarkPlayerDirty(string.sub(mapName, 6))
+					end
+					log("ResourceSpawner: respawn dropped near building " .. item.sourceName .. " at (" .. cellX .. ", " .. cellY .. ") in map " .. mapName)
+					continue
+				end
+
 				local isOccupied = false
 				local key = cellX .. "_" .. cellY
 				if gridToEntity[key] ~= nil then
@@ -3205,7 +3220,18 @@ script ResourceSpawner extends Logic
 			resEntity:Destroy()
 			return nil
 		end
-		
+		-- 점유 칸이 건축 칸(바닥 포함)에 걸치면 되살리지 않는다 (TickResourceRespawnForMap 둘레 검사의 안전망).
+		if _BuildingManager ~= nil then
+			for nx = xMin, xMax do
+				for ny = yMin, yMax do
+					if _BuildingManager:IsBuildCell(mapName, math.floor(nx), math.floor(ny)) then
+						resEntity:Destroy()
+						return nil
+					end
+				end
+			end
+		end
+
 		local gridToEntity = self:GetGridToEntity(mapName)
 		for nx = xMin, xMax do
 			for ny = yMin, yMax do

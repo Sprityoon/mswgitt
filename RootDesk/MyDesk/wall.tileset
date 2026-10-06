@@ -1080,6 +1080,246 @@
           "Id": "d31d507527974b7aa6d2bf1eaa18e8a0",
           "Name": "GrassRDRound",
           "IsCollidable": false
+        },
+        {
+          "Id": "385994e872c34c10971a8fec76e901c6",
+          "Name": "Cabin_top_outer_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "0aa33acf53424b5e9d63cba92c1b5876",
+          "Name": "Cabin_top_edge_T",
+          "IsCollidable": true
+        },
+        {
+          "Id": "eb3644aa46064c45a9160d66cb4f37c2",
+          "Name": "Cabin_top_outer_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "2813b36dfd9a41999e82cc0f803c1ea4",
+          "Name": "Cabin_top_edge_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "bcc4b8545cc848a59bc6863420122cbf",
+          "Name": "Cabin_top_fill",
+          "IsCollidable": true
+        },
+        {
+          "Id": "1da80be238284dba809861965e333678",
+          "Name": "Cabin_top_edge_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "453f39edf33b457e92b1171f052085d3",
+          "Name": "Cabin_top_nub_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "80206feb7d854552a94a3fb678e3d5a8",
+          "Name": "Cabin_top_nub_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "18c57120afc54770a529a9da27dbc973",
+          "Name": "Cabin_face_INT_U_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "83142ec2390a412f989d64fd3f5c25d2",
+          "Name": "Cabin_face_INT_U_M",
+          "IsCollidable": true
+        },
+        {
+          "Id": "ff291ac2a9b14329b29ff9febe8db2ca",
+          "Name": "Cabin_face_INT_U_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "8bb99f0dadd64c918468f2b7ed703b3c",
+          "Name": "Cabin_face_INT_D_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "d679869816b14522979e5ed542cd71c8",
+          "Name": "Cabin_face_INT_D_M",
+          "IsCollidable": true
+        },
+        {
+          "Id": "a45550ef2ee44d66b23dd71c86af969f",
+          "Name": "Cabin_face_INT_D_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "56f2cdb25ab34b95aa89652d21ab21be",
+          "Name": "Cabin_face_EXT_U_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "c943c594adcb4f7a9de1ebde991ece78",
+          "Name": "Cabin_face_EXT_U_M",
+          "IsCollidable": true
+        },
+        {
+          "Id": "8c7a47e60c7e4484aa2a08526f24f63b",
+          "Name": "Cabin_face_EXT_U_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "5e8864672f5c44d4ada69ee0950d62ae",
+          "Name": "Cabin_face_EXT_D_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "208bb6b2b75a4f5fb8415e81d69d9fe5",
+          "Name": "Cabin_face_EXT_D_M",
+          "IsCollidable": true
+        },
+        {
+          "Id": "65b30c85166e4bbfbc7f61435995c143",
+          "Name": "Cabin_face_EXT_D_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "90b6ac8a07cc4219a49c9bffff2b7911",
+          "Name": "Cabin_door_INT_closed_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "0431a26eb53044898fa654b419be9362",
+          "Name": "Cabin_door_INT_closed_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "bf127310763b487484060e2ceb3f60da",
+          "Name": "Cabin_door_INT_closed_BL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "4a2dd8266f0943f8bf7af734ffc07813",
+          "Name": "Cabin_door_INT_closed_BR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "1c867c4023934e83b3534c4a55b2e805",
+          "Name": "Cabin_door_INT_open_TL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "cb8803adcfaa47e79702db131e49a6b6",
+          "Name": "Cabin_door_INT_open_TR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "de28673f71154b4a8f757f106296eaa8",
+          "Name": "Cabin_door_INT_open_BL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "50f667b364ff4eebaaf0c5420d8ea355",
+          "Name": "Cabin_door_INT_open_BR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "69074d4b879042aca2a7465c57470782",
+          "Name": "Cabin_door_EXT_closed_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "5d4182ab99bf4fe49bd2a4f8b44add83",
+          "Name": "Cabin_door_EXT_closed_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "00368c7d6b384fc3bb74052501529c39",
+          "Name": "Cabin_door_EXT_closed_BL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "66f89e294237436cacf98bffb61b1eac",
+          "Name": "Cabin_door_EXT_closed_BR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "57a315b4625e43db8685f67cc2ba6cb5",
+          "Name": "Cabin_door_EXT_open_TL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "37913a5335204c3cb2a760d256e3f2c5",
+          "Name": "Cabin_door_EXT_open_TR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0dcbe302635b4b7f9b4c39d02c585b64",
+          "Name": "Cabin_door_EXT_open_BL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "e63437b6e9884f3f80e9789da7bdb3da",
+          "Name": "Cabin_door_EXT_open_BR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0c972d5e486e4e7fb9edd5387f7e7f83",
+          "Name": "Cabin_window_INT_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "8c4f9846c4d54858a2043e9ed1a37c3e",
+          "Name": "Cabin_window_INT_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "a2bf454e1a034828b74aa859b97bbcc7",
+          "Name": "Cabin_window_INT_BL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "46e83906729c4a2592f389824229e625",
+          "Name": "Cabin_window_INT_BR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "c17d74f91a1a45e98961f00ac1d1d397",
+          "Name": "Cabin_window_EXT_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "de65c876ca7c4a9d8d2444db4bc0f510",
+          "Name": "Cabin_window_EXT_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "f7737e7d72c3467abf5008eb0369c707",
+          "Name": "Cabin_window_EXT_BL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "26e9c089297248da887cf20eb204ded5",
+          "Name": "Cabin_window_EXT_BR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "a4065b7e26824f94a4101edf6011a315",
+          "Name": "Cabin_floor1",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a4ef95bcc3f9493c824cb1c938a73d47",
+          "Name": "Cabin_floor2",
+          "IsCollidable": false
+        },
+        {
+          "Id": "fedc1156a7af483eada95837e3d2e664",
+          "Name": "Cabin_floor3",
+          "IsCollidable": false
+        },
+        {
+          "Id": "02c0c06610684a32ad704bcc26932fcc",
+          "Name": "Cabin_floor4",
+          "IsCollidable": false
         }
       ]
     }

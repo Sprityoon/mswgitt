@@ -2304,6 +2304,96 @@ script PlayerInventory extends Component
 		end
 	end
 
+	@ExecSpace("Server")
+	method void ServerRequestBuildCraft(string recipeName)
+		-- 건축 테이블 제작 (BuildingManager.RecipeTableName = BuildRecipeDataSet).
+		-- ServerRequestCraft 와 같은 흐름 + 건축 테이블 근접 검증 + OutputCount(바닥 2장 등).
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then
+			return
+		end
+		local pc = self.Entity:GetComponent("script.PlayerController")
+		if _BuildingManager == nil or not _BuildingManager:IsNearBuildingTable(self.Entity) then
+			if isvalid(pc) then
+				pc:ShowMineFeedback("건축 테이블 가까이에서만 만들 수 있습니다.")
+			end
+			self:ClientOnCraftCompleted(recipeName, false, playerComp.UserId)
+			return
+		end
+
+		local ds = _DataService:GetTable(_BuildingManager.RecipeTableName)
+		if ds == nil then
+			log_error(_BuildingManager.RecipeTableName .. " not found.")
+			self:ClientOnCraftCompleted(recipeName, false, playerComp.UserId)
+			return
+		end
+		local row = ds:FindRow("RecipeName", recipeName)
+		if row == nil then
+			self:ClientOnCraftCompleted(recipeName, false, playerComp.UserId)
+			return
+		end
+
+		local unlockId = row:GetItem("UnlockId") or ""
+		if unlockId ~= "" and not self:HasRecipeUnlock(unlockId) then
+			if isvalid(pc) then
+				pc:ShowMineFeedback("아직 익히지 않은 제작법입니다. " .. tostring(row:GetItem("UnlockHint") or "???"))
+			end
+			self:ClientOnCraftCompleted(recipeName, false, playerComp.UserId)
+			return
+		end
+
+		local ingredients = {}
+		local ing1Name = row:GetItem("Ing1Name") or ""
+		local ing1Count = tonumber(row:GetItem("Ing1Count")) or 0
+		local ing2Name = row:GetItem("Ing2Name") or ""
+		local ing2Count = tonumber(row:GetItem("Ing2Count")) or 0
+		if ing1Name ~= "" and ing1Count > 0 then
+			table.insert(ingredients, { itemName = ing1Name, required = ing1Count })
+		end
+		if ing2Name ~= "" and ing2Count > 0 then
+			table.insert(ingredients, { itemName = ing2Name, required = ing2Count })
+		end
+		for _, ing in ipairs(ingredients) do
+			if self:GetItemCount(ing.itemName) < ing.required then
+				self:ClientOnCraftCompleted(recipeName, false, playerComp.UserId)
+				return
+			end
+		end
+
+		for _, ing in ipairs(ingredients) do
+			self:RemoveItem(ing.itemName, ing.required)
+		end
+		local outputCount = math.max(1, math.floor(tonumber(row:GetItem("OutputCount")) or 1))
+		local craftedKey = self:AddItem(recipeName, outputCount)
+		log("[CRAFT][BUILD] Player " .. self.Entity.Name .. " crafted " .. recipeName .. " x" .. tostring(outputCount))
+
+		if _ActionSignals ~= nil then
+			_ActionSignals:EmitToPlayer(self.Entity, _ActionEnum.Craft, recipeName, outputCount)
+		end
+		self:ClientOnCraftCompleted(recipeName, true, playerComp.UserId)
+		self:AutoSlotCraftedItem(craftedKey)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void AutoSlotCraftedItem(string craftedKey)
+		-- 건축 제작물을 빈 퀵슬롯에 자동 등록하고 선택한다 (ServerRequestCraft 의 도구·가구 자동 장착과 같은 규칙).
+		if craftedKey == nil or craftedKey == "" then return end
+		local slots = self:SafeDecodeJson(self.QuickSlotsJson, {})
+		for i = 1, 10 do
+			if slots[i] == craftedKey then return end
+		end
+		for i = 1, 10 do
+			if slots[i] == nil or slots[i] == "" then
+				self.SelectedQuickSlotIndex = i
+				slots[i] = craftedKey
+				self.QuickSlotsJson = self:SafeEncodeJson(slots, "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]")
+				log("[QUICKSLOT] Auto-registered crafted item " .. craftedKey .. " to slot " .. i)
+				self:SyncEquippedToolToSelectedSlot()
+				return
+			end
+		end
+	end
+
 	@ExecSpace("Client")
 	method void ClientOnCraftCompleted(string recipeName, boolean success)
 		-- description: Handles crafting result on client, displays private notice, and resets crafting status.
@@ -2511,10 +2601,22 @@ script PlayerInventory extends Component
 			log_warning("Player " .. self.Entity.Name .. " does not own " .. itemName)
 			return
 		end
-		
+
+		-- 건축 부품·설계도(item_dataset.Category = "build"): 2×2 칸 단위 배치·검증은 BuildingManager 가 전담한다.
+		-- 위의 영지 전용·마을 금지·손님 권한·소유 검사는 그대로 거친다. 셀 = 클라 GetAimUnit 칸의 원점 셀.
+		local buildDs = _DataService:GetTable("item_dataset")
+		local buildRow = nil
+		if buildDs ~= nil then buildRow = buildDs:FindRow("Name", self:GetBaseItemName(itemName)) end
+		if buildRow ~= nil and buildRow:GetItem("Category") == "build" then
+			if _BuildingManager ~= nil then
+				_BuildingManager:PlaceBuildItem(self.Entity, itemName, cellX, cellY)
+			end
+			return
+		end
+
 		local currentMap = self.Entity.CurrentMap
 		if not isvalid(currentMap) then return end
-		
+
 		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
 		if not isvalid(tilemap) then
 			log_warning("No RectTileMapComponent found on map.")
@@ -2600,6 +2702,13 @@ script PlayerInventory extends Component
 			local key = cellPos.x .. "_" .. cellPos.y
 			if resourceSpawner:GetGridToEntity(currentMap.Name)[key] ~= nil then
 				log_warning("Grid cell occupied: " .. key)
+				return
+			end
+			-- 건축 칸(바닥 포함): 설치 바닥 타일은 같은 RectTileMap3 에 칠해져 건축 바닥을 덮어쓰므로 막는다.
+			if _BuildingManager ~= nil and _BuildingManager:IsBuildCell(currentMap.Name, cellPos.x, cellPos.y) then
+				if isvalid(pc) then
+					pc:ShowMineFeedback("건축물이 있는 칸에는 놓을 수 없습니다.")
+				end
 				return
 			end
 		else

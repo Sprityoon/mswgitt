@@ -447,7 +447,7 @@ script UIInventoryController extends Component
 			local row = ds:FindRow("Name", itemName)
 			if row ~= nil then
 				local category = row:GetItem("Category") or ""
-				if category == "tool" or category == "furniture" or category == "equipment" then
+				if category == "tool" or category == "furniture" or category == "equipment" or category == "build" then
 					return "Equipment"
 				end
 			end

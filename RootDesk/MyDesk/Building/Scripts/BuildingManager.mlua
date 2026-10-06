@@ -1,0 +1,916 @@
+@Logic
+script BuildingManager extends Logic
+
+	-- 건축 시스템 (docs/design/building-system-v2.md §10 구현).
+	-- 2×2 셀 = 건축 칸(unit) 1개. 칸 (ux, uy) = 셀 x 2ux..2ux+1, y 2uy..2uy+1 (월드 y 는 위쪽이 +).
+	-- 칸 종류(BuildPieceDataSet.Kind): floor = 바닥(FloorLayerName, 통행) / wall·window·door = 구조물(WallLayerName, 막힘).
+	-- 서버의 칸 상태가 단일 소스다. 타일은 상태에서 매번 다시 계산해 칠한다(바뀐 칸의 3×3 이웃을 다시 칠함).
+	-- 벽 문법(윗면·앞면·안팎·끝 트림)은 docs/design/art/building/wall_template_2x2/build_template.py quadrants() 와 같다.
+	-- 바닥은 GridToEntity 에 넣지 않는다(그 위에 가구를 놓아야 한다) — 점유 판정은 IsBuildCell 로 따로 본다.
+
+	-- 구조물 레이어(MapLayer4). 이 레이어의 타일은 전부 막힘이다 — 열린 문은 바닥 레이어로 옮겨 칠한다.
+	property string WallLayerName = "RectTileMap7"
+	-- 바닥 레이어 = 설치 바닥 타일·밭과 같이 쓰는 Layer 3. 건축 타일(스타일 접두어)만 지운다.
+	property string FloorLayerName = "RectTileMap3"
+	property string PieceTableName = "BuildPieceDataSet"
+	property string BlueprintTableName = "BlueprintDataSet"
+	property string RecipeTableName = "BuildRecipeDataSet"
+	-- 조준 칸 = 바라보는 축으로 발에서 이만큼 이상 떨어진 첫 칸 (몸과 겹치는 칸을 고르지 않게).
+	property number AimClearance = 0.35
+	-- 서버 검증: 발 ↔ 칸 사각형 최단 거리 허용치 (AimClearance + 칸 폭 2 보다 조금 크게).
+	property number PlaceReach = 2.8
+	-- 문 여닫기 거리(칸 사각형 기준) / 건축 테이블 사용 거리(트리거 박스 가장자리 기준 — 규칙 67).
+	property number DoorReach = 2.8
+	property number TableReach = 3.0
+	-- 구조물을 세우거나 문을 닫을 때 이 반경 안에 발이 있으면 거부 (이동 판정 반경 0.3 과 같게).
+	property number PlayerRadius = 0.3
+	property integer FloorVariantCount = 4
+	-- 철거 타격 누적이 이 시간 동안 멈추면 처음부터 (TileDurabilityManager 의 10초 회복과 같은 값).
+	property number HitResetSeconds = 10.0
+	-- 건축물에서 이 거리(셀) 안의 파괴 자원은 다시 자라지 않는다 — 여러 칸짜리 자원이 집을 뚫고 자라지 않게.
+	property integer RespawnClearRadius = 2
+	property string DoorOpenLabel = "문 열기"
+	property string DoorCloseLabel = "문 닫기"
+	-- 미리보기: 공식 흰 정사각 스프라이트(불투명 10×10px, 피벗 정중앙). Scale = 셀 수 × 100 / PreviewSpritePx.
+	property string PreviewSpriteRUID = "e682d7c62bb0474fa6a556cfbd6aefc9"
+	property number PreviewSpritePx = 10
+
+	-- ── 데이터 ─────────────────────────────────────────────────────────
+
+	method table GetPieceInfo(string itemName)
+		-- BuildPieceDataSet 행 → { kind, style, hits }. 건축 부품이 아니면 빈 테이블.
+		local out = {}
+		if itemName == nil or itemName == "" then return out end
+		local ds = _DataService:GetTable(self.PieceTableName)
+		if ds == nil then return out end
+		local row = ds:FindRow("ItemName", itemName)
+		if row == nil then return out end
+		out.kind = row:GetItem("Kind") or ""
+		out.style = row:GetItem("Style") or ""
+		out.hits = math.max(1, math.floor(tonumber(row:GetItem("Hits")) or 2))
+		return out
+	end
+
+	method table GetStyles()
+		-- BuildPieceDataSet.Style 고유값 목록(캐시). 건축 타일 이름 = "<Style>_<키>".
+		if self._T.Styles ~= nil then return self._T.Styles end
+		local out = {}
+		local seen = {}
+		local ds = _DataService:GetTable(self.PieceTableName)
+		if ds ~= nil then
+			for i = 1, ds:GetRowCount() do
+				local s = ds:GetCell(i, "Style") or ""
+				if s ~= "" and seen[s] == nil then
+					seen[s] = true
+					table.insert(out, s)
+				end
+			end
+		end
+		self._T.Styles = out
+		return out
+	end
+
+	method boolean IsBuildTileName(string name)
+		-- 건축 타일인지 — 이름이 "<Style>_" 로 시작한다 (Style 은 BuildPieceDataSet 에 나오는 값).
+		if name == nil or name == "" then return false end
+		for _, s in ipairs(self:GetStyles()) do
+			if string.sub(name, 1, #s + 1) == s .. "_" then return true end
+		end
+		return false
+	end
+
+	method table GetBlueprint(string itemName)
+		-- BlueprintDataSet 행 → { rows, legend, ar, ac }. 설계도가 아니면 빈 테이블.
+		-- Layout: 북쪽 행부터 '/' 구분. # 벽 · f 바닥 · D 문 · W 창문 · . 빈칸. 'D' 칸이 설치 기준 칸이다.
+		local out = {}
+		if itemName == nil or itemName == "" then return out end
+		local ds = _DataService:GetTable(self.BlueprintTableName)
+		if ds == nil then return out end
+		local row = ds:FindRow("BlueprintName", itemName)
+		if row == nil then return out end
+		local rows = {}
+		for part in string.gmatch(tostring(row:GetItem("Layout") or ""), "[^/]+") do
+			table.insert(rows, part)
+		end
+		local legend = {}
+		legend["#"] = row:GetItem("WallItem") or ""
+		legend["f"] = row:GetItem("FloorItem") or ""
+		legend["D"] = row:GetItem("DoorItem") or ""
+		legend["W"] = row:GetItem("WindowItem") or ""
+		local ar = 0
+		local ac = 0
+		for r, line in ipairs(rows) do
+			local c, _ = string.find(line, "D", 1, true)
+			if c ~= nil then
+				ar = r
+				ac = c
+				break
+			end
+		end
+		if ar == 0 then
+			log_warning("[BUILD] blueprint has no D anchor: " .. itemName)
+			return out
+		end
+		out.rows = rows
+		out.legend = legend
+		out.ar = ar
+		out.ac = ac
+		return out
+	end
+
+	method boolean IsBlueprintItem(string itemName)
+		-- 설계도 아이템인지 (BlueprintDataSet 에 행이 있다).
+		return self:GetBlueprint(itemName).rows ~= nil
+	end
+
+	method table BuildPlan(string itemName, integer ux, integer uy)
+		-- 설치 계획 = 칸 목록 { {x, y, k, i, s}, ... }. 설계도면 'D' 칸을 (ux, uy)에 맞춰 펼친다(북쪽 = +y).
+		local plan = {}
+		local bp = self:GetBlueprint(itemName)
+		if bp.rows ~= nil then
+			for r, line in ipairs(bp.rows) do
+				for c = 1, #line do
+					local item = bp.legend[string.sub(line, c, c)]
+					if item ~= nil and item ~= "" then
+						local info = self:GetPieceInfo(item)
+						if info.kind ~= nil and info.kind ~= "" then
+							table.insert(plan, { x = ux + (c - bp.ac), y = uy + (bp.ar - r), k = info.kind, i = item, s = info.style })
+						else
+							log_warning("[BUILD] blueprint piece missing in BuildPieceDataSet: " .. item)
+						end
+					end
+				end
+			end
+			return plan
+		end
+		local info = self:GetPieceInfo(itemName)
+		if info.kind ~= nil and info.kind ~= "" then
+			table.insert(plan, { x = ux, y = uy, k = info.kind, i = itemName, s = info.style })
+		end
+		return plan
+	end
+
+	method table GetPlanBounds(table plan)
+		-- 계획 칸들의 외곽 사각형(칸 좌표) { x0, y0, x1, y1 }. 빈 계획이면 빈 테이블.
+		local b = {}
+		for _, p in ipairs(plan) do
+			if b.x0 == nil or p.x < b.x0 then b.x0 = p.x end
+			if b.x1 == nil or p.x > b.x1 then b.x1 = p.x end
+			if b.y0 == nil or p.y < b.y0 then b.y0 = p.y end
+			if b.y1 == nil or p.y > b.y1 then b.y1 = p.y end
+		end
+		return b
+	end
+
+	-- ── 좌표 ───────────────────────────────────────────────────────────
+
+	method table GetAimUnit(number px, number py, integer dirX, integer dirY)
+		-- 조준 칸 단일 소스(규칙 18): 미리보기(PlayerController)와 설치 요청이 같이 쓴다. 반환 { x, y } (정수 칸 좌표).
+		-- 바라보는 축마다 발에서 AimClearance 이상 떨어진 첫 칸, 바라보지 않는 축은 발이 선 칸.
+		-- (Logic 메서드 반환형으로 Vector2Int 는 쓸 수 없다 — LSP 'type is unavailable'.)
+		local c = self.AimClearance
+		local ux = math.floor(px / 2)
+		local uy = math.floor(py / 2)
+		if dirX > 0 then
+			ux = math.ceil((px + c) / 2)
+		elseif dirX < 0 then
+			ux = math.floor((px - c) / 2) - 1
+		end
+		if dirY > 0 then
+			uy = math.ceil((py + c) / 2)
+		elseif dirY < 0 then
+			uy = math.floor((py - c) / 2) - 1
+		end
+		return { x = ux, y = uy }
+	end
+
+	method number DistanceToUnit(number px, number py, integer ux, integer uy)
+		-- 점 ↔ 칸 사각형 최단 거리 (사각형 안이면 0).
+		local x0 = ux * 2
+		local y0 = uy * 2
+		local dx = 0
+		if px < x0 then
+			dx = x0 - px
+		elseif px > x0 + 2 then
+			dx = px - (x0 + 2)
+		end
+		local dy = 0
+		if py < y0 then
+			dy = y0 - py
+		elseif py > y0 + 2 then
+			dy = py - (y0 + 2)
+		end
+		return math.sqrt(dx * dx + dy * dy)
+	end
+
+	method RectTileMapComponent GetLayer(Entity map, string layerName)
+		-- 맵 자식 타일맵 레이어 컴포넌트 (없으면 nil).
+		if not isvalid(map) then return nil end
+		local ent = map:GetChildByName(layerName)
+		if not isvalid(ent) then return nil end
+		return ent.RectTileMapComponent
+	end
+
+	-- ── 상태 (서버) ─────────────────────────────────────────────────────
+
+	method table GetMapState(string mapName)
+		-- 맵별 칸 상태 { units = { ["ux_uy"] = { x, y, k, i, s, o } }, damage = {} }. 서버만 채운다.
+		if self._T.Maps == nil then self._T.Maps = {} end
+		local st = self._T.Maps[mapName]
+		if st == nil then
+			st = { units = {}, damage = {} }
+			self._T.Maps[mapName] = st
+		end
+		return st
+	end
+
+	method boolean IsStructKind(string kind)
+		-- 구조물(막힘·벽 문법 대상) 여부.
+		return kind == "wall" or kind == "door" or kind == "window"
+	end
+
+	method boolean IsStructAt(table units, integer ux, integer uy)
+		-- (ux, uy) 칸이 구조물인지.
+		local u = units[ux .. "_" .. uy]
+		return u ~= nil and self:IsStructKind(u.k)
+	end
+
+	method boolean IsFloorAt(table units, integer ux, integer uy)
+		-- (ux, uy) 칸이 건축 바닥인지.
+		local u = units[ux .. "_" .. uy]
+		return u ~= nil and u.k == "floor"
+	end
+
+	method boolean IsTopAt(table units, integer ux, integer uy)
+		-- 윗면 칸 = 구조물이고 남쪽(uy-1)도 구조물.
+		return self:IsStructAt(units, ux, uy) and self:IsStructAt(units, ux, uy - 1)
+	end
+
+	method boolean IsFaceAt(table units, integer ux, integer uy)
+		-- 앞면 칸 = 구조물이고 남쪽이 트였다.
+		return self:IsStructAt(units, ux, uy) and not self:IsStructAt(units, ux, uy - 1)
+	end
+
+	method string FaceTypeAt(table units, integer ux, integer uy)
+		-- 앞면 종류: 남쪽이 건축 바닥이면 내벽 INT, 아니면 외벽 EXT.
+		if self:IsFloorAt(units, ux, uy - 1) then return "INT" end
+		return "EXT"
+	end
+
+	method boolean IsBuildCell(string mapName, integer x, integer y)
+		-- 셀이 건축 칸(바닥 포함)에 속하는지 — 자원 스폰·리스폰·지형 편집 점유 판정용(서버 상태).
+		if self._T.Maps == nil then return false end
+		local st = self._T.Maps[mapName]
+		if st == nil then return false end
+		return st.units[math.floor(x / 2) .. "_" .. math.floor(y / 2)] ~= nil
+	end
+
+	method boolean IsNearBuild(string mapName, integer x, integer y)
+		-- (x, y) 둘레 RespawnClearRadius 셀 안에 건축 칸이 있는지 (자원 리스폰 금지 판정).
+		local r = self.RespawnClearRadius
+		for cx = x - r, x + r do
+			for cy = y - r, y + r do
+				if self:IsBuildCell(mapName, cx, cy) then return true end
+			end
+		end
+		return false
+	end
+
+	-- ── 벽 문법 ────────────────────────────────────────────────────────
+
+	method string TopUpperKey(boolean nT, boolean sideTrim, string side, boolean diagOpen)
+		-- 윗면 칸 위쪽 4분면: 북쪽 트림 / 옆 트림 / 바깥 모서리 / 안쪽 모서리 마디(nub).
+		if nT and sideTrim then return "top_outer_T" .. side end
+		if nT then return "top_edge_T" end
+		if sideTrim then return "top_edge_" .. side end
+		if diagOpen then return "top_nub_T" .. side end
+		return "top_fill"
+	end
+
+	method boolean IsFaceEnd(table units, integer nx, integer ny, string faceType)
+		-- 앞면 끝 트림: 이웃이 비었거나, 이웃도 앞면인데 안팎 종류가 다르면 그쪽에 세로 트림을 단다.
+		if not self:IsStructAt(units, nx, ny) then return true end
+		return self:IsFaceAt(units, nx, ny) and self:FaceTypeAt(units, nx, ny) ~= faceType
+	end
+
+	method table ComputeQuadrants(table units, integer ux, integer uy)
+		-- 구조물 칸의 4분면 타일 키 { tl, tr, bl, br } (스타일 접두어 제외). build_template.py quadrants() 의 월드 좌표판.
+		local q = {}
+		local u = units[ux .. "_" .. uy]
+		if u == nil then return q end
+		if u.k == "door" or u.k == "window" then
+			-- 문·창문은 2×2 캔버스 그대로 (INT/EXT 는 남쪽 바닥 여부).
+			local base = "window_" .. self:FaceTypeAt(units, ux, uy)
+			if u.k == "door" then
+				local state = "closed"
+				if u.o == true then state = "open" end
+				base = "door_" .. self:FaceTypeAt(units, ux, uy) .. "_" .. state
+			end
+			q.tl = base .. "_TL"
+			q.tr = base .. "_TR"
+			q.bl = base .. "_BL"
+			q.br = base .. "_BR"
+			return q
+		end
+		if self:IsStructAt(units, ux, uy - 1) then
+			-- 윗면: 남쪽도 벽이라 이 칸에서는 벽 몸통의 윗면이 보인다.
+			local nT = not self:IsTopAt(units, ux, uy + 1)
+			local wT = not self:IsTopAt(units, ux - 1, uy)
+			local eT = not self:IsTopAt(units, ux + 1, uy)
+			q.tl = self:TopUpperKey(nT, wT, "L", not self:IsStructAt(units, ux - 1, uy + 1))
+			q.tr = self:TopUpperKey(nT, eT, "R", not self:IsStructAt(units, ux + 1, uy + 1))
+			q.bl = "top_fill"
+			if wT then q.bl = "top_edge_L" end
+			q.br = "top_fill"
+			if eT then q.br = "top_edge_R" end
+			return q
+		end
+		-- 앞면: 남쪽이 트였다. 끝 트림은 좌우 이웃으로 정한다.
+		local t = self:FaceTypeAt(units, ux, uy)
+		local l = "M"
+		if self:IsFaceEnd(units, ux - 1, uy, t) then l = "L" end
+		local r = "M"
+		if self:IsFaceEnd(units, ux + 1, uy, t) then r = "R" end
+		q.tl = "face_" .. t .. "_U_" .. l
+		q.tr = "face_" .. t .. "_U_" .. r
+		q.bl = "face_" .. t .. "_D_" .. l
+		q.br = "face_" .. t .. "_D_" .. r
+		return q
+	end
+
+	-- ── 도장 (서버) ─────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method integer FloorVariant(integer x, integer y)
+		-- 바닥 무늬 1..FloorVariantCount — 잔디 변형과 같은 셀 해시라 재접속해도 같은 무늬.
+		local n = math.max(1, self.FloorVariantCount)
+		return _ResourceSpawner:TileVariantHash(x, y) % n + 1
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SetBuildTile(RectTileMapComponent tilemap, string name, integer x, integer y)
+		-- 타일을 칠한다. 이름별 첫 사용 때 실제로 칠해졌는지 확인해 타일셋 미등록을 한 번만 경고한다.
+		if not isvalid(tilemap) then return end
+		local ok = pcall(function() tilemap:SetTile(name, x, y) end)
+		if self._T.TileChecked == nil then self._T.TileChecked = {} end
+		if self._T.TileChecked[name] == nil then
+			local info = tilemap:GetTile(x, y)
+			local found = ok and info ~= nil and info.Name == name
+			self._T.TileChecked[name] = found
+			if not found then
+				log_warning("[BUILD] tile missing in tileset: " .. name .. " — wall.tileset 등록 필요 (building-system-v2.md §10.4)")
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RemoveFloorBuildTile(RectTileMapComponent tilemap, integer x, integer y)
+		-- 바닥 레이어는 밭·설치 바닥 타일과 같이 쓰므로 건축 타일만 지운다.
+		if not isvalid(tilemap) then return end
+		local info = tilemap:GetTile(x, y)
+		if info ~= nil and self:IsBuildTileName(info.Name) then
+			tilemap:RemoveTile(x, y)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void PaintUnit(Entity map, table units, integer ux, integer uy)
+		-- 칸 하나의 4셀 타일을 상태에서 다시 계산해 칠한다. 빈 칸이면 건축 타일만 걷어낸다.
+		local wall = self:GetLayer(map, self.WallLayerName)
+		local floor = self:GetLayer(map, self.FloorLayerName)
+		local x0 = ux * 2
+		local y0 = uy * 2
+		local cells = {
+			{ x0, y0 + 1, "tl" }, { x0 + 1, y0 + 1, "tr" },
+			{ x0, y0, "bl" }, { x0 + 1, y0, "br" },
+		}
+		local u = units[ux .. "_" .. uy]
+		if u == nil then
+			for _, c in ipairs(cells) do
+				if isvalid(wall) then wall:RemoveTile(c[1], c[2]) end
+				self:RemoveFloorBuildTile(floor, c[1], c[2])
+			end
+			return
+		end
+		if u.k == "floor" then
+			for _, c in ipairs(cells) do
+				if isvalid(wall) then wall:RemoveTile(c[1], c[2]) end
+				self:SetBuildTile(floor, u.s .. "_floor" .. tostring(self:FloorVariant(c[1], c[2])), c[1], c[2])
+			end
+			return
+		end
+		local q = self:ComputeQuadrants(units, ux, uy)
+		local passable = (u.k == "door" and u.o == true)
+		for _, c in ipairs(cells) do
+			local name = u.s .. "_" .. tostring(q[c[3]])
+			if passable then
+				if isvalid(wall) then wall:RemoveTile(c[1], c[2]) end
+				self:SetBuildTile(floor, name, c[1], c[2])
+			else
+				self:RemoveFloorBuildTile(floor, c[1], c[2])
+				self:SetBuildTile(wall, name, c[1], c[2])
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RepaintAround(Entity map, table changed)
+		-- 바뀐 칸들의 3×3 이웃을 한 번씩만 다시 칠한다(윗면·끝 트림·안팎이 이웃 상태로 정해진다).
+		local st = self:GetMapState(map.Name)
+		local done = {}
+		for _, p in ipairs(changed) do
+			for dx = -1, 1 do
+				for dy = -1, 1 do
+					local x = p.x + dx
+					local y = p.y + dy
+					local key = x .. "_" .. y
+					if done[key] == nil then
+						done[key] = true
+						self:PaintUnit(map, st.units, x, y)
+					end
+				end
+			end
+		end
+	end
+
+	-- ── 점유 (서버) ─────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method void RegisterUnitGrid(string mapName, table u)
+		-- 구조물 칸 4셀을 GridToEntity 에 isBuild 로 등록한다(피벗 = 칸 원점 셀).
+		-- 자원 스폰·가구 설치·지형 편집이 점유로 보고, Ctrl 타격은 TileDurabilityManager → HitBuildUnit 으로 온다.
+		if _ResourceSpawner == nil then return end
+		local grid = _ResourceSpawner:GetGridToEntity(mapName)
+		local px = u.x * 2
+		local py = u.y * 2
+		for cx = px, px + 1 do
+			for cy = py, py + 1 do
+				grid[cx .. "_" .. cy] = { entity = nil, pivotX = px, pivotY = py, isBuild = true, itemName = u.i }
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void UnregisterUnitGrid(string mapName, integer ux, integer uy)
+		-- 이 칸이 등록한 isBuild 기록만 지운다(다른 점유는 건드리지 않는다 — 규칙 60).
+		if _ResourceSpawner == nil then return end
+		local grid = _ResourceSpawner:GetGridToEntity(mapName)
+		local px = ux * 2
+		local py = uy * 2
+		for cx = px, px + 1 do
+			for cy = py, py + 1 do
+				local key = cx .. "_" .. cy
+				local g = grid[key]
+				if g ~= nil and g.isBuild == true and math.floor(g.pivotX) == px and math.floor(g.pivotY) == py then
+					grid[key] = nil
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ClearResourcesInUnit(string mapName, integer ux, integer uy)
+		-- 로그인 직후 스폰된 자원(나무·돌)이 집 칸에 걸쳐 있으면 걷어낸다. 파괴 기록은 남기지 않는다.
+		if _ResourceSpawner == nil then return end
+		local grid = _ResourceSpawner:GetGridToEntity(mapName)
+		for cx = ux * 2, ux * 2 + 1 do
+			for cy = uy * 2, uy * 2 + 1 do
+				local g = grid[cx .. "_" .. cy]
+				if g ~= nil and g.isTile ~= true and g.isFurniture ~= true and g.isBuild ~= true then
+					local ent = g.entity
+					_ResourceSpawner:RemoveEntity(mapName, math.floor(g.pivotX) .. "_" .. math.floor(g.pivotY))
+					if isvalid(ent) then ent:Destroy() end
+					log(string.format("[BUILD] cleared resource under unit %d,%d map=%s", ux, uy, mapName))
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean IsAnyPlayerInUnit(Entity map, integer ux, integer uy)
+		-- 칸 사각형(PlayerRadius 만큼 넓힘) 안에 플레이어 발이 있는지.
+		local mapComp = map.MapComponent
+		if not isvalid(mapComp) then return false end
+		local users = _UserService:GetUsersByMapComponent(mapComp)
+		if users == nil then return false end
+		local r = self.PlayerRadius
+		local x0 = ux * 2 - r
+		local x1 = ux * 2 + 2 + r
+		local y0 = uy * 2 - r
+		local y1 = uy * 2 + 2 + r
+		for _, user in pairs(users) do
+			if isvalid(user) and isvalid(user.TransformComponent) then
+				local p = user.TransformComponent.WorldPosition
+				if p.x > x0 and p.x < x1 and p.y > y0 and p.y < y1 then return true end
+			end
+		end
+		return false
+	end
+
+	-- ── 설치 ───────────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method string ValidatePlan(Entity map, table plan, boolean single)
+		-- 설치 가능 여부. "" = 통과, 아니면 플레이어 안내 문구. single = 부품 1개(문·창문 자리 규칙 적용).
+		local mapName = map.Name
+		local wall = self:GetLayer(map, self.WallLayerName)
+		if not isvalid(wall) then
+			log_error("[BUILD] " .. self.WallLayerName .. " missing in map " .. mapName .. " (map01.map 레이어 확인)")
+			return "이 맵에서는 건축할 수 없습니다."
+		end
+		local st = self:GetMapState(mapName)
+		local grid = _ResourceSpawner:GetGridToEntity(mapName)
+		local l1 = self:GetLayer(map, "RectTileMap")
+		local l2 = self:GetLayer(map, "RectTileMap2")
+		local floor = self:GetLayer(map, self.FloorLayerName)
+		for _, p in ipairs(plan) do
+			if st.units[p.x .. "_" .. p.y] ~= nil then return "이미 건축물이 있는 자리입니다." end
+			for cx = p.x * 2, p.x * 2 + 1 do
+				for cy = p.y * 2, p.y * 2 + 1 do
+					if not _ResourceSpawner:IsInsidePlayable(cx, cy) then return "영지 경계에는 지을 수 없습니다." end
+					local hasBase = (isvalid(l1) and l1:GetTile(cx, cy) ~= nil) or (isvalid(l2) and l2:GetTile(cx, cy) ~= nil)
+					if not hasBase then return "땅이 없는 곳에는 지을 수 없습니다." end
+					if isvalid(l1) and _ResourceSpawner:IsWaterCell(l1, cx, cy) then return "물 위에는 지을 수 없습니다." end
+					if grid[cx .. "_" .. cy] ~= nil then return "자리에 나무·돌·설치물이 있습니다. 먼저 치워 주세요." end
+					if isvalid(floor) and floor:GetTile(cx, cy) ~= nil then return "밭이나 바닥 타일 위에는 지을 수 없습니다." end
+					if wall:GetTile(cx, cy) ~= nil then return "이미 건축물이 있는 자리입니다." end
+				end
+			end
+			if self:IsStructKind(p.k) and self:IsAnyPlayerInUnit(map, p.x, p.y) then
+				return "사람이 서 있는 자리에는 벽을 세울 수 없습니다."
+			end
+			if single and (p.k == "door" or p.k == "window") and self:IsStructAt(st.units, p.x, p.y - 1) then
+				return "문·창문은 아래쪽이 트인 벽 자리에만 놓을 수 있습니다."
+			end
+		end
+		return ""
+	end
+
+	@ExecSpace("ServerOnly")
+	method void PlaceBuildItem(Entity player, string itemKey, integer cellX, integer cellY)
+		-- PlayerInventory:ServerRequestPlace 의 건축 분기(영지·권한·소유 검사를 통과한 뒤).
+		-- cellX/Y = 클라가 GetAimUnit 으로 고른 칸의 원점 셀. 칸 = 셀 / 2 내림.
+		if not isvalid(player) then return end
+		local map = player.CurrentMap
+		if not isvalid(map) then return end
+		local mapName = map.Name
+		local pc = player:GetComponent("script.PlayerController")
+		---@type PlayerInventory
+		local inv = player:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return end
+		local itemName = inv:GetBaseItemName(itemKey)
+		local ux = math.floor(cellX / 2)
+		local uy = math.floor(cellY / 2)
+		local pos = player.TransformComponent.WorldPosition
+		if self:DistanceToUnit(pos.x, pos.y, ux, uy) > self.PlaceReach then
+			self:Feedback(pc, "너무 멀어서 지을 수 없습니다.")
+			return
+		end
+		local isBlueprint = self:IsBlueprintItem(itemName)
+		if isBlueprint and isvalid(pc) and pc.LastDirectionY <= 0 then
+			self:Feedback(pc, "설계도는 위쪽을 바라보고 문이 들어설 자리에 놓으세요.")
+			return
+		end
+		local plan = self:BuildPlan(itemName, ux, uy)
+		if #plan == 0 then
+			log_warning("[BUILD] not a build piece or blueprint: " .. tostring(itemName))
+			return
+		end
+		local reason = self:ValidatePlan(map, plan, not isBlueprint)
+		if reason ~= "" then
+			self:Feedback(pc, reason)
+			log(string.format("[BUILD] place rejected item=%s unit=%d,%d reason=%s", itemName, ux, uy, reason))
+			return
+		end
+		if not inv:RemoveItem(itemKey, 1) then return end
+		local st = self:GetMapState(mapName)
+		for _, p in ipairs(plan) do
+			local u = { x = p.x, y = p.y, k = p.k, i = p.i, s = p.s, o = false }
+			st.units[p.x .. "_" .. p.y] = u
+			if self:IsStructKind(u.k) then self:RegisterUnitGrid(mapName, u) end
+		end
+		self:RepaintAround(map, plan)
+		self:MarkDirty(mapName)
+		if _ActionSignals ~= nil then
+			_ActionSignals:EmitToPlayer(player, _ActionEnum.Place, itemName, 1)
+		end
+		log(string.format("[BUILD] placed item=%s unit=%d,%d units=%d map=%s", itemName, ux, uy, #plan, mapName))
+	end
+
+	-- ── 철거 ───────────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method void HitBuildUnit(Entity map, integer cellX, integer cellY, Entity attacker)
+		-- 구조물 칸 타격 (TileDurabilityManager:HitResource 의 isBuild 분기 — 권한 검사는 호출부가 끝냈다).
+		if not isvalid(map) then return end
+		self:ApplyHit(map, math.floor(cellX / 2), math.floor(cellY / 2), attacker)
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean TryHitFloor(Entity map, integer cellX, integer cellY, Entity attacker)
+		-- 바닥 칸 타격 (PlayerController:RequestMine — 바닥은 GridToEntity 밖). 바닥이 아니면 false.
+		if not isvalid(map) then return false end
+		local st = self:GetMapState(map.Name)
+		local ux = math.floor(cellX / 2)
+		local uy = math.floor(cellY / 2)
+		local u = st.units[ux .. "_" .. uy]
+		if u == nil or u.k ~= "floor" then return false end
+		if not self:CanDemolish(map, attacker) then return true end
+		-- 바닥 위(칸 4셀 중 하나라도)에 가구·자원 점유가 있으면 거부 — 가구가 맨땅에 뜨지 않게 (설계 v2 §6).
+		if _ResourceSpawner ~= nil then
+			local grid = _ResourceSpawner:GetGridToEntity(map.Name)
+			for cx = ux * 2, ux * 2 + 1 do
+				for cy = uy * 2, uy * 2 + 1 do
+					if grid[cx .. "_" .. cy] ~= nil then
+						if isvalid(attacker) then
+							self:Feedback(attacker:GetComponent("script.PlayerController"), "바닥 위의 가구를 먼저 치워 주세요.")
+						end
+						return true
+					end
+				end
+			end
+		end
+		self:ApplyHit(map, ux, uy, attacker)
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean CanDemolish(Entity map, Entity attacker)
+		-- TileDurabilityManager:HitResource 와 같은 철거 권한 (영지 주인 또는 "mine" 권한 손님).
+		if not isvalid(attacker) or attacker.PlayerComponent == nil then return false end
+		local pc = attacker:GetComponent("script.PlayerController")
+		local mapName = map.Name
+		if string.sub(mapName, 1, 5) ~= "Home_" then
+			self:Feedback(pc, "여기서는 철거할 수 없습니다.")
+			return false
+		end
+		local ownerId = string.sub(mapName, 6)
+		if _PersistenceManager ~= nil and not _PersistenceManager:CheckGuestPermission(ownerId, attacker.PlayerComponent.UserId, "mine") then
+			self:Feedback(pc, "이 영지에서 채집/철거할 수 있는 권한이 없습니다.")
+			return false
+		end
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplyHit(Entity map, integer ux, integer uy, Entity attacker)
+		-- 타격을 누적하고 BuildPieceDataSet.Hits 에 닿으면 철거 — 부품 아이템 1개를 칸 중앙에 떨군다.
+		local mapName = map.Name
+		local st = self:GetMapState(mapName)
+		local key = ux .. "_" .. uy
+		local u = st.units[key]
+		if u == nil then return end
+		local maxHits = self:GetPieceInfo(u.i).hits or 2
+		local now = os.clock()
+		local d = st.damage[key]
+		if d == nil or now - d.t > self.HitResetSeconds then
+			d = { n = 0, t = now }
+		end
+		d.n = d.n + 1
+		d.t = now
+		st.damage[key] = d
+		log(string.format("[BUILD] hit %s unit=%d,%d (%d/%d)", tostring(u.i), ux, uy, d.n, maxHits))
+		if d.n < maxHits then return end
+		st.damage[key] = nil
+		if self:IsStructKind(u.k) then self:UnregisterUnitGrid(mapName, ux, uy) end
+		st.units[key] = nil
+		self:RepaintAround(map, { { x = ux, y = uy } })
+		if _TileDurabilityManager ~= nil then
+			_TileDurabilityManager:SpawnResourceDrop(map, Vector3(ux * 2 + 1.0, uy * 2 + 1.0, 0), u.i, 1, 1, 0)
+		end
+		self:MarkDirty(mapName)
+		log(string.format("[BUILD] demolished %s unit=%d,%d map=%s", tostring(u.i), ux, uy, mapName))
+	end
+
+	-- ── 문 ─────────────────────────────────────────────────────────────
+
+	method table GetDoorAtCell(Entity map, integer cx, integer cy)
+		-- 셀에 칠해진 문 타일 → { ux, uy, open }. 클라 조준 판정용 — 서버 상태 없이 복제된 타일 이름으로 본다.
+		local out = {}
+		if not isvalid(map) then return out end
+		local name = ""
+		local wall = self:GetLayer(map, self.WallLayerName)
+		if isvalid(wall) then
+			local info = wall:GetTile(cx, cy)
+			if info ~= nil then name = info.Name end
+		end
+		if name == "" then
+			local floor = self:GetLayer(map, self.FloorLayerName)
+			if isvalid(floor) then
+				local info = floor:GetTile(cx, cy)
+				if info ~= nil then name = info.Name end
+			end
+		end
+		if name == "" or not self:IsBuildTileName(name) then return out end
+		if string.find(name, "_door_", 1, true) == nil then return out end
+		out.ux = math.floor(cx / 2)
+		out.uy = math.floor(cy / 2)
+		out.open = string.find(name, "_open_", 1, true) ~= nil
+		return out
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ToggleDoorAt(Entity player, integer cellX, integer cellY)
+		-- 문 여닫기 (PlayerController:ServerRequestToggleBuildDoor). 손님도 가능. 닫을 때 문 칸에 사람이 있으면 거부.
+		if not isvalid(player) then return end
+		local map = player.CurrentMap
+		if not isvalid(map) then return end
+		local st = self:GetMapState(map.Name)
+		local ux = math.floor(cellX / 2)
+		local uy = math.floor(cellY / 2)
+		local u = st.units[ux .. "_" .. uy]
+		if u == nil or u.k ~= "door" then return end
+		local pc = player:GetComponent("script.PlayerController")
+		local pos = player.TransformComponent.WorldPosition
+		if self:DistanceToUnit(pos.x, pos.y, ux, uy) > self.DoorReach then return end
+		if u.o == true then
+			if self:IsAnyPlayerInUnit(map, ux, uy) then
+				self:Feedback(pc, "문 자리에 누가 서 있어 닫을 수 없습니다.")
+				return
+			end
+			u.o = false
+		else
+			u.o = true
+		end
+		self:PaintUnit(map, st.units, ux, uy)
+		self:MarkDirty(map.Name)
+		log(string.format("[BUILD] door unit=%d,%d open=%s", ux, uy, tostring(u.o)))
+	end
+
+	-- ── 건축 테이블 ─────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method boolean IsNearBuildingTable(Entity player)
+		-- 건축 제작 서버 검증: 같은 맵 건축 테이블의 트리거 박스 가장자리까지 TableReach 이내 (규칙 67).
+		if not isvalid(player) then return false end
+		local map = player.CurrentMap
+		if not isvalid(map) then return false end
+		local comps = map:GetChildComponentsByTypeName("script.BuildingTable", true)
+		if comps == nil then return false end
+		local pos = player.TransformComponent.WorldPosition
+		local box = { minX = 0, maxX = 0, minY = 0, maxY = 0 }
+		for _, comp in ipairs(comps) do
+			if isvalid(comp) and isvalid(comp.Entity) then
+				local ent = comp.Entity
+				local d = 9999.0
+				if _ObstacleQuery ~= nil and _ObstacleQuery:GetColliderAABB(ent, box) then
+					local nx = math.max(box.minX, math.min(pos.x, box.maxX))
+					local ny = math.max(box.minY, math.min(pos.y, box.maxY))
+					d = math.sqrt((pos.x - nx) * (pos.x - nx) + (pos.y - ny) * (pos.y - ny))
+				else
+					local p = ent.TransformComponent.WorldPosition
+					d = math.sqrt((pos.x - p.x) * (pos.x - p.x) + (pos.y - p.y) * (pos.y - p.y)) - 1.0
+				end
+				if d <= self.TableReach then return true end
+			end
+		end
+		return false
+	end
+
+	-- ── 세이브 (서버) ───────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method string GetBuildJson(string mapName)
+		-- 세이브용 칸 목록 JSON [{x, y, i, o}] (PersistenceManager homeBuild). Yield 없음(규칙 9).
+		local list = {}
+		local st = self:GetMapState(mapName)
+		for _, u in pairs(st.units) do
+			table.insert(list, { x = u.x, y = u.y, i = u.i, o = (u.o == true) })
+		end
+		if #list == 0 then return "[]" end
+		return _HttpService:JSONEncode(list)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SetBuildJson(string mapName, string json)
+		-- 세이브 JSON → 칸 상태만 바꾼다(칠하지 않음). 부품 정의가 사라진 칸은 경고 후 버린다.
+		local st = self:GetMapState(mapName)
+		st.units = {}
+		st.damage = {}
+		if json == nil or json == "" or json == "[]" then return end
+		local ok, list = pcall(function() return _HttpService:JSONDecode(json) end)
+		if not ok or type(list) ~= "table" then
+			log_warning("[BUILD] homeBuild decode failed map=" .. mapName)
+			return
+		end
+		for _, rec in ipairs(list) do
+			local itemName = tostring(rec.i or "")
+			local info = self:GetPieceInfo(itemName)
+			if info.kind ~= nil and info.kind ~= "" then
+				local x = math.floor(tonumber(rec.x) or 0)
+				local y = math.floor(tonumber(rec.y) or 0)
+				st.units[x .. "_" .. y] = { x = x, y = y, k = info.kind, i = itemName, s = info.style, o = (rec.o == true and info.kind == "door") }
+			else
+				log_warning("[BUILD] unknown piece in save, dropped: " .. itemName)
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ClearMapBuild(Entity map)
+		-- 맵의 건축 흔적(구조물 레이어 전체 + 바닥 레이어의 건축 타일 + isBuild 점유)과 상태를 비운다.
+		local mapName = map.Name
+		local wall = self:GetLayer(map, self.WallLayerName)
+		if isvalid(wall) then wall:Clear() end
+		local floor = self:GetLayer(map, self.FloorLayerName)
+		if isvalid(floor) then
+			local positions = floor:GetAllTilePositions()
+			if positions ~= nil then
+				for _, cell in ipairs(positions:ToTable()) do
+					self:RemoveFloorBuildTile(floor, cell.x, cell.y)
+				end
+			end
+		end
+		if _ResourceSpawner ~= nil then
+			local grid = _ResourceSpawner:GetGridToEntity(mapName)
+			local stale = {}
+			for key, g in pairs(grid) do
+				if g ~= nil and g.isBuild == true then table.insert(stale, key) end
+			end
+			for _, key in ipairs(stale) do
+				grid[key] = nil
+			end
+		end
+		local st = self:GetMapState(mapName)
+		st.units = {}
+		st.damage = {}
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RestoreForMap(Entity map, string json)
+		-- 세이브(homeBuild) → 상태 + 점유 + 타일. 멱등: 이 맵에 남은 건축 흔적을 먼저 전부 걷어낸다.
+		if not isvalid(map) then return end
+		local mapName = map.Name
+		self:ClearMapBuild(map)
+		self:SetBuildJson(mapName, json)
+		local st = self:GetMapState(mapName)
+		local count = 0
+		for _, u in pairs(st.units) do
+			self:ClearResourcesInUnit(mapName, u.x, u.y)
+			if self:IsStructKind(u.k) then self:RegisterUnitGrid(mapName, u) end
+			count = count + 1
+		end
+		for _, u in pairs(st.units) do
+			self:PaintUnit(map, st.units, u.x, u.y)
+		end
+		log(string.format("[BUILD] restored map=%s units=%d", mapName, count))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void MarkDirty(string mapName)
+		-- 영지 세이브는 소유자 기준 — Home_<UserId> 소유자를 dirty 로.
+		if string.sub(mapName, 1, 5) == "Home_" and _PersistenceManager ~= nil then
+			_PersistenceManager:MarkPlayerDirty(string.sub(mapName, 6))
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void Feedback(any pc, string message)
+		-- 플레이어 화면 안내 (PlayerController:ShowMineFeedback — Client RPC).
+		if not isvalid(pc) then return end
+		pc:ShowMineFeedback(message)
+	end
+
+	-- ── 미리보기 (클라 근사) ─────────────────────────────────────────────
+
+	method string CheckPlanClient(Entity map, table plan, Entity localPlayer)
+		-- 미리보기 색 판정. 복제된 타일맵·충돌 겹침만 본다 — 최종 판정은 서버 ValidatePlan.
+		if not isvalid(map) or #plan == 0 then return "empty" end
+		local wall = self:GetLayer(map, self.WallLayerName)
+		if not isvalid(wall) then return "no layer" end
+		local l1 = self:GetLayer(map, "RectTileMap")
+		local l2 = self:GetLayer(map, "RectTileMap2")
+		local floor = self:GetLayer(map, self.FloorLayerName)
+		local wallInner = 28
+		if _ResourceSpawner ~= nil then wallInner = _ResourceSpawner.MapRadius - _ResourceSpawner.WallThickness + 1 end
+		local simulator = _CollisionService:GetSimulator(localPlayer)
+		for _, p in ipairs(plan) do
+			for cx = p.x * 2, p.x * 2 + 1 do
+				for cy = p.y * 2, p.y * 2 + 1 do
+					if math.abs(cx) >= wallInner or math.abs(cy) >= wallInner then return "bounds" end
+					if wall:GetTile(cx, cy) ~= nil then return "built" end
+					if isvalid(floor) and floor:GetTile(cx, cy) ~= nil then return "floor" end
+					local hasBase = (isvalid(l1) and l1:GetTile(cx, cy) ~= nil) or (isvalid(l2) and l2:GetTile(cx, cy) ~= nil)
+					if not hasBase then return "void" end
+					if isvalid(l1) and _ResourceSpawner ~= nil and _ResourceSpawner:IsWaterCell(l1, cx, cy) then return "water" end
+				end
+			end
+			if simulator then
+				local shape = BoxShape(Vector2(p.x * 2 + 1.0, p.y * 2 + 1.0), Vector2(1.8, 1.8), 0)
+				local overlaps = simulator:OverlapAll({ CollisionGroups.Default, CollisionGroups.TriggerBox, CollisionGroups.HitBox }, shape)
+				for _, comp in ipairs(overlaps) do
+					if isvalid(comp) and isvalid(comp.Entity) and comp.Entity ~= localPlayer then
+						-- 서버가 막는 것만 본다: 점유 엔티티(자원·가구 — GridToEntity 등록 대상)와, 구조물이면 플레이어.
+						local ent = comp.Entity
+						if isvalid(ent:GetComponent("script.ResourceOccupiedArea")) or isvalid(ent:GetComponent("script.PlaceableFurniture")) then
+							return "blocked"
+						end
+						if ent.PlayerComponent ~= nil and self:IsStructKind(p.k) then return "player" end
+					end
+				end
+			end
+		end
+		return ""
+	end
+
+end

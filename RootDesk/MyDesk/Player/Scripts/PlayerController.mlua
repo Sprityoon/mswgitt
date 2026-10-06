@@ -1084,6 +1084,7 @@ script PlayerController extends Component
 		if targetCell == nil then return end
 
 		local isPlaceable = false
+		local isBuildItem = false
 		local terrainAction = ""
 		local isTerrainTool = false
 		local terrainCooldown = 0
@@ -1097,6 +1098,8 @@ script PlayerController extends Component
 					if ok and v ~= nil then terrainAction = v end
 					if row:GetItem("Category") == "furniture" then
 						isPlaceable = true
+					elseif row:GetItem("Category") == "build" then
+						isBuildItem = true
 					end
 					if terrainAction ~= nil and terrainAction ~= "" then
 						isTerrainTool = row:GetItem("Category") == "tool"
@@ -1129,6 +1132,14 @@ script PlayerController extends Component
 				self:ClientPlaySwingSound()
 			end
 			inv:ServerRequestTerrainEdit(activeItem, targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY)
+			return
+		end
+
+		if isBuildItem and _BuildingManager ~= nil then
+			-- 건축: 조준 칸(BuildingManager:GetAimUnit — 미리보기와 같은 단일 소스, 규칙 18)의 원점 셀을 보낸다.
+			local unit = _BuildingManager:GetAimUnit(playerPos.x, playerPos.y, self.LastDirectionX, self.LastDirectionY)
+			log("[BUILD] place request " .. activeItem .. " unit=(" .. unit.x .. ", " .. unit.y .. ")")
+			inv:ServerRequestPlace(activeItem, unit.x * 2, unit.y * 2)
 			return
 		end
 
@@ -1489,7 +1500,7 @@ script PlayerController extends Component
 		local gridToEntity = resourceSpawner and resourceSpawner:GetGridToEntity(currentMap.Name)
 		if gridToEntity then
 			local gridData = gridToEntity[key]
-			if gridData and (gridData.isTile or isvalid(gridData.entity)) then
+			if gridData and (gridData.isTile or gridData.isBuild or isvalid(gridData.entity)) then
 				pivotKey = math.floor(gridData.pivotX) .. "_" .. math.floor(gridData.pivotY)
 				targetEntity = gridData.entity
 			end
@@ -1500,15 +1511,21 @@ script PlayerController extends Component
 				local probeY = math.floor(playerPos.y + self.LastDirectionY * 2.0)
 				local probeKey = probeX .. "_" .. probeY
 				local pData = gridToEntity[probeKey]
-				if pData and (pData.isTile or isvalid(pData.entity)) then
+				if pData and (pData.isTile or pData.isBuild or isvalid(pData.entity)) then
 					pivotKey = math.floor(pData.pivotX) .. "_" .. math.floor(pData.pivotY)
 					targetEntity = pData.entity
 				end
 			end
 		end
 		
+		-- 건축 바닥 철거 타격: 바닥은 GridToEntity 밖(위에 가구를 놓아야 한다)이라 점유가 없는 조준 셀만 따로 본다.
+		if pivotKey == nil and _BuildingManager ~= nil and _BuildingManager:TryHitFloor(currentMap, targetCell.x, targetCell.y, self.Entity) then
+			self:ClientPlayMineEffect(true, nil)
+			return
+		end
+
 		if pivotKey ~= nil then
-		
+
 			-- Play hit effect on all clients (attached to target resource entity)
 			self:ClientPlayMineEffect(true, targetEntity)
 		
@@ -1544,7 +1561,7 @@ script PlayerController extends Component
 		if activeItem == "" then return false end
 		local baseName = p:GetBaseItemName(activeItem)
 		local category = p:GetItemText(baseName, "Category")
-		if category == "consumable" or category == "furniture" then return true end
+		if category == "consumable" or category == "furniture" or category == "build" then return true end
 		return p:GetItemText(baseName, "TerrainEditAction") ~= ""
 	end
 
@@ -1892,6 +1909,11 @@ script PlayerController extends Component
 			local ds = _DataService:GetTable("item_dataset")
 			if ds ~= nil then
 				local row = ds:FindRow("Name", baseName)
+				if row ~= nil and row:GetItem("Category") == "build" and _BuildingManager ~= nil then
+					-- 건축 부품·설계도: 2×2 칸 단위 미리보기 (조준 칸·판정은 BuildingManager 단일 소스).
+					self:UpdateBuildPreview(baseName)
+					return
+				end
 				if row ~= nil and row:GetItem("Category") == "furniture" then
 					isPlaceable = true
 					iconRuid = row:GetItem("IconRUID") or ""
@@ -2013,6 +2035,64 @@ script PlayerController extends Component
 
 	end
 
+	@ExecSpace("ClientOnly")
+	method void UpdateBuildPreview(string itemName)
+		-- 건축 미리보기: 조준 칸(설계도는 집 전체 외곽)을 흰 정사각 스프라이트 틴트로 덮는다 (PlacementPreview 재사용).
+		-- 색 판정 = BuildingManager:CheckPlanClient (클라 근사, 칸이 바뀌거나 0.25초마다 재계산). 최종 판정은 서버.
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) then return end
+		local pos = self.Entity.TransformComponent.WorldPosition
+		local unit = _BuildingManager:GetAimUnit(pos.x, pos.y, self.LastDirectionX, self.LastDirectionY)
+		local key = itemName .. "@" .. unit.x .. "_" .. unit.y .. "_" .. self.LastDirectionY
+		local now = _UtilLogic.ElapsedSeconds
+		if self._T.BuildPreviewKey ~= key or now >= (self._T.BuildPreviewNext or 0) then
+			self._T.BuildPreviewKey = key
+			self._T.BuildPreviewNext = now + 0.25
+			local plan = _BuildingManager:BuildPlan(itemName, unit.x, unit.y)
+			local bounds = _BuildingManager:GetPlanBounds(plan)
+			local ok = bounds.x0 ~= nil and self.CanPlaceOnCurrentMap
+			if ok and self.LastDirectionY <= 0 and _BuildingManager:IsBlueprintItem(itemName) then
+				ok = false   -- 설계도는 위쪽을 바라볼 때만 (서버 PlaceBuildItem 과 같은 조건)
+			end
+			if ok then
+				ok = _BuildingManager:CheckPlanClient(currentMap, plan, self.Entity) == ""
+			end
+			self._T.BuildPreviewOk = ok
+			self._T.BuildPreviewBounds = bounds
+		end
+		local b = self._T.BuildPreviewBounds
+		if b == nil or b.x0 == nil then return end
+
+		local preview = self._T.PlacementPreviewEntity
+		if not isvalid(preview) then
+			preview = currentMap:GetChildByName("PlacementPreview")
+			self._T.PlacementPreviewEntity = preview
+		end
+		if not isvalid(preview) then return end
+		local wCells = (b.x1 - b.x0 + 1) * 2
+		local hCells = (b.y1 - b.y0 + 1) * 2
+		local px = math.max(1, _BuildingManager.PreviewSpritePx)
+		preview.Enable = true
+		preview.Visible = true
+		preview.TransformComponent.WorldPosition = Vector3(b.x0 * 2 + wCells * 0.5, b.y0 * 2 + hCells * 0.5, 0)
+		preview.TransformComponent.Scale = Vector3(wCells * 100 / px, hCells * 100 / px, 1.0)
+		local sprite = preview.SpriteRendererComponent
+		if isvalid(sprite) then
+			if sprite.SpriteRUID ~= _BuildingManager.PreviewSpriteRUID then
+				sprite.SpriteRUID = _BuildingManager.PreviewSpriteRUID
+				self._T.LastActiveItem = itemName
+			end
+			if self._T.BuildPreviewOk then
+				sprite.Color = Color(0.25, 1.0, 0.35, 0.35)
+			else
+				sprite.Color = Color(1.0, 0.25, 0.2, 0.35)
+			end
+			local mapRadius = 75
+			if _ResourceSpawner then mapRadius = _ResourceSpawner.MapRadius end
+			sprite.OrderInLayer = math.floor((mapRadius - b.y0 * 2) * 100) + 1
+		end
+	end
+
 	method boolean IsAimTarget(Entity target)
 		-- T67/T82 조준 판정 + [T82][AIM] 로그. F 입력 등 단발 판정용 (분산 인터랙터블도 이걸 호출).
 		-- 고빈도 폴링(가이드 프로브)은 IsAimTargetCore(target, false)를 쓸 것 — 로그 스팸 방지.
@@ -2073,6 +2153,7 @@ script PlayerController extends Component
 		local typeNames = {
 			"script.ResearchLab",
 			"script.BlacksmithAnvil",
+			"script.BuildingTable",
 			"script.BulletinBoard",
 			"script.Furniture_Bed",
 			"script.Furnace",
@@ -2183,6 +2264,7 @@ script PlayerController extends Component
 			"script.TerritoryPortal",
 			"script.ResearchLab",
 			"script.BlacksmithAnvil",
+			"script.BuildingTable",
 			"script.BulletinBoard",
 			"script.Furniture_Bed",
 			"script.Furnace",
@@ -2218,6 +2300,7 @@ script PlayerController extends Component
 		local typeNames = {
 			"script.ResearchLab",
 			"script.BlacksmithAnvil",
+			"script.BuildingTable",
 			"script.BulletinBoard",
 			"script.MerchantInteract",
 			"script.VillagerDialog",
@@ -2289,6 +2372,14 @@ script PlayerController extends Component
 		if isvalid(target) then
 			out.target = target
 			out.label = self:ReadInteractLabel(target, "낚시하기")
+			return out
+		end
+		-- 건축 문(타일): TryInteract 와 같은 자리(낚시터 다음·물 앞)에서 판정한다.
+		local door = self:FindAimedBuildDoor()
+		if door.ux ~= nil then
+			out.label = door.label
+			out.ax = door.ax
+			out.ay = door.ay
 			return out
 		end
 		if self:IsAimTileWaterCore(false) then
@@ -2539,11 +2630,56 @@ script PlayerController extends Component
 			return true
 		end
 
+		-- 건축 문(타일): ProbeInteractTarget 과 같은 자리에서 판정한다. 여닫기 검증은 서버(BuildingManager:ToggleDoorAt).
+		local door = self:FindAimedBuildDoor()
+		if door.ux ~= nil then
+			self:ServerRequestToggleBuildDoor(door.cx, door.cy)
+			return true
+		end
+
 		if self:IsAimTileWater() then
 			self:ServerRequestTileFishingInteract()
 			return true
 		end
 		return false
+	end
+
+	@ExecSpace("ClientOnly")
+	method table FindAimedBuildDoor()
+		-- 조준 셀(IsAimTargetCore 와 같은 규약: 발 + LastDirection×1.8)에 칠해진 건축 문 타일.
+		-- 반환: { ux, uy, cx, cy, label, ax, ay } 또는 {} (문 상태는 복제된 타일 이름으로 판정 — BuildingManager:GetDoorAtCell).
+		local out = {}
+		if _BuildingManager == nil then return out end
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) then return out end
+		local tilemap = currentMap:GetFirstChildComponentByTypeName("RectTileMapComponent")
+		if not isvalid(tilemap) then return out end
+		local p = self.Entity.TransformComponent.WorldPosition
+		local aimCell = tilemap:ToCellPosition(Vector3(p.x + self.LastDirectionX * 1.8, p.y + self.LastDirectionY * 1.8, 0))
+		if aimCell == nil then return out end
+		local door = _BuildingManager:GetDoorAtCell(currentMap, aimCell.x, aimCell.y)
+		if door.ux == nil then return out end
+		out.ux = door.ux
+		out.uy = door.uy
+		out.cx = aimCell.x
+		out.cy = aimCell.y
+		if door.open then
+			out.label = _BuildingManager.DoorCloseLabel
+		else
+			out.label = _BuildingManager.DoorOpenLabel
+		end
+		out.ax = door.ux * 2 + 1.0
+		out.ay = door.uy * 2 + 2.35
+		return out
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestToggleBuildDoor(integer cellX, integer cellY)
+		-- 건축 문 여닫기 요청 → BuildingManager:ToggleDoorAt (거리·사람 겹침 검증은 서버).
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		if _BuildingManager == nil then return end
+		_BuildingManager:ToggleDoorAt(self.Entity, cellX, cellY)
 	end
 
 	@ExecSpace("ClientOnly")
