@@ -143,6 +143,8 @@ script MonsterAI extends Component
 	property boolean TelegraphOn = false
 
 	@HideFromInspector property string CurrentAIState = "STAND"
+	-- 보스가 받는 강제 표적(소환수 어그로·도발) 지속 배율. 0 이면 보스는 강제 표적을 무시한다.
+	property number BossForcedTargetScale = 0.6
 	@HideFromInspector property number StateTimer = 0
 	@HideFromInspector property Vector2 MoveDir = Vector2(1, 0)
 	@HideFromInspector property Vector2 SpawnPos = Vector2(0, 0)
@@ -1818,6 +1820,15 @@ script MonsterAI extends Component
 			self._T.nearest = forced
 			return forced
 		end
+		local best = self:FindNearestRealPlayer()
+		self._T.nearest = best
+		return best
+	end
+
+	@ExecSpace("ServerOnly")
+	method Entity FindNearestRealPlayer()
+		-- 강제 표적을 무시한 최근접 플레이어(쓰러짐·도착 보호 제외). 보스 패턴(BossPatternController.FindTarget)은 이걸 쓴다 —
+		-- 패턴 피해는 소환수에게 들어가지 않으므로, 패턴까지 소환수를 노리면 소환수가 무적 탱커가 된다(2026-10-06).
 		local map = self.Entity.CurrentMap
 		if not isvalid(map) then return nil end
 		local mapComp = map.MapComponent
@@ -1841,7 +1852,6 @@ script MonsterAI extends Component
 				end
 			end
 		end
-		self._T.nearest = best
 		return best
 	end
 
@@ -1858,8 +1868,13 @@ script MonsterAI extends Component
 	@ExecSpace("ServerOnly")
 	method void SetForcedTarget(Entity target, number seconds, integer priority)
 		-- 강제 표적을 건다 (job-branch-redesign §7.3). 도발(쇠망치 도발·숲의 군주)은 우선순위 2, 소환수에게 맞아 생기는 짧은 어그로는 1.
-		-- 살아 있는 더 높은 우선순위가 있으면 덮지 않는다(소환수 타격이 플레이어의 도발을 빼앗지 않게). ⚖️ 보스는 무시한다(2026-10-01).
-		if self:IsBossMonster() then return end
+		-- 살아 있는 더 높은 우선순위가 있으면 덮지 않는다(소환수 타격이 플레이어의 도발을 빼앗지 않게).
+		-- ⚖️ 보스: 2026-10-01 엔 완전 무시했으나, 솔로 와일드키퍼의 소환수 탱킹·회복 펄스가 무의미해져(2026-10-06) 지속을 BossForcedTargetScale 배로 줄여 받는다.
+		--    보스 패턴의 표적은 여전히 실제 플레이어다(FindNearestRealPlayer).
+		if self:IsBossMonster() then
+			if self.BossForcedTargetScale <= 0 then return end
+			seconds = seconds * self.BossForcedTargetScale
+		end
 		if not isvalid(target) or seconds <= 0 then return end
 		local now = _UtilLogic.ElapsedSeconds
 		local active = self:GetForcedTarget() ~= nil

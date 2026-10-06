@@ -764,9 +764,10 @@ script BossPatternController extends Component
 
 	@ExecSpace("ServerOnly")
 	method Entity FindTarget()
+		-- 패턴은 강제 표적(소환수 어그로·도발)을 따르지 않고 실제 플레이어를 노린다(MonsterAI.FindNearestRealPlayer 참고).
 		local ai = self:GetAI()
 		if not isvalid(ai) then return nil end
-		return ai:FindNearestPlayer()
+		return ai:FindNearestRealPlayer()
 	end
 
 	@ExecSpace("ServerOnly")

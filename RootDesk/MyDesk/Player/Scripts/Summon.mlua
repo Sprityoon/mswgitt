@@ -1,7 +1,8 @@
 @Component
 script Summon extends Component
 	-- 와일드키퍼 소환수 (job-branch-redesign §7.4). PlayerController.ExecuteSummonSkill 이 Summon_Spirit 모델을 스폰한 뒤 붙이고 Setup 을 부른다.
-	-- 주인을 따라다니다 근처 몬스터를 쫓아가 공격한다. 소환수에게 맞은 몬스터는 잠깐 소환수를 노린다(어그로 우회 — 보스 제외).
+	-- 주인을 따라다니다 근처 몬스터를 쫓아가 공격한다. 소환수에게 맞은 몬스터는 잠깐 소환수를 노린다(어그로 우회 — 보스는
+	-- MonsterAI.BossForcedTargetScale 배로 짧게, 보스 패턴은 실제 플레이어를 노린다 · 2026-10-06).
 	-- 수치·외형은 SummonDataSet 행, 피해 계열·배율은 시전 스킬 행(SkillDataSet)이 정한다. 판정·이동은 전부 서버에서 돈다.
 
 	property Entity Owner = nil
@@ -207,7 +208,7 @@ script Summon extends Component
 
 	@ExecSpace("ServerOnly")
 	method void ForceTargetAround(Vector2 center, number radius, Entity single, number seconds, integer priority)
-		-- single 이 있으면 그 몬스터에게만, radius > 0 이면 원 안 몬스터 전부에게 강제 표적(나)을 건다. 보스는 MonsterAI 가 무시한다.
+		-- single 이 있으면 그 몬스터에게만, radius > 0 이면 원 안 몬스터 전부에게 강제 표적(나)을 건다. 보스는 MonsterAI 가 지속을 줄여 받는다.
 		if seconds <= 0 then return end
 		if isvalid(single) then
 			local ai = single:GetComponent("script.MonsterAI")

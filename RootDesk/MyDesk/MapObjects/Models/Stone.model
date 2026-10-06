@@ -39,7 +39,7 @@
               "$type": "MODNativeType",
               "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": "769856e40032410b9cac6a485623459d"
+            "Value": "5b4c934a74b14d34977a3f9d107b21d9"
           },
           {
             "TargetType": "MOD.Core.PhysicsColliderComponent",
@@ -225,7 +225,7 @@
               "$type": "MODNativeType",
               "type": "System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": "769856e40032410b9cac6a485623459d"
+            "Value": "5b4c934a74b14d34977a3f9d107b21d9"
           },
           {
             "TargetType": "MOD.Core.SpriteRendererComponent",
@@ -342,6 +342,28 @@
               "x": 1.5,
               "y": 1.5,
               "z": 1.5
+            }
+          },
+          {
+            "TargetType": "MOD.Core.SpriteRendererComponent",
+            "Name": "DrawMode",
+            "ValueType": {
+              "$type": "MODNativeType",
+              "type": "MOD.Core.SpriteDrawMode, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+            },
+            "Value": 1
+          },
+          {
+            "TargetType": "MOD.Core.SpriteRendererComponent",
+            "Name": "TiledSize",
+            "ValueType": {
+              "$type": "MODNativeType",
+              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+            },
+            "Value": {
+              "$type": "MOD.Core.MODVector2, MOD.Core",
+              "x": 1.08,
+              "y": 0.4
             }
           }
         ],

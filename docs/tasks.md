@@ -1,5 +1,137 @@
 # 작업 목록 (Tasks)
 
+## [아트] Stone 채집 모델 이미지 교체 (2026-10-06) — 모델 완료 · refresh ok · build 로그 갱신 미확인 · 런타임 검증 보류
+
+- **제작자 요청**: `Stone` 이미지 → `5b4c934a74b14d34977a3f9d107b21d9`. 기존 크기를 크게 바꾸지 않으며, 후속 지시에 따라 드롭 모델·인벤토리 아이콘은 기존 이미지 유지.
+- **변경**: `MapObjects/Models/Stone.model`의 `renderguid`와 `SpriteRUID` 교체. `DrawMode=Sliced`, `TiledSize=(1.08, 0.4)`로 기존 배율 1.5에서 표시 크기 약 162×60px 유지. MODLazyModel 래퍼·배율·콜라이더·점유 칸·드롭 수량 유지. 새 이미지 종횡비는 기존 표시 영역에 맞춰 조정되므로 제작자 시각 확인 필요.
+- **범위 정정**: `Item_Stone.model` 및 `item_dataset` 돌 아이콘은 원래 RUID `5ed8bdcf520044c0a1660873beb30b10`으로 복구. 자원·드롭·바이옴·상점·제작 데이터의 수량/확률/참조 키 무변경. stone 이미지를 직접 지정하는 다른 데이터셋 필드 없음.
+- **검증**: ModelBuilder 검증·저장 후 재읽기 및 기존 배율/콜라이더 불변 확인. 맵의 기존 stone 이미지 오버라이드 0건. `check_dataset_columns` 불일치 0건. Maker refresh `ok`(19:15 및 범위 정정 후 재실행). build 로그는 18:59:17 스냅샷(Warning 9 / Info 871)으로 시각 불일치 → **build 로그 갱신 미확인**. **런타임 검증 보류(제작자 수행)**: Stone 표시 크기·피벗·납작해진 종횡비·콜라이더 정합 확인.
+
+## [아트/기능] 공사장 표지판 & 소품 스프라이트 17종 에셋화 및 F키 상호작용 컴포넌트 구현 (2026-10-06) — 에셋·코드 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 요청**: 공사장 표지판 및 시설물 레퍼런스에서 아이디어를 얻어 게임 감성에 맞는 공사장 표지판과 소품 이미지 생성 & 정면 구도 맞춤 & 1번(스프라이트 개별 에셋화) 및 3번(인게임 F키 상호작용 연동) 진행.
+- **아트 산출물** ([docs/design/art/construction/](./design/art/construction/)):
+  - 정면 뷰(Front Orthographic 2D, 기존 연구소/대장간과 100% 동일 구도) 기반 17종 개별 투명 PNG 스프라이트 제작 (지붕형 게시판, 주황버섯 삼각표지판, 경광등 2단 바리케이드, 라바콘 차단봉, 슬라임 스탠드 2종, 칠판 이젤, 드럼통, UNDER CONSTRUCTION 배너, 방수포 자재더미, 리본 팻말, 작업도구 표지판, 기본 바리케이드, 방향 팻말, 라바콘 세트, 콘크리트 방호벽, 청사진 기둥).
+  - 인게임 잔디 지형 및 체커보드 투명도 검증 시트 제작 (`preview_construction_sheet.png` — 외곽선 디프린지 및 관통 홀 투명화 완료).
+- **스크립트** ([ConstructionSignInteract.mlua](../RootDesk/MyDesk/MapObjects/Scripts/ConstructionSignInteract.mlua)):
+  - `PlayerController:ReadInteractLabel` 연동 (`"표지판 읽기"` HUD 가이드 자동 표시).
+  - `F` 키 및 모바일 상호작용 버튼 클릭 시 `TryInteract` 게이트 (조준선 판정).
+  - `UIDialogController` 연동으로 메이플스토리 공식 하단 대화창을 열어 다중 페이지 안내문 출력 (`UseDialog = false` 시 상단 토스트 대체 지원).
+- **검증**: `maker_refresh_workspace` status ok · `maker_logs(kind="build")` dateTime 18:59:17 일치, **Error 0 / Warning 9 / Info 870** · `ConstructionSignInteract.codeblock` 정상 생성. **런타임 검증 보류(제작자 수행)**: 표지판 모델 배치 후 인게임 F키로 대화창 팝업 확인.
+
+## [사운드] 곡괭이 휘두르기·타격음 교체 (2026-10-06) — 데이터 완료 · refresh ok · build 로그 갱신 미확인(CSV 만 변경) · 런타임 검증 보류
+
+- **제작자 제보**: 곡괭이 사운드가 이상하다(예전부터).
+- **원인** (`item_dataset` + 리소스 API `payload.description`·태그로 판별 — 직접 청취 불가): 돌·구리 곡괭이 휘두르기 `dfed94cc…` = 몬스터 9300627 피격음(바람 소리 성격), 철 곡괭이 휘두르기 `96e8c2ff…` = 스킬 「에어로 스윙」 사용음("반짝이는 마법 효과가 포함된 밝은 UI 효과음"), 타격 `b097e12f…` = 몬스터 「무장한 레프군」 피격음("금속 날카로운 타격음") — 바위를 캐는 소리가 아니었다.
+- **수정**: 곡괭이 3종 `SwingSoundRUID` → `8c62b200…`(플레이어 기본 휘두르기 — "공기를 가르는 짧고 날카로운 소리"), `HitSoundRUID` → `93b1f5aa…`(`sound/reactor.img` 1102002 타격 — "돌이나 바위가 부서지는 날카로운 파괴음", 0.34초).
+- **3차 (제작자: "곡괭이 이상한 소리 — 도끼랑 비슷하게", "망치 소리도 정리")**: AI 설명이 이 계열을 모두 "반짝이는 UI 효과음"으로 붙여 설명으론 구분 불가 → 출처(태그 path/subPath)로 선택. 도끼 소리 = 아란 「에어로 스윙」(21110022/Use). 곡괭이 3종 휘두르기 → 같은 스킬 다른 단계 `5357f9ce…`(21110026/Use, 0.91초). 망치 4종(`smith_hammer`·`_t2`·`_t3`·`echo_stone_hammer`) 휘두르기 몬스터 피격음 → 아란 「스매쉬 스윙」 `1927422f…`(21000007/Use, 1.36초), 타격 몬스터 피격음 → 「해머 스매시」 `da937e9f…`(37111000/Hit, 1.01초). refresh ok.
+- **2차 (제작자 지시)**: 돌·구리 도끼 휘두르기 `96e8c2ff…` 는 **제작자가 직접 고른 소리 — 유지**. 철 도끼 휘두르기 몬스터 피격음 `cc4775e4…` → 같은 `96e8c2ff…`. 곡괭이 3종 휘두르기는 "더 묵직하게" → `c173609a…`(`sound/item.img` 02020025/Use, 0.52초 — "휘두른 뒤 무언가에 부딪히는 짧고 묵직한 물리적 타격음"; 검색 후보 중 '묵직' 설명은 이것뿐, 나머지는 날카로운 검 소리). refresh ok.
+- **검증**: `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build 로그 최신 18:45:38(스크립트 무변경이라 재빌드 없음 → **build 로그 갱신 미확인**). **런타임 검증 보류(제작자 수행)**: 곡괭이로 바위·광석을 칠 때 소리.
+
+## [전투/배틀스미스] 쇠망치 회전 — 이동 중에도 회전 연출 우선 (2026-10-06) — 코드 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 요청**: 쇠망치 회전하며 이동할 때 회전 모션이 우선되게.
+- **원인**: ① `AvatarStateAnimationComponent` 는 현재 상태(MOVE/IDLE) 모션을 계속 다시 보내 걷기 모션이 스크립트 휘두르기(`ActionStateChangedEvent`)를 즉시 덮는다. ② 이동 입력이 `PlayerControllerComponent.LookDirectionX` 를 다시 정해 좌우 반전이 흐트러진다.
+- **수정** (`PlayerController`): 서버 `BeginSpinPose(seconds)` — `StateToAvatarBodyActionSheet` 의 IDLE·MOVE 매핑을 저장 후 `RemoveActionSheet`(비레거시일 때), `FixedLookAt = 1`(문서: 값이 있으면 이동해도 방향 고정), `seconds` 뒤 `EndSpinPose` 가 `AvatarBodyActionElement(이름, 배율)` 로 복구·`FixedLookAt` 원복(둘 다 @Sync 라 서버에서). 클라 `MulticastBeginChannel` 도 `FixedLookAt = 1` 즉시 적용. `OnEndPlay` 타이머 정리. 공격(attack) 상태로 재매핑하는 안은 무기에 따라 alert 정지 자세가 될 수 있어 배제.
+- **검증**: VS Code 진단 0 · `maker_refresh_workspace` ok · build 18:29:45(refresh 직후) **Error 0 / Warning 9(기존 LWA-4012) / Info 870** — 이 refresh 로 앞선 Play 중 보류 3건(쇠망치 2초 채널·소환수 보스 어그로·맨주먹 파이터)도 함께 반영.
+- **2차 수정 (제작자 Play 18:35 — "휘두르기는 나오는데 이동을 못 함 · 한쪽으로만 때림")**: 로그상 채널·8타·복구는 정상, 에러 0. `FixedLookAt = 1` 이 스크립트 좌우 반전까지 잠그고 이동도 막은 것으로 판단 → **FixedLookAt 사용 전면 제거**. 대신 `ApplySpinFacing()` 을 OnUpdate 이동 처리(`MoveToDirection`) 직후에 불러 매 프레임 회전 박자 방향(`_T.ChannelSign`)을 다시 쓰고, 회전 중엔 OnUpdate 의 MOVE/IDLE 상태 전환을 건너뜀(걷기 모션 재생 방지). IDLE·MOVE 모션 매핑 일시 제거는 유지. build 18:37:17 **Error 0 / Warning 9 / Info 870**.
+- **3차 수정 (제작자 Play — "사용 직후 잠깐은 이동하다 그 뒤 이동 못 함")**: 멈추는 시점이 서버의 매핑 변경이 동기화돼 도착하는 시점과 맞음 → `StateToAvatarBodyActionSheet` IDLE·MOVE `RemoveActionSheet`(`BeginSpinPose`/`EndSpinPose`)가 엔진 이동까지 멈춘 것으로 판단, **두 메서드·호출·타이머 정리 전부 삭제**. 걷기 모션 덮어쓰기는 "회전 중 OnUpdate MOVE/IDLE 상태 전환 생략"으로만 막는다. 🔴 교훈: 플레이어 아바타의 MOVE 매핑 제거·`FixedLookAt` 은 이 프로젝트의 커스텀 이동(`MoveToDirection`)을 멈춘다 — 둘 다 쓰지 말 것. build 18:39:21 **Error 0 / Warning 9 / Info 870**.
+- **4차 수정 (제작자 Play — "이동은 되나 좌우 이동 땐 진행 방향만 보고, 상하 이동 땐 반전은 되지만 둘 다 공격 모션이 없음")**: `MovementComponent:MoveToDirection` 이 이동 방향으로 몸을 돌리고 이동 중 모션을 잡는다. 제작자 제안대로 회전 중 이동을 별도 로직으로: `movement:Stop()` 후 같은 속도·같은 장애물 검사(`IsObstacle`)로 `KinematicbodyComponent:SetWorldPosition` 만 갱신(바디 없으면 Transform). build 18:42:50 **Error 0 / Warning 9 / Info 870**.
+- **5차 수정 (제작자 Play — "이동이 너무 빠름 · 좌우 이동 땐 여전히 진행 방향만 봄")**: ① 엔진 RectTile 실속도 = `InputSpeed ÷ 1.2 × SpeedFactor`(platform-rect §7)인데 직접 이동은 `InputSpeed` 그대로 써서 빨랐다 → 같은 환산 + `SpinMoveScale`(0.8). ② OnBeginPlay 주석대로 방향키는 엔진 `PlayerControllerComponent` 가 계속 처리해 좌우를 정한다(스크립트보다 늦게 돌아 회전 반전을 덮음, 자체 이동도 겹쳤을 가능성) → 로컬 플레이어는 회전 시작 시 `SuspendArrowActionKeys`(방향키 4개 `GetActionName` 저장 → `RemoveActionKey`), 끝날 때 `RestoreArrowActionKeys`(`SetActionKey`). WASD 영구 해제와 같은 API. build 18:45:38 **Error 0 / Warning 9 / Info 870**. **런타임 검증 보류**: 회전 중 좌우 이동에도 반전·휘두르기 유지, 속도가 평소보다 약간 느림, 회전 후 방향키·점프·걷기 정상(로그 `[CHANNEL] arrow action keys suspended/restored n=`). **런타임 검증 보류(제작자 수행)**: 회전하며 방향키 이동 → 걷기 모션 대신 휘두르기·좌우 반전이 유지되는지 · 2초 뒤 걷기/서기·이동 방향 전환 정상 복귀(로그 `[CHANNEL] spin pose restored`) · 다른 플레이어 화면.
+
+## [전투/맨주먹 파이터] 슬래시 블러스트 전용화 · 정권 지르기 주딜기화 · 붉은 너클 따라가기 (2026-10-06) — 코드·데이터 완료 · refresh ok(18:29 일괄) · build Error 0 · 런타임 검증 보류
+
+- **제작자 요청**: 모험가가 슬래시 블러스트를 못 쓰게(너무 강하고 이펙트 강렬 — 파이터 전용/타 직업/삭제 중 택). 정권 지르기는 기절기인데 쿨이 너무 짧다 → 기절 빼고 주딜기. 붉은 너클의 일격은 장판처럼 보이지 말고 플레이어를 따라다니게, 연계 내용 삭제.
+- **데이터** (`SkillDataSet`):
+  - `earth_shatter` 공용 → `JobId=barefist_fighter`(광역 딜기가 없던 히든 직업에 배정. 선행·참조 스킬·퀘스트 없음 확인). 설명에 전용 표기.
+  - `fist_heavy_straight`(power_strike 변형, 원본 쿨 1.2초) `Status` Stun·`StatusDuration` 제거, 배율 1.6→2.2(레벨당 +0.3 유지, Lv5 3.4배). 설명 갱신.
+  - `red_knuckle` 새 열 `HideAreaMarker=true` + `AreaFollow=true`, 설명에서 "기절시킨 적에게 반드시 들어감"(코드 없는 문구뿐이었음) 삭제.
+- **코드** (`PlayerController`): `RefundOrphanSkills()` — 직업이 정해진 캐릭터가 다른 직업 전용 스킬 레벨을 갖고 있으면 레벨 삭제 + SP 환급(`SanitizeEquippedSkills` 첫 줄 → 로드·전직·초기화·테스트 직업 전환 모두 경유, 직업 "" 이면 복구 전일 수 있어 건너뜀). `CreateSkillArea` `HideAreaMarker` 면 마커 미생성. 따라가는 장판의 방향성 이펙트 위치(`fxPose`)도 시전자 기준 상대 좌표로 갱신.
+- [job-branch-redesign.md §5.5](./design/job-branch-redesign.md) ⚖️ 표기.
+- **검증**: VS Code 진단 0 · `check_dataset_columns` 불일치 없음. **Maker Play 중 → refresh·build 미확인**. **런타임 검증 보류(제작자 수행)**: 모험가·다른 직업 스킬창에 슬래시 블러스트가 없고 이미 배운 캐릭터는 로드 시 SP 환급(로그 `[SKILL] refund orphan skills`) · 정권 지르기에 기절 표시 없음·피해 증가 · 붉은 너클 시전 후 0.5초 사이 이동해도 강타가 캐릭터 앞에서 터지고 바닥 원판이 없는지.
+
+## [전투/와일드키퍼] 소환수 보스 어그로 · 추적 거리 확대 (2026-10-06) — 코드·데이터 완료 · refresh ok(18:29 일괄) · build Error 0 · 런타임 검증 보류
+
+- **제작자 제보**: 소환수가 보스 어그로를 끌지 않는다 — 체력이 있어야 솔로에서 회복 펄스가 의미 있다. 소환수 추적 거리가 너무 짧다.
+- **원인**: 소환수 체력은 있다(주인 최대 HP × `HpRatio` 0.4/0.6, 회복 오라·생명 펄스로 회복). 그러나 `MonsterAI.SetForcedTarget` 첫 줄이 보스면 return(⚖️ 2026-10-01 "보스는 강제 표적 무시") → 보스는 소환수를 한 번도 노리지 않아 맞지도 않았다. 추적은 `SummonDataSet` 감지 6 · 주인 끈 7(주인에게서 7칸 안 몬스터만).
+- **수정**:
+  - `MonsterAI`: 보스는 강제 표적 지속을 `BossForcedTargetScale`(0.6) 배로 받는다(0 = 기존처럼 무시). 소환수 타격 어그로 2.5→1.5초(공격 간격 1.2초라 붙어 있으면 유지), 쇠망치 도발 5→3초, 숲의 군주 도발 3→1.8초.
+  - 보스 패턴 표적은 실제 플레이어: `FindNearestRealPlayer()` 분리(강제 표적 무시), `BossPatternController.FindTarget` 이 사용. 패턴 피해는 소환수에게 안 들어가 패턴까지 소환수를 노리면 무적 탱커가 되기 때문. 일반 공격·도약은 `FindNearestPlayer`(강제 표적 우선) 그대로 — `MonsterMeleeAttack`/`MonsterProjectile` 은 원래 소환수도 맞힌다.
+  - `SummonDataSet` 두 소환수 `DetectRange` 6→9, `LeashRange` 7→11(순간이동 복귀 = 끈 × 1.6 ≈ 17.6).
+  - 설명 문구: 야수 소환·쇠망치 도발·숲의 군주의 "(보스 제외)" → 보스 짧게·패턴 제외. `Summon.mlua` 주석 정정.
+- **검증**: VS Code 진단 0(MonsterAI·BossPatternController·Summon) · `check_dataset_columns` 불일치 없음. **Maker Play 중이라 refresh·build 로그 미확인(Stop 후 refresh 필요)**. 신규 `.mlua` 없음. **런타임 검증 보류(제작자 수행)**: F5 슬라임킹 + 와일드키퍼 야수 소환 → 보스가 정령을 쫓아 때리고 정령 HP 가 줄어드는지·생명 펄스로 회복되는지, 패턴(장판·투사체)은 여전히 플레이어 쪽으로 오는지 · 정령이 9칸 밖 몬스터까지 달려가는지.
+
+## [전투/배틀스미스] 쇠망치 회전 2초 채널 — 회전 연출 · 시전 중 스킬·평타 잠금 (2026-10-06) — 코드·데이터 완료 · refresh ok(18:29 일괄) · build Error 0 · 런타임 검증 보류
+
+- **제작자 요청**: 쇠망치 회전을 2초 정도로 길게, 망치를 들고 회전하는 모션, 지속 피해가 강한 대신 다른 스킬을 못 쓰게.
+- **데이터** (`SkillDataSet`): hammer_whirl `Duration` 1→2(0.25초 틱 4→8타, 총 배율 3.6→7.2배), 새 열 `Channel`(hammer_whirl = `spin`), 설명 갱신. 회전 중 슈퍼아머 버프 `skill_channel_armor` 는 이미 2초라 그대로.
+- **코드** (`PlayerController`):
+  - `IsChanneling()` = `_T.ChannelUntil` 전(서버·클라 각자). 서버는 시전 확정 시 `Channel` 이 있으면 Duration 만큼 설정 + `MulticastBeginChannel`.
+  - 잠금: 서버 `ServerRequestCastSkill`·`RequestMine`·`ServerRequestChargeStart/Release` 거부, 클라 `TryCastSlot`·`TryMine` 선차단. 이동은 허용.
+  - 회전 연출 `UpdateChannelVisual`(ClientOnly OnUpdate, 로컬 가드 앞이라 원격 플레이어도): MSW 아바타에 회전 동작이 없어 `SpinBeatSeconds`(0.12초)마다 `PlayerControllerComponent.LookDirectionX` 좌우 반전 + 두 박자마다 CastAction(`swingT1`)을 PlayRate 2 로 재생. 끝나면 원래 방향 복구 + 이동 여부에 맞춰 Walk/Stand `BodyActionStateChangeEvent`.
+- **검증**: VS Code 진단 0 · `check_dataset_columns` 불일치 없음. **Maker 가 Play 중이라 `maker_refresh_workspace` 거부 → refresh·build 로그 미확인(제작자 Stop 후 refresh 필요)**. 신규 `.mlua` 없음. **런타임 검증 보류(제작자 수행)**: 회전 중 좌우 반전이 "도는" 느낌인지(이동 입력이 방향을 덮어써 깜빡이지 않는지, 원격 플레이어 화면에서도 도는지) · 8타 · 회전 중 QWER·Ctrl 무반응(로그 `[SKILL] channeling`) · 끝난 뒤 모션·방향 정상 복귀 · 이동하며 원판이 따라오는지.
+
+## [전투/배틀스미스] 대지 분쇄타 보스 기절(슈퍼아머 존중) · 쇠망치 회전 시전자 추적 (2026-10-06) — 코드·데이터 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 요청**: ① 대지 분쇄타는 보스도 기절해야 직업 정체성이 산다(보스 슈퍼아머 스킬 중엔 못 끊음). ② 쇠망치 회전이 시전 자리에 머무는 장판이 됐다 — 이동해도 따라다니며 주변을 때려야 한다.
+- **① 원인·수정**: `Monster.ApplySkillStatus` 가 보스의 기절·속박을 무조건 둔화 25%로 바꿨다(보스 기절 0). `SkillDataSet` 새 열 `BossStun`(earth_crusher 만 `true`) → `CanBossBeStunned()` 통과 시 진짜 기절(지속 × `BossStunDurationScale` 0.75 = 약 0.9초, 교감 지속 보정 포함), 끝난 뒤 `BossStunImmuneSeconds` 6초 기절 면역(연쇄 기절 방지). 보스 AI 가 `PATTERN`/`LEAP`(기존 슈퍼아머 — `MonsterAI` 도 이 두 상태에선 기절 무시)이거나 면역 중이면 기존처럼 둔화. 기절 중엔 AI 틱이 STAND 로 빠져 예고 중 일반 공격이 끊기고 새 패턴(`PickNext`/`Begin` 은 AI 틱에서만 호출)도 시작되지 않는다. 로그 `[BOSS-STUN] … stunned / super armor / immune`. 정권 지르기(쿨 없음)·덫·덩굴·호루라기는 미적용(필요 시 같은 열만 켜면 됨).
+- **② 원인·수정**: 쇠망치 회전 = `Field`(`AreaReach` 0) — 장판 중심을 생성 시 한 번 정하고 고정. `SkillDataSet` 새 열 `AreaFollow`(hammer_whirl 만 `true`) → `CreateSkillArea` 가 오프셋 저장, `TickSkillAreas` 가 판정 직전에 중심을 시전자 위치로 갱신, `FollowSkillAreas`(0.05초 타이머, 따라가는 장판이 있을 때만) 가 바닥 표시를 옮김. 틱 이펙트도 새 중심에서 재생. `OnEndPlay` 타이머 정리.
+- 설명 문구 2건 갱신 · [job-branch-redesign.md §5.2](./design/job-branch-redesign.md) 표 ⚖️ 표기.
+- **검증**: LSP Error 0 · `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build 17:10:44(refresh 직후) **Error 0 / Warning 9(기존 LWA-4012) / Info 870**(+1 = `CurrentAIState` 동적 접근) · 신규 `.mlua` 없음. **런타임 검증 보류(제작자 수행)**: F5 슬라임킹 → 일반 공격 예고 중 대지 분쇄타 → 멈춤·머리 위 기절 표시·`[BOSS-STUN] stunned` / 패턴 시전 중엔 `super armor -> slow` / 6초 안 재사용은 `immune` · 쇠망치 회전 쓰며 이동 → 원판·타격이 따라오는지, 움직이며 4타가 다 들어가는지.
+
+## [이펙트/UI] 알케미스트 투사체 3종 교체 · 스킬 상세 패널 겹침 해소 (2026-10-06) — 데이터·코드 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 제보**: ① 알케미스트 충전 공격·매직 클로·푸른 불씨 폭발의 날아가는 이펙트가 모두 같고 허전하다. ② 스킬 설명에서 선행 조건과 피해 계산 줄이 겹친다 — 긴 설명에 맞춰 창이 늘어나게 했던 게 안 먹힌 것 아닌가.
+- **① 원인·수정 (데이터만, 로직 무변경)**: 세 공격 모두 `ProjectileRUID 983a41e8…`(「플라잉 어썰터」 팩의 검은 곡선 소용돌이 13프레임). 공식 스킬 리소스 비교 시트(41종)에서 교체:
+  - 충전 공격 `WeaponAttackDataSet` Wand_Charge_1/2 → `d393500f…` 원작 「에너지 볼트」 투사체(푸른 링 마력탄), `ProjectileScale` 1.2→1.8 / 1.8→2.6.
+  - 매직 클로 `fireball` → `e4912b93…` 보라 마력 구체+꼬리, `ProjectileScale` 2.4.
+  - 푸른 불씨 폭발 `blue_ember` → `6bf4bdf6…` 푸른 불꽃 구체+꼬리, `ProjectileScale` 3.
+  - 판정 크기(`ProjectileSize`)·시전/피격 이펙트는 그대로. 산성 포션 행의 같은 `ProjectileRUID` 는 이번 범위 밖이라 유지.
+  - 스킬 가이드 원장(maplestory-skill-maker): DATA = 기존 행 값만 교체(정적 PASS) · PAP/PAJ/MHP = 시전·판정·피격 코드 무변경 → 런타임 증거 BLOCKED(제작자 Play).
+- **② 원인·수정 (`UISkillTreeController`)**: 10-03 동적 크기 조정은 공용 툴팁·인벤토리 설명창에만 적용됐고, 스킬창 상세 패널(`PopupGroup/…/SkillDetailPanel`)은 글자 칸이 고정 좌표·고정 높이(DDesc y−96 h150, DParent y−256, DUnlock y−290…)라 넘친 설명이 선행·해금 줄 위에 그려졌다. `LayoutDetailPanel()` 신설 — 설명→선행→해금→상태→비용을 `GetPreferredHeight` 로 잰 높이대로 10px 간격으로 쌓고, 넘치면 패널·Bg 높이를 늘림(짧으면 .ui 원래 548 로 복귀). `.ui` 무수정(런타임 배치). 덤으로 선행·해금 줄의 충족/미충족 색이 `TextComponent` 일 때만 칠해져 GUI 렌더러인 실제 칸엔 한 번도 적용 안 되던 문제를 `SetTextColorSafe` 로 수정.
+- **검증**: VS Code 진단 0 · `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build 17:03:18(refresh 직후) **Error 0 / Warning 9(기존 LWA-4012) / Info 869** · 신규 `.mlua` 없음. **런타임 검증 보류(제작자 수행)**: 세 투사체의 크기·방향(좌우 반전)·속도감 · 스킬창에서 긴 설명 스킬(불씨 저격·급소 찌르기 등) 선택 시 선행/해금 줄이 설명 아래로 밀리는지, 패널이 화면 밖으로 넘치지 않는지 · 선행 줄 금색/빨강.
+
+## [밸런스/테스트 도구] 정밀 폭파술사 지능 기반 + 솜씨 혼합 · Shift+F7 전용 무기 지급 (2026-10-06) — 코드·데이터 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 요청**: "전용무기도 지급하는 키를 만들자. 알케미스트(저격 스타일)의 몇몇 스킬이 아예 지능 기반이거나 솜씨 기반인데, 기본적으로 지능 기반이되 솜씨를 적당히 섞으면 효율적인 구성이 되도록."
+- **혼합 계열 (⚖️ 결정은 [job-branch-redesign.md §5.3](./design/job-branch-redesign.md))**:
+  - `SkillDataSet` 새 열 `SubStat` · `SubStatCap`(전 행 공란, 53행). 푸른 불씨 폭발·불씨 저격·불씨 결정 = `ScaleStat` DEX → **INT**, `SubStat=DEX`, `SubStatCap=0.5`.
+  - `PlayerController`: `GetStatPower` 본체를 `GetStatPowerWithExtra(statKey, extraPoints)` 로 분리(기존 시그니처 유지 — 규칙 46), `GetSubStatPoints(row)` = min(솜씨, 지능×0.5), `GetSkillStatPower(row)` → `GetSkillCore` 가 사용(모든 스킬 피해·소환수가 이 경로). 스킬창 피해 설명에 "솜씨도 지능의 50%까지 위력에 반영 (현재 n/상한)" 줄.
+  - 예시(Lv16 · AP45 · 창공 불꽃 완드 · 정밀 배합 Lv3 · 불씨 저격 기대 피해): 지능45/솜씨0 ≈ 90 · **지능30/솜씨15 ≈ 94(최적)** · 지능20/솜씨25 ≈ 86 · 솜씨 몰빵 위력 51(−31%).
+  - `JobBranchDataSet` 정밀 폭파술사 ScaleStat INT·설명 갱신(스크립트 미사용 기획 데이터).
+- **Shift+F7 전용 무기** (`TestModeConfig.GiveJobWeaponsFor`): 무기 칸 아이템 중 `EquipJobs` 에 현재 직업이 든 것 전부 1개씩(주무기 미등록이면 보유 최고 무기 자동 사용). 스킬에 `ScaleStat=TRI` 가 있는 직업(맨주먹 파이터)은 장갑 칸 아이템 전부 + 레벨이 되는 최고 방어력 장갑을 장비 칸에 등록. 모험가는 안내만.
+- **검증**: LSP Error 0 · `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build 16:44:47(refresh 직후) **Error 0 / Warning 9(기존 LWA-4012) / Info 869** · 신규 `.mlua` 없음. **런타임 검증 보류(제작자 수행)**: ① 알케미스트 F1 → Shift+F7 → 완드 4종 지급·피드백 ② 격투가 Shift+F7 → 너클 장착(캐릭터 창 장갑 칸) ③ 정밀 폭파 스킬 상세에 "솜씨도 지능의 50%까지…" 줄과 수치 ④ 능력치 분배를 바꿔 가며 허수아비(Shift+F5)로 불씨 저격 DPS 비교 — 로그 `[DMG] skill=ember_snipe stat=INT core=…`.
+
+## [테스트 도구] 직업 테스트 — F1 직업 전환 · Shift+F8 스킬 전부 최대 · Shift+F5 허수아비 DPS (2026-10-06) — 코드 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 요청**: "각 직업별 스킬 이펙트나 밸런스를 빠르게 확인해 보고 싶다" → 직업 전환·스킬 최대·허수아비(3번)까지.
+- **구현** (치트는 `DevTools/Scripts/TestModeConfig.mlua` 에만, 전부 `EnableTestMode`·`EnableDebugHotkeys` 게이트 + 테스트 격리 슬롯(규칙 63)):
+  - **F1 / Shift+F1**: `SkillDataSet` 의 JobId 등장 순서(모험가 → trapper → battle_smith → alchemist → wild_keeper → barefist_fighter)로 순환 / 모험가로. 이전 직업 스킬은 정식 `BuildProgressReset("JobSP")` 로 SP 환급. 전직 자격(`CanReceiveJob`)은 우회.
+  - **Shift+F8**: 현재 직업 + 공용 스킬을 `MaxLevel` 로(직업 변형 행 제외), 가장 높은 `RequiredLevel` 까지 `AddXP` 정식 경로로 레벨업, 새로 배운 액티브는 `TryAutoEquipOnUnlock`, 스킬 필요 아이템(ConsumeItem·RequireEquippedItem·PassiveItem — 손도끼·구리 광석)을 `TestItemTopUp`(50)까지 보충.
+  - **Shift+F5**: 사냥터·보스맵에서 바라보는 방향 3칸 앞에 허수아비(`stump` 모델, `MonsterAI`·`MonsterMeleeAttack` 끔, 금빛 틴트, HP 999999, 방어 `DummyDefense`=6). 다시 누르면 제거, 소유자가 맵을 떠나면 자동 제거. 0.5초마다 키 목록 HUD(`TestKeyHud`)에 평균 DPS · 최근 3초 DPS · 누적/타수/치명률 · 최대 한 방(스킬명) · 출처별 상위 3개 비중. 5초(`DummyIdleResetSeconds`) 쉬면 새 측정 구간.
+  - `Monster.mlua`: `IsTrainingDummy` 프로퍼티 — 켜져 있으면 넉백 없음, 피격 시 HP 즉시 복구 후 `_TestModeConfig:RecordDummyHit(엔티티, 피해, 치명, 출처)`(드롭·경험치·처치 집계 없음). 출처 = 공격자 `PlayerCombat.PendingSkillId`(평타 ""), 플레이어가 아닌 공격자(소환수) = "@이름".
+  - `PlayerController.IsSkillQuestAllowed`: 테스트 모드 + `UnlockAllPortals` 일 때 해금 퀘스트 통과(포탈 해금 우회와 같은 스위치) — 스킬창(K) 표시·수동 습득도 일관.
+- **한계**: 피해 출처는 공격자의 "마지막 시전 스킬" 기준이라 장판·덫·도트 틱이 다른 스킬 시전 직후 들어오면 그 스킬로 묶일 수 있음 · 소환수 피해는 "소환수·기타" 한 줄 · 허수아비는 사냥터 몬스터 수 상한(10)에 1마리로 셈 · 격투가는 장갑이 없으면 삼위일체 공격력이 낮다(장비는 지급하지 않음).
+- **검증**: LSP Error 0 · `maker_refresh_workspace` ok · build 16:26:59(refresh 직후) **Error 0 / Warning 9(기존 LWA-4012) / Info 869**(신규 Info 5건 = 테이블 필드 대입·교차 스크립트 동적 접근 노이즈) · 신규 `.mlua` 없음. **런타임 검증 보류(제작자 수행)**: ① 테스트 슬롯 → hunt01 에서 F1 → "[TEST] 직업 → 탄막…" 피드백·로그 `[TESTMODE] job` ② Shift+F8 → 스킬창 전부 최대·스킬바 자동 장착·손도끼 50 ③ Shift+F5 → 금빛 스텀프가 가만히 서 있고 맞아도 안 죽고 안 밀림, HUD 가 측정값으로 바뀌는지(글자가 HUD 패널을 넘치지 않는지 육안 확인) ④ 5초 쉬고 다시 때리면 수치 초기화 ⑤ Shift+F5 재입력/마을 이동 시 허수아비 제거·HUD 키 목록 복귀.
+
+## [사냥터/밸런스] 흙 벌판 1→2→3구역 난이도 계단 — 구역 전용 스폰 표 (2026-10-06) — 코드·데이터 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 제보**: "흙벌판 슬라임킹 이전 사냥터 3개 — 1 2 3 으로 갈수록 강해져야 하는데 그렇지 않다. 초반치고 강한 멧돼지가 1에 나오고 2·3에선 안 나온다."
+- **원인**: hunt01~03 은 모두 강제 바이옴 `earth_field` → `MonsterSpawner` 가 바이옴 표 하나로 뽑아 **세 구역의 구성·확률·스탯이 동일**했다. 멧돼지(가중치 30/200, ×1.4/×1.2 = HP 84·돌진 약 9.6)는 구역마다 약 15% 확률이라 운에 따라 2·3구역에서 안 보였다. 바위 고원·모래 언덕·만년 설원 체인도 같은 구조.
+- **수정**:
+  - `MonsterSpawner.SpawnMonstersForMap`: `MonsterSpawnDataSet.BiomeId` 칸에 **맵 이름**(hunt01 등)을 쓴 행이 있으면 그 맵은 그 행들만 쓴다. 없으면 기존 바이옴 표(하위 호환 — 다른 체인은 변화 없음).
+  - `MonsterSpawnDataSet` +9행: **hunt01** 슬라임 70 · 리본돼지 60 / **hunt02** 슬라임 40 · 리본돼지 50 · 주황버섯 60 · 멧돼지 20(×1.0) / **hunt03** 리본돼지 30 · 주황버섯 60 · 멧돼지 50(×1.2/×1.2). 기존 `earth_field` 행은 대체 경로로 유지(현재 사용처 없음).
+  - `QuestDataSet` 216 요약: "흙 벌판 2구역부터 나타나는 멧돼지를 3마리 퇴치하세요." (302·332 직업 시험도 멧돼지 + 3구역 끝 슬라임킹이라 순서 자연스러움.)
+- **후속 후보**: 바위 고원·모래 언덕·만년 설원 체인에도 같은 방식으로 구역 행 추가.
+- **검증**: LSP Error 0(Info 는 기존 동적 컴포넌트 접근) · `check_dataset_columns` 불일치 없음 · `maker_refresh_workspace` ok · build 16:03:47(refresh 직후) **Error 0 / Warning 9(기존 LWA-4012) / Info 857** · 신규 `.mlua` 없음. **런타임 검증 보류(제작자 수행)**: 구역별 `[SPAWN] Spawned variant monster ...` 로그 — hunt01 에 슬라임·리본돼지만, hunt02 에 주황버섯·멧돼지 소수, hunt03 에 멧돼지 다수(HpMul=1.2). 기존에 떠 있던 몬스터는 죽은 뒤 새 표로 교체된다.
+
+## [포탈/버그픽스] 영지 → 마을 목록 포탈 이동이 가끔 실패 (2026-10-06) — 코드 수정 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 제보**: "가끔 영지에서 마을로 포탈로 이동하는게 실패해."
+- **원인**: 영지 포탈은 트리거 안(`ActivePortal`)이면 목록 창을 연다(`TryUsePortal`, 조준 무관). 그런데 목적지를 고르면 서버 `ServerRequestWarpTo` 가 **조준(`IsAimTarget`) 재검사**를 했다 — 조준 셀(앞 1.8유닛)이 포탈 트리거와 겹쳐야 통과. 포탈 위·옆에 서 있거나 창을 고르는 사이 방향이 바뀌면 거절. 거절이 **로그·안내 없는 `return`** 이라 클라 전환 커버만 돌다 걷혀 "가끔 실패"로 보였다. 고정 포탈(`ServerRequestWarp`)은 원래 조준 검사가 없다.
+- **수정** (`PlayerController.ServerRequestWarpTo`): 조준 재검사 제거(위조 방지는 서버 트리거가 정한 `ActivePortal` + 같은 맵 + `PortalGate` 검사로 유지). 모든 거절 경로에서 `ClientCancelWarpCover()` 로 커버를 즉시 걷고 `reason=` 경고 로그, 포탈 밖(`no_active_portal`)·미해금은 안내 문구.
+- **검증**: VS Code 진단 0 · `maker_refresh_workspace` ok · build 16:00:43(refresh 직후) **Error 0 / Warning 9(기존 LWA-4012) / Info 857**. 신규 `.mlua` 없음. **런타임 검증 보류(제작자 수행)**: 영지 포탈에서 포탈을 등지거나 옆을 본 채 F → 마을 선택 시 이동되는지 · 목록 창을 띄운 뒤 포탈 밖으로 걸어 나가 선택하면 커버가 즉시 걷히고 "포탈 가까이에서…" 안내가 뜨는지(로그 `Rejected list-warp ... reason=no_active_portal`).
+
 ## [건축] 건축 테이블 · 기본형 오두막 설계도 · 부품 수정 구현 (2026-10-06) — 코드·데이터·모델·맵 완료 · refresh ok · build Error 0 · 타일 등록 대기 · 런타임 검증 보류
 
 - **제작자 요청**: "`template_painted_imagegen_v2.png` 이렇게 입혀놨어 한번 검증하고 건축 시스템을 구현까지 해볼까. '건축 테이블'을 이용해서 건축 … 일정한 건물 양식을 주고 '기본형' 건물을 먼저 지을 수 있는 형태, 그리고 이후 수정하는건 플레이어의 몫으로."

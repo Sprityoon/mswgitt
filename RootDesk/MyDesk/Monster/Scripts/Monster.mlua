@@ -13,6 +13,10 @@ script Monster extends Component
 	property number BossWeakenScale = 0.55
 	-- 장비·주문 부여 적중 시 둔화(SlowOnHit)의 지속 시간(초)
 	property number GearSlowDuration = 2.0
+	-- 보스 기절(SkillDataSet.BossStun=true 스킬만 — 대지 분쇄타): 지속 배율과, 기절이 끝난 뒤 다시 기절하지 않는 시간(초).
+	-- 패턴·도약(슈퍼아머) 중이거나 면역 시간 안이면 기존처럼 둔화로 바뀐다.
+	property number BossStunDurationScale = 0.75
+	property number BossStunImmuneSeconds = 6
 	@Sync @HideFromInspector property number Hp = 0
 	@Sync property boolean RespawnOn = false
 	@Sync @HideFromInspector property boolean IsDead = false
@@ -48,6 +52,10 @@ script Monster extends Component
 
 	-- Last entity that damaged this monster (the killer credit, server-side only).
 	@HideFromInspector property any LastAttacker = nil
+
+	-- 테스트 모드 허수아비(TestModeConfig Shift+F5)가 스폰 직후 켠다. 켜져 있으면 죽지 않고(HP 즉시 복구)
+	-- 넉백도 없으며, 받은 피해를 TestModeConfig.RecordDummyHit 로 넘겨 DPS 를 집계한다.
+	@HideFromInspector property boolean IsTrainingDummy = false
 
 	method void OnBeginPlay()
 		-- Initializes current HP and binds the taken-hit damage skin if present.
@@ -541,6 +549,12 @@ script Monster extends Component
 		end
 		self:FlashHit()
 
+		-- 허수아비 집계용 피해 출처: 스킬 id(평타는 ""), 플레이어가 아닌 공격자(소환수 등)는 "@이름".
+		local hitSource = ""
+		if isvalid(event.AttackerEntity) and not isvalid(event.AttackerEntity:GetComponent("script.PlayerController")) then
+			hitSource = "@" .. tostring(event.AttackerEntity.Name)
+		end
+
 		-- T65: 피격음 — 공격자 장착 도구 HitSoundRUID (MulticastPlaySkillSound 선례)
 		-- T66: 피격 이펙트 — PlayerCombat.PendingHitEffectRUID (HitEvent.Extra로는 스킬 식별 불가 확인)
 		if isvalid(event.AttackerEntity) then
@@ -559,6 +573,7 @@ script Monster extends Component
 				if isvalid(combatComp) then
 					---@type PlayerCombat
 					local combat = combatComp
+					hitSource = combat.PendingSkillId or ""
 					self:ApplySkillHit(combat.PendingSkillId, event.AttackerEntity)
 					local fx = combat.PendingHitEffectRUID
 					if fx ~= nil and fx ~= "" then
@@ -573,6 +588,15 @@ script Monster extends Component
 					end
 				end
 			end
+		end
+
+		if self.IsTrainingDummy then
+			-- 허수아비: 죽지 않는다. 피해만 넘기고 HP 를 채운다(드롭·경험치·처치 집계 없음).
+			self.Hp = self.MaxHp
+			if _TestModeConfig ~= nil then
+				_TestModeConfig:RecordDummyHit(self.Entity, event.TotalDamage, event.IsCritical, hitSource)
+			end
+			return
 		end
 
 		if self.Hp > 0 then return end
@@ -608,6 +632,7 @@ script Monster extends Component
 		--  ① 속박·기절 중인 적은 밀지 않는다 — 덫에 묶인 적이 맞을 때마다 덫 밖으로 밀려나는 일을 막는다.
 		--     보스의 속박·기절은 둔화로 바뀌어(ApplySkillHit) 여기 걸리지 않는다.
 		--  ② 스킬 행의 Knockback 열이 0 이면 넉백이 없다(장판·덫·도트 틱). 공란 = 넉백 있음. 평타는 항상 넉백이 있다.
+		if self.IsTrainingDummy then return false end
 		if self:GetSkillStatus("Root") ~= nil or self:GetSkillStatus("Stun") ~= nil then return false end
 		local combatComp = attacker:GetComponent("script.PlayerCombat")
 		if not isvalid(combatComp) then return true end
@@ -703,6 +728,25 @@ script Monster extends Component
 	end
 
 	@ExecSpace("ServerOnly")
+	method boolean CanBossBeStunned()
+		-- 보스에게 진짜 기절이 들어가는가. 패턴·도약 중(슈퍼아머 — MonsterAI 도 이 두 상태에선 기절을 무시한다)이거나
+		-- 직전 기절의 면역 시간 안이면 false → 호출부가 둔화로 바꾼다.
+		if _UtilLogic.ElapsedSeconds < (tonumber(self._T.BossStunImmuneUntil) or 0) then
+			log("[BOSS-STUN] " .. self:GetMonsterId() .. " immune (recent stun) -> slow")
+			return false
+		end
+		local ai = self.Entity:GetComponent("script.MonsterAI")
+		if isvalid(ai) then
+			local st = ai.CurrentAIState
+			if st == "PATTERN" or st == "LEAP" then
+				log("[BOSS-STUN] " .. self:GetMonsterId() .. " super armor (" .. tostring(st) .. ") -> slow")
+				return false
+			end
+		end
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
 	method void ApplySkillStatus(string skillId, Entity attacker)
 		-- 스킬 행의 상태이상(Status·콤보 소모)만 건다. 적중(ApplySkillHit)과, 피해 없이 상태만 거는 오라(야생의 고무 → 약화)가 함께 쓴다.
 		-- 장판 판정은 피해가 최소 1이라 "상태만" 걸 수 없어서 따로 둔 경로다 (job-branch-redesign §7.5).
@@ -718,7 +762,12 @@ script Monster extends Component
 		-- 내가 건 상태이상 지속은 교감·패시브(GetControlDurationScale)만큼 늘어난다. 보스는 아래에서 둔화로 바뀌며 한 번 더 줄어든다.
 		local duration = pc:SkillNumber(row, "StatusDuration", 0) * pc:GetControlDurationScale()
 		local value = pc:SkillNumber(row, "StatusValue", 0)
-		if self.IsBoss and (key == "Root" or key == "Stun") then
+		if self.IsBoss and key == "Stun" and pc:SkillText(row, "BossStun") == "true" and self:CanBossBeStunned() then
+			-- 정체성 기절기(대지 분쇄타)는 보스도 짧게 끊는다. 끝난 뒤 BossStunImmuneSeconds 동안은 다시 기절하지 않는다(연쇄 기절 방지).
+			duration = duration * self.BossStunDurationScale
+			self._T.BossStunImmuneUntil = _UtilLogic.ElapsedSeconds + duration + self.BossStunImmuneSeconds
+			log("[BOSS-STUN] " .. self:GetMonsterId() .. " stunned " .. string.format("%.2f", duration) .. "s by " .. tostring(skillId))
+		elseif self.IsBoss and (key == "Root" or key == "Stun") then
 			key = "Slow"
 			value = self.BossControlScale
 			duration = duration * self.BossControlScale

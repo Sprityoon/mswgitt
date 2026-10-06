@@ -443,6 +443,70 @@ script UISkillTreeController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method void SetTextColorSafe(Entity ent, Color color)
+		-- SetTextSafe 와 같은 이유로 두 글자 컴포넌트를 모두 지원한다.
+		-- (구형은 TextComponent 만 칠해서, GUI 렌더러인 선행·해금 줄의 충족/미충족 색이 한 번도 적용되지 않았다.)
+		if not isvalid(ent) then return end
+		if isvalid(ent.TextComponent) then
+			ent.TextComponent.FontColor = color
+		elseif isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.FontColor = color
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method number MeasureTextHeight(Entity ent, number width)
+		-- 그 글자 칸에 현재 문구를 width 폭으로 넣었을 때의 높이(px). 공용 툴팁과 같은 GetPreferredHeight 방식.
+		if not isvalid(ent) then return 0 end
+		if isvalid(ent.TextGUIRendererComponent) then
+			local c = ent.TextGUIRendererComponent
+			return c:GetPreferredHeight(c.Text, width)
+		end
+		if isvalid(ent.TextComponent) then
+			local c = ent.TextComponent
+			return c:GetPreferredHeight(c.Text, width)
+		end
+		return 0
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LayoutDetailPanel()
+		-- 상세 글자 칸(설명 → 선행 → 해금 → 상태 → 비용)을 실제 글자 높이대로 위에서부터 쌓는다(2026-10-06).
+		-- 칸이 고정 좌표·고정 높이라 설명이 길면 넘친 줄이 선행·해금 줄 위에 겹쳐 그려졌다.
+		-- 내용이 패널보다 길면 패널과 배경을 함께 늘리고, 짧으면 .ui 원래 높이로 되돌린다.
+		local panel = self._T.detailPanel
+		if not isvalid(panel) or not isvalid(panel.UITransformComponent) then return end
+		local descEnt = self._T.dDesc
+		if self._T.detailBase == nil then
+			-- .ui 에 저장된 원래 값(첫 호출 때 한 번만 기록).
+			local top = 96
+			if isvalid(descEnt) and isvalid(descEnt.UITransformComponent) then top = -descEnt.UITransformComponent.anchoredPosition.y end
+			self._T.detailBase = { height = panel.UITransformComponent.RectSize.y, top = top }
+		end
+		local base = self._T.detailBase
+		local gap = 10
+		local y = base.top
+		for _, ent in ipairs({ self._T.dDesc, self._T.dParent, self._T.dUnlock, self._T.dGate, self._T.dCost }) do
+			if isvalid(ent) and ent.Enable and isvalid(ent.UITransformComponent) then
+				local tf = ent.UITransformComponent
+				local w = tf.RectSize.x
+				local h = math.max(24, math.ceil(self:MeasureTextHeight(ent, w)))
+				tf.RectSize = Vector2(w, h)
+				tf.anchoredPosition = Vector2(tf.anchoredPosition.x, -y)
+				y = y + h + gap
+			end
+		end
+		local need = math.max(base.height, y - gap + 24)
+		local ptf = panel.UITransformComponent
+		ptf.RectSize = Vector2(ptf.RectSize.x, need)
+		local bg = panel:GetChildByName("Bg")
+		if isvalid(bg) and isvalid(bg.UITransformComponent) then
+			local btf = bg.UITransformComponent
+			btf.RectSize = Vector2(btf.RectSize.x, need)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
 	method string RowText(any row, string key)
 		-- 데이터셋 행의 열 값(없으면 ""). 열 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.
 		if row == nil then return "" end
@@ -465,6 +529,7 @@ script UISkillTreeController extends Component
 			self:SetTextSafe(self._T.dParent, "", false)
 			self:SetTextSafe(self._T.dGate, "", false)
 			self:SetTextSafe(self._T.dCost, "", false)
+			self:LayoutDetailPanel()
 			return
 		end
 
@@ -571,12 +636,10 @@ script UISkillTreeController extends Component
 			local parentLine = prefix .. parentName .. " Lv " .. tostring(parentNeed)
 				.. " 필요 (현재 " .. tostring(parentLv) .. ")"
 			self:SetTextSafe(self._T.dParent, parentLine, true)
-			if isvalid(self._T.dParent) and isvalid(self._T.dParent.TextComponent) then
-				if parentLv >= parentNeed then
-					self._T.dParent.TextComponent.FontColor = Color(0.94, 0.66, 0.19, 1.0)
-				else
-					self._T.dParent.TextComponent.FontColor = Color(0.85, 0.33, 0.31, 1.0)
-				end
+			if parentLv >= parentNeed then
+				self:SetTextColorSafe(self._T.dParent, Color(0.94, 0.66, 0.19, 1.0))
+			else
+				self:SetTextColorSafe(self._T.dParent, Color(0.85, 0.33, 0.31, 1.0))
 			end
 		else
 			self:SetTextSafe(self._T.dParent, "", false)
@@ -586,12 +649,10 @@ script UISkillTreeController extends Component
 		local unlockLine = self:UnlockGoalLine(row, pc)
 		if unlockLine ~= "" and level < 1 then
 			self:SetTextSafe(self._T.dUnlock, unlockLine, true)
-			if isvalid(self._T.dUnlock) and isvalid(self._T.dUnlock.TextComponent) then
-				if self:IsUnlockGateOpenClient(row, pc) then
-					self._T.dUnlock.TextComponent.FontColor = Color(0.94, 0.66, 0.19, 1.0)
-				else
-					self._T.dUnlock.TextComponent.FontColor = Color(0.85, 0.33, 0.31, 1.0)
-				end
+			if self:IsUnlockGateOpenClient(row, pc) then
+				self:SetTextColorSafe(self._T.dUnlock, Color(0.94, 0.66, 0.19, 1.0))
+			else
+				self:SetTextColorSafe(self._T.dUnlock, Color(0.85, 0.33, 0.31, 1.0))
 			end
 		else
 			self:SetTextSafe(self._T.dUnlock, "", false)
@@ -629,6 +690,7 @@ script UISkillTreeController extends Component
 			costLine = costLine .. " · MP " .. pc:SkillNumber(row, "ManaCost", 0) .. " · 기력 " .. (tonumber(row:GetItem("StaminaCost")) or 0)
 		end
 		self:SetTextSafe(self._T.dCost, costLine, true)
+		self:LayoutDetailPanel()
 	end
 
 	@ExecSpace("ClientOnly")

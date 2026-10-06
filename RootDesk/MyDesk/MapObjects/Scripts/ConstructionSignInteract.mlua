@@ -1,0 +1,107 @@
+@Component
+script ConstructionSignInteract extends Component
+
+	-- 공사장 표지판 / 안내판 상호작용 컴포넌트
+	-- F 키 / 모바일 상호작용 버튼 클릭 시 안내 대화창 또는 토스트 출력
+
+	property any keyHandler = nil
+	property any interactRequestHandler = nil
+
+	-- 조준 가이드 설정 (PlayerController:ReadInteractLabel이 읽음)
+	property integer AimFootprintW = 1
+	property integer AimFootprintH = 1
+	property string InteractLabel = "표지판 읽기"
+
+	-- 안내판 정보
+	property string SignTitle = "공사 안내판"
+	property string Page1 = "🚧 [공사 중] 현재 이 구역은 새로운 콘텐츠 개발 공사가 진행 중입니다."
+	property string Page2 = "새롭고 멋진 모험 구역으로 찾아뵐 예정이니 조금만 기다려주세요! 🛠️"
+	property string Page3 = ""
+
+	property boolean UseDialog = true
+
+	method void OnBeginPlay()
+		if self:IsClient() then
+			self.keyHandler = _InputService:ConnectEvent(KeyDownEvent, self.OnKeyDown)
+			local lp = _UserService.LocalPlayer
+			if isvalid(lp) then
+				self.interactRequestHandler = lp:ConnectEvent(InteractRequestEvent, function()
+					self:TryInteract()
+				end)
+			else
+				log_warning("[ConstructionSign] LocalPlayer nil — InteractRequestEvent not connected")
+			end
+		end
+	end
+
+	method void OnEndPlay()
+		if self:IsClient() then
+			if self.keyHandler ~= nil then
+				_InputService:DisconnectEvent(KeyDownEvent, self.keyHandler)
+				self.keyHandler = nil
+			end
+			if self.interactRequestHandler ~= nil then
+				local lp = _UserService.LocalPlayer
+				if isvalid(lp) then
+					lp:DisconnectEvent(InteractRequestEvent, self.interactRequestHandler)
+				end
+				self.interactRequestHandler = nil
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnKeyDown(KeyDownEvent event)
+		if event.key ~= KeyboardKey.F then return end
+		self:TryInteract()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void TryInteract()
+		local localPlayer = _UserService.LocalPlayer
+		if not isvalid(localPlayer) then return end
+		local pc = localPlayer:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		if not pc:IsAimTarget(self.Entity) then return end
+
+		log("[AIM] ConstructionSignInteract aim-ok")
+		self:ShowNotice()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowNotice()
+		if self.UseDialog then
+			local dialog = self:GetDialogController()
+			if dialog ~= nil then
+				if dialog:IsOpen() then return end
+				local pages = {}
+				if self.Page1 ~= nil and self.Page1 ~= "" then table.insert(pages, self.Page1) end
+				if self.Page2 ~= nil and self.Page2 ~= "" then table.insert(pages, self.Page2) end
+				if self.Page3 ~= nil and self.Page3 ~= "" then table.insert(pages, self.Page3) end
+				if #pages == 0 then
+					table.insert(pages, "🚧 공사 중입니다.")
+				end
+				dialog:OpenTalk(self.SignTitle, pages)
+				return
+			end
+		end
+
+		-- 토스트 대체 출력
+		local toast = _EntityService:GetEntityByPath("/ui/HUDGroup/QuestToast")
+		if isvalid(toast) then
+			toast.Enable = true
+			local textEnt = toast:GetChildByName("Text", true)
+			if isvalid(textEnt) and isvalid(textEnt.TextGUIRendererComponent) then
+				textEnt.TextGUIRendererComponent.Text = self.Page1
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method any GetDialogController()
+		local ent = _EntityService:GetEntityByPath("/ui/DialogGroup/Controller")
+		if not isvalid(ent) then return nil end
+		return ent:GetComponent("script.UIDialogController")
+	end
+
+end

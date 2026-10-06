@@ -56,6 +56,12 @@ script TestModeConfig extends Logic
 	--   Shift+F12 : 진행 중 퀘스트를 NPC 없이 즉시 완료 (정식 PlayerQuest.CompleteQuests 경로 — 보상·전직·다음 퀘스트 자동 수락 그대로)
 	--        ※ 수락 전 퀘스트는 대상이 아니다(NPC에게 먼저 수락). 레벨·직업 자격이 안 되면 건너뛴다 — F7 로 레벨을 맞출 것
 	--   F2/F3/F4 : 랭킹 샘플 UI        (RankingBasic/Sample/RankingSampleUILogic)
+	--   [직업 테스트] (2026-10-06) — Ctrl 은 공격 키라 조합에 쓰지 않는다.
+	--   F1 : 다음 직업으로 전환 (SkillDataSet 의 JobId 순서, 모험가 포함). 이전 직업 스킬 SP 는 환급
+	--   Shift+F1 : 모험가로 되돌리기
+	--   Shift+F8 : 현재 직업 + 공용 스킬 전부 최대 레벨 (필요 레벨까지 레벨업, 해금 퀘스트 무시, 필요 아이템 보충)
+	--   Shift+F5 : 허수아비 소환/제거 (사냥터·보스맵 전용) — 죽지 않는 표적, 키 목록 HUD 에 DPS 표시
+	--   Shift+F7 : 현재 직업 전용 무기 전부 지급 (item_dataset.EquipJobs). 삼위일체(TRI) 스킬 직업은 장갑 전부 + 최고 장갑 장착
 	-- ⚠ F9 와 F2~F4 는 원래 게이트가 없어 출시본에서도 열렸다. 각 스크립트에 EnableTestMode
 	--   가드를 넣어 막았으므로, 키를 추가/제거하면 아래 도움말 문구도 같이 고칠 것.
 	-- 프로덕션 스크립트를 건드리지 않도록 치트 코드는 전부 이 DevTools 파일 안에만 둔다.
@@ -79,6 +85,18 @@ script TestModeConfig extends Logic
 	property number TestDayTime = 100
 	-- F10 이 잡아 둔 재추첨 타이머
 	property any testWeatherTimerId = nil
+
+	-- [직업 테스트 — 허수아비] 스폰할 몬스터 모델(MonsterSpawnDataSet 과 같은 모델 id). AI·공격은 꺼서 세워 둔다.
+	property string DummyModelName = "stump"
+	-- 허수아비 방어력. 실제 몬스터처럼 피해에서 빠진다(Monster.ResolveSkillDamage). 직업 간 비교는 같은 값으로.
+	property number DummyDefense = 6
+	property number DummyMaxHp = 999999
+	-- 이 시간(초) 동안 안 때리면 다음 타격부터 새 측정 구간을 시작한다(스킬별로 끊어서 비교하기 위함).
+	property number DummyIdleResetSeconds = 5
+	-- 최근 DPS 창 길이(초).
+	property number DummyRecentWindow = 3
+	-- Shift+F8 이 스킬 필요 아이템(ConsumeItem·RequireEquippedItem·PassiveItem)을 이 수량까지 채운다.
+	property integer TestItemTopUp = 50
 
 	-- KeyDownEvent 핸들러. property any 로 잡아두지 않으면 GC 되어 조용히 안 먹는다.
 	property any debugKeyHandler = nil
@@ -108,10 +126,12 @@ script TestModeConfig extends Logic
 	@ExecSpace("ClientOnly")
 	method string BuildDebugKeyHelp()
 		-- HUD 본문에 들어갈 키 목록. 수치는 프로퍼티에서 읽어 안내와 실제가 어긋나지 않게 한다.
-		return "F5            보스 레이드 대기실 (" .. self.TestRaidBossId .. ")\n"
+		return "F1            직업 전환 (Shift: 모험가로)\n"
+			.. "F5            보스 레이드 대기실 (" .. self.TestRaidBossId .. ")\n"
+			.. "Shift+F5      허수아비 소환/제거 (DPS)\n"
 			.. "F6            키 목록 표시/숨김\n"
-			.. "F7            레벨업 +" .. tostring(self.GrantLevelCount) .. "\n"
-			.. "F8            SP +" .. tostring(self.GrantSPAmount) .. "\n"
+			.. "F7            레벨업 +" .. tostring(self.GrantLevelCount) .. " (Shift: 전용 무기)\n"
+			.. "F8            SP +" .. tostring(self.GrantSPAmount) .. " (Shift: 스킬 전부 최대)\n"
 			.. "F9            리소스 프리뷰\n"
 			.. "F10 / F11     날씨 순환 · 낮/밤 전환\n"
 			.. "F12           퀘스트 보고 준비 (Shift: 즉시 완료)\n"
@@ -121,16 +141,21 @@ script TestModeConfig extends Logic
 	@ExecSpace("ClientOnly")
 	method string BuildDebugKeyHelpLine()
 		-- 로그 한 줄용 요약(개행 없는 형태).
-		return "F5 레이드 대기실 · F6 목록 · F7 레벨업 +" .. tostring(self.GrantLevelCount)
-			.. " · F8 SP +" .. tostring(self.GrantSPAmount)
+		return "F1 직업 전환 · F5 레이드 대기실(Shift 허수아비) · F6 목록 · F7 레벨업 +" .. tostring(self.GrantLevelCount) .. "(Shift 전용 무기)"
+			.. " · F8 SP +" .. tostring(self.GrantSPAmount) .. "(Shift 스킬 최대)"
 			.. " · F9 리소스 프리뷰 · F10 날씨 순환 · F11 낮/밤 · F12 퀘스트 보고 준비(Shift 즉시 완료) · F2/F3/F4 랭킹 샘플"
 	end
 
 	@ExecSpace("ClientOnly")
 	method void RefreshDebugKeyHud()
-		-- HUD 오버레이 본문을 현재 프로퍼티 값으로 다시 채운다.
+		-- HUD 오버레이 본문을 현재 프로퍼티 값으로 다시 채운다. 허수아비 측정 중이면 키 목록 대신 측정값을 보인다.
 		if not isvalid(self.debugHudText) then return end
-		self.debugHudText.Text = self:BuildDebugKeyHelp()
+		local dummyText = self._T.dummyStatsText
+		if dummyText ~= nil and dummyText ~= "" then
+			self.debugHudText.Text = dummyText
+		else
+			self.debugHudText.Text = self:BuildDebugKeyHelp()
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -168,14 +193,30 @@ script TestModeConfig extends Logic
 		-- 디버그 핫키 라우팅. 실제 지급/검증은 전부 서버가 한다.
 		if self.EnableTestMode ~= true then return end
 		if self.EnableDebugHotkeys ~= true then return end
-		if event.key == KeyboardKey.F6 then
+		-- Shift 조합(F1·F5·F8·F12). _InputService 에는 IsKeyDown 이 없다(규칙 35) — IsKeyPressed.
+		local shift = _InputService:IsKeyPressed(KeyboardKey.LeftShift) or _InputService:IsKeyPressed(KeyboardKey.RightShift)
+		if event.key == KeyboardKey.F1 then
+			self:RequestCycleJob(shift)
+		elseif event.key == KeyboardKey.F6 then
 			self:ShowDebugKeyHelp()
 		elseif event.key == KeyboardKey.F7 then
-			self:RequestGrantLevel(self.GrantLevelCount)
+			if shift then
+				self:RequestJobWeapons()
+			else
+				self:RequestGrantLevel(self.GrantLevelCount)
+			end
 		elseif event.key == KeyboardKey.F8 then
-			self:RequestGrantSkillPoints(self.GrantSPAmount)
+			if shift then
+				self:RequestMaxJobSkills()
+			else
+				self:RequestGrantSkillPoints(self.GrantSPAmount)
+			end
 		elseif event.key == KeyboardKey.F5 then
-			self:RequestEnterTestRaid()
+			if shift then
+				self:RequestToggleDummy()
+			else
+				self:RequestEnterTestRaid()
+			end
 		elseif event.key == KeyboardKey.F10 then
 			self:RequestCycleWeather()
 		elseif event.key == KeyboardKey.F11 then
@@ -491,6 +532,475 @@ script TestModeConfig extends Logic
 		end
 
 		return Vector2(0.0, 0.0)
+	end
+
+	-- =========================================================================
+	-- [직업 테스트] F1 직업 전환 · Shift+F8 스킬 전부 최대 · Shift+F5 허수아비 DPS (2026-10-06)
+	-- RPC 는 얇게(테스트 모드 게이트 + 유저 조회), 본체는 ServerOnly 메서드에 둔다(규칙 53).
+	-- =========================================================================
+
+	@ExecSpace("Server")
+	method void RequestCycleJob(boolean toAdventurer)
+		-- 테스트 모드 전용 직업 전환 요청.
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+		local userEntity = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(userEntity) then return end
+		self:CycleJobFor(userEntity, toAdventurer)
+	end
+
+	@ExecSpace("Server")
+	method void RequestMaxJobSkills()
+		-- 테스트 모드 전용 스킬 전부 최대 요청.
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+		local userEntity = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(userEntity) then return end
+		self:MaxJobSkillsFor(userEntity)
+	end
+
+	@ExecSpace("Server")
+	method void RequestToggleDummy()
+		-- 테스트 모드 전용 허수아비 소환/제거 요청.
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+		local userEntity = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(userEntity) then return end
+		self:ToggleDummyFor(userEntity)
+	end
+
+	@ExecSpace("Server")
+	method void RequestJobWeapons()
+		-- 테스트 모드 전용 직업 무기 지급 요청.
+		if self.EnableTestMode ~= true then return end
+		if self.EnableDebugHotkeys ~= true then return end
+		local userEntity = _UserService:GetUserEntityByUserId(senderUserId)
+		if not isvalid(userEntity) then return end
+		self:GiveJobWeaponsFor(userEntity)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void GiveJobWeaponsFor(Entity userEntity)
+		-- 무기 칸 아이템 중 EquipJobs 에 현재 직업이 든 것을 1개씩 지급한다(주무기 미등록이면 보유 최고 무기가 자동 사용됨).
+		-- 장갑이 무기 노릇을 하는 직업(스킬 ScaleStat=TRI, 맨주먹 파이터)은 장갑 칸 아이템 전부 + 레벨이 되는 최고 방어력 장갑을 장착한다.
+		local pcComp = userEntity:GetComponent("script.PlayerController")
+		local invComp = userEntity:GetComponent("script.PlayerInventory")
+		if not isvalid(pcComp) or not isvalid(invComp) then return end
+		---@type PlayerController
+		local pc = pcComp
+		---@type PlayerInventory
+		local inv = invComp
+		local userId = userEntity.PlayerComponent.UserId
+		local job = pc.JobId
+		if job == "" then
+			pc:ShowMineFeedback("[TEST] 모험가는 전용 무기가 없습니다 — F1 로 직업을 고르세요", userId)
+			return
+		end
+
+		local usesTri = false
+		local skillDs = _DataService:GetTable("SkillDataSet")
+		if skillDs ~= nil then
+			for i = 1, skillDs:GetRowCount() do
+				if skillDs:GetCell(i, "JobId") == job and skillDs:GetCell(i, "ScaleStat") == "TRI" then usesTri = true end
+			end
+		end
+
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return end
+		local given = {}
+		local bestGlove = ""
+		local bestDef = -1
+		for i = 1, ds:GetRowCount() do
+			local name = ds:GetCell(i, "Name") or ""
+			local slot = ds:GetCell(i, "EquipSlot") or ""
+			local jobs = ds:GetCell(i, "EquipJobs") or ""
+			local pick = false
+			if slot == "weapon" and jobs ~= "" and inv:IsItemAllowedForJob(name, job) then pick = true end
+			if usesTri and slot == "gloves" then pick = true end
+			if name ~= "" and pick then
+				if inv:GetItemCount(name) < 1 then
+					inv:AddItem(name, 1)
+					given[#given + 1] = inv:GetItemDisplayName(name)
+				end
+				if slot == "gloves" then
+					local need = math.floor(tonumber(ds:GetCell(i, "EquipLevel")) or 0)
+					local def = tonumber(ds:GetCell(i, "Defense")) or 0
+					if need <= pc.Level and def > bestDef then
+						bestDef = def
+						bestGlove = name
+					end
+				end
+			end
+		end
+
+		-- 장갑 장착: 보유 키(고유 키 장비는 "이름_번호")를 찾아 장비 칸에 등록한다.
+		local equipped = ""
+		if bestGlove ~= "" then
+			local gloveKey = ""
+			for key, entry in pairs(inv.Items) do
+				if key == bestGlove or (type(entry) == "table" and entry.name == bestGlove) then gloveKey = key end
+			end
+			if gloveKey ~= "" then
+				local slots = inv:GetGearSlots()
+				slots["gloves"] = gloveKey
+				inv.GearJson = inv:SafeEncodeJson(slots, "{}")
+				inv:ClientOnGearChanged(userId)
+				equipped = " · 장갑 장착: " .. inv:GetItemDisplayName(bestGlove)
+			end
+		end
+		if _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(userId) end
+
+		local msg = "[TEST] " .. pc:GetJobName(job) .. " 전용 장비 " .. tostring(#given) .. "종 지급" .. equipped
+		if #given == 0 and equipped == "" then msg = "[TEST] 이미 " .. pc:GetJobName(job) .. " 전용 장비를 모두 갖고 있습니다" end
+		pc:ShowMineFeedback(msg .. " (착용 레벨 부족 무기는 F7)", userId)
+		log("[TESTMODE] job weapons job=" .. job .. " given=" .. tostring(#given) .. " glove=" .. bestGlove .. " user=" .. tostring(userId))
+	end
+
+	@ExecSpace("ServerOnly")
+	method table GetTestJobList()
+		-- 전환 순서: 모험가("") → SkillDataSet 에 나오는 JobId 순서. 직업을 추가하면 CSV 만 고치면 된다.
+		local jobs = { "" }
+		local seen = { [""] = true }
+		local ds = _DataService:GetTable("SkillDataSet")
+		if ds == nil then return jobs end
+		for i = 1, ds:GetRowCount() do
+			local job = ds:GetCell(i, "JobId") or ""
+			if not seen[job] then
+				seen[job] = true
+				jobs[#jobs + 1] = job
+			end
+		end
+		return jobs
+	end
+
+	@ExecSpace("ServerOnly")
+	method void CycleJobFor(Entity userEntity, boolean toAdventurer)
+		-- 현재 직업 스킬을 환급(정식 BuildProgressReset 경로)한 뒤 다음 직업으로 바꾼다. 전직 자격 검사(CanReceiveJob)는 건너뛴다.
+		local pcComp = userEntity:GetComponent("script.PlayerController")
+		if not isvalid(pcComp) then return end
+		---@type PlayerController
+		local pc = pcComp
+		local userId = userEntity.PlayerComponent.UserId
+
+		local jobs = self:GetTestJobList()
+		local nextJob = ""
+		if not toAdventurer then
+			local cur = 1
+			for i, job in ipairs(jobs) do
+				if job == pc.JobId then cur = i end
+			end
+			nextJob = jobs[(cur % #jobs) + 1]
+		end
+		if nextJob == pc.JobId then
+			pc:ShowMineFeedback("[TEST] 이미 " .. pc:GetJobName(nextJob) .. " 입니다", userId)
+			return
+		end
+
+		local beforeJob = pc.JobId
+		if beforeJob ~= "" then
+			local plan = pc:BuildProgressReset("JobSP")
+			if plan ~= nil then pc:ApplyProgressReset(plan) end
+		end
+		pc.JobId = nextJob
+		pc:SanitizeEquippedSkills()
+		pc.Mana = pc:GetMaxMana()
+		if _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(userId) end
+
+		local hint = ""
+		if nextJob ~= "" then hint = " — Shift+F8 스킬 전부 최대" end
+		pc:ShowMineFeedback("[TEST] 직업 → " .. pc:GetJobName(nextJob) .. hint, userId)
+		log("[TESTMODE] job " .. tostring(beforeJob) .. " -> " .. tostring(nextJob) .. " user=" .. tostring(userId))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void MaxJobSkillsFor(Entity userEntity)
+		-- 현재 직업 + 공용 스킬을 MaxLevel 로 맞춘다. 직업 변형 행(JobVariantOf)은 원본 레벨을 따르므로 건너뛴다.
+		-- 레벨은 직접 대입하지 않고 AddXP(정식 레벨업 경로)로 가장 높은 RequiredLevel 까지 올린다.
+		local pcComp = userEntity:GetComponent("script.PlayerController")
+		local invComp = userEntity:GetComponent("script.PlayerInventory")
+		if not isvalid(pcComp) then return end
+		---@type PlayerController
+		local pc = pcComp
+		local userId = userEntity.PlayerComponent.UserId
+		local ds = _DataService:GetTable("SkillDataSet")
+		if ds == nil then return end
+
+		local ok, levels = pcall(function() return _HttpService:JSONDecode(pc.SkillLevelsJson) end)
+		if not ok or type(levels) ~= "table" then levels = {} end
+
+		local needLevel = 1
+		local newIds = {}
+		local items = {}
+		local count = 0
+		for i = 1, ds:GetRowCount() do
+			local row = ds:FindRow("SkillId", ds:GetCell(i, "SkillId"))
+			if row == nil or not pc:IsSkillJobAllowed(row) then continue end
+			if pc:SkillText(row, "JobVariantOf") ~= "" then continue end
+			local id = pc:SkillText(row, "SkillId")
+			local maxLevel = math.max(1, math.floor(pc:SkillNumber(row, "MaxLevel", 1)))
+			local cur = math.floor(tonumber(levels[id]) or 0)
+			if cur < 1 then newIds[#newIds + 1] = id end
+			levels[id] = maxLevel
+			count = count + 1
+			needLevel = math.max(needLevel, math.floor(pc:SkillNumber(row, "RequiredLevel", 1)))
+			for _, col in ipairs({ "ConsumeItem", "RequireEquippedItem", "PassiveItem" }) do
+				local itemName = pc:SkillText(row, col)
+				if itemName ~= "" then items[itemName] = true end
+			end
+		end
+
+		-- 레벨: 스킬 사용 조건이 레벨을 다시 보는 경우가 있어 RequiredLevel 까지 실제로 올린다.
+		local guard = 0
+		while pc.Level < needLevel and guard < 100 do
+			local need = pc.MaxXP - pc.XP
+			if need < 1 then need = 1 end
+			pc:AddXP(need)
+			guard = guard + 1
+		end
+
+		pc.SkillLevelsJson = _HttpService:JSONEncode(levels)
+		for _, id in ipairs(newIds) do
+			pc:TryAutoEquipOnUnlock(id)
+		end
+		pc:SanitizeEquippedSkills()
+		pc.Mana = pc:GetMaxMana()
+
+		-- 필요 아이템(투척 손도끼 등)을 TestItemTopUp 까지 채운다.
+		local given = 0
+		if isvalid(invComp) then
+			for itemName, _ in pairs(items) do
+				local missing = self.TestItemTopUp - invComp:GetItemCount(itemName)
+				if missing > 0 then
+					invComp:AddItem(itemName, missing)
+					given = given + 1
+				end
+			end
+		end
+		if _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(userId) end
+
+		pc:ShowMineFeedback("[TEST] " .. pc:GetJobName(pc.JobId) .. " 스킬 " .. tostring(count) .. "종 최대 · Lv " .. tostring(pc.Level) .. " — K에서 스킬바 장착", userId)
+		log("[TESTMODE] max skills job=" .. tostring(pc.JobId) .. " count=" .. tostring(count) .. " level=" .. tostring(pc.Level) .. " items=" .. tostring(given) .. " user=" .. tostring(userId))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ToggleDummyFor(Entity userEntity)
+		-- 유저당 허수아비 1개. 있으면 제거, 없으면 바라보는 방향 3칸 앞에 소환한다.
+		local pcComp = userEntity:GetComponent("script.PlayerController")
+		if not isvalid(pcComp) then return end
+		---@type PlayerController
+		local pc = pcComp
+		local userId = userEntity.PlayerComponent.UserId
+		if self._T.dummies == nil then self._T.dummies = {} end
+
+		local existing = self._T.dummies[userId]
+		if existing ~= nil then
+			self:RemoveDummy(userId)
+			pc:ShowMineFeedback("[TEST] 허수아비 제거", userId)
+			return
+		end
+
+		local map = userEntity.CurrentMap
+		if not isvalid(map) or not pc:IsCombatSkillMap() then
+			pc:ShowMineFeedback("[TEST] 허수아비는 사냥터·보스맵에서만 소환됩니다", userId)
+			return
+		end
+
+		local p = userEntity.TransformComponent.WorldPosition
+		local pos = Vector3(p.x + pc.LastDirectionX * 3, p.y + pc.LastDirectionY * 3, 0)
+		local modelId = _EntryService:GetModelIdByName(self.DummyModelName)
+		if modelId == nil or modelId == "" then modelId = self.DummyModelName end
+		local dummy = _SpawnService:SpawnByModelId(modelId, "TrainingDummy_" .. tostring(userId), pos, map)
+		if not isvalid(dummy) then
+			log_warning("[TESTMODE] dummy spawn failed model=" .. tostring(self.DummyModelName))
+			return
+		end
+
+		-- 세워 두기: AI(이동·추적)와 근접 공격을 끈다.
+		local ai = dummy:GetComponent("script.MonsterAI")
+		if isvalid(ai) then ai.Enable = false end
+		local melee = dummy:GetComponent("script.MonsterMeleeAttack")
+		if isvalid(melee) then melee.Enable = false end
+
+		local mComp = dummy:GetComponent("script.Monster")
+		if isvalid(mComp) then
+			mComp.IsTrainingDummy = true
+			mComp.MonsterId = "training_dummy"
+			mComp.Defense = self.DummyDefense
+			mComp.MaxHp = self.DummyMaxHp
+			mComp.Hp = self.DummyMaxHp
+		end
+
+		-- 일반 몬스터와 구분되는 금빛 틴트(피격 플래시 뒤 이 색으로 복귀).
+		local sprite = dummy.SpriteRendererComponent
+		if isvalid(sprite) then
+			sprite.IgnoreMapLayerCheck = true
+			sprite.SortingLayer = _RenderLayers.EntityLayer
+			sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(dummy, 0)
+			local tint = Color(1.0, 0.85, 0.45, 1.0)
+			sprite.Color = tint
+			if isvalid(mComp) then mComp.BaseTint = tint end
+		end
+
+		self._T.dummies[userId] = { entity = dummy, seg = nil, dirty = true }
+		self:EnsureDummyTimer()
+		pc:ShowMineFeedback("[TEST] 허수아비 소환 — 때리면 키 목록 HUD 에 DPS 표시", userId)
+		log("[TESTMODE] dummy spawned map=" .. tostring(map.Name) .. " pos=" .. tostring(pos) .. " user=" .. tostring(userId))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RemoveDummy(string userId)
+		-- 허수아비 엔티티와 측정 기록을 지우고, 접속 중이면 HUD 를 키 목록으로 되돌린다.
+		local rec = self._T.dummies ~= nil and self._T.dummies[userId] or nil
+		if rec == nil then return end
+		if isvalid(rec.entity) then rec.entity:Destroy() end
+		self._T.dummies[userId] = nil
+		if isvalid(_UserService:GetUserEntityByUserId(userId)) then
+			self:ClientShowDummyStats("", userId)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RecordDummyHit(Entity dummy, integer damage, boolean isCritical, string source)
+		-- Monster.HandleHitEvent 가 허수아비 피격마다 부른다. 쉬는 시간이 DummyIdleResetSeconds 를 넘으면 새 구간.
+		if self._T.dummies == nil then return end
+		local rec = nil
+		for _, r in pairs(self._T.dummies) do
+			if r.entity == dummy then rec = r end
+		end
+		if rec == nil then return end
+		local now = _UtilLogic.ElapsedSeconds
+		local seg = rec.seg
+		if seg == nil or now - seg.lastT > self.DummyIdleResetSeconds then
+			seg = { startT = now, lastT = now, total = 0, hits = 0, crits = 0, maxHit = 0, maxSource = "", bySource = {}, recent = {} }
+			rec.seg = seg
+		end
+		local d = math.max(0, damage or 0)
+		seg.lastT = now
+		seg.total = seg.total + d
+		seg.hits = seg.hits + 1
+		if isCritical then seg.crits = seg.crits + 1 end
+		local label = self:ResolveDummySourceLabel(source or "")
+		if d > seg.maxHit then
+			seg.maxHit = d
+			seg.maxSource = label
+		end
+		seg.bySource[label] = (seg.bySource[label] or 0) + d
+		seg.recent[#seg.recent + 1] = { t = now, d = d }
+		rec.dirty = true
+	end
+
+	@ExecSpace("ServerOnly")
+	method string ResolveDummySourceLabel(string source)
+		-- 스킬 id → 표시 이름. "" = 평타, "@이름" = 플레이어가 아닌 공격자(소환수 등).
+		if source == "" then return "평타" end
+		if string.sub(source, 1, 1) == "@" then return "소환수·기타" end
+		local ds = _DataService:GetTable("SkillDataSet")
+		local row = ds ~= nil and ds:FindRow("SkillId", source) or nil
+		if row ~= nil then
+			local name = row:GetItem("Name")
+			if name ~= nil and tostring(name) ~= "" then return tostring(name) end
+		end
+		return source
+	end
+
+	@ExecSpace("ServerOnly")
+	method void EnsureDummyTimer()
+		-- 0.5초마다 측정값을 소유자에게 보낸다. 허수아비가 하나도 없으면 멈춘다.
+		if self._T.dummyTimer ~= nil then return end
+		self._T.dummyTimer = _TimerService:SetTimerRepeat(function()
+			self:TickDummies()
+		end, 0.5)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void TickDummies()
+		-- 소유자가 나갔거나 다른 맵으로 가면 허수아비를 치운다. 측정 중이면 HUD 문구를 갱신한다.
+		local now = _UtilLogic.ElapsedSeconds
+		local alive = 0
+		local stale = {}
+		for userId, rec in pairs(self._T.dummies or {}) do
+			local owner = _UserService:GetUserEntityByUserId(userId)
+			if not isvalid(rec.entity) or not isvalid(owner) or owner.CurrentMap ~= rec.entity.CurrentMap then
+				stale[#stale + 1] = userId
+			else
+				alive = alive + 1
+				local seg = rec.seg
+				-- 최근 DPS 가 0 으로 떨어지는 모습까지 보이도록 마지막 타격 뒤 창 길이 + 1초 동안은 계속 보낸다.
+				if rec.dirty or (seg ~= nil and now - seg.lastT < self.DummyRecentWindow + 1) then
+					rec.dirty = false
+					self:ClientShowDummyStats(self:BuildDummyStatsText(owner, seg, now), userId)
+				end
+			end
+		end
+		for _, userId in ipairs(stale) do
+			self:RemoveDummy(userId)
+			log("[TESTMODE] dummy removed (owner left map) user=" .. tostring(userId))
+		end
+		if alive == 0 and #stale == 0 and self._T.dummyTimer ~= nil then
+			_TimerService:ClearTimer(self._T.dummyTimer)
+			self._T.dummyTimer = nil
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method string BuildDummyStatsText(Entity owner, any seg, number now)
+		-- HUD 에 그릴 측정 결과(키 목록과 비슷한 8줄 안팎).
+		local job = "?"
+		local level = 0
+		local pcComp = owner:GetComponent("script.PlayerController")
+		if isvalid(pcComp) then
+			---@type PlayerController
+			local pc = pcComp
+			job = pc:GetJobName(pc.JobId)
+			level = pc.Level
+		end
+		local head = "[허수아비] " .. job .. " Lv " .. tostring(level) .. " · 방어 " .. tostring(self.DummyDefense) .. "\n"
+		local foot = "\n" .. tostring(self.DummyIdleResetSeconds) .. "초 쉬면 새 구간 · Shift+F5 제거"
+		if seg == nil then
+			return head .. "때려 보세요 — 피해량·DPS 가 여기에 표시됩니다\n" .. foot
+		end
+
+		-- 최근 창 밖의 기록은 버린다.
+		local recentSum = 0
+		local kept = {}
+		for _, h in ipairs(seg.recent) do
+			if now - h.t <= self.DummyRecentWindow then
+				kept[#kept + 1] = h
+				recentSum = recentSum + h.d
+			end
+		end
+		seg.recent = kept
+
+		local dur = math.max(1, seg.lastT - seg.startT)
+		local critPct = 0
+		if seg.hits > 0 then critPct = math.floor(seg.crits * 100 / seg.hits + 0.5) end
+		local text = head
+			.. string.format("평균 DPS %.1f  (%.1f초)\n", seg.total / dur, dur)
+			.. string.format("최근 %d초 DPS %.1f\n", math.floor(self.DummyRecentWindow), recentSum / self.DummyRecentWindow)
+			.. "누적 " .. tostring(math.floor(seg.total)) .. " · " .. tostring(seg.hits) .. "타 · 치명 " .. tostring(critPct) .. "%\n"
+			.. "최대 한 방 " .. tostring(math.floor(seg.maxHit)) .. " (" .. seg.maxSource .. ")\n"
+
+		-- 출처별 비중 상위 3개.
+		local list = {}
+		for label, sum in pairs(seg.bySource) do list[#list + 1] = { label = label, sum = sum } end
+		table.sort(list, function(a, b) return a.sum > b.sum end)
+		for i = 1, math.min(3, #list) do
+			local pct = 0
+			if seg.total > 0 then pct = math.floor(list[i].sum * 100 / seg.total + 0.5) end
+			text = text .. "· " .. list[i].label .. " " .. tostring(math.floor(list[i].sum)) .. " (" .. tostring(pct) .. "%)\n"
+		end
+		return text .. foot
+	end
+
+	@ExecSpace("Client")
+	method void ClientShowDummyStats(string text)
+		-- 서버가 보낸 측정 문구를 키 목록 HUD 에 그린다. 빈 문자열이면 키 목록으로 되돌린다.
+		self._T.dummyStatsText = text
+		if text ~= "" then
+			self:SetDebugKeyHudVisible(true)
+		else
+			self:RefreshDebugKeyHud()
+		end
 	end
 
 end
