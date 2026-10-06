@@ -160,12 +160,12 @@ script UIQuestLogController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void PlayClick()
-		_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume)
+		_BGMManager:PlayInGameSound(self.uiClickSfx, self.uiSfxVolume)
 	end
 
 	@ExecSpace("ClientOnly")
 	method void PlayHover()
-		_SoundService:PlaySound(self.uiHoverSfx, self.uiSfxVolume)
+		_BGMManager:PlayInGameSound(self.uiHoverSfx, self.uiSfxVolume)
 	end
 
 	@ExecSpace("ClientOnly")

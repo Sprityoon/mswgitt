@@ -84,7 +84,7 @@ script UIRequestController extends Component
 		local day = self:GetServerDayIndex()
 		if isvalid(self.dayText) then
 			local tc = self.dayText.TextComponent
-			if isvalid(tc) then tc.Text = "오늘의 의뢰  ·  Day " .. tostring(day) end
+			if isvalid(tc) then tc.Text = "오늘의 의뢰  ·  " .. tostring(day) .. "일차" end
 		end
 		if isvalid(self.hintText) then
 			local tc = self.hintText.TextComponent
@@ -150,7 +150,7 @@ script UIRequestController extends Component
 							progEnt.TextComponent.FontColor = Color(0.49, 0.72, 0.36, 1)
 						else
 							progEnt.TextComponent.Text = "보유 " .. tostring(owned) .. " / " .. tostring(reqCnt)
-								.. "  →  보상 " .. rewItem .. " x" .. tostring(rewCnt)
+								.. "  →  보상 " .. inv:GetItemDisplayName(rewItem) .. " x" .. tostring(rewCnt)
 							if owned >= reqCnt then
 								progEnt.TextComponent.FontColor = Color(0.94, 0.66, 0.19, 1)
 							else

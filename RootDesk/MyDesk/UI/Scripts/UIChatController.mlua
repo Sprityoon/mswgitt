@@ -294,11 +294,11 @@ script UIChatController extends Component
 			formattedLine = "<color=#FFFFFF>[" .. senderName .. "]</color> " .. message
 			table.insert(self.AllLogs, formattedLine)
 		elseif channel == "whisper_to" then
-			formattedLine = "<color=#FFB6C1>[귓속말 ➔ " .. senderName .. "]</color> " .. message
+			formattedLine = "<color=#FFB6C1>[귓속말 → " .. senderName .. "]</color> " .. message
 			table.insert(self.AllLogs, formattedLine)
 			table.insert(self.WhisperLogs, formattedLine)
 		elseif channel == "whisper_from" then
-			formattedLine = "<color=#FF69B4>[" .. senderName .. " ➔ 귓속말]</color> " .. message
+			formattedLine = "<color=#FF69B4>[" .. senderName .. " → 귓속말]</color> " .. message
 			table.insert(self.AllLogs, formattedLine)
 			table.insert(self.WhisperLogs, formattedLine)
 		elseif channel == "system" then

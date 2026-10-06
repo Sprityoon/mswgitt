@@ -5,6 +5,8 @@ script Monster extends Component
 
 	@Sync property number MaxHp = 30
 	property number Defense = 6
+	-- 같은 공격자의 몬스터 피격음은 이 시간(초) 안에 1번만 — 범위 평타가 여러 마리를 맞혀도 소리가 겹쳐 커지지 않게.
+	property number HitSoundDedupSeconds = 0.08
 	property number RootThrowBonus = 0.25
 	property number BossControlScale = 0.25
 	-- 보스에게 건 균열(Vulnerable, 받는 피해 증가)은 이 배율로 줄어든다 (균열 각인: 일반 +20% / 보스 +10%).
@@ -564,9 +566,14 @@ script Monster extends Component
 				local pc = pcComp
 				-- 몬스터를 때린 플레이어는 전투 상태 (비전투 회복 패시브 정지)
 				pc:MarkCombat()
+				-- 한 번의 공격이 여러 마리를 동시에 맞히면 HitEvent 가 마리 수만큼 와서 같은 소리가 겹쳐 커진다
+				-- (맨주먹 평타 = 전방 3.4×2.8 범위 전체). 공격자당 HitSoundDedupSeconds 안에는 1번만 재생한다.
 				local hitRuid = pc:ResolveEquippedToolSound("HitSoundRUID")
-				if hitRuid ~= nil and hitRuid ~= "" then
-					pc:MulticastPlaySkillSound(hitRuid)
+				local now = _UtilLogic.ServerElapsedSeconds
+				local lastAt = pcComp._T.LastHitSoundAt or -100
+				if hitRuid ~= nil and hitRuid ~= "" and now - lastAt >= self.HitSoundDedupSeconds then
+					pcComp._T.LastHitSoundAt = now
+					pc:MulticastPlayHitSound(hitRuid)
 					log("[T65][HIT] monster sound=" .. hitRuid)
 				end
 				local combatComp = event.AttackerEntity:GetComponent("script.PlayerCombat")

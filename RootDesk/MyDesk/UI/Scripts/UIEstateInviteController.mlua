@@ -71,7 +71,7 @@ script UIEstateInviteController extends Component
 	@ExecSpace("ClientOnly")
 	method void PlayClick()
 		-- 공통 UI 클릭 SFX.
-		_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume)
+		_BGMManager:PlayInGameSound(self.uiClickSfx, self.uiSfxVolume)
 	end
 
 	@ExecSpace("ClientOnly")

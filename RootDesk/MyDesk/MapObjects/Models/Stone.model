@@ -7,7 +7,7 @@
   "Usage": 0,
   "UsePublish": 1,
   "UseService": 0,
-  "CoreVersion": "26.5.0.0",
+  "CoreVersion": "26.7.0.0",
   "StudioVersion": "0.1.0.0",
   "DynamicLoading": 0,
   "ContentProto": {
@@ -46,12 +46,12 @@
             "Name": "BoxSize",
             "ValueType": {
               "$type": "MODNativeType",
-              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.5.0.0, Culture=neutral, PublicKeyToken=null"
+              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 0.8,
-              "y": 0.45
+              "x": 9.53,
+              "y": 2.52005053
             }
           },
           {
@@ -59,12 +59,12 @@
             "Name": "ColliderOffset",
             "ValueType": {
               "$type": "MODNativeType",
-              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.5.0.0, Culture=neutral, PublicKeyToken=null"
+              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 0,
-              "y": 0
+              "x": 0.005744485,
+              "y": -0.68359375
             }
           },
           {
@@ -81,12 +81,12 @@
             "Name": "BoxSize",
             "ValueType": {
               "$type": "MODNativeType",
-              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.5.0.0, Culture=neutral, PublicKeyToken=null"
+              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 0.85,
-              "y": 0.55
+              "x": 9.53,
+              "y": 3.99615836
             }
           },
           {
@@ -94,12 +94,12 @@
             "Name": "ColliderOffset",
             "ValueType": {
               "$type": "MODNativeType",
-              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.5.0.0, Culture=neutral, PublicKeyToken=null"
+              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 0,
-              "y": 0
+              "x": 0.005744485,
+              "y": -1.0225184
             }
           },
           {
@@ -118,7 +118,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 0
+            "Value": 0.0
           },
           {
             "TargetType": "script.ResourceOccupiedArea",
@@ -127,7 +127,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 1
+            "Value": 1.0
           },
           {
             "TargetType": "script.ResourceOccupiedArea",
@@ -136,7 +136,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 0
+            "Value": 0.0
           },
           {
             "TargetType": "script.ResourceOccupiedArea",
@@ -145,7 +145,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 1
+            "Value": 1.0
           },
           {
             "TargetType": "script.ResourceReaction",
@@ -163,7 +163,7 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 1
+            "Value": 1.0
           },
           {
             "TargetType": "script.ResourceReaction",
@@ -172,21 +172,21 @@
               "$type": "MODNativeType",
               "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             },
-            "Value": 1
+            "Value": 1.0
           },
           {
             "TargetType": "MOD.Core.TransformComponent",
             "Name": "QuaternionRotation",
             "ValueType": {
               "$type": "MODNativeType",
-              "type": "MOD.Core.MODQuaternion, MOD.Core, Version=26.5.0.0, Culture=neutral, PublicKeyToken=null"
+              "type": "MOD.Core.MODQuaternion, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
             },
             "Value": {
               "$type": "MOD.Core.MODQuaternion, MOD.Core",
-              "x": 0,
-              "y": 0,
-              "z": 0,
-              "w": 1
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0,
+              "w": 1.0
             }
           },
           {
@@ -214,7 +214,7 @@
             "Name": "RenderSetting",
             "ValueType": {
               "$type": "MODNativeType",
-              "type": "MOD.Core.RenderSettingType, MOD.Core, Version=26.5.0.0, Culture=neutral, PublicKeyToken=null"
+              "type": "MOD.Core.RenderSettingType, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
             },
             "Value": 0
           },
@@ -259,12 +259,12 @@
             "Name": "ColliderScale",
             "ValueType": {
               "$type": "MODNativeType",
-              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.5.0.0, Culture=neutral, PublicKeyToken=null"
+              "type": "MOD.Core.MODVector2, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 1,
-              "y": 1
+              "x": 1.0,
+              "y": 1.0
             }
           },
           {
@@ -339,9 +339,9 @@
             },
             "Value": {
               "$type": "MOD.Core.MODVector3, MOD.Core",
-              "x": 1.5,
-              "y": 1.5,
-              "z": 1.5
+              "x": 0.17,
+              "y": 0.17,
+              "z": 0.17
             }
           },
           {
@@ -351,7 +351,7 @@
               "$type": "MODNativeType",
               "type": "MOD.Core.SpriteDrawMode, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
             },
-            "Value": 1
+            "Value": 0
           },
           {
             "TargetType": "MOD.Core.SpriteRendererComponent",
@@ -362,8 +362,22 @@
             },
             "Value": {
               "$type": "MOD.Core.MODVector2, MOD.Core",
-              "x": 1.08,
-              "y": 0.4
+              "x": 1.0,
+              "y": 1.0
+            }
+          },
+          {
+            "TargetType": null,
+            "Name": "Scale",
+            "ValueType": {
+              "$type": "MODNativeType",
+              "type": "MOD.Core.MODVector3, MOD.Core, Version=26.7.0.0, Culture=neutral, PublicKeyToken=null"
+            },
+            "Value": {
+              "$type": "MOD.Core.MODVector3, MOD.Core",
+              "x": 0.17,
+              "y": 0.17,
+              "z": 0.17
             }
           }
         ],

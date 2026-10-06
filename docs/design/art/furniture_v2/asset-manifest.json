@@ -1,0 +1,110 @@
+{
+  "cooking_pot": {
+    "sprite_canvas": [
+      1254,
+      1254
+    ],
+    "sprite_opaque_bounds": [
+      118,
+      64,
+      1137,
+      1202
+    ],
+    "icon_canvas": [
+      1254,
+      1254
+    ],
+    "icon_opaque_bounds": [
+      35,
+      154,
+      1219,
+      1150
+    ],
+    "registration": "connected",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "icon_ruid": "81a8b2d8738b4c4d8490ee0278be4d66",
+    "sprite_ruid": "c494472e96614b0cbd1c76b344d51dfe",
+    "preview_scale": 0.17664376840039253,
+    "drop_scale_multiplier": 0.02702702702702703,
+    "item_model_id": "8c363226-e0bc-4279-829f-f782b32b0b48",
+    "trigger_world_size": [
+      1.7,
+      1.7
+    ]
+  },
+  "bed": {
+    "sprite_canvas": [
+      1244,
+      1264
+    ],
+    "sprite_opaque_bounds": [
+      277,
+      87,
+      969,
+      1155
+    ],
+    "icon_canvas": [
+      1254,
+      1254
+    ],
+    "icon_opaque_bounds": [
+      248,
+      90,
+      1007,
+      1168
+    ],
+    "registration": "connected",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "icon_ruid": "b733c148a20d41a481c613d682e1f780",
+    "sprite_ruid": "03031ab084354c8581e84239e2f6f83f",
+    "preview_scale": 0.2023121387283237,
+    "drop_scale_multiplier": 0.029684601113172542,
+    "item_model_id": "8a8d129b-41c5-435c-997f-0cb4c9af103b",
+    "trigger_world_size": [
+      1.4,
+      1.7
+    ]
+  },
+  "animal_pen": {
+    "sprite_canvas": [
+      1374,
+      1145
+    ],
+    "sprite_opaque_bounds": [
+      39,
+      106,
+      1335,
+      964
+    ],
+    "icon_canvas": [
+      1254,
+      1254
+    ],
+    "icon_opaque_bounds": [
+      9,
+      161,
+      1245,
+      1090
+    ],
+    "registration": "connected",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "icon_ruid": "105b1739f4f14dfaafb5a73638e1ade3",
+    "sprite_ruid": "7256286180e948d8841e2b22337dc60b",
+    "preview_scale": 0.14660493827160495,
+    "drop_scale_multiplier": 0.025889967637540454,
+    "item_model_id": "874e9b73-0201-4579-b72f-56a6fb10439e",
+    "trigger_world_size": [
+      1.8,
+      1.3
+    ]
+  }
+}

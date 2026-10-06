@@ -121,7 +121,7 @@
       {
         "id": "182f526a-ed01-454e-a778-f81e7fcbfb64",
         "path": "/ui/MainMenuGroup/Bg",
-        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent,MOD.Core.MaskComponent",
         "jsonString": {
           "name": "Bg",
           "path": "/ui/MainMenuGroup/Bg",
@@ -155,20 +155,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 800.0,
-                "y": 300.0
+                "x": 0.0,
+                "y": 0.0
               },
               "OffsetMin": {
-                "x": -800.0,
-                "y": -300.0
+                "x": 0.0,
+                "y": 0.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 3520.0,
-                "y": 1680.0
+                "x": 1920.0,
+                "y": 1080.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -264,6 +264,21 @@
               "RaycastTarget": false,
               "Type": 0,
               "Enable": true
+            },
+            {
+              "@type": "MOD.Core.MaskComponent",
+              "Padding": {
+                "left": 0,
+                "right": 0,
+                "top": 0,
+                "bottom": 0
+              },
+              "Shape": 0,
+              "Softness": {
+                "x": 0,
+                "y": 0
+              },
+              "Enable": true
             }
           ],
           "@version": 1
@@ -306,20 +321,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 1050.0,
-                "y": 1050.0
+                "x": 960.0,
+                "y": 960.0
               },
               "OffsetMin": {
-                "x": -1050.0,
-                "y": -1050.0
+                "x": -960.0,
+                "y": -960.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 2100.0,
-                "y": 2100.0
+                "x": 1920.0,
+                "y": 1920.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -458,11 +473,11 @@
               "MobileOnly": false,
               "OffsetMax": {
                 "x": 0.0,
-                "y": -2.38418579E-06
+                "y": 0.0
               },
               "OffsetMin": {
                 "x": 0.0,
-                "y": -2.38418579E-06
+                "y": 0.0
               },
               "Pivot": {
                 "x": 0.5,
@@ -481,7 +496,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": -2.38418579E-06
+                "y": 0.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -537,31 +552,31 @@
             {
               "@type": "MOD.Core.UITransformComponent",
               "ActivePlatform": 255,
-              "AlignmentOption": 2,
+              "AlignmentOption": 0,
               "AnchorsMax": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "AnchorsMin": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -733.8013,
-                "y": 427.000153
+                "x": 210.801285,
+                "y": 381.645844
               },
               "OffsetMin": {
-                "x": -1169.99988,
-                "y": 183.768448
+                "x": -209.99968,
+                "y": 147.000153
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 436.198639,
-                "y": 243.2317
+                "x": 420.800964,
+                "y": 234.645691
               },
               "UIMode": 1,
               "UIScale": {
@@ -571,8 +586,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": -951.9006,
-                "y": 427.000153
+                "x": 0.4008007,
+                "y": 381.645844
               },
               "Rotation": {
                 "x": 0.0,
@@ -580,8 +595,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 8.099426,
-                "y": 427.000153,
+                "x": 0.4008007,
+                "y": 381.645844,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -688,31 +703,31 @@
             {
               "@type": "MOD.Core.UITransformComponent",
               "ActivePlatform": 255,
-              "AlignmentOption": 2,
+              "AlignmentOption": 0,
               "AnchorsMax": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "AnchorsMin": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 11.6175232,
-                "y": 461.875916
+                "x": 231.134277,
+                "y": 254.9999
               },
               "OffsetMin": {
-                "x": -564.862549,
-                "y": -533.8625
+                "x": -227.920471,
+                "y": -537.9129
               },
               "Pivot": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 576.4801,
-                "y": 995.7384
+                "x": 459.054749,
+                "y": 792.9128
               },
               "UIMode": 1,
               "UIScale": {
@@ -722,8 +737,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 11.6175232,
-                "y": -35.9933
+                "x": 1.60689926,
+                "y": -141.4565
               },
               "Rotation": {
                 "x": 0.0,
@@ -731,8 +746,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 971.617554,
-                "y": -35.9933,
+                "x": 1.60689926,
+                "y": -141.4565,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -755,7 +770,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "9d3a2b2b00124690b00515e900119627"
+                "DataId": "a49a5bd9bddf457b881e4e6f7ea5b878"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -839,26 +854,26 @@
             {
               "@type": "MOD.Core.UITransformComponent",
               "ActivePlatform": 255,
-              "AlignmentOption": 2,
+              "AlignmentOption": 0,
               "AnchorsMax": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "AnchorsMin": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -152.0,
-                "y": 135.0
+                "x": 125.0,
+                "y": 25.4956818
               },
               "OffsetMin": {
-                "x": -402.0,
-                "y": 65.0
+                "x": -125.0,
+                "y": -44.50432
               },
               "Pivot": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
@@ -873,8 +888,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": -152.0,
-                "y": 100.0
+                "x": 0.0,
+                "y": -9.504318
               },
               "Rotation": {
                 "x": 0.0,
@@ -882,8 +897,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 808.0,
-                "y": 100.0,
+                "x": 0.0,
+                "y": -9.504318,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1085,26 +1100,26 @@
             {
               "@type": "MOD.Core.UITransformComponent",
               "ActivePlatform": 255,
-              "AlignmentOption": 2,
+              "AlignmentOption": 0,
               "AnchorsMax": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "AnchorsMin": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -152.0,
-                "y": 17.0
+                "x": 125.0,
+                "y": -87.50441
               },
               "OffsetMin": {
-                "x": -402.0,
-                "y": -53.0
+                "x": -125.0,
+                "y": -157.50441
               },
               "Pivot": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
@@ -1119,8 +1134,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": -152.0,
-                "y": -18.0
+                "x": 0.0,
+                "y": -122.50441
               },
               "Rotation": {
                 "x": 0.0,
@@ -1128,8 +1143,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 808.0,
-                "y": -18.0,
+                "x": 0.0,
+                "y": -122.50441,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1481,26 +1496,26 @@
             {
               "@type": "MOD.Core.UITransformComponent",
               "ActivePlatform": 255,
-              "AlignmentOption": 2,
+              "AlignmentOption": 0,
               "AnchorsMax": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "AnchorsMin": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -152.0,
-                "y": -355.0
+                "x": 125.0,
+                "y": -418.779
               },
               "OffsetMin": {
-                "x": -402.0,
-                "y": -425.0
+                "x": -125.0,
+                "y": -488.779
               },
               "Pivot": {
-                "x": 1.0,
+                "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
@@ -1515,8 +1530,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": -152.0,
-                "y": -390.0
+                "x": 0.0,
+                "y": -453.779
               },
               "Rotation": {
                 "x": 0.0,
@@ -1524,8 +1539,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 808.0,
-                "y": -390.0,
+                "x": 0.0,
+                "y": -453.779,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1889,6 +1904,2812 @@
               "OutlineWidth": 3.0,
               "RaycastTarget": false,
               "Type": 0,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "a1a02771-9f3a-4a89-94a4-a93bd34b2b31",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent,MOD.Core.ButtonComponent,MOD.Core.TextGUIRendererComponent",
+        "jsonString": {
+          "name": "BtnMusic",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 7,
+          "pathConstraints": "////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIButton",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uibutton",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 5,
+              "AnchorsMax": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "AnchorsMin": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": -240.0,
+                "y": -32.0
+              },
+              "OffsetMin": {
+                "x": -328.0,
+                "y": -120.0
+              },
+              "Pivot": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "RectSize": {
+                "x": 88.0,
+                "y": 88.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": -240.0,
+                "y": -32.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 720.0,
+                "y": 508.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteGUIRendererComponent",
+              "AnimClipPlayType": 0,
+              "EndFrameIndex": 2147483647,
+              "IgnoreMapLayerCheck": false,
+              "ImageRUID": {
+                "DataId": "9bb8e4d004fb46bb9c1b528b3c1ebf9f"
+              },
+              "LocalPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "LocalScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "MaterialId": "",
+              "OrderInLayer": 0,
+              "OverrideSorting": false,
+              "PlayRate": 1.0,
+              "PreserveSprite": 0,
+              "SortingLayer": "UI",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 0.0
+              },
+              "DropShadow": false,
+              "DropShadowAngle": 120.0,
+              "DropShadowColor": {
+                "r": 0.1,
+                "g": 0.05,
+                "b": 0.0,
+                "a": 0.35
+              },
+              "DropShadowDistance": 2.0,
+              "FillAmount": 1.0,
+              "FillCenter": true,
+              "FillClockWise": true,
+              "FillMethod": 0,
+              "FillOrigin": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "FrameColumn": 1,
+              "FrameRate": 0,
+              "FrameRow": 1,
+              "Outline": false,
+              "OutlineColor": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+              },
+              "OutlineWidth": 3.0,
+              "RaycastTarget": true,
+              "Type": 1,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.ButtonComponent",
+              "Colors": {
+                "NormalColor": {
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "a": 1.0
+                },
+                "HighlightedColor": {
+                  "r": 1.0,
+                  "g": 0.82,
+                  "b": 0.38,
+                  "a": 1.0
+                },
+                "PressedColor": {
+                  "r": 0.62,
+                  "g": 0.55,
+                  "b": 0.42,
+                  "a": 1.0
+                },
+                "SelectedColor": {
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "a": 1.0
+                },
+                "DisabledColor": {
+                  "r": 0.78,
+                  "g": 0.78,
+                  "b": 0.78,
+                  "a": 0.5
+                },
+                "ColorMultiplier": 1.0,
+                "FadeDuration": 0.08
+              },
+              "IgnoreMapLayerCheck": false,
+              "ImageRUIDs": {
+                "HighlightedSprite": null,
+                "PressedSprite": null,
+                "SelectedSprite": null,
+                "DisabledSprite": null
+              },
+              "KeyCode": 0,
+              "OrderInLayer": 0,
+              "OverrideSorting": false,
+              "SortingLayer": "UI",
+              "Transition": 0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TextGUIRendererComponent",
+              "BestFit": true,
+              "ConstraintX": 100.0,
+              "ConstraintY": 100.0,
+              "FaceDilate": 0.18,
+              "Font": "Default",
+              "FontColor": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 0.96,
+                "a": 1.0
+              },
+              "FontSize": 28.0,
+              "FontStyle": 1,
+              "HorizontalAlignment": 2,
+              "IgnoreMapLayerCheck": false,
+              "MaxSize": 28.0,
+              "MinSize": 24.0,
+              "OrderInLayer": 0,
+              "OutlineColor": {
+                "r": 0.12,
+                "g": 0.07,
+                "b": 0.04,
+                "a": 1.0
+              },
+              "OutlineWidth": 0.28,
+              "Overflow": 0,
+              "OverrideSorting": false,
+              "Padding": {
+                "left": 12,
+                "right": 12,
+                "top": 4,
+                "bottom": 4
+              },
+              "SizeFit": false,
+              "SortingLayer": "UI",
+              "Text": "",
+              "Underlay": false,
+              "UseConstraintX": false,
+              "UseConstraintY": false,
+              "VerticalAlignment": 512,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "65faa4a6-dcc1-4e12-8758-18660ddf5429",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon",
+        "componentNames": "MOD.Core.UITransformComponent",
+        "jsonString": {
+          "name": "Icon",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 0,
+          "pathConstraints": "/////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -44.0,
+                "y": -44.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "9abbb437-6d83-4d27-9e65-8ab04a95dd5b",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/SpeakerOutline",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.PolygonGUIRendererComponent",
+        "jsonString": {
+          "name": "SpeakerOutline",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/SpeakerOutline",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 0,
+          "pathConstraints": "//////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PolygonGUIRendererComponent",
+              "Color": {
+                "r": 0.227450982,
+                "g": 0.141176477,
+                "b": 0.09803922,
+                "a": 1.0
+              },
+              "MaterialId": "",
+              "Points": [
+                {
+                  "x": -30.0,
+                  "y": -12.0
+                },
+                {
+                  "x": -29.88889,
+                  "y": -13.2222223
+                },
+                {
+                  "x": -29.5555553,
+                  "y": -14.2222223
+                },
+                {
+                  "x": -29.0,
+                  "y": -15.0
+                },
+                {
+                  "x": -28.2222214,
+                  "y": -15.5555553
+                },
+                {
+                  "x": -27.2222214,
+                  "y": -15.8888893
+                },
+                {
+                  "x": -26.0,
+                  "y": -16.0
+                },
+                {
+                  "x": -22.0,
+                  "y": -16.0
+                },
+                {
+                  "x": -20.6853275,
+                  "y": -16.0616341
+                },
+                {
+                  "x": -19.4079781,
+                  "y": -16.2465343
+                },
+                {
+                  "x": -18.16795,
+                  "y": -16.5547
+                },
+                {
+                  "x": -16.9652443,
+                  "y": -16.9861336
+                },
+                {
+                  "x": -15.79986,
+                  "y": -17.5408344
+                },
+                {
+                  "x": -14.6717987,
+                  "y": -18.2188015
+                },
+                {
+                  "x": -1.99230182,
+                  "y": -26.6717987
+                },
+                {
+                  "x": -0.466876239,
+                  "y": -27.5220833
+                },
+                {
+                  "x": 0.7811992,
+                  "y": -27.8541336
+                },
+                {
+                  "x": 1.75192451,
+                  "y": -27.66795
+                },
+                {
+                  "x": 2.44529986,
+                  "y": -26.9635334
+                },
+                {
+                  "x": 2.861325,
+                  "y": -25.7408829
+                },
+                {
+                  "x": 3.0,
+                  "y": -24.0
+                },
+                {
+                  "x": 3.0,
+                  "y": 24.0
+                },
+                {
+                  "x": 2.861325,
+                  "y": 25.7408829
+                },
+                {
+                  "x": 2.44529986,
+                  "y": 26.9635334
+                },
+                {
+                  "x": 1.75192451,
+                  "y": 27.66795
+                },
+                {
+                  "x": 0.7811992,
+                  "y": 27.8541336
+                },
+                {
+                  "x": -0.466876239,
+                  "y": 27.5220833
+                },
+                {
+                  "x": -1.99230182,
+                  "y": 26.6717987
+                },
+                {
+                  "x": -14.6717987,
+                  "y": 18.2188015
+                },
+                {
+                  "x": -15.79986,
+                  "y": 17.5408344
+                },
+                {
+                  "x": -16.9652443,
+                  "y": 16.9861336
+                },
+                {
+                  "x": -18.16795,
+                  "y": 16.5547
+                },
+                {
+                  "x": -19.4079781,
+                  "y": 16.2465343
+                },
+                {
+                  "x": -20.6853275,
+                  "y": 16.0616341
+                },
+                {
+                  "x": -22.0,
+                  "y": 16.0
+                },
+                {
+                  "x": -26.0,
+                  "y": 16.0
+                },
+                {
+                  "x": -27.2222214,
+                  "y": 15.8888893
+                },
+                {
+                  "x": -28.2222214,
+                  "y": 15.5555553
+                },
+                {
+                  "x": -29.0,
+                  "y": 15.0
+                },
+                {
+                  "x": -29.5555553,
+                  "y": 14.2222223
+                },
+                {
+                  "x": -29.88889,
+                  "y": 13.2222223
+                },
+                {
+                  "x": -30.0,
+                  "y": 12.0
+                }
+              ],
+              "UVs": [],
+              "UseCustomUVs": false,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "96fa18fa-fbb9-4a2c-9474-ff1dc96aabde",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Speaker",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.PolygonGUIRendererComponent",
+        "jsonString": {
+          "name": "Speaker",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Speaker",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 1,
+          "pathConstraints": "//////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PolygonGUIRendererComponent",
+              "Color": {
+                "r": 1.0,
+                "g": 0.9411765,
+                "b": 0.807843149,
+                "a": 1.0
+              },
+              "MaterialId": "",
+              "Points": [
+                {
+                  "x": -26.0,
+                  "y": -8.666667
+                },
+                {
+                  "x": -25.9074078,
+                  "y": -9.685185
+                },
+                {
+                  "x": -25.62963,
+                  "y": -10.5185184
+                },
+                {
+                  "x": -25.166666,
+                  "y": -11.166667
+                },
+                {
+                  "x": -24.5185184,
+                  "y": -11.62963
+                },
+                {
+                  "x": -23.6851845,
+                  "y": -11.9074078
+                },
+                {
+                  "x": -22.666666,
+                  "y": -12.0
+                },
+                {
+                  "x": -19.333334,
+                  "y": -12.0
+                },
+                {
+                  "x": -18.2429523,
+                  "y": -12.0583878
+                },
+                {
+                  "x": -17.1940327,
+                  "y": -12.2335529
+                },
+                {
+                  "x": -16.1865711,
+                  "y": -12.5254936
+                },
+                {
+                  "x": -15.2205715,
+                  "y": -12.9342117
+                },
+                {
+                  "x": -14.296032,
+                  "y": -13.4597054
+                },
+                {
+                  "x": -13.4129534,
+                  "y": -14.1019754
+                },
+                {
+                  "x": -3.104456,
+                  "y": -22.4776287
+                },
+                {
+                  "x": -2.155872,
+                  "y": -23.1372433
+                },
+                {
+                  "x": -1.37975824,
+                  "y": -23.4345016
+                },
+                {
+                  "x": -0.776114,
+                  "y": -23.3694077
+                },
+                {
+                  "x": -0.34493956,
+                  "y": -22.94196
+                },
+                {
+                  "x": -0.08623489,
+                  "y": -22.1521568
+                },
+                {
+                  "x": 0.0,
+                  "y": -21.0
+                },
+                {
+                  "x": 0.0,
+                  "y": 21.0
+                },
+                {
+                  "x": -0.08623489,
+                  "y": 22.1521568
+                },
+                {
+                  "x": -0.34493956,
+                  "y": 22.94196
+                },
+                {
+                  "x": -0.776114,
+                  "y": 23.3694077
+                },
+                {
+                  "x": -1.37975824,
+                  "y": 23.4345016
+                },
+                {
+                  "x": -2.155872,
+                  "y": 23.1372433
+                },
+                {
+                  "x": -3.104456,
+                  "y": 22.4776287
+                },
+                {
+                  "x": -13.4129534,
+                  "y": 14.1019754
+                },
+                {
+                  "x": -14.296032,
+                  "y": 13.4597054
+                },
+                {
+                  "x": -15.2205715,
+                  "y": 12.9342117
+                },
+                {
+                  "x": -16.1865711,
+                  "y": 12.5254936
+                },
+                {
+                  "x": -17.1940327,
+                  "y": 12.2335529
+                },
+                {
+                  "x": -18.2429523,
+                  "y": 12.0583878
+                },
+                {
+                  "x": -19.333334,
+                  "y": 12.0
+                },
+                {
+                  "x": -22.666666,
+                  "y": 12.0
+                },
+                {
+                  "x": -23.6851845,
+                  "y": 11.9074078
+                },
+                {
+                  "x": -24.5185184,
+                  "y": 11.62963
+                },
+                {
+                  "x": -25.166666,
+                  "y": 11.166667
+                },
+                {
+                  "x": -25.62963,
+                  "y": 10.5185184
+                },
+                {
+                  "x": -25.9074078,
+                  "y": 9.685185
+                },
+                {
+                  "x": -26.0,
+                  "y": 8.666667
+                }
+              ],
+              "UVs": [],
+              "UseCustomUVs": false,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "2761fd63-7919-40cf-989c-1daee0ebc38a",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves",
+        "componentNames": "MOD.Core.UITransformComponent",
+        "jsonString": {
+          "name": "Waves",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 2,
+          "pathConstraints": "//////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "51ca98cd-9fe8-499f-ad6f-a6b30ddb1c70",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc0Outline",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.PolygonGUIRendererComponent",
+        "jsonString": {
+          "name": "Arc0Outline",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc0Outline",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 0,
+          "pathConstraints": "///////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PolygonGUIRendererComponent",
+              "Color": {
+                "r": 0.227450982,
+                "g": 0.141176477,
+                "b": 0.09803922,
+                "a": 1.0
+              },
+              "MaterialId": "",
+              "Points": [
+                {
+                  "x": 13.0433378,
+                  "y": -15.8252325
+                },
+                {
+                  "x": 14.39266,
+                  "y": -14.1394739
+                },
+                {
+                  "x": 15.5850086,
+                  "y": -12.3392639
+                },
+                {
+                  "x": 16.6107311,
+                  "y": -10.4391727
+                },
+                {
+                  "x": 17.4615231,
+                  "y": -8.454581
+                },
+                {
+                  "x": 18.1305,
+                  "y": -6.40155458
+                },
+                {
+                  "x": 18.61225,
+                  "y": -4.29670954
+                },
+                {
+                  "x": 18.9028664,
+                  "y": -2.15708518
+                },
+                {
+                  "x": 19.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 18.9028664,
+                  "y": 2.15708518
+                },
+                {
+                  "x": 18.61225,
+                  "y": 4.29670954
+                },
+                {
+                  "x": 18.1305,
+                  "y": 6.40155458
+                },
+                {
+                  "x": 17.4615231,
+                  "y": 8.454581
+                },
+                {
+                  "x": 16.6107311,
+                  "y": 10.4391727
+                },
+                {
+                  "x": 15.5850086,
+                  "y": 12.3392639
+                },
+                {
+                  "x": 14.39266,
+                  "y": 14.1394739
+                },
+                {
+                  "x": 13.0433378,
+                  "y": 15.8252325
+                },
+                {
+                  "x": 11.8656664,
+                  "y": 16.857914
+                },
+                {
+                  "x": 10.4608459,
+                  "y": 17.5506039
+                },
+                {
+                  "x": 8.924612,
+                  "y": 17.8560982
+                },
+                {
+                  "x": 7.361657,
+                  "y": 17.7535744
+                },
+                {
+                  "x": 5.878493,
+                  "y": 17.2500229
+                },
+                {
+                  "x": 4.57619524,
+                  "y": 16.3797588
+                },
+                {
+                  "x": 3.543513,
+                  "y": 15.2020874
+                },
+                {
+                  "x": 2.85082269,
+                  "y": 13.797267
+                },
+                {
+                  "x": 2.54532933,
+                  "y": 12.2610331
+                },
+                {
+                  "x": 2.647852,
+                  "y": 10.6980782
+                },
+                {
+                  "x": 3.151404,
+                  "y": 9.214913
+                },
+                {
+                  "x": 4.021669,
+                  "y": 7.91261625
+                },
+                {
+                  "x": 4.69633,
+                  "y": 7.069737
+                },
+                {
+                  "x": 5.29250431,
+                  "y": 6.169632
+                },
+                {
+                  "x": 5.805365,
+                  "y": 5.21958637
+                },
+                {
+                  "x": 6.230762,
+                  "y": 4.22729063
+                },
+                {
+                  "x": 6.565251,
+                  "y": 3.20077729
+                },
+                {
+                  "x": 6.806124,
+                  "y": 2.14835477
+                },
+                {
+                  "x": 6.9514327,
+                  "y": 1.07854259
+                },
+                {
+                  "x": 7.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 6.9514327,
+                  "y": -1.07854259
+                },
+                {
+                  "x": 6.806124,
+                  "y": -2.14835477
+                },
+                {
+                  "x": 6.565251,
+                  "y": -3.20077729
+                },
+                {
+                  "x": 6.230762,
+                  "y": -4.22729063
+                },
+                {
+                  "x": 5.805365,
+                  "y": -5.21958637
+                },
+                {
+                  "x": 5.29250431,
+                  "y": -6.169632
+                },
+                {
+                  "x": 4.69633,
+                  "y": -7.069737
+                },
+                {
+                  "x": 4.021669,
+                  "y": -7.91261625
+                },
+                {
+                  "x": 3.151404,
+                  "y": -9.214913
+                },
+                {
+                  "x": 2.647852,
+                  "y": -10.6980782
+                },
+                {
+                  "x": 2.54532933,
+                  "y": -12.2610331
+                },
+                {
+                  "x": 2.85082269,
+                  "y": -13.797267
+                },
+                {
+                  "x": 3.543513,
+                  "y": -15.2020874
+                },
+                {
+                  "x": 4.57619524,
+                  "y": -16.3797588
+                },
+                {
+                  "x": 5.878493,
+                  "y": -17.2500229
+                },
+                {
+                  "x": 7.361657,
+                  "y": -17.7535744
+                },
+                {
+                  "x": 8.924612,
+                  "y": -17.8560982
+                },
+                {
+                  "x": 10.4608459,
+                  "y": -17.5506039
+                },
+                {
+                  "x": 11.8656664,
+                  "y": -16.857914
+                }
+              ],
+              "UVs": [],
+              "UseCustomUVs": false,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "7bb47de5-d277-42a6-8abb-be222d58e508",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc0",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.PolygonGUIRendererComponent",
+        "jsonString": {
+          "name": "Arc0",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc0",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 1,
+          "pathConstraints": "///////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PolygonGUIRendererComponent",
+              "Color": {
+                "r": 1.0,
+                "g": 0.9411765,
+                "b": 0.807843149,
+                "a": 1.0
+              },
+              "MaterialId": "",
+              "Points": [
+                {
+                  "x": 11.5397263,
+                  "y": -14.5064631
+                },
+                {
+                  "x": 12.7766056,
+                  "y": -12.9611845
+                },
+                {
+                  "x": 13.8695908,
+                  "y": -11.3109922
+                },
+                {
+                  "x": 14.8098364,
+                  "y": -9.569242
+                },
+                {
+                  "x": 15.58973,
+                  "y": -7.750033
+                },
+                {
+                  "x": 16.20296,
+                  "y": -5.86809158
+                },
+                {
+                  "x": 16.6445618,
+                  "y": -3.93865061
+                },
+                {
+                  "x": 16.91096,
+                  "y": -1.97732806
+                },
+                {
+                  "x": 17.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 16.91096,
+                  "y": 1.97732806
+                },
+                {
+                  "x": 16.6445618,
+                  "y": 3.93865061
+                },
+                {
+                  "x": 16.20296,
+                  "y": 5.86809158
+                },
+                {
+                  "x": 15.58973,
+                  "y": 7.750033
+                },
+                {
+                  "x": 14.8098364,
+                  "y": 9.569242
+                },
+                {
+                  "x": 13.8695908,
+                  "y": 11.3109922
+                },
+                {
+                  "x": 12.7766056,
+                  "y": 12.9611845
+                },
+                {
+                  "x": 11.5397263,
+                  "y": 14.5064631
+                },
+                {
+                  "x": 10.754612,
+                  "y": 15.1949177
+                },
+                {
+                  "x": 9.818066,
+                  "y": 15.6567106
+                },
+                {
+                  "x": 8.793909,
+                  "y": 15.8603735
+                },
+                {
+                  "x": 7.7519393,
+                  "y": 15.7920246
+                },
+                {
+                  "x": 6.763163,
+                  "y": 15.4563236
+                },
+                {
+                  "x": 5.894964,
+                  "y": 14.8761473
+                },
+                {
+                  "x": 5.20650959,
+                  "y": 14.091033
+                },
+                {
+                  "x": 4.744716,
+                  "y": 13.1544867
+                },
+                {
+                  "x": 4.541054,
+                  "y": 12.13033
+                },
+                {
+                  "x": 4.609402,
+                  "y": 11.08836
+                },
+                {
+                  "x": 4.94510365,
+                  "y": 10.0995836
+                },
+                {
+                  "x": 5.52528,
+                  "y": 9.231385
+                },
+                {
+                  "x": 6.312385,
+                  "y": 8.248027
+                },
+                {
+                  "x": 7.0079217,
+                  "y": 7.197904
+                },
+                {
+                  "x": 7.60625935,
+                  "y": 6.08951759
+                },
+                {
+                  "x": 8.102555,
+                  "y": 4.93183947
+                },
+                {
+                  "x": 8.492792,
+                  "y": 3.73424
+                },
+                {
+                  "x": 8.773811,
+                  "y": 2.506414
+                },
+                {
+                  "x": 8.943338,
+                  "y": 1.25829971
+                },
+                {
+                  "x": 9.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 8.943338,
+                  "y": -1.25829971
+                },
+                {
+                  "x": 8.773811,
+                  "y": -2.506414
+                },
+                {
+                  "x": 8.492792,
+                  "y": -3.73424
+                },
+                {
+                  "x": 8.102555,
+                  "y": -4.93183947
+                },
+                {
+                  "x": 7.60625935,
+                  "y": -6.08951759
+                },
+                {
+                  "x": 7.0079217,
+                  "y": -7.197904
+                },
+                {
+                  "x": 6.312385,
+                  "y": -8.248027
+                },
+                {
+                  "x": 5.52528,
+                  "y": -9.231385
+                },
+                {
+                  "x": 4.94510365,
+                  "y": -10.0995836
+                },
+                {
+                  "x": 4.609402,
+                  "y": -11.08836
+                },
+                {
+                  "x": 4.541054,
+                  "y": -12.13033
+                },
+                {
+                  "x": 4.744716,
+                  "y": -13.1544867
+                },
+                {
+                  "x": 5.20650959,
+                  "y": -14.091033
+                },
+                {
+                  "x": 5.894964,
+                  "y": -14.8761473
+                },
+                {
+                  "x": 6.763163,
+                  "y": -15.4563236
+                },
+                {
+                  "x": 7.7519393,
+                  "y": -15.7920246
+                },
+                {
+                  "x": 8.793909,
+                  "y": -15.8603735
+                },
+                {
+                  "x": 9.818066,
+                  "y": -15.6567106
+                },
+                {
+                  "x": 10.754612,
+                  "y": -15.1949177
+                }
+              ],
+              "UVs": [],
+              "UseCustomUVs": false,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "dda6fd67-ddca-4098-8063-2a97dab18d38",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc1Outline",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.PolygonGUIRendererComponent",
+        "jsonString": {
+          "name": "Arc1Outline",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc1Outline",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 2,
+          "pathConstraints": "///////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PolygonGUIRendererComponent",
+              "Color": {
+                "r": 0.227450982,
+                "g": 0.141176477,
+                "b": 0.09803922,
+                "a": 1.0
+              },
+              "MaterialId": "",
+              "Points": [
+                {
+                  "x": 22.0650063,
+                  "y": -23.7378483
+                },
+                {
+                  "x": 24.0889912,
+                  "y": -21.2092113
+                },
+                {
+                  "x": 25.877512,
+                  "y": -18.5088959
+                },
+                {
+                  "x": 27.4160957,
+                  "y": -15.6587591
+                },
+                {
+                  "x": 28.6922855,
+                  "y": -12.6818724
+                },
+                {
+                  "x": 29.6957531,
+                  "y": -9.602332
+                },
+                {
+                  "x": 30.4183731,
+                  "y": -6.44506454
+                },
+                {
+                  "x": 30.8542976,
+                  "y": -3.235628
+                },
+                {
+                  "x": 31.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 30.8542976,
+                  "y": 3.235628
+                },
+                {
+                  "x": 30.4183731,
+                  "y": 6.44506454
+                },
+                {
+                  "x": 29.6957531,
+                  "y": 9.602332
+                },
+                {
+                  "x": 28.6922855,
+                  "y": 12.6818724
+                },
+                {
+                  "x": 27.4160957,
+                  "y": 15.6587591
+                },
+                {
+                  "x": 25.877512,
+                  "y": 18.5088959
+                },
+                {
+                  "x": 24.0889912,
+                  "y": 21.2092113
+                },
+                {
+                  "x": 22.0650063,
+                  "y": 23.7378483
+                },
+                {
+                  "x": 20.8873348,
+                  "y": 24.77053
+                },
+                {
+                  "x": 19.4825153,
+                  "y": 25.46322
+                },
+                {
+                  "x": 17.9462814,
+                  "y": 25.7687149
+                },
+                {
+                  "x": 16.3833256,
+                  "y": 25.6661911
+                },
+                {
+                  "x": 14.9001617,
+                  "y": 25.16264
+                },
+                {
+                  "x": 13.5978642,
+                  "y": 24.2923737
+                },
+                {
+                  "x": 12.5651817,
+                  "y": 23.1147041
+                },
+                {
+                  "x": 11.8724918,
+                  "y": 21.7098827
+                },
+                {
+                  "x": 11.5669985,
+                  "y": 20.1736488
+                },
+                {
+                  "x": 11.66952,
+                  "y": 18.6106949
+                },
+                {
+                  "x": 12.1730728,
+                  "y": 17.12753
+                },
+                {
+                  "x": 13.0433378,
+                  "y": 15.8252325
+                },
+                {
+                  "x": 14.39266,
+                  "y": 14.1394739
+                },
+                {
+                  "x": 15.5850086,
+                  "y": 12.3392639
+                },
+                {
+                  "x": 16.6107311,
+                  "y": 10.4391727
+                },
+                {
+                  "x": 17.4615231,
+                  "y": 8.454581
+                },
+                {
+                  "x": 18.1305,
+                  "y": 6.40155458
+                },
+                {
+                  "x": 18.61225,
+                  "y": 4.29670954
+                },
+                {
+                  "x": 18.9028664,
+                  "y": 2.15708518
+                },
+                {
+                  "x": 19.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 18.9028664,
+                  "y": -2.15708518
+                },
+                {
+                  "x": 18.61225,
+                  "y": -4.29670954
+                },
+                {
+                  "x": 18.1305,
+                  "y": -6.40155458
+                },
+                {
+                  "x": 17.4615231,
+                  "y": -8.454581
+                },
+                {
+                  "x": 16.6107311,
+                  "y": -10.4391727
+                },
+                {
+                  "x": 15.5850086,
+                  "y": -12.3392639
+                },
+                {
+                  "x": 14.39266,
+                  "y": -14.1394739
+                },
+                {
+                  "x": 13.0433378,
+                  "y": -15.8252325
+                },
+                {
+                  "x": 12.1730728,
+                  "y": -17.12753
+                },
+                {
+                  "x": 11.66952,
+                  "y": -18.6106949
+                },
+                {
+                  "x": 11.5669985,
+                  "y": -20.1736488
+                },
+                {
+                  "x": 11.8724918,
+                  "y": -21.7098827
+                },
+                {
+                  "x": 12.5651817,
+                  "y": -23.1147041
+                },
+                {
+                  "x": 13.5978642,
+                  "y": -24.2923737
+                },
+                {
+                  "x": 14.9001617,
+                  "y": -25.16264
+                },
+                {
+                  "x": 16.3833256,
+                  "y": -25.6661911
+                },
+                {
+                  "x": 17.9462814,
+                  "y": -25.7687149
+                },
+                {
+                  "x": 19.4825153,
+                  "y": -25.46322
+                },
+                {
+                  "x": 20.8873348,
+                  "y": -24.77053
+                }
+              ],
+              "UVs": [],
+              "UseCustomUVs": false,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "27d81416-6a10-4bcb-bc2d-c38364f4fc94",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc1",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.PolygonGUIRendererComponent",
+        "jsonString": {
+          "name": "Arc1",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc1",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 3,
+          "pathConstraints": "///////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PolygonGUIRendererComponent",
+              "Color": {
+                "r": 1.0,
+                "g": 0.9411765,
+                "b": 0.807843149,
+                "a": 1.0
+              },
+              "MaterialId": "",
+              "Points": [
+                {
+                  "x": 20.5613956,
+                  "y": -22.4190788
+                },
+                {
+                  "x": 22.4729347,
+                  "y": -20.0309219
+                },
+                {
+                  "x": 24.162096,
+                  "y": -17.4806232
+                },
+                {
+                  "x": 25.615202,
+                  "y": -14.7888279
+                },
+                {
+                  "x": 26.8204918,
+                  "y": -11.9773235
+                },
+                {
+                  "x": 27.7682114,
+                  "y": -9.068869
+                },
+                {
+                  "x": 28.4506855,
+                  "y": -6.08700562
+                },
+                {
+                  "x": 28.8623924,
+                  "y": -3.05587077
+                },
+                {
+                  "x": 29.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 28.8623924,
+                  "y": 3.05587077
+                },
+                {
+                  "x": 28.4506855,
+                  "y": 6.08700562
+                },
+                {
+                  "x": 27.7682114,
+                  "y": 9.068869
+                },
+                {
+                  "x": 26.8204918,
+                  "y": 11.9773235
+                },
+                {
+                  "x": 25.615202,
+                  "y": 14.7888279
+                },
+                {
+                  "x": 24.162096,
+                  "y": 17.4806232
+                },
+                {
+                  "x": 22.4729347,
+                  "y": 20.0309219
+                },
+                {
+                  "x": 20.5613956,
+                  "y": 22.4190788
+                },
+                {
+                  "x": 19.7762814,
+                  "y": 23.1075344
+                },
+                {
+                  "x": 18.8397331,
+                  "y": 23.5693264
+                },
+                {
+                  "x": 17.8155785,
+                  "y": 23.77299
+                },
+                {
+                  "x": 16.7736073,
+                  "y": 23.7046413
+                },
+                {
+                  "x": 15.784832,
+                  "y": 23.36894
+                },
+                {
+                  "x": 14.9166336,
+                  "y": 22.788763
+                },
+                {
+                  "x": 14.228179,
+                  "y": 22.0036488
+                },
+                {
+                  "x": 13.7663851,
+                  "y": 21.0671024
+                },
+                {
+                  "x": 13.5627222,
+                  "y": 20.0429459
+                },
+                {
+                  "x": 13.6310711,
+                  "y": 19.0009766
+                },
+                {
+                  "x": 13.9667721,
+                  "y": 18.0122
+                },
+                {
+                  "x": 14.5469494,
+                  "y": 17.144001
+                },
+                {
+                  "x": 16.0087147,
+                  "y": 15.3177633
+                },
+                {
+                  "x": 17.3004265,
+                  "y": 13.3675356
+                },
+                {
+                  "x": 18.4116249,
+                  "y": 11.309104
+                },
+                {
+                  "x": 19.3333168,
+                  "y": 9.15913
+                },
+                {
+                  "x": 20.0580425,
+                  "y": 6.93501759
+                },
+                {
+                  "x": 20.5799351,
+                  "y": 4.654769
+                },
+                {
+                  "x": 20.8947716,
+                  "y": 2.3368423
+                },
+                {
+                  "x": 21.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 20.8947716,
+                  "y": -2.3368423
+                },
+                {
+                  "x": 20.5799351,
+                  "y": -4.654769
+                },
+                {
+                  "x": 20.0580425,
+                  "y": -6.93501759
+                },
+                {
+                  "x": 19.3333168,
+                  "y": -9.15913
+                },
+                {
+                  "x": 18.4116249,
+                  "y": -11.309104
+                },
+                {
+                  "x": 17.3004265,
+                  "y": -13.3675356
+                },
+                {
+                  "x": 16.0087147,
+                  "y": -15.3177633
+                },
+                {
+                  "x": 14.5469494,
+                  "y": -17.144001
+                },
+                {
+                  "x": 13.9667721,
+                  "y": -18.0122
+                },
+                {
+                  "x": 13.6310711,
+                  "y": -19.0009766
+                },
+                {
+                  "x": 13.5627222,
+                  "y": -20.0429459
+                },
+                {
+                  "x": 13.7663851,
+                  "y": -21.0671024
+                },
+                {
+                  "x": 14.228179,
+                  "y": -22.0036488
+                },
+                {
+                  "x": 14.9166336,
+                  "y": -22.788763
+                },
+                {
+                  "x": 15.784832,
+                  "y": -23.36894
+                },
+                {
+                  "x": 16.7736073,
+                  "y": -23.7046413
+                },
+                {
+                  "x": 17.8155785,
+                  "y": -23.77299
+                },
+                {
+                  "x": 18.8397331,
+                  "y": -23.5693264
+                },
+                {
+                  "x": 19.7762814,
+                  "y": -23.1075344
+                }
+              ],
+              "UVs": [],
+              "UseCustomUVs": false,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "aca95e11-be38-4c8b-9e20-b077c1c8985d",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/MuteSlash",
+        "componentNames": "MOD.Core.UITransformComponent",
+        "jsonString": {
+          "name": "MuteSlash",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/MuteSlash",
+          "nameEditable": true,
+          "enable": false,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 3,
+          "pathConstraints": "//////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "659310d0-973a-43fe-8814-4809dc86a5b2",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/MuteSlash/Outline",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.PolygonGUIRendererComponent",
+        "jsonString": {
+          "name": "Outline",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/MuteSlash/Outline",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 0,
+          "pathConstraints": "///////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PolygonGUIRendererComponent",
+              "Color": {
+                "r": 0.227450982,
+                "g": 0.141176477,
+                "b": 0.09803922,
+                "a": 1.0
+              },
+              "MaterialId": "",
+              "Points": [
+                {
+                  "x": 31.7558556,
+                  "y": 19.8636761
+                },
+                {
+                  "x": 32.9231834,
+                  "y": 21.269598
+                },
+                {
+                  "x": 33.6868553,
+                  "y": 22.92974
+                },
+                {
+                  "x": 33.9948273,
+                  "y": 24.7309685
+                },
+                {
+                  "x": 33.8261147,
+                  "y": 26.55053
+                },
+                {
+                  "x": 33.192215,
+                  "y": 28.2644253
+                },
+                {
+                  "x": 32.1363258,
+                  "y": 29.7558556
+                },
+                {
+                  "x": 30.730402,
+                  "y": 30.9231834
+                },
+                {
+                  "x": 29.07026,
+                  "y": 31.6868553
+                },
+                {
+                  "x": 27.2690315,
+                  "y": 31.9948273
+                },
+                {
+                  "x": 25.44947,
+                  "y": 31.8261166
+                },
+                {
+                  "x": 23.7355747,
+                  "y": 31.192215
+                },
+                {
+                  "x": 22.2441444,
+                  "y": 30.1363239
+                },
+                {
+                  "x": -31.7558556,
+                  "y": -19.8636761
+                },
+                {
+                  "x": -32.9231834,
+                  "y": -21.269598
+                },
+                {
+                  "x": -33.6868553,
+                  "y": -22.92974
+                },
+                {
+                  "x": -33.9948273,
+                  "y": -24.7309685
+                },
+                {
+                  "x": -33.8261147,
+                  "y": -26.55053
+                },
+                {
+                  "x": -33.192215,
+                  "y": -28.2644253
+                },
+                {
+                  "x": -32.1363258,
+                  "y": -29.7558556
+                },
+                {
+                  "x": -30.730402,
+                  "y": -30.9231834
+                },
+                {
+                  "x": -29.07026,
+                  "y": -31.6868553
+                },
+                {
+                  "x": -27.2690315,
+                  "y": -31.9948273
+                },
+                {
+                  "x": -25.44947,
+                  "y": -31.8261166
+                },
+                {
+                  "x": -23.7355747,
+                  "y": -31.192215
+                },
+                {
+                  "x": -22.2441444,
+                  "y": -30.1363239
+                }
+              ],
+              "UVs": [],
+              "UseCustomUVs": false,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "ccf2c7c9-50f8-431a-a45f-3a64ac83069e",
+        "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/MuteSlash/Line",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.PolygonGUIRendererComponent",
+        "jsonString": {
+          "name": "Line",
+          "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/MuteSlash/Line",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": true,
+          "displayOrder": 1,
+          "pathConstraints": "///////",
+          "revision": 0,
+          "origin": {
+            "type": "Model",
+            "entry_id": "UIEmpty",
+            "sub_entity_id": null,
+            "root_entity_id": null,
+            "replaced_model_id": null
+          },
+          "modelId": "uiempty",
+          "@components": [
+            {
+              "@type": "MOD.Core.UITransformComponent",
+              "ActivePlatform": 255,
+              "AlignmentOption": 0,
+              "AnchorsMax": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "AnchorsMin": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "MobileOnly": false,
+              "OffsetMax": {
+                "x": 34.0,
+                "y": 34.0
+              },
+              "OffsetMin": {
+                "x": -34.0,
+                "y": -34.0
+              },
+              "Pivot": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "RectSize": {
+                "x": 68.0,
+                "y": 68.0
+              },
+              "UIMode": 1,
+              "UIScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "UIVersion": 2,
+              "anchoredPosition": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.PolygonGUIRendererComponent",
+              "Color": {
+                "r": 1.0,
+                "g": 0.9411765,
+                "b": 0.807843149,
+                "a": 1.0
+              },
+              "MaterialId": "",
+              "Points": [
+                {
+                  "x": 30.39704,
+                  "y": 21.3311958
+                },
+                {
+                  "x": 31.2308445,
+                  "y": 22.3354263
+                },
+                {
+                  "x": 31.7763252,
+                  "y": 23.521244
+                },
+                {
+                  "x": 31.9963055,
+                  "y": 24.8078346
+                },
+                {
+                  "x": 31.8757973,
+                  "y": 26.1075211
+                },
+                {
+                  "x": 31.42301,
+                  "y": 27.3317318
+                },
+                {
+                  "x": 30.6688042,
+                  "y": 28.39704
+                },
+                {
+                  "x": 29.6645737,
+                  "y": 29.2308445
+                },
+                {
+                  "x": 28.478756,
+                  "y": 29.7763252
+                },
+                {
+                  "x": 27.1921654,
+                  "y": 29.9963055
+                },
+                {
+                  "x": 25.8924789,
+                  "y": 29.8757973
+                },
+                {
+                  "x": 24.6682682,
+                  "y": 29.42301
+                },
+                {
+                  "x": 23.60296,
+                  "y": 28.6688042
+                },
+                {
+                  "x": -30.39704,
+                  "y": -21.3311958
+                },
+                {
+                  "x": -31.2308445,
+                  "y": -22.3354263
+                },
+                {
+                  "x": -31.7763252,
+                  "y": -23.521244
+                },
+                {
+                  "x": -31.9963055,
+                  "y": -24.8078346
+                },
+                {
+                  "x": -31.8757973,
+                  "y": -26.1075211
+                },
+                {
+                  "x": -31.42301,
+                  "y": -27.3317318
+                },
+                {
+                  "x": -30.6688042,
+                  "y": -28.39704
+                },
+                {
+                  "x": -29.6645737,
+                  "y": -29.2308445
+                },
+                {
+                  "x": -28.478756,
+                  "y": -29.7763252
+                },
+                {
+                  "x": -27.1921654,
+                  "y": -29.9963055
+                },
+                {
+                  "x": -25.8924789,
+                  "y": -29.8757973
+                },
+                {
+                  "x": -24.6682682,
+                  "y": -29.42301
+                },
+                {
+                  "x": -23.60296,
+                  "y": -28.6688042
+                }
+              ],
+              "UVs": [],
+              "UseCustomUVs": false,
               "Enable": true
             }
           ],

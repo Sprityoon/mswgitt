@@ -63,7 +63,7 @@ script UIAnvilController extends Component
 			return
 		end
 		local h = e:ConnectEvent(ButtonClickEvent, function()
-			if self.ClickSoundRUID ~= "" then _SoundService:PlaySound(self.ClickSoundRUID, 1.0) end
+			if self.ClickSoundRUID ~= "" then _BGMManager:PlayInGameSound(self.ClickSoundRUID, 1.0) end
 			fn()
 		end)
 		table.insert(self.handlers, { entity = e, cb = h })

@@ -1,12 +1,15 @@
 @Logic
 script BGMManager extends Logic
-	-- T55: 맵 kind별 BGM + 날씨 앰비언스 (클라 로컬 연출). WeatherManager/PlayerController 무수정.
+	-- 맵별 BGM·날씨 앰비언스와 메인메뉴의 인게임 효과음 차단을 관리한다.
 
 	property number PollIntervalSec = 0.5
 	property number AccumSec = 0
 	property string CurrentMapKind = ""
 	property string CurrentBgmRUID = ""
 	property number CurrentBgmVolume = 0.5
+	-- 클라이언트별 음악 설정. 맵 이동 중 유지하고, 효과음·날씨 앰비언스에는 적용하지 않는다.
+	property boolean MusicEnabled = true
+	property boolean MainMenuActive = true
 	property string CurrentAmbienceRUID = ""
 	property number AmbienceVolume = 0.35
 	property boolean Started = false
@@ -14,6 +17,7 @@ script BGMManager extends Logic
 	method void OnBeginPlay()
 		-- 클라 전용 기동. 서버는 무동작.
 		if not self:IsClient() then return end
+		self.MainMenuActive = true
 		self.Started = true
 		self.AccumSec = 0
 		log("[T55][BGM] BGMManager client OnBeginPlay — poll=" .. tostring(self.PollIntervalSec))
@@ -24,6 +28,7 @@ script BGMManager extends Logic
 		-- 재생 중 BGM/앰비언스 정리.
 		if not self:IsClient() then return end
 		self:StopAmbience()
+		self:StopInGameSounds()
 		if _SoundService ~= nil then
 			_SoundService:StopBGM(true)
 		end
@@ -51,6 +56,51 @@ script BGMManager extends Logic
 		self:UpdateAmbience(force)
 	end
 
+	@ExecSpace("ClientOnly")
+	method void SetMusicEnabled(boolean enabled)
+		-- 현재 곡의 재생 위치를 유지하며 음악 볼륨만 전환한다.
+		self.MusicEnabled = enabled
+		if _SoundService ~= nil then
+			_SoundService:SetBGMVolume(enabled and self.CurrentBgmVolume or 0)
+		end
+		log("[BGM] music enabled=" .. tostring(enabled))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetMainMenuActive(boolean active)
+		-- 메뉴 진입 시 인게임 소리를 즉시 끊고, 닫을 때 현재 맵·날씨 소리를 복구한다.
+		if active then
+			self:StopAmbience()
+			self:StopInGameSounds()
+		end
+		if self.MainMenuActive == active then return end
+		self.MainMenuActive = active
+		self:TickAudio(true)
+		log("[AUDIO] main menu active=" .. tostring(active) .. " in-game sounds enabled=" .. tostring(not active))
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean PlayInGameSound(string ruid, number volume)
+		-- 인게임 효과음은 각 클라이언트의 메뉴 상태를 확인한 뒤 재생하며, 재진입 정지용 RUID를 기록한다.
+		if self.MainMenuActive or ruid == nil or ruid == "" or _SoundService == nil then return false end
+		if self._T.inGameSoundRUIDs == nil then self._T.inGameSoundRUIDs = {} end
+		self._T.inGameSoundRUIDs[ruid] = true
+		_SoundService:PlaySound(ruid, volume)
+		return true
+	end
+
+	@ExecSpace("ClientOnly")
+	method void StopInGameSounds()
+		-- 기존 인게임 효과음의 잔향까지 정지한다. 메인메뉴 클릭·호버음은 별도로 재생한다.
+		if self._T.inGameSoundRUIDs == nil then return end
+		if _SoundService ~= nil then
+			for ruid, _ in pairs(self._T.inGameSoundRUIDs) do
+				_SoundService:StopSound(ruid)
+			end
+		end
+		self._T.inGameSoundRUIDs = {}
+	end
+
 	method string ClassifyMapKind(string mapName)
 		-- T37 규약 확장: Home_=home / town=town / boss 템플릿 계열=boss / 그 외=field.
 		if mapName == nil or mapName == "" then return "home" end
@@ -76,10 +126,10 @@ script BGMManager extends Logic
 	end
 
 	method void UpdateBGM(boolean force)
-		-- MapKind 변화 시에만 BGM 전환. 같은 kind면 재시작 없음.
+		-- 메인메뉴가 열려 있으면 mainmenu 행을 우선하며 같은 권역에서는 재시작하지 않는다.
 		local mapName = self:GetLocalMapName()
-		if mapName == "" then return end
-		local kind = self:ClassifyMapKind(mapName)
+		if not self.MainMenuActive and mapName == "" then return end
+		local kind = self.MainMenuActive and "mainmenu" or self:ClassifyMapKind(mapName)
 		if (not force) and kind == self.CurrentMapKind then return end
 
 		local bgmRuid = ""
@@ -138,7 +188,7 @@ script BGMManager extends Logic
 
 		-- SoundService에 페이드 전환 API 없음 → 즉시 Stop+Play (FadeSec은 데이터 예약, 런타임 미사용).
 		_SoundService:StopBGM(true)
-		_SoundService:PlayBGM(bgmRuid, volume)
+		_SoundService:PlayBGM(bgmRuid, self.MusicEnabled and volume or 0)
 		log("[T55][BGM] play kind=" .. kind
 			.. " map=" .. mapName
 			.. " ruid=" .. bgmRuid
@@ -153,6 +203,10 @@ script BGMManager extends Logic
 
 	method void UpdateAmbience(boolean force)
 		-- WeatherManager @Sync 읽기 전용 → WeatherDataSet.AmbienceSoundRUID 루프 재생.
+		if self.MainMenuActive then
+			self:StopAmbience()
+			return
+		end
 		local weatherId = "clear"
 		if _WeatherManager ~= nil then
 			local ok, wid = pcall(function() return _WeatherManager:GetCurrentWeatherId() end)

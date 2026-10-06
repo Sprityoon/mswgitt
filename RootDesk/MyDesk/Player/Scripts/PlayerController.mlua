@@ -265,9 +265,13 @@ script PlayerController extends Component
 	property string RanchingMentorNpcId = "barnkeeper"
 
 	-- T65: 맨손(도구 공란) 스윙/타격 SFX 폴백 — item_dataset SwingSoundRUID/HitSoundRUID 공란 시 사용
-	property string DefaultSwingSoundRUID = "8c62b200dd5046adb002b3873582cb79"
+	-- 2026-10-06 제작자 선정 (가벼운 주먹 소리). 이전: 스윙 8c62b200… · 타격 c1707b72…
+	property string DefaultSwingSoundRUID = "5f9fd5d11f054593a85b1c66e5829723"
 
-	property string DefaultHitSoundRUID = "c1707b72acff4d35a464ffd7a9bdb540"
+	property string DefaultHitSoundRUID = "50c95260aa524be6b7bb9eeb48a30ec2"
+	-- 맨손 기본음 볼륨 (0~1). 도구가 자기 소리를 지정한 경우(곡괭이 등)는 건드리지 않고 1.0 그대로.
+	property number DefaultSwingSoundVolume = 0.45
+	property number DefaultHitSoundVolume = 0.45
 
 	-- T66: 시전 이펙트 전방 오프셋(월드 유닛)·스케일 (CSV EffectOffset/EffectScale 공란 시 폴백)
 	property number SkillEffectForwardOffset = 0.8
@@ -1172,13 +1176,22 @@ script PlayerController extends Component
 
 		if isBuildItem and _BuildingManager ~= nil then
 			-- 건축: 조준 칸(BuildingManager:GetAimUnit — 미리보기와 같은 단일 소스, 규칙 18)의 원점 셀을 보낸다.
-			local unit = _BuildingManager:GetAimUnit(playerPos.x, playerPos.y, self.LastDirectionX, self.LastDirectionY)
+			local unit = _BuildingManager:GetPlacementAimUnit(inv:GetBaseItemName(activeItem), playerPos.x, playerPos.y, self.LastDirectionX, self.LastDirectionY)
 			log("[BUILD] place request " .. activeItem .. " unit=(" .. unit.x .. ", " .. unit.y .. ")")
 			inv:ServerRequestPlace(activeItem, unit.x * 2, unit.y * 2)
 			return
 		end
 
 		if isPlaceable then
+			local baseName = inv:GetBaseItemName(activeItem)
+			local cropDs = _DataService:GetTable("CropDataSet")
+			local isCropSeed = cropDs ~= nil and cropDs:FindRow("SeedItem", baseName) ~= nil
+			local itemDs = _DataService:GetTable("item_dataset")
+			local itemRow = itemDs ~= nil and itemDs:FindRow("Name", baseName) or nil
+			if not isCropSeed and itemRow ~= nil and (itemRow:GetItem("PlacedTileName") or "") == "" then
+				local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, 2)
+				targetCell = Vector2Int(origin.x, origin.y)
+			end
 			log("[PLACE] Requesting placement of " .. activeItem .. " at cell (" .. targetCell.x .. ", " .. targetCell.y .. ")")
 			inv:ServerRequestPlace(activeItem, targetCell.x, targetCell.y)
 			return
@@ -1423,12 +1436,19 @@ script PlayerController extends Component
 		return defaultRuid
 	end
 
+	method number GetToolSoundVolume(string ruid, string columnName)
+		-- 맨손 기본음(Default*SoundRUID)과 같은 소리일 때만 줄인 볼륨, 아니면 1.0.
+		if columnName == "SwingSoundRUID" and ruid == self.DefaultSwingSoundRUID then return self.DefaultSwingSoundVolume end
+		if columnName == "HitSoundRUID" and ruid == self.DefaultHitSoundRUID then return self.DefaultHitSoundVolume end
+		return 1.0
+	end
+
 	@ExecSpace("ClientOnly")
 	method void ClientPlaySwingSound()
 		-- T65: 로컬 스윙음 (TryMine MINE 진입 — 허공/지형 편집 포함).
 		local ruid = self:ResolveEquippedToolSound("SwingSoundRUID")
 		if ruid == nil or ruid == "" then return end
-		_SoundService:PlaySound(ruid, 1.0)
+		if not _BGMManager:PlayInGameSound(ruid, self:GetToolSoundVolume(ruid, "SwingSoundRUID")) then return end
 		log("[T65][SWING] sound=" .. ruid)
 	end
 
@@ -1441,7 +1461,7 @@ script PlayerController extends Component
 		end
 		local ruid = self:ResolveEquippedToolSound("HitSoundRUID")
 		if ruid == nil or ruid == "" then return end
-		_SoundService:PlaySound(ruid, 1.0)
+		if not _BGMManager:PlayInGameSound(ruid, self:GetToolSoundVolume(ruid, "HitSoundRUID")) then return end
 		log("[T65][HIT] resource sound=" .. ruid)
 	end
 
@@ -1905,7 +1925,7 @@ script PlayerController extends Component
 			self.AP = self.AP + self.APPerLevelUp
 			leveledUp = true
 			
-			self:ShowMineFeedback("LEVEL UP! Level " .. self.Level .. " (SP +" .. self.SPPerLevelUp .. " · AP +" .. self.APPerLevelUp .. ")")
+			self:ShowMineFeedback("레벨 업! Lv." .. self.Level .. " (SP +" .. self.SPPerLevelUp .. " · AP +" .. self.APPerLevelUp .. ")")
 		end
 		if leveledUp then
 			-- 레벨 성장(최대 HP 등)을 반영하고 HP·마나를 가득 채운다.
@@ -1939,6 +1959,7 @@ script PlayerController extends Component
 		local placedTileName = ""
 		local previewRuid = ""
 		local previewScaleRaw = ""
+		local isCropSeed = false
 		
 		if activeItem ~= "" then
 			local baseName = inv:GetBaseItemName(activeItem)
@@ -1952,6 +1973,8 @@ script PlayerController extends Component
 				end
 				if row ~= nil and row:GetItem("Category") == "furniture" then
 					isPlaceable = true
+					local cropDs = _DataService:GetTable("CropDataSet")
+					isCropSeed = cropDs ~= nil and cropDs:FindRow("SeedItem", baseName) ~= nil
 					iconRuid = row:GetItem("IconRUID") or ""
 					placedTileName = row:GetItem("PlacedTileName") or ""
 					previewRuid = row:GetItem("PreviewRUID") or ""
@@ -1968,7 +1991,11 @@ script PlayerController extends Component
 				local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.8
 				local targetCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
 				if targetCell == nil then return end
-				local is2x2 = (placedTileName == "")
+				local is2x2 = placedTileName == "" and not isCropSeed
+				if is2x2 then
+					local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, 2)
+					targetCell = Vector2Int(origin.x, origin.y)
+				end
 				local cellWorldPos = is2x2 and Vector3(targetCell.x + 1.0, targetCell.y + 1.0, 0) or Vector3(targetCell.x + 0.5, targetCell.y + 0.5, 0)
 				local previewScale = is2x2 and Vector3(2.0, 2.0, 1.0) or Vector3(1.0, 1.0, 1.0)
 				-- item_dataset.PreviewScale 이 있으면 그 값을 쓴다. 모델 Scale 과 어긋나면 미리보기만 딴 크기로 보인다.
@@ -2007,7 +2034,7 @@ script PlayerController extends Component
 				if isvalid(preview) then
 					preview.TransformComponent.WorldPosition = cellWorldPos
 					
-					local canPlace = true
+					local canPlace = not isCropSeed or _ResourceSpawner:IsPlantableFarmCell(self.Entity.CurrentMap, targetCell.x, targetCell.y)
 					-- Client-side occupancy check using collision simulator
 					local simulator = _CollisionService:GetSimulator(self.Entity)
 					if simulator then
@@ -2022,7 +2049,7 @@ script PlayerController extends Component
 							if isvalid(comp) and isvalid(comp.Entity) then
 								local ent = comp.Entity
 								-- Block if there's any entity except self, the preview itself, or temporary item drops
-								if ent ~= self.Entity and ent.Name ~= "PlacementPreview" and ent.Name ~= "ItemDrop" then
+									if ent ~= self.Entity and (isvalid(ent:GetComponent("script.ResourceOccupiedArea")) or isvalid(ent:GetComponent("script.PlaceableFurniture")) or ent.PlayerComponent ~= nil) then
 									canPlace = false
 									break
 								end
@@ -2078,7 +2105,7 @@ script PlayerController extends Component
 		local currentMap = self.Entity.CurrentMap
 		if not isvalid(currentMap) then return end
 		local pos = self.Entity.TransformComponent.WorldPosition
-		local unit = _BuildingManager:GetAimUnit(pos.x, pos.y, self.LastDirectionX, self.LastDirectionY)
+		local unit = _BuildingManager:GetPlacementAimUnit(itemName, pos.x, pos.y, self.LastDirectionX, self.LastDirectionY)
 		local key = itemName .. "@" .. unit.x .. "_" .. unit.y .. "_" .. self.LastDirectionY
 		local now = _UtilLogic.ElapsedSeconds
 		if self._T.BuildPreviewKey ~= key or now >= (self._T.BuildPreviewNext or 0) then
@@ -2087,9 +2114,6 @@ script PlayerController extends Component
 			local plan = _BuildingManager:BuildPlan(itemName, unit.x, unit.y)
 			local bounds = _BuildingManager:GetPlanBounds(plan)
 			local ok = bounds.x0 ~= nil and self.CanPlaceOnCurrentMap
-			if ok and self.LastDirectionY <= 0 and _BuildingManager:IsBlueprintItem(itemName) then
-				ok = false   -- 설계도는 위쪽을 바라볼 때만 (서버 PlaceBuildItem 과 같은 조건)
-			end
 			if ok then
 				ok = _BuildingManager:CheckPlanClient(currentMap, plan, self.Entity) == ""
 			end
@@ -2190,6 +2214,7 @@ script PlayerController extends Component
 			"script.ResearchLab",
 			"script.BlacksmithAnvil",
 			"script.BuildingTable",
+			"script.ConstructionSignInteract",
 			"script.BulletinBoard",
 			"script.Furniture_Bed",
 			"script.Furnace",
@@ -2301,6 +2326,7 @@ script PlayerController extends Component
 			"script.ResearchLab",
 			"script.BlacksmithAnvil",
 			"script.BuildingTable",
+			"script.ConstructionSignInteract",
 			"script.BulletinBoard",
 			"script.Furniture_Bed",
 			"script.Furnace",
@@ -2337,6 +2363,7 @@ script PlayerController extends Component
 			"script.ResearchLab",
 			"script.BlacksmithAnvil",
 			"script.BuildingTable",
+			"script.ConstructionSignInteract",
 			"script.BulletinBoard",
 			"script.MerchantInteract",
 			"script.VillagerDialog",
@@ -5590,10 +5617,17 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("Multicast")
+	method void MulticastPlayHitSound(string soundRUID)
+		-- 몬스터 피격음(도구 HitSoundRUID). 맨손 기본음은 DefaultHitSoundVolume 으로 줄여 재생한다 — 스킬 시전음과 볼륨을 따로 두려고 분리.
+		if soundRUID == nil or soundRUID == "" then return end
+		_BGMManager:PlayInGameSound(soundRUID, self:GetToolSoundVolume(soundRUID, "HitSoundRUID"))
+	end
+
+	@ExecSpace("Multicast")
 	method void MulticastPlaySkillSound(string soundRUID)
 		-- T46: 시전 사운드 (SoundService — 클라 재생).
 		if soundRUID == nil or soundRUID == "" then return end
-		_SoundService:PlaySound(soundRUID, 1.0)
+		_BGMManager:PlayInGameSound(soundRUID, 1.0)
 	end
 
 	@ExecSpace("ServerOnly")

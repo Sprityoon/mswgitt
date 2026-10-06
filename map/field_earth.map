@@ -125346,186 +125346,6 @@
         }
       },
       {
-        "id": "3cb2daa0-46fb-430d-8688-436cf82c2346",
-        "path": "/maps/field_earth/D02_Deco_MushroomCluster",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D02_Deco_MushroomCluster",
-          "path": "/maps/field_earth/D02_Deco_MushroomCluster",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 290,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_mushroom_cluster",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -15,
-                "y": -17.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e2b9717421a7486192c5821b70cdb1de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.88,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.15
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_mushroom_cluster",
-            "sub_entity_id": null,
-            "root_entity_id": "3cb2daa0-46fb-430d-8688-436cf82c2346",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "4378d929-e9d2-4f67-bb2e-c93ce1d31702",
-        "path": "/maps/field_earth/D04_Deco_FlowerBushYellow",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D04_Deco_FlowerBushYellow",
-          "path": "/maps/field_earth/D04_Deco_FlowerBushYellow",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 292,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_flower_bush_yellow",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -15,
-                "y": -24.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "675880ddceac406d8bc9b101cc32e6fb",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 1.16,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.29
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_flower_bush_yellow",
-            "sub_entity_id": null,
-            "root_entity_id": "4378d929-e9d2-4f67-bb2e-c93ce1d31702",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
         "id": "a970058b-d437-43ff-9ff3-60b57dc8c213",
         "path": "/maps/field_earth/D06_Deco_BushMushroom",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
@@ -125701,186 +125521,6 @@
             "entry_id": "deco_bush_twin",
             "sub_entity_id": null,
             "root_entity_id": "a4af8c61-0094-43e2-a835-0f8364305b51",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "2f49212c-a742-4562-979d-06bd26a525d9",
-        "path": "/maps/field_earth/D08_Deco_MushroomCluster",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D08_Deco_MushroomCluster",
-          "path": "/maps/field_earth/D08_Deco_MushroomCluster",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 296,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_mushroom_cluster",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -16,
-                "y": 3.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e2b9717421a7486192c5821b70cdb1de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.88,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.15
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_mushroom_cluster",
-            "sub_entity_id": null,
-            "root_entity_id": "2f49212c-a742-4562-979d-06bd26a525d9",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "53ec9dc4-120c-4a5c-ad1a-489d139b286d",
-        "path": "/maps/field_earth/D10_Deco_FlowerBushYellow",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D10_Deco_FlowerBushYellow",
-          "path": "/maps/field_earth/D10_Deco_FlowerBushYellow",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 298,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_flower_bush_yellow",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 5,
-                "y": 2.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "675880ddceac406d8bc9b101cc32e6fb",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 1.16,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.29
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_flower_bush_yellow",
-            "sub_entity_id": null,
-            "root_entity_id": "53ec9dc4-120c-4a5c-ad1a-489d139b286d",
             "replaced_model_id": null
           }
         }
@@ -126066,186 +125706,6 @@
         }
       },
       {
-        "id": "ca9c7ebc-f30f-4b2b-a967-e44805333357",
-        "path": "/maps/field_earth/D14_Deco_MushroomCluster",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D14_Deco_MushroomCluster",
-          "path": "/maps/field_earth/D14_Deco_MushroomCluster",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 302,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_mushroom_cluster",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 17,
-                "y": -15.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e2b9717421a7486192c5821b70cdb1de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.88,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.15
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_mushroom_cluster",
-            "sub_entity_id": null,
-            "root_entity_id": "ca9c7ebc-f30f-4b2b-a967-e44805333357",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "5dc7e257-fc82-48f9-a6f0-2dcd6127d2bf",
-        "path": "/maps/field_earth/D16_Deco_FlowerBushYellow",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D16_Deco_FlowerBushYellow",
-          "path": "/maps/field_earth/D16_Deco_FlowerBushYellow",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 304,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_flower_bush_yellow",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 17,
-                "y": -22.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "675880ddceac406d8bc9b101cc32e6fb",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 1.16,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.29
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_flower_bush_yellow",
-            "sub_entity_id": null,
-            "root_entity_id": "5dc7e257-fc82-48f9-a6f0-2dcd6127d2bf",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
         "id": "12aac2fe-245c-448d-b96b-fb89329e81a4",
         "path": "/maps/field_earth/D18_Deco_BushMushroom",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
@@ -126421,186 +125881,6 @@
             "entry_id": "deco_bush_twin",
             "sub_entity_id": null,
             "root_entity_id": "70c0e49b-8d9c-42a1-a9a9-fb3a9623ea22",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "bbaa3c7b-b79f-4d07-b2ab-e4db0af1f9d7",
-        "path": "/maps/field_earth/D20_Deco_MushroomCluster",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D20_Deco_MushroomCluster",
-          "path": "/maps/field_earth/D20_Deco_MushroomCluster",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 308,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_mushroom_cluster",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 0,
-                "y": 14.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e2b9717421a7486192c5821b70cdb1de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.88,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.15
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_mushroom_cluster",
-            "sub_entity_id": null,
-            "root_entity_id": "bbaa3c7b-b79f-4d07-b2ab-e4db0af1f9d7",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "3298a4fc-f23c-4929-af4b-0a33000311f3",
-        "path": "/maps/field_earth/D22_Deco_FlowerBushYellow",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D22_Deco_FlowerBushYellow",
-          "path": "/maps/field_earth/D22_Deco_FlowerBushYellow",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 310,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_flower_bush_yellow",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 26,
-                "y": 25.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "675880ddceac406d8bc9b101cc32e6fb",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 1.16,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.29
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_flower_bush_yellow",
-            "sub_entity_id": null,
-            "root_entity_id": "3298a4fc-f23c-4929-af4b-0a33000311f3",
             "replaced_model_id": null
           }
         }
@@ -127866,96 +127146,6 @@
         }
       },
       {
-        "id": "c0212160-b961-4e24-9139-132ebae7495b",
-        "path": "/maps/field_earth/D47_Deco_FlowerBushYellow",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D47_Deco_FlowerBushYellow",
-          "path": "/maps/field_earth/D47_Deco_FlowerBushYellow",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 335,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_flower_bush_yellow",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -7.5,
-                "y": -22.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "675880ddceac406d8bc9b101cc32e6fb",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 1.16,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.29
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_flower_bush_yellow",
-            "sub_entity_id": null,
-            "root_entity_id": "c0212160-b961-4e24-9139-132ebae7495b",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
         "id": "b952008b-db3e-4d66-8172-72d3d624354e",
         "path": "/maps/field_earth/D49_Deco_PinkFlowers",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
@@ -128226,26 +127416,26 @@
         }
       },
       {
-        "id": "c8d20eb1-6de7-4407-a9e8-324e5a2726ab",
-        "path": "/maps/field_earth/D53_Deco_FlowerBushYellow",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "id": "7baf4b2e-9791-438a-9b60-38999a26bd8d",
+        "path": "/maps/field_earth/D02_Deco_RockTree",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
         "jsonString": {
-          "name": "D53_Deco_FlowerBushYellow",
-          "path": "/maps/field_earth/D53_Deco_FlowerBushYellow",
+          "name": "D02_Deco_RockTree",
+          "path": "/maps/field_earth/D02_Deco_RockTree",
           "nameEditable": true,
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 341,
+          "displayOrder": 342,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_flower_bush_yellow",
+          "modelId": "deco_rocktree",
           "@components": [
             {
               "@type": "MOD.Core.TransformComponent",
               "Position": {
-                "x": 23.5,
-                "y": -0.5,
+                "x": -15,
+                "y": -17.5,
                 "z": 0
               },
               "QuaternionRotation": {
@@ -128256,15 +127446,15 @@
               },
               "Scale": {
                 "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
               },
               "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "675880ddceac406d8bc9b101cc32e6fb",
+              "SpriteRUID": "ca01ab2cf27c493c8dd97cf2f5fa54c9",
               "Color": {
                 "r": 1,
                 "g": 1,
@@ -128286,13 +127476,133 @@
               "Enable": true,
               "BoxSize": {
                 "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 1.16,
-                "y": 0.3
+                "x": 1.16999984,
+                "y": 0.448284149
               },
               "ColliderOffset": {
                 "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.01,
-                "y": -0.29
+                "x": 0.00499979639,
+                "y": -0.155858353
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1.16999984,
+                "y": 0.448284149
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.00499979639,
+                "y": -0.155858353
+              },
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 1,
+              "OffsetYMin": 0,
+              "OffsetYMax": 1
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Stone",
+              "DropMinCount": 1,
+              "DropMaxCount": 1
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_rocktree",
+            "sub_entity_id": null,
+            "root_entity_id": "7baf4b2e-9791-438a-9b60-38999a26bd8d",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "23ae18f4-04cf-4de5-b77d-7b2d14112f9e",
+        "path": "/maps/field_earth/D04_Deco_Bush",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "D04_Deco_Bush",
+          "path": "/maps/field_earth/D04_Deco_Bush",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 343,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "deco_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -15,
+                "y": -24.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "dc1567476c4b4137975e6bcdade7e015",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.8800000000000001,
+                "y": 0.52
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": 0
               },
               "IsPassive": true,
               "IsLegacy": false
@@ -128308,9 +127618,819 @@
           "@version": 1,
           "origin": {
             "type": "Model",
-            "entry_id": "deco_flower_bush_yellow",
+            "entry_id": "deco_bush",
             "sub_entity_id": null,
-            "root_entity_id": "c8d20eb1-6de7-4407-a9e8-324e5a2726ab",
+            "root_entity_id": "23ae18f4-04cf-4de5-b77d-7b2d14112f9e",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "b711d685-6796-496a-ba00-5f7f9e84bf2e",
+        "path": "/maps/field_earth/D08_Deco_RockTree",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "D08_Deco_RockTree",
+          "path": "/maps/field_earth/D08_Deco_RockTree",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 344,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "deco_rocktree",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -16,
+                "y": 3.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "ca01ab2cf27c493c8dd97cf2f5fa54c9",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1.16999984,
+                "y": 0.448284149
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.00499979639,
+                "y": -0.155858353
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1.16999984,
+                "y": 0.448284149
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.00499979639,
+                "y": -0.155858353
+              },
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 1,
+              "OffsetYMin": 0,
+              "OffsetYMax": 1
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Stone",
+              "DropMinCount": 1,
+              "DropMaxCount": 1
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_rocktree",
+            "sub_entity_id": null,
+            "root_entity_id": "b711d685-6796-496a-ba00-5f7f9e84bf2e",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "910af098-0d5d-46f3-9d79-9edfcfcbd0b2",
+        "path": "/maps/field_earth/D10_Deco_Bush",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "D10_Deco_Bush",
+          "path": "/maps/field_earth/D10_Deco_Bush",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 345,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "deco_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 5,
+                "y": 2.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "dc1567476c4b4137975e6bcdade7e015",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.8800000000000001,
+                "y": 0.52
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": 0
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_bush",
+            "sub_entity_id": null,
+            "root_entity_id": "910af098-0d5d-46f3-9d79-9edfcfcbd0b2",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "4bb7d1f3-94da-4493-b86b-0d32035fae83",
+        "path": "/maps/field_earth/D14_Deco_RockTree",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "D14_Deco_RockTree",
+          "path": "/maps/field_earth/D14_Deco_RockTree",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 346,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "deco_rocktree",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 17,
+                "y": -15.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "ca01ab2cf27c493c8dd97cf2f5fa54c9",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1.16999984,
+                "y": 0.448284149
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.00499979639,
+                "y": -0.155858353
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1.16999984,
+                "y": 0.448284149
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.00499979639,
+                "y": -0.155858353
+              },
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 1,
+              "OffsetYMin": 0,
+              "OffsetYMax": 1
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Stone",
+              "DropMinCount": 1,
+              "DropMaxCount": 1
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_rocktree",
+            "sub_entity_id": null,
+            "root_entity_id": "4bb7d1f3-94da-4493-b86b-0d32035fae83",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "669e898e-52ce-41ea-bd27-8f88f53da5fe",
+        "path": "/maps/field_earth/D16_Deco_Bush",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "D16_Deco_Bush",
+          "path": "/maps/field_earth/D16_Deco_Bush",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 347,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "deco_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 17,
+                "y": -22.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "dc1567476c4b4137975e6bcdade7e015",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.8800000000000001,
+                "y": 0.52
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": 0
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_bush",
+            "sub_entity_id": null,
+            "root_entity_id": "669e898e-52ce-41ea-bd27-8f88f53da5fe",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "75ac21c9-5891-4207-9051-4c976a04e60d",
+        "path": "/maps/field_earth/D20_Deco_RockTree",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "D20_Deco_RockTree",
+          "path": "/maps/field_earth/D20_Deco_RockTree",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 348,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "deco_rocktree",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 0,
+                "y": 14.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "ca01ab2cf27c493c8dd97cf2f5fa54c9",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1.16999984,
+                "y": 0.448284149
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.00499979639,
+                "y": -0.155858353
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 1.16999984,
+                "y": 0.448284149
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.00499979639,
+                "y": -0.155858353
+              },
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0,
+              "OffsetXMax": 1,
+              "OffsetYMin": 0,
+              "OffsetYMax": 1
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Stone",
+              "DropMinCount": 1,
+              "DropMaxCount": 1
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_rocktree",
+            "sub_entity_id": null,
+            "root_entity_id": "75ac21c9-5891-4207-9051-4c976a04e60d",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "9f7ae90b-e9d7-4495-b321-0ca5352791cf",
+        "path": "/maps/field_earth/D22_Deco_Bush",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "D22_Deco_Bush",
+          "path": "/maps/field_earth/D22_Deco_Bush",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 349,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "deco_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 26,
+                "y": 25.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "dc1567476c4b4137975e6bcdade7e015",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.8800000000000001,
+                "y": 0.52
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": 0
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_bush",
+            "sub_entity_id": null,
+            "root_entity_id": "9f7ae90b-e9d7-4495-b321-0ca5352791cf",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "ec316cdf-ed37-4a91-9657-16b2f4230caa",
+        "path": "/maps/field_earth/D47_Deco_Bush",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "D47_Deco_Bush",
+          "path": "/maps/field_earth/D47_Deco_Bush",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 350,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "deco_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": -7.5,
+                "y": -22.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "dc1567476c4b4137975e6bcdade7e015",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.8800000000000001,
+                "y": 0.52
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": 0
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_bush",
+            "sub_entity_id": null,
+            "root_entity_id": "ec316cdf-ed37-4a91-9657-16b2f4230caa",
+            "replaced_model_id": null
+          }
+        }
+      },
+      {
+        "id": "e7e67975-8bd1-4bce-823b-4aeba91c55f1",
+        "path": "/maps/field_earth/D53_Deco_Bush",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
+        "jsonString": {
+          "name": "D53_Deco_Bush",
+          "path": "/maps/field_earth/D53_Deco_Bush",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 351,
+          "pathConstraints": "///",
+          "revision": 1,
+          "modelId": "deco_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Position": {
+                "x": 23.5,
+                "y": -0.5,
+                "z": 0
+              },
+              "QuaternionRotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "Scale": {
+                "$type": "MOD.Core.MODVector3, MOD.Core",
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "SpriteRUID": "dc1567476c4b4137975e6bcdade7e015",
+              "Color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "DrawMode": 0,
+              "FlipX": false,
+              "FlipY": false,
+              "PlayRate": 1,
+              "OrderInLayer": 2,
+              "StartFrameIndex": 0,
+              "EndFrameIndex": 2147483647,
+              "Enable": true,
+              "SortingLayer": "MapLayer5"
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "Enable": true,
+              "BoxSize": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0.8800000000000001,
+                "y": 0.52
+              },
+              "ColliderOffset": {
+                "$type": "MOD.Core.MODVector2, MOD.Core",
+                "x": 0,
+                "y": 0
+              },
+              "IsPassive": true,
+              "IsLegacy": false
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0
+            }
+          ],
+          "@version": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_bush",
+            "sub_entity_id": null,
+            "root_entity_id": "e7e67975-8bd1-4bce-823b-4aeba91c55f1",
             "replaced_model_id": null
           }
         }

@@ -1,0 +1,31 @@
+@Component
+script GroupSortChild extends Component
+
+	-- 여러 소품을 한 모델로 묶었을 때(예: 공사장 무리 Prop_UC_ConstructionSite) 자식 스프라이트의 그리는 순서.
+	-- 루트의 Y정렬 순서(루트 Trigger 아랫변 = 무리 전체의 접지선) + OrderAboveRoot 로 고정한다.
+	-- 자식마다 따로 Y정렬하면 같은 무리 안에서 뒤쪽 소품(고양이)이 앞쪽 소품에 가려진다 — 낚시터 FlatGround 같은 예외 처리.
+
+	-- 무리 안에서의 앞뒤 (클수록 앞). 같은 루트의 형제끼리만 비교된다.
+	@HideFromInspector property integer OrderAboveRoot = 1
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 정적 소품이라 시작할 때 한 번만 정한다. 루트가 맵 직속이 아니어도 가장 가까운 Trigger 보유 조상을 기준으로 삼는다.
+		self:Apply()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Apply()
+		-- 루트(Trigger 를 가진 가장 가까운 조상)의 Y정렬 순서 + OrderAboveRoot.
+		local sprite = self.Entity.SpriteRendererComponent
+		if not isvalid(sprite) or _RenderLayers == nil then return end
+		local root = self.Entity.Parent
+		while isvalid(root) and not isvalid(root.TriggerComponent) do
+			root = root.Parent
+		end
+		if not isvalid(root) then return end
+		sprite.SortingLayer = _RenderLayers.EntityLayer
+		sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(root, 0) + self.OrderAboveRoot
+	end
+
+end

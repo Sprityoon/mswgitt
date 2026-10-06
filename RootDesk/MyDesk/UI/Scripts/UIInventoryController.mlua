@@ -1178,7 +1178,7 @@ script UIInventoryController extends Component
 		self.discardMax = self.inspectedCount
 		self.discardCount = 1
 		if isvalid(self.discardItemText) then
-			self.discardItemText.Text = self.inspectedItem .. "  (보유 " .. self.inspectedCount .. ")"
+			self.discardItemText.Text = self:GetItemDisplayName(self.inspectedItem) .. "  (보유 " .. self.inspectedCount .. ")"
 		end
 		self:UpdateDiscardCountText()
 		self.discardPopup.Enable = true

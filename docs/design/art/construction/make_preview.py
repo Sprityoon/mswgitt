@@ -2,10 +2,11 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 def make_preview_sheet():
-    art_dir = r"c:\minho\메이플월드\docs\design\art\construction"
-    tile_path = r"c:\minho\메이플월드\scratch\grass-remote-FullGrass.png"
+    art_dir = os.path.dirname(os.path.abspath(__file__))
+    workspace_dir = os.path.abspath(os.path.join(art_dir, "..", "..", "..", ".."))
+    tile_path = os.path.join(workspace_dir, "scratch", "grass-remote-FullGrass.png")
     if not os.path.exists(tile_path):
-        tile_path = r"c:\minho\메이플월드\tileimg\new grass\14.png"
+        tile_path = os.path.join(workspace_dir, "tileimg", "new grass", "14.png")
         
     tile = Image.open(tile_path).convert('RGBA')
     tw, th = tile.size

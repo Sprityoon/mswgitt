@@ -34,6 +34,12 @@ script BuildingManager extends Logic
 	-- 미리보기: 공식 흰 정사각 스프라이트(불투명 10×10px, 피벗 정중앙). Scale = 셀 수 × 100 / PreviewSpritePx.
 	property string PreviewSpriteRUID = "e682d7c62bb0474fa6a556cfbd6aefc9"
 	property number PreviewSpritePx = 10
+	-- 투명 접촉 그림자 타일. Maker 등록 후 RUID를 연결해야 켜진다.
+	property string WallShadowRUID = "edaf8aba812440329291dde23e8b4123"
+	property string WallShadowModelName = "BuildingWallShadow"
+	property number WallShadowTexturePx = 1254
+	property number WallShadowDepth = 0.65
+	property number WallShadowOpacity = 0.5
 
 	-- ── 데이터 ─────────────────────────────────────────────────────────
 
@@ -201,6 +207,37 @@ script BuildingManager extends Logic
 			dy = py - (y0 + 2)
 		end
 		return math.sqrt(dx * dx + dy * dy)
+	end
+
+	method table GetPlacementAimUnit(string itemName, number px, number py, integer dirX, integer dirY)
+		-- 문 앵커 대신 설계도 전체 외곽을 앞쪽에 놓는다. 미리보기와 설치 요청 공용.
+		local aim = self:GetAimUnit(px, py, dirX, dirY)
+		local b = self:GetPlanBounds(self:BuildPlan(itemName, 0, 0))
+		if b.x0 == nil then return aim end
+		if dirX > 0 then
+			aim.x = aim.x - b.x0
+		elseif dirX < 0 then
+			aim.x = aim.x - b.x1
+		else
+			aim.x = aim.x - math.floor((b.x0 + b.x1) / 2)
+		end
+		if dirY > 0 then
+			aim.y = aim.y - b.y0
+		elseif dirY < 0 then
+			aim.y = aim.y - b.y1
+		else
+			aim.y = aim.y - math.floor((b.y0 + b.y1) / 2)
+		end
+		return aim
+	end
+
+	method number DistanceToPlan(number px, number py, table plan)
+		-- 큰 설계도는 멀어진 문 앵커가 아니라 가장 가까운 설치 칸까지의 거리로 검증.
+		local distance = math.huge
+		for _, p in ipairs(plan) do
+			distance = math.min(distance, self:DistanceToUnit(px, py, p.x, p.y))
+		end
+		return distance
 	end
 
 	method RectTileMapComponent GetLayer(Entity map, string layerName)
@@ -427,8 +464,75 @@ script BuildingManager extends Logic
 					if done[key] == nil then
 						done[key] = true
 						self:PaintUnit(map, st.units, x, y)
+						self:PaintUnitShadows(map, st.units, x, y)
 					end
 				end
+			end
+		end
+	end
+
+	method boolean CastsWallShadow(table units, integer ux, integer uy)
+		local u = units[ux .. "_" .. uy]
+		return u ~= nil and self:IsStructKind(u.k) and not (u.k == "door" and u.o == true)
+	end
+
+	method table GetWallShadowEdges(table units, integer ux, integer uy)
+		-- 열린 칸의 벽 접촉 변. 회전값은 상단이 짙은 타일 기준(엔진 반시계 회전).
+		local edges = {}
+		if self:CastsWallShadow(units, ux, uy) then return edges end
+		local d = math.max(0.05, math.min(1.0, self.WallShadowDepth))
+		if self:CastsWallShadow(units, ux, uy + 1) then table.insert(edges, { side = "n", x = ux * 2 + 1, y = uy * 2 + 2 - d * 0.5, rotation = 0 }) end
+		if self:CastsWallShadow(units, ux, uy - 1) then table.insert(edges, { side = "s", x = ux * 2 + 1, y = uy * 2 + d * 0.5, rotation = 180 }) end
+		if self:CastsWallShadow(units, ux - 1, uy) then table.insert(edges, { side = "w", x = ux * 2 + d * 0.5, y = uy * 2 + 1, rotation = 90 }) end
+		if self:CastsWallShadow(units, ux + 1, uy) then table.insert(edges, { side = "e", x = ux * 2 + 2 - d * 0.5, y = uy * 2 + 1, rotation = 270 }) end
+		return edges
+	end
+
+	@ExecSpace("ServerOnly")
+	method void PaintUnitShadows(Entity map, table units, integer ux, integer uy)
+		-- 바닥 위·가구 아래에 비충돌 타일 스프라이트를 배치. 모서리는 두 변의 알파가 자연스럽게 겹친다.
+		local mapName = map.Name
+		if self._T.WallShadows == nil then self._T.WallShadows = {} end
+		local shadows = self._T.WallShadows[mapName]
+		if shadows == nil then
+			shadows = {}
+			self._T.WallShadows[mapName] = shadows
+		end
+		local prefix = ux .. "_" .. uy .. "_"
+		local wanted = {}
+		local l1 = self:GetLayer(map, "RectTileMap")
+		local l2 = self:GetLayer(map, "RectTileMap2")
+		local hasGround = (isvalid(l1) and l1:GetTile(ux * 2, uy * 2) ~= nil) or (isvalid(l2) and l2:GetTile(ux * 2, uy * 2) ~= nil)
+		if self.WallShadowRUID ~= "" and hasGround then
+			local modelId = _EntryService:GetModelIdByName(self.WallShadowModelName)
+			if modelId ~= nil and modelId ~= "" then
+				local px = math.max(1, self.WallShadowTexturePx)
+				local depth = math.max(0.05, math.min(1.0, self.WallShadowDepth))
+				for _, edge in ipairs(self:GetWallShadowEdges(units, ux, uy)) do
+					local key = prefix .. edge.side
+					wanted[key] = true
+					local ent = shadows[key]
+					if not isvalid(ent) then
+						ent = _SpawnService:SpawnByModelId(modelId, "BuildShadow_" .. key, Vector3(edge.x, edge.y, 0), map)
+						shadows[key] = ent
+					end
+					if isvalid(ent) then
+						ent.TransformComponent.WorldPosition = Vector3(edge.x, edge.y, 0)
+						ent.TransformComponent.Scale = Vector3(200 / px, depth * 100 / px, 1)
+						ent.TransformComponent.ZRotation = edge.rotation
+						ent.SpriteRendererComponent.SpriteRUID = self.WallShadowRUID
+						ent.SpriteRendererComponent.Color = Color(1, 1, 1, math.max(0, math.min(1, self.WallShadowOpacity)))
+						ent.Enable = true
+						ent.Visible = true
+					end
+				end
+			end
+		end
+		for _, side in ipairs({ "n", "s", "w", "e" }) do
+			local key = prefix .. side
+			if not wanted[key] then
+				if isvalid(shadows[key]) then shadows[key]:Destroy() end
+				shadows[key] = nil
 			end
 		end
 	end
@@ -549,7 +653,7 @@ script BuildingManager extends Logic
 	@ExecSpace("ServerOnly")
 	method void PlaceBuildItem(Entity player, string itemKey, integer cellX, integer cellY)
 		-- PlayerInventory:ServerRequestPlace 의 건축 분기(영지·권한·소유 검사를 통과한 뒤).
-		-- cellX/Y = 클라가 GetAimUnit 으로 고른 칸의 원점 셀. 칸 = 셀 / 2 내림.
+		-- cellX/Y = 클라 GetPlacementAimUnit 의 앵커 칸 원점 셀. 칸 = 셀 / 2 내림.
 		if not isvalid(player) then return end
 		local map = player.CurrentMap
 		if not isvalid(map) then return end
@@ -562,18 +666,14 @@ script BuildingManager extends Logic
 		local ux = math.floor(cellX / 2)
 		local uy = math.floor(cellY / 2)
 		local pos = player.TransformComponent.WorldPosition
-		if self:DistanceToUnit(pos.x, pos.y, ux, uy) > self.PlaceReach then
-			self:Feedback(pc, "너무 멀어서 지을 수 없습니다.")
-			return
-		end
 		local isBlueprint = self:IsBlueprintItem(itemName)
-		if isBlueprint and isvalid(pc) and pc.LastDirectionY <= 0 then
-			self:Feedback(pc, "설계도는 위쪽을 바라보고 문이 들어설 자리에 놓으세요.")
-			return
-		end
 		local plan = self:BuildPlan(itemName, ux, uy)
 		if #plan == 0 then
 			log_warning("[BUILD] not a build piece or blueprint: " .. tostring(itemName))
+			return
+		end
+		if self:DistanceToPlan(pos.x, pos.y, plan) > self.PlaceReach then
+			self:Feedback(pc, "너무 멀어서 지을 수 없습니다.")
 			return
 		end
 		local reason = self:ValidatePlan(map, plan, not isBlueprint)
@@ -732,7 +832,7 @@ script BuildingManager extends Logic
 		else
 			u.o = true
 		end
-		self:PaintUnit(map, st.units, ux, uy)
+		self:RepaintAround(map, { { x = ux, y = uy } })
 		self:MarkDirty(map.Name)
 		log(string.format("[BUILD] door unit=%d,%d open=%s", ux, uy, tostring(u.o)))
 	end
@@ -810,6 +910,12 @@ script BuildingManager extends Logic
 	method void ClearMapBuild(Entity map)
 		-- 맵의 건축 흔적(구조물 레이어 전체 + 바닥 레이어의 건축 타일 + isBuild 점유)과 상태를 비운다.
 		local mapName = map.Name
+		if self._T.WallShadows ~= nil and self._T.WallShadows[mapName] ~= nil then
+			for _, ent in pairs(self._T.WallShadows[mapName]) do
+				if isvalid(ent) then ent:Destroy() end
+			end
+			self._T.WallShadows[mapName] = nil
+		end
 		local wall = self:GetLayer(map, self.WallLayerName)
 		if isvalid(wall) then wall:Clear() end
 		local floor = self:GetLayer(map, self.FloorLayerName)
@@ -850,9 +956,9 @@ script BuildingManager extends Logic
 			if self:IsStructKind(u.k) then self:RegisterUnitGrid(mapName, u) end
 			count = count + 1
 		end
-		for _, u in pairs(st.units) do
-			self:PaintUnit(map, st.units, u.x, u.y)
-		end
+		local restored = {}
+		for _, u in pairs(st.units) do table.insert(restored, u) end
+		self:RepaintAround(map, restored)
 		log(string.format("[BUILD] restored map=%s units=%d", mapName, count))
 	end
 
@@ -885,6 +991,10 @@ script BuildingManager extends Logic
 		if _ResourceSpawner ~= nil then wallInner = _ResourceSpawner.MapRadius - _ResourceSpawner.WallThickness + 1 end
 		local simulator = _CollisionService:GetSimulator(localPlayer)
 		for _, p in ipairs(plan) do
+			if self:IsStructKind(p.k) and isvalid(localPlayer) then
+				local pos = localPlayer.TransformComponent.WorldPosition
+				if self:DistanceToUnit(pos.x, pos.y, p.x, p.y) < self.PlayerRadius then return "player" end
+			end
 			for cx = p.x * 2, p.x * 2 + 1 do
 				for cy = p.y * 2, p.y * 2 + 1 do
 					if math.abs(cx) >= wallInner or math.abs(cy) >= wallInner then return "bounds" end

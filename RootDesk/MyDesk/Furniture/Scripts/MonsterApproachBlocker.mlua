@@ -13,6 +13,13 @@ script MonsterApproachBlocker extends Component
 	@ExecSpace("ServerOnly")
 	method void OnBeginPlay()
 		-- CSV 수치 로드 후 레지스트리 등록, 지속시간 만료 타이머를 건다.
+		local pf = self.Entity:GetComponent("script.PlaceableFurniture")
+		local ds = _DataService:GetTable("item_dataset")
+		if not isvalid(pf) or ds == nil or ds:FindRow("Name", pf.ItemId) == nil then
+			-- 삭제된 아이템의 이전 설치 기록이 복원돼도 회피 효과를 켜지 않는다.
+			self.IsActive = false
+			return
+		end
 		self:LoadParamsFromItemDataset()
 		if self.AvoidExitRadius < self.AvoidRadius then
 			self.AvoidExitRadius = self.AvoidRadius + 1.0

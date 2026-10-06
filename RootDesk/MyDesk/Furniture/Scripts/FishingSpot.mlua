@@ -141,7 +141,7 @@ script FishingSpot extends Component
 		session.dangerTimer = params.DangerIntervalMin + math.random() * (params.DangerIntervalMax - params.DangerIntervalMin)
 
 		pc.FishingState = "Reeling"
-		pc:ClientShowMineFeedback("입질! 꾹 눌러 릴을 감으세요! (⚠ 표시 중에는 손 떼기)", userId)
+		pc:ClientShowMineFeedback("입질! 꾹 눌러 릴을 감으세요! (경고 표시 중에는 손 떼기)", userId)
 		pc:ClientReelBegin(userId)
 		log("[T64][FISHING] Reeling started for User: " .. userId .. " fish=" .. fish.item
 			.. " difficulty=" .. tostring(fish.difficulty)
@@ -241,7 +241,7 @@ script FishingSpot extends Component
 				if fishXp > 0 then
 					pc:AddFishingXP(fishXp)
 				end
-				pc:ClientShowMineFeedback("[성공] " .. fishItem .. "을(를) 낚았습니다! (숙련 +" .. tostring(fishXp) .. ")", userId)
+				pc:ClientShowMineFeedback("[성공] " .. inv:GetItemDisplayName(fishItem) .. "을(를) 낚았습니다! (숙련 +" .. tostring(fishXp) .. ")", userId)
 			end
 			log("[T64][FISHING] Success! Caught " .. fishItem .. " by User: " .. userId
 				.. " at " .. self.SpotType .. " xp=" .. tostring(fishXp))

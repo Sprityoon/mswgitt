@@ -1,0 +1,2127 @@
+{
+  "entities": [
+    {
+      "name": "MainMenuGroup",
+      "path": "/ui/MainMenuGroup",
+      "depth": 0,
+      "kind": "GROUP",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "enable": true
+    },
+    {
+      "name": "Bg",
+      "path": "/ui/MainMenuGroup/Bg",
+      "depth": 1,
+      "kind": "SPR",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        3520,
+        1680
+      ],
+      "enable": true
+    },
+    {
+      "name": "Art",
+      "path": "/ui/MainMenuGroup/Bg/Art",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        2100,
+        2100
+      ],
+      "enable": true
+    },
+    {
+      "name": "Controller",
+      "path": "/ui/MainMenuGroup/Controller",
+      "depth": 1,
+      "kind": "SCRIPT",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        1,
+        1
+      ],
+      "enable": true
+    },
+    {
+      "name": "CustomizePanel",
+      "path": "/ui/MainMenuGroup/CustomizePanel",
+      "depth": 1,
+      "kind": "PANEL",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "enable": false
+    },
+    {
+      "name": "Frame",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        -20
+      ],
+      "size": [
+        960,
+        960
+      ],
+      "enable": true
+    },
+    {
+      "name": "BodyLabel",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BodyLabel",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        109,
+        54
+      ],
+      "size": [
+        72,
+        40
+      ],
+      "enable": true
+    },
+    {
+      "name": "BodyName",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BodyName",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        287,
+        54
+      ],
+      "size": [
+        148,
+        44
+      ],
+      "enable": true
+    },
+    {
+      "name": "BodyNamePlate",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BodyNamePlate",
+      "depth": 3,
+      "kind": "SPR",
+      "pos": [
+        245,
+        54
+      ],
+      "size": [
+        360,
+        62
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnBack",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnBack",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        -225,
+        -195
+      ],
+      "size": [
+        200,
+        62
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnBodyNext",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnBodyNext",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        395,
+        54
+      ],
+      "size": [
+        56,
+        56
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnBodyPrev",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnBodyPrev",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        179,
+        54
+      ],
+      "size": [
+        56,
+        56
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnCoatNext",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnCoatNext",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        395,
+        -18
+      ],
+      "size": [
+        56,
+        56
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnCoatPrev",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnCoatPrev",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        179,
+        -18
+      ],
+      "size": [
+        56,
+        56
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnFaceNext",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnFaceNext",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        395,
+        126
+      ],
+      "size": [
+        56,
+        56
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnFacePrev",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnFacePrev",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        179,
+        126
+      ],
+      "size": [
+        56,
+        56
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnHairNext",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnHairNext",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        395,
+        198
+      ],
+      "size": [
+        56,
+        56
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnHairPrev",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnHairPrev",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        179,
+        198
+      ],
+      "size": [
+        56,
+        56
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnLookAccount",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnLookAccount",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        -225,
+        15
+      ],
+      "size": [
+        250,
+        54
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnLookCustom",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnLookCustom",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        -225,
+        -50
+      ],
+      "size": [
+        250,
+        54
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnStart",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/BtnStart",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        245,
+        -195
+      ],
+      "size": [
+        240,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "CoatLabel",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/CoatLabel",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        109,
+        -18
+      ],
+      "size": [
+        72,
+        40
+      ],
+      "enable": true
+    },
+    {
+      "name": "CoatName",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/CoatName",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        287,
+        -18
+      ],
+      "size": [
+        148,
+        44
+      ],
+      "enable": true
+    },
+    {
+      "name": "CoatNamePlate",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/CoatNamePlate",
+      "depth": 3,
+      "kind": "SPR",
+      "pos": [
+        245,
+        -18
+      ],
+      "size": [
+        360,
+        62
+      ],
+      "enable": true
+    },
+    {
+      "name": "Error",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/Error",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        245,
+        -148
+      ],
+      "size": [
+        348,
+        38
+      ],
+      "enable": false
+    },
+    {
+      "name": "ErrorPlate",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/ErrorPlate",
+      "depth": 3,
+      "kind": "SPR",
+      "pos": [
+        245,
+        -148
+      ],
+      "size": [
+        372,
+        46
+      ],
+      "enable": false
+    },
+    {
+      "name": "FaceLabel",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/FaceLabel",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        109,
+        126
+      ],
+      "size": [
+        72,
+        40
+      ],
+      "enable": true
+    },
+    {
+      "name": "FaceName",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/FaceName",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        287,
+        126
+      ],
+      "size": [
+        148,
+        44
+      ],
+      "enable": true
+    },
+    {
+      "name": "FaceNamePlate",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/FaceNamePlate",
+      "depth": 3,
+      "kind": "SPR",
+      "pos": [
+        245,
+        126
+      ],
+      "size": [
+        360,
+        62
+      ],
+      "enable": true
+    },
+    {
+      "name": "HairLabel",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/HairLabel",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        109,
+        198
+      ],
+      "size": [
+        72,
+        40
+      ],
+      "enable": true
+    },
+    {
+      "name": "HairName",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/HairName",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        287,
+        198
+      ],
+      "size": [
+        148,
+        44
+      ],
+      "enable": true
+    },
+    {
+      "name": "HairNamePlate",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/HairNamePlate",
+      "depth": 3,
+      "kind": "SPR",
+      "pos": [
+        245,
+        198
+      ],
+      "size": [
+        360,
+        62
+      ],
+      "enable": true
+    },
+    {
+      "name": "LeftPageTint",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/LeftPageTint",
+      "depth": 3,
+      "kind": "SPR",
+      "pos": [
+        -225,
+        10
+      ],
+      "size": [
+        350,
+        490
+      ],
+      "enable": false
+    },
+    {
+      "name": "NameInput",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/NameInput",
+      "depth": 3,
+      "kind": "PANEL",
+      "pos": [
+        245,
+        -95
+      ],
+      "size": [
+        360,
+        56
+      ],
+      "enable": true
+    },
+    {
+      "name": "Notebook",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/Notebook",
+      "depth": 3,
+      "kind": "SPR",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        960,
+        960
+      ],
+      "enable": true
+    },
+    {
+      "name": "PageTint",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/PageTint",
+      "depth": 3,
+      "kind": "SPR",
+      "pos": [
+        245,
+        10
+      ],
+      "size": [
+        380,
+        490
+      ],
+      "enable": false
+    },
+    {
+      "name": "Preview",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/Preview",
+      "depth": 3,
+      "kind": "SCRIPT",
+      "pos": [
+        -225,
+        215
+      ],
+      "size": [
+        288,
+        372
+      ],
+      "enable": true
+    },
+    {
+      "name": "Title",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/Title",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        0,
+        366
+      ],
+      "size": [
+        480,
+        44
+      ],
+      "enable": true
+    },
+    {
+      "name": "TitlePlate",
+      "path": "/ui/MainMenuGroup/CustomizePanel/Frame/TitlePlate",
+      "depth": 3,
+      "kind": "SPR",
+      "pos": [
+        0,
+        365
+      ],
+      "size": [
+        520,
+        58
+      ],
+      "enable": true
+    },
+    {
+      "name": "NamePrompt",
+      "path": "/ui/MainMenuGroup/NamePrompt",
+      "depth": 1,
+      "kind": "SPR",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        640,
+        640
+      ],
+      "enable": false
+    },
+    {
+      "name": "BtnCancel",
+      "path": "/ui/MainMenuGroup/NamePrompt/BtnCancel",
+      "depth": 2,
+      "kind": "BTN",
+      "pos": [
+        110,
+        -105
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnOk",
+      "path": "/ui/MainMenuGroup/NamePrompt/BtnOk",
+      "depth": 2,
+      "kind": "BTN",
+      "pos": [
+        -110,
+        -105
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "enable": true
+    },
+    {
+      "name": "Error",
+      "path": "/ui/MainMenuGroup/NamePrompt/Error",
+      "depth": 2,
+      "kind": "TEXT",
+      "pos": [
+        0,
+        62
+      ],
+      "size": [
+        440,
+        40
+      ],
+      "enable": true
+    },
+    {
+      "name": "Input",
+      "path": "/ui/MainMenuGroup/NamePrompt/Input",
+      "depth": 2,
+      "kind": "PANEL",
+      "pos": [
+        0,
+        -10
+      ],
+      "size": [
+        420,
+        60
+      ],
+      "enable": true
+    },
+    {
+      "name": "Title",
+      "path": "/ui/MainMenuGroup/NamePrompt/Title",
+      "depth": 2,
+      "kind": "TEXT",
+      "pos": [
+        0,
+        140
+      ],
+      "size": [
+        400,
+        44
+      ],
+      "enable": true
+    },
+    {
+      "name": "TitlePlate",
+      "path": "/ui/MainMenuGroup/NamePrompt/TitlePlate",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        140
+      ],
+      "size": [
+        420,
+        52
+      ],
+      "enable": true
+    },
+    {
+      "name": "SlotPanel",
+      "path": "/ui/MainMenuGroup/SlotPanel",
+      "depth": 1,
+      "kind": "PANEL",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "enable": false
+    },
+    {
+      "name": "BtnBack",
+      "path": "/ui/MainMenuGroup/SlotPanel/BtnBack",
+      "depth": 2,
+      "kind": "BTN",
+      "pos": [
+        -380,
+        365
+      ],
+      "size": [
+        130,
+        52
+      ],
+      "enable": true
+    },
+    {
+      "name": "Notebook",
+      "path": "/ui/MainMenuGroup/SlotPanel/Notebook",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        -25
+      ],
+      "size": [
+        1020,
+        920
+      ],
+      "enable": true
+    },
+    {
+      "name": "PageTint",
+      "path": "/ui/MainMenuGroup/SlotPanel/PageTint",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        -25
+      ],
+      "size": [
+        800,
+        560
+      ],
+      "enable": false
+    },
+    {
+      "name": "Slot1",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot1",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        170
+      ],
+      "size": [
+        760,
+        94
+      ],
+      "enable": true
+    },
+    {
+      "name": "Avatar",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot1/Avatar",
+      "depth": 3,
+      "kind": "SCRIPT",
+      "pos": [
+        -305,
+        24
+      ],
+      "size": [
+        96,
+        108
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnDelete",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot1/BtnDelete",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        315,
+        0
+      ],
+      "size": [
+        80,
+        66
+      ],
+      "enable": false
+    },
+    {
+      "name": "BtnSelect",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot1/BtnSelect",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        175,
+        0
+      ],
+      "size": [
+        170,
+        66
+      ],
+      "enable": true
+    },
+    {
+      "name": "Info",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot1/Info",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        -18
+      ],
+      "size": [
+        310,
+        30
+      ],
+      "enable": true
+    },
+    {
+      "name": "Title",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot1/Title",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        18
+      ],
+      "size": [
+        310,
+        36
+      ],
+      "enable": true
+    },
+    {
+      "name": "Slot2",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot2",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        68
+      ],
+      "size": [
+        760,
+        94
+      ],
+      "enable": true
+    },
+    {
+      "name": "Avatar",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot2/Avatar",
+      "depth": 3,
+      "kind": "SCRIPT",
+      "pos": [
+        -305,
+        24
+      ],
+      "size": [
+        96,
+        108
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnDelete",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot2/BtnDelete",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        315,
+        0
+      ],
+      "size": [
+        80,
+        66
+      ],
+      "enable": false
+    },
+    {
+      "name": "BtnSelect",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot2/BtnSelect",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        175,
+        0
+      ],
+      "size": [
+        170,
+        66
+      ],
+      "enable": true
+    },
+    {
+      "name": "Info",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot2/Info",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        -18
+      ],
+      "size": [
+        310,
+        30
+      ],
+      "enable": true
+    },
+    {
+      "name": "Title",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot2/Title",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        18
+      ],
+      "size": [
+        310,
+        36
+      ],
+      "enable": true
+    },
+    {
+      "name": "Slot3",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot3",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        -34
+      ],
+      "size": [
+        760,
+        94
+      ],
+      "enable": true
+    },
+    {
+      "name": "Avatar",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot3/Avatar",
+      "depth": 3,
+      "kind": "SCRIPT",
+      "pos": [
+        -305,
+        24
+      ],
+      "size": [
+        96,
+        108
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnDelete",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot3/BtnDelete",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        315,
+        0
+      ],
+      "size": [
+        80,
+        66
+      ],
+      "enable": false
+    },
+    {
+      "name": "BtnSelect",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot3/BtnSelect",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        175,
+        0
+      ],
+      "size": [
+        170,
+        66
+      ],
+      "enable": true
+    },
+    {
+      "name": "Info",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot3/Info",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        -18
+      ],
+      "size": [
+        310,
+        30
+      ],
+      "enable": true
+    },
+    {
+      "name": "Title",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot3/Title",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        18
+      ],
+      "size": [
+        310,
+        36
+      ],
+      "enable": true
+    },
+    {
+      "name": "Slot4",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot4",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        -136
+      ],
+      "size": [
+        760,
+        94
+      ],
+      "enable": true
+    },
+    {
+      "name": "Avatar",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot4/Avatar",
+      "depth": 3,
+      "kind": "SCRIPT",
+      "pos": [
+        -305,
+        24
+      ],
+      "size": [
+        96,
+        108
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnDelete",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot4/BtnDelete",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        315,
+        0
+      ],
+      "size": [
+        80,
+        66
+      ],
+      "enable": false
+    },
+    {
+      "name": "BtnSelect",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot4/BtnSelect",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        175,
+        0
+      ],
+      "size": [
+        170,
+        66
+      ],
+      "enable": true
+    },
+    {
+      "name": "Info",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot4/Info",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        -18
+      ],
+      "size": [
+        310,
+        30
+      ],
+      "enable": true
+    },
+    {
+      "name": "Title",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot4/Title",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        18
+      ],
+      "size": [
+        310,
+        36
+      ],
+      "enable": true
+    },
+    {
+      "name": "Slot5",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot5",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        -238
+      ],
+      "size": [
+        760,
+        94
+      ],
+      "enable": true
+    },
+    {
+      "name": "Avatar",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot5/Avatar",
+      "depth": 3,
+      "kind": "SCRIPT",
+      "pos": [
+        -305,
+        24
+      ],
+      "size": [
+        96,
+        108
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnDelete",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot5/BtnDelete",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        315,
+        0
+      ],
+      "size": [
+        80,
+        66
+      ],
+      "enable": false
+    },
+    {
+      "name": "BtnSelect",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot5/BtnSelect",
+      "depth": 3,
+      "kind": "BTN",
+      "pos": [
+        175,
+        0
+      ],
+      "size": [
+        170,
+        66
+      ],
+      "enable": true
+    },
+    {
+      "name": "Info",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot5/Info",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        -18
+      ],
+      "size": [
+        310,
+        30
+      ],
+      "enable": true
+    },
+    {
+      "name": "Title",
+      "path": "/ui/MainMenuGroup/SlotPanel/Slot5/Title",
+      "depth": 3,
+      "kind": "TEXT",
+      "pos": [
+        -100,
+        18
+      ],
+      "size": [
+        310,
+        36
+      ],
+      "enable": true
+    },
+    {
+      "name": "Subtitle",
+      "path": "/ui/MainMenuGroup/SlotPanel/Subtitle",
+      "depth": 2,
+      "kind": "TEXT",
+      "pos": [
+        0,
+        366
+      ],
+      "size": [
+        480,
+        44
+      ],
+      "enable": true
+    },
+    {
+      "name": "SubtitlePlate",
+      "path": "/ui/MainMenuGroup/SlotPanel/SubtitlePlate",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        365
+      ],
+      "size": [
+        520,
+        58
+      ],
+      "enable": true
+    },
+    {
+      "name": "TestModeBadge",
+      "path": "/ui/MainMenuGroup/TestModeBadge",
+      "depth": 1,
+      "kind": "SPR",
+      "pos": [
+        0,
+        -24
+      ],
+      "size": [
+        780,
+        56
+      ],
+      "enable": false
+    },
+    {
+      "name": "TitlePanel",
+      "path": "/ui/MainMenuGroup/TitlePanel",
+      "depth": 1,
+      "kind": "PANEL",
+      "pos": [
+        0,
+        -0.00000238418579
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnContinue",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnContinue",
+      "depth": 2,
+      "kind": "BTN",
+      "pos": [
+        -839,
+        -170.711
+      ],
+      "size": [
+        250,
+        70
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnMusic",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic",
+      "depth": 2,
+      "kind": "BTN",
+      "pos": [
+        1840.21655,
+        1010.38672
+      ],
+      "size": [
+        88,
+        88
+      ],
+      "enable": true
+    },
+    {
+      "name": "Icon",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon",
+      "depth": 3,
+      "kind": "PANEL",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "MuteSlash",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/MuteSlash",
+      "depth": 4,
+      "kind": "PANEL",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": false
+    },
+    {
+      "name": "Line",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/MuteSlash/Line",
+      "depth": 5,
+      "kind": "POLY",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "Outline",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/MuteSlash/Outline",
+      "depth": 5,
+      "kind": "POLY",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "Speaker",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Speaker",
+      "depth": 4,
+      "kind": "POLY",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "SpeakerOutline",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/SpeakerOutline",
+      "depth": 4,
+      "kind": "POLY",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "Waves",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves",
+      "depth": 4,
+      "kind": "PANEL",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "Arc0",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc0",
+      "depth": 5,
+      "kind": "POLY",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "Arc0Outline",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc0Outline",
+      "depth": 5,
+      "kind": "POLY",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "Arc1",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc1",
+      "depth": 5,
+      "kind": "POLY",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "Arc1Outline",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnMusic/Icon/Waves/Arc1Outline",
+      "depth": 5,
+      "kind": "POLY",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnNew",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnNew",
+      "depth": 2,
+      "kind": "BTN",
+      "pos": [
+        -837,
+        -57.710907
+      ],
+      "size": [
+        250,
+        70
+      ],
+      "enable": true
+    },
+    {
+      "name": "BtnQuit",
+      "path": "/ui/MainMenuGroup/TitlePanel/BtnQuit",
+      "depth": 2,
+      "kind": "BTN",
+      "pos": [
+        -839,
+        -501.9855
+      ],
+      "size": [
+        250,
+        70
+      ],
+      "enable": true
+    },
+    {
+      "name": "Hint",
+      "path": "/ui/MainMenuGroup/TitlePanel/Hint",
+      "depth": 2,
+      "kind": "TEXT",
+      "pos": [
+        0,
+        46
+      ],
+      "size": [
+        720,
+        40
+      ],
+      "enable": false
+    },
+    {
+      "name": "HintPlate",
+      "path": "/ui/MainMenuGroup/TitlePanel/HintPlate",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        0,
+        42
+      ],
+      "size": [
+        760,
+        48
+      ],
+      "enable": false
+    },
+    {
+      "name": "Logo",
+      "path": "/ui/MainMenuGroup/TitlePanel/Logo",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        -985.7394,
+        452.6624
+      ],
+      "size": [
+        578.521,
+        322.593048
+      ],
+      "enable": true
+    },
+    {
+      "name": "SignBoard",
+      "path": "/ui/MainMenuGroup/TitlePanel/SignBoard",
+      "depth": 2,
+      "kind": "SPR",
+      "pos": [
+        -734.3635,
+        -188.3299
+      ],
+      "size": [
+        459.054749,
+        792.9128
+      ],
+      "enable": true
+    }
+  ],
+  "transforms": {
+    "Bg": {
+      "@type": "MOD.Core.UITransformComponent",
+      "ActivePlatform": 255,
+      "AlignmentOption": 15,
+      "AnchorsMax": {
+        "x": 1,
+        "y": 1
+      },
+      "AnchorsMin": {
+        "x": 0,
+        "y": 0
+      },
+      "MobileOnly": false,
+      "OffsetMax": {
+        "x": 800,
+        "y": 300
+      },
+      "OffsetMin": {
+        "x": -800,
+        "y": -300
+      },
+      "Pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "RectSize": {
+        "x": 3520,
+        "y": 1680
+      },
+      "UIMode": 1,
+      "UIScale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "UIVersion": 2,
+      "anchoredPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "Position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "QuaternionRotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "Scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "ZRotation": 0,
+      "Enable": true
+    },
+    "Bg/Art": {
+      "@type": "MOD.Core.UITransformComponent",
+      "ActivePlatform": 255,
+      "AlignmentOption": 0,
+      "AnchorsMax": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "AnchorsMin": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "MobileOnly": false,
+      "OffsetMax": {
+        "x": 1050,
+        "y": 1050
+      },
+      "OffsetMin": {
+        "x": -1050,
+        "y": -1050
+      },
+      "Pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "RectSize": {
+        "x": 2100,
+        "y": 2100
+      },
+      "UIMode": 1,
+      "UIScale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "UIVersion": 2,
+      "anchoredPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "Position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "QuaternionRotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "Scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "ZRotation": 0,
+      "Enable": true
+    },
+    "TitlePanel": {
+      "@type": "MOD.Core.UITransformComponent",
+      "ActivePlatform": 255,
+      "AlignmentOption": 15,
+      "AnchorsMax": {
+        "x": 1,
+        "y": 1
+      },
+      "AnchorsMin": {
+        "x": 0,
+        "y": 0
+      },
+      "MobileOnly": false,
+      "OffsetMax": {
+        "x": 0,
+        "y": -0.00000238418579
+      },
+      "OffsetMin": {
+        "x": 0,
+        "y": -0.00000238418579
+      },
+      "Pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "RectSize": {
+        "x": 1920,
+        "y": 1080
+      },
+      "UIMode": 1,
+      "UIScale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "UIVersion": 2,
+      "anchoredPosition": {
+        "x": 0,
+        "y": -0.00000238418579
+      },
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "Position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "QuaternionRotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "Scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "ZRotation": 0,
+      "Enable": true
+    },
+    "TitlePanel/Logo": {
+      "@type": "MOD.Core.UITransformComponent",
+      "ActivePlatform": 255,
+      "AlignmentOption": 2,
+      "AnchorsMax": {
+        "x": 1,
+        "y": 0.5
+      },
+      "AnchorsMin": {
+        "x": 1,
+        "y": 0.5
+      },
+      "MobileOnly": false,
+      "OffsetMax": {
+        "x": -696.4789,
+        "y": 452.6624
+      },
+      "OffsetMin": {
+        "x": -1274.99988,
+        "y": 130.069366
+      },
+      "Pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "RectSize": {
+        "x": 578.521,
+        "y": 322.593048
+      },
+      "UIMode": 1,
+      "UIScale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "UIVersion": 2,
+      "anchoredPosition": {
+        "x": -985.7394,
+        "y": 452.6624
+      },
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "Position": {
+        "x": -25.73938,
+        "y": 452.6624,
+        "z": 0
+      },
+      "QuaternionRotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "Scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "ZRotation": 0,
+      "Enable": true
+    },
+    "TitlePanel/SignBoard": {
+      "@type": "MOD.Core.UITransformComponent",
+      "ActivePlatform": 255,
+      "AlignmentOption": 2,
+      "AnchorsMax": {
+        "x": 1,
+        "y": 0.5
+      },
+      "AnchorsMin": {
+        "x": 1,
+        "y": 0.5
+      },
+      "MobileOnly": false,
+      "OffsetMax": {
+        "x": -734.3635,
+        "y": 208.1265
+      },
+      "OffsetMin": {
+        "x": -1193.41821,
+        "y": -584.786255
+      },
+      "Pivot": {
+        "x": 1,
+        "y": 0.5
+      },
+      "RectSize": {
+        "x": 459.054749,
+        "y": 792.9128
+      },
+      "UIMode": 1,
+      "UIScale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "UIVersion": 2,
+      "anchoredPosition": {
+        "x": -734.3635,
+        "y": -188.3299
+      },
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "Position": {
+        "x": 225.636475,
+        "y": -188.3299,
+        "z": 0
+      },
+      "QuaternionRotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "Scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "ZRotation": 0,
+      "Enable": true
+    },
+    "TitlePanel/BtnNew": {
+      "@type": "MOD.Core.UITransformComponent",
+      "ActivePlatform": 255,
+      "AlignmentOption": 2,
+      "AnchorsMax": {
+        "x": 1,
+        "y": 0.5
+      },
+      "AnchorsMin": {
+        "x": 1,
+        "y": 0.5
+      },
+      "MobileOnly": false,
+      "OffsetMax": {
+        "x": -837,
+        "y": -22.710907
+      },
+      "OffsetMin": {
+        "x": -1087,
+        "y": -92.71091
+      },
+      "Pivot": {
+        "x": 1,
+        "y": 0.5
+      },
+      "RectSize": {
+        "x": 250,
+        "y": 70
+      },
+      "UIMode": 1,
+      "UIScale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "UIVersion": 2,
+      "anchoredPosition": {
+        "x": -837,
+        "y": -57.710907
+      },
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "Position": {
+        "x": 123,
+        "y": -57.710907,
+        "z": 0
+      },
+      "QuaternionRotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "Scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "ZRotation": 0,
+      "Enable": true
+    },
+    "TitlePanel/BtnContinue": {
+      "@type": "MOD.Core.UITransformComponent",
+      "ActivePlatform": 255,
+      "AlignmentOption": 2,
+      "AnchorsMax": {
+        "x": 1,
+        "y": 0.5
+      },
+      "AnchorsMin": {
+        "x": 1,
+        "y": 0.5
+      },
+      "MobileOnly": false,
+      "OffsetMax": {
+        "x": -839,
+        "y": -135.711
+      },
+      "OffsetMin": {
+        "x": -1089,
+        "y": -205.711
+      },
+      "Pivot": {
+        "x": 1,
+        "y": 0.5
+      },
+      "RectSize": {
+        "x": 250,
+        "y": 70
+      },
+      "UIMode": 1,
+      "UIScale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "UIVersion": 2,
+      "anchoredPosition": {
+        "x": -839,
+        "y": -170.711
+      },
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "Position": {
+        "x": 121,
+        "y": -170.711,
+        "z": 0
+      },
+      "QuaternionRotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "Scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "ZRotation": 0,
+      "Enable": true
+    },
+    "TitlePanel/BtnQuit": {
+      "@type": "MOD.Core.UITransformComponent",
+      "ActivePlatform": 255,
+      "AlignmentOption": 2,
+      "AnchorsMax": {
+        "x": 1,
+        "y": 0.5
+      },
+      "AnchorsMin": {
+        "x": 1,
+        "y": 0.5
+      },
+      "MobileOnly": false,
+      "OffsetMax": {
+        "x": -839,
+        "y": -466.9855
+      },
+      "OffsetMin": {
+        "x": -1089,
+        "y": -536.9855
+      },
+      "Pivot": {
+        "x": 1,
+        "y": 0.5
+      },
+      "RectSize": {
+        "x": 250,
+        "y": 70
+      },
+      "UIMode": 1,
+      "UIScale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "UIVersion": 2,
+      "anchoredPosition": {
+        "x": -839,
+        "y": -501.9855
+      },
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "Position": {
+        "x": 121,
+        "y": -501.9855,
+        "z": 0
+      },
+      "QuaternionRotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "Scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "ZRotation": 0,
+      "Enable": true
+    },
+    "TitlePanel/BtnMusic": {
+      "@type": "MOD.Core.UITransformComponent",
+      "ActivePlatform": 255,
+      "AlignmentOption": 7,
+      "AnchorsMax": {
+        "x": 0,
+        "y": 0
+      },
+      "AnchorsMin": {
+        "x": 0,
+        "y": 0
+      },
+      "MobileOnly": false,
+      "OffsetMax": {
+        "x": 1928.21655,
+        "y": 1098.38672
+      },
+      "OffsetMin": {
+        "x": 1840.21655,
+        "y": 1010.38672
+      },
+      "Pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "RectSize": {
+        "x": 88,
+        "y": 88
+      },
+      "UIMode": 1,
+      "UIScale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "UIVersion": 2,
+      "anchoredPosition": {
+        "x": 1840.21655,
+        "y": 1010.38672
+      },
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "Position": {
+        "x": 880.216553,
+        "y": 470.386719,
+        "z": 0
+      },
+      "QuaternionRotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      },
+      "Scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "ZRotation": 0,
+      "Enable": true
+    }
+  }
+}

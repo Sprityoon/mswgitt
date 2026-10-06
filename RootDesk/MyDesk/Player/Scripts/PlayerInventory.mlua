@@ -778,6 +778,31 @@ script PlayerInventory extends Component
 		-- 오프라인 경과로 이미 끝난 연구가 있으면 먼저 정산
 		self:TryCompleteActiveResearch()
 
+		-- 연구 두루마리 제출 (ResearchDataSet.ScrollItem): 재료·시간 없이 그 연구를 바로 마친다.
+		-- 두루마리는 사용 아이템이 아니라 제출용 재료다 — 연구소를 거쳐야만 제작법이 열린다(2026-10-06 제작자 결정).
+		-- 다른 연구가 진행 중이어도 제출할 수 있고, 같은 연구가 진행 중이면 그 연구를 끝낸다.
+		local scrollRow = self:GetResearchRow(researchId)
+		if scrollRow ~= nil then
+			local okS, vS = pcall(function() return scrollRow:GetItem("ScrollItem") end)
+			local scrollItem = ""
+			if okS and vS ~= nil then scrollItem = tostring(vS) end
+			local scrollUnlock = scrollRow:GetItem("UnlockRecipeId") or ""
+			if scrollItem ~= "" and self:GetItemCount(scrollItem) > 0
+				and (scrollUnlock == "" or not self:HasRecipeUnlock(scrollUnlock)) then
+				if not self:RemoveItem(scrollItem, 1) then return end
+				if self.ActiveResearchId == researchId then
+					self.ActiveResearchId = ""
+					self.ResearchStartTime = "0"
+				end
+				if scrollUnlock ~= "" then self:GrantRecipeUnlock(scrollUnlock) end
+				_PersistenceManager:MarkPlayerDirty(userId)
+				local scrollName = scrollRow:GetItem("DisplayName") or researchId
+				self:ClientOnResearchComplete(tostring(scrollName) .. " (두루마리 제출)", playerComp.UserId)
+				log("[RESEARCH] scroll submit " .. scrollItem .. " -> " .. researchId .. " by " .. tostring(userId))
+				return
+			end
+		end
+
 		if self.ActiveResearchId ~= nil and self.ActiveResearchId ~= "" then
 			local pc = self.Entity:GetComponent("script.PlayerController")
 			if isvalid(pc) then pc:ShowMineFeedback("이미 연구가 진행 중입니다.") end
@@ -807,7 +832,7 @@ script PlayerInventory extends Component
 		if self:GetItemCount(inputItem) < inputCount then
 			local pc = self.Entity:GetComponent("script.PlayerController")
 			if isvalid(pc) then
-				pc:ShowMineFeedback("재료가 부족합니다: " .. inputItem .. " x" .. tostring(inputCount))
+				pc:ShowMineFeedback("재료가 부족합니다: " .. self:GetItemDisplayName(inputItem) .. " x" .. tostring(inputCount))
 			end
 			return
 		end
@@ -2689,7 +2714,7 @@ script PlayerInventory extends Component
 
 		-- 작물 파종: 호미로 일군 실제 Farm 타일이 있는 셀만 서버에서 허용.
 		if isCropSeed then
-			if not resourceSpawner:IsFarmCell(currentMap, cellPos.x, cellPos.y) then
+			if not resourceSpawner:IsPlantableFarmCell(currentMap, cellPos.x, cellPos.y) then
 				if isvalid(pc) then
 					pc:ShowMineFeedback("호미로 일군 밭에만 작물을 심을 수 있습니다.")
 				end

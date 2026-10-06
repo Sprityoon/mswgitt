@@ -1,0 +1,57 @@
+@Component
+script IdleBreathe extends Component
+
+	-- 장식 스프라이트 숨쉬기(꿍실꿍실) 연출 — 클라 전용, 서버·동기화 부담 없음.
+	-- 아래로 눌렸다 펴지는 스쿼시·스트레치 + 아주 작은 좌우 기울기. 발밑(스프라이트 아랫변)은 고정한다.
+	-- 사용: 공사 안내판 고양이(Prop_UC_NoticeBoard 의 자식 "Cat"). 스프라이트 피벗은 정중앙 가정.
+
+	-- 스프라이트 높이(로컬 유닛, Scale 1 기준 px/100). 발밑 고정 보정에 쓴다.
+	property number SpriteHeight = 0.63
+	-- 한 번 숨쉬는 데 걸리는 초 / 세로 눌림 비율 / 기울기(도)
+	property number Period = 1.6
+	property number SquashAmount = 0.06
+	property number TiltDegrees = 1.5
+	-- 부모 스프라이트보다 이만큼 앞에 그린다(부모 OrderInLayer + 이 값).
+	property integer OrderAboveParent = 1
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 기준 위치·크기를 기억하고 시작 위상을 엔티티마다 흩뜨린다(여러 개가 똑같이 움직이지 않게).
+		local tr = self.Entity.TransformComponent
+		if not isvalid(tr) then return end
+		self._T.BasePos = tr.Position
+		self._T.BaseScale = tr.Scale
+		self._T.Time = _UtilLogic:RandomDouble() * self.Period
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 숨쉬기 한 주기: 위상 0~1 → 사인 곡선으로 눌림(0~1).
+		local tr = self.Entity.TransformComponent
+		if not isvalid(tr) or self._T.BasePos == nil then return end
+		local period = math.max(0.2, self.Period)
+		self._T.Time = (self._T.Time + delta) % period
+		local phase = self._T.Time / period * 6.2831853
+		local squash = (1 - math.cos(phase)) * 0.5          -- 0 → 1 → 0
+		local sy = 1 - self.SquashAmount * squash
+		local sx = 1 + self.SquashAmount * 0.6 * squash
+		local base = self._T.BasePos
+		local bs = self._T.BaseScale
+		tr.Scale = Vector3(bs.x * sx, bs.y * sy, bs.z)
+		-- 피벗이 정중앙이라 세로로 줄면 발이 뜬다 → 줄어든 절반만큼 내린다.
+		tr.Position = Vector3(base.x, base.y - self.SpriteHeight * bs.y * (1 - sy) * 0.5, base.z)
+		tr.ZRotation = self.TiltDegrees * math.sin(phase * 0.5)
+
+		-- 부모(게시판)보다 앞에 그린다 — 부모의 Y정렬 값이 바뀌어도 따라간다.
+		local sprite = self.Entity.SpriteRendererComponent
+		local parent = self.Entity.Parent
+		if isvalid(sprite) and isvalid(parent) and isvalid(parent.SpriteRendererComponent) then
+			local want = parent.SpriteRendererComponent.OrderInLayer + self.OrderAboveParent
+			if sprite.OrderInLayer ~= want then
+				sprite.SortingLayer = parent.SpriteRendererComponent.SortingLayer
+				sprite.OrderInLayer = want
+			end
+		end
+	end
+
+end

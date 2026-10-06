@@ -14,8 +14,8 @@ script ConstructionSignInteract extends Component
 
 	-- 안내판 정보
 	property string SignTitle = "공사 안내판"
-	property string Page1 = "🚧 [공사 중] 현재 이 구역은 새로운 콘텐츠 개발 공사가 진행 중입니다."
-	property string Page2 = "새롭고 멋진 모험 구역으로 찾아뵐 예정이니 조금만 기다려주세요! 🛠️"
+	property string Page1 = "※ [공사 중] 현재 이 구역은 새로운 콘텐츠 개발 공사가 진행 중입니다."
+	property string Page2 = "새롭고 멋진 모험 구역으로 찾아뵐 예정이니 조금만 기다려주세요!"
 	property string Page3 = ""
 
 	property boolean UseDialog = true
@@ -79,7 +79,7 @@ script ConstructionSignInteract extends Component
 				if self.Page2 ~= nil and self.Page2 ~= "" then table.insert(pages, self.Page2) end
 				if self.Page3 ~= nil and self.Page3 ~= "" then table.insert(pages, self.Page3) end
 				if #pages == 0 then
-					table.insert(pages, "🚧 공사 중입니다.")
+					table.insert(pages, "※ 공사 중입니다.")
 				end
 				dialog:OpenTalk(self.SignTitle, pages)
 				return

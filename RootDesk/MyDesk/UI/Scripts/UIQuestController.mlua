@@ -52,7 +52,7 @@ script UIQuestController extends Component
 			btn.SpriteGUIRendererComponent.RaycastTarget = true
 		end
 		self.trackerClickHandler = btn:ConnectEvent(ButtonClickEvent, function()
-			_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume)
+			_BGMManager:PlayInGameSound(self.uiClickSfx, self.uiSfxVolume)
 			self:ToggleQuestLog()
 		end)
 		log("[QUEST] tracker click wired")
@@ -283,7 +283,7 @@ script UIQuestController extends Component
 		local data = _QuestDataSetLogic:GetData(id)
 		if data == nil then return end
 
-		local msg = "✔ 퀘스트 완료: " .. (data.Name or "")
+		local msg = "★ 퀘스트 완료: " .. (data.Name or "")
 		local rewardStr = self:BuildRewardStr(data)
 		if rewardStr ~= "" then
 			msg = msg .. "\n보상  " .. rewardStr

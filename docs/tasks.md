@@ -1,5 +1,65 @@
 # 작업 목록 (Tasks)
 
+## [건축·연구·마을·필드] 오두막 타일·공사중 모델·연구 두루마리·필드 장식 교체 (2026-10-07) — 코드·데이터 완료 · refresh ok · build 로그 갱신 미확인
+
+- **건축/타일**: wall.tileset 213~260을 Cabin_* 이름으로 바꾸고 IsCollidable 설정(백업 scratch/wall.tileset-before-cabin-20261006). 오두막 아이콘 4종 IconRUID 연결. 테스트 모드 활성(TestModeConfig).
+- **마을**: 공사장 소품을 Prop_UC_ConstructionSite 한 모델로 묶음(F키 "공사중..", 충돌, 고양이 최상단 정렬 — GroupSortChild/IdleBreathe). town 4곳 배치, 트리거 박스 62개 보정. 이모지 제거. Stone 반투명 범위 수정(ResourceReaction).
+- **전투/사운드**: 주먹 휘두름·타격 RUID 교체, 볼륨 0.45, 타격음 중복 제거(0.08초).
+- **연구**: 두루마리는 자원 아이템으로 바꾸고 연구소 제출 시 즉시 완료. 드롭률 대폭 하향(보물상자 0.5%). 영문 UI 문구 한글화.
+- **필드**: template_field·field_earth의 MushroomCluster 7개/FlowerBushYellow 10개를 Deco_RockTree/Deco_Bush로 교체(scripts/swap_field_deco.cjs, 백업 scratch/*-before-decoswap-20261007.map). RockTree는 충돌·채집 자원.
+- **검증**: refresh status ok. build 로그 시각(05:22) 불일치 → **build 로그 갱신 미확인**. OrderAboveRoot LWA-4012 4건 해소 여부 미확인. **런타임 검증 보류(제작자 수행)**: 공사중 모델 상호작용·정렬, 연구 제출, 필드 바위나무 충돌.
+
+## [UI] 메인화면 배경 시작 시 세로 확대 수정 (2026-10-07) — 수정 완료 · 정적 검증 완료
+
+- **원인**: Bg/Art의 현재 RUID `d06a9d16a6004e408dca1e0a0cfce4d1`는 keyart_1_1 정사각 리소스. 이전 변경은 가로형 초기 비율 1.791666667 및 Rect 1935×1080을 사용했다. 실행 후 실제 Sprite 비율 1을 읽으면 cover 높이가 1080→1920으로 바뀌어 시작 시 확대가 발생한다. 실제 런타임 수치는 Maker 연결 부재로 미측정.
+- **수정**: UIMainMenuController.backgroundAspectRatio=1, UIBuilder로 Bg/Art 초기 Rect=1920×1920. 현재 배경 RUID·중앙 앵커·AspectOnly 유지. 등록 리소스 메타데이터의 이름/RUID와 로컬 원본 1024×1024를 확인하고, 로드 전후의 비율을 일치시켰다. 업로드 hash와 로컬 JPG 바이트 hash는 다르므로 등록 바이너리 동일성은 확인하지 못했다.
+- **검증**: LSP 오류 0 / 경고 0(workspaceLoaded=true, staleCrossFileResults=false). UIBuilder 저장·재읽기, 기존 103개 UUID 유지, strict lint 오류 0 / 경고 31. 화면 비율 5종에서 초기 비율/로드된 정사각 비율의 cover 계산 결과 동일 확인. 실제 리소스 치수는 런타임 LoadSpriteAndWait로 계속 확인한다.
+- **남은 검증**: Maker MCP 없음 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: 시작 시 배경 확대 전환이 사라지는지, 화면 비율별 cover/중앙 정렬 확인.
+
+## [농사·건축·아트] 밭 제한·설치 방향·가구 교체·벽 그림자 (2026-10-07) — 코드·RUID 연결 완료 · 정적 검증 완료
+
+- **농사/제작**: 호미 설명을 밭을 일구는 도구로 수정. 실제 Farm 타일 15종만 경작지로 인정하며 물·일반 흙·덮인 바닥은 씨앗 설치 불가. 서버 검증과 1×1 씨앗 미리보기 판정을 맞췄다. 일반 제작의 Wood Floor 레시피만 제거(건축 제작대 유지). Monster Ward 아이템/제작법 제거, 기존 설치물도 데이터 행이 없으면 몬스터 회피 효과 비활성화.
+- **드롭**: 공통 배율 4→3, 화폐 4.5→3.375로 이전의 75%. 자연 돌 드롭도 공통 배율을 사용. 고해상도 신규 아이콘은 DropScaleMultiplier로 논리 크기를 보정.
+- **설치**: 오두막 설계도의 전체 배치 범위를 바라보는 방향 앞에 두고 가장 가까운 구성 칸으로 설치 거리를 검사. 위쪽 전용 제한 해제. 일반 2×2 가구도 아래/왼쪽을 바라볼 때 시작 칸을 보정. 미리보기와 서버 좌표 계산을 통일하고 플레이어 몸과의 겹침을 미리보기에 반영.
+- **아트**: [가구 6장·RUID·배율](./design/art/furniture_v2/README.md), [벽 그림자·전후 미리보기](./design/art/building/wall_shadows/README.md). 제작자가 제공한 7개 RUID 연결 완료. 냄비 드롭 모델을 화로에서 분리. 세 가구의 모델/미리보기 배율 및 Trigger 크기를 새 실루엣에 맞췄다. 벽·창·닫힌 문 옆에 회전 가능한 접촉 그림자를 배치하고 건축/철거/문 변경/복원 시 갱신.
+- **검증**: 변경 스크립트 7개 LSP 오류 0 / 경고 0, 작업 중 최종 변경 파일 재진단도 동일(workspaceLoaded=true, staleCrossFileResults=false). 소스에서 추출한 좌표 계산으로 3,888개 배치 사례(4방향·음수 좌표·칸 경계) 통과. 밭 8개 사례와 그림자 모서리/문 개폐/제거 계산 통과. 모델 7개 validation 위반 0, RUID·미리보기 배율·Trigger 실효 크기 재읽기 확인. CSV 열 참조 359건 확인/존재하지 않는 열 0건(일반 인자 추적 미확정 226건은 별도). item/recipe CSV 행 폭 51/11 일치, 기존 BOM 여부 보존.
+- **남은 검증**: Maker MCP 없음 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: 일반 흙/경작지 심기와 수량 차감, 4방향 오두막·가구 설치, 기존 건축/가구 저장 복원, 새 가구 크기·접지·통행·상호작용, 드롭 크기, 그림자 레이어/이음새/문 개폐 확인.
+
+## [UI] 메인화면 중앙 배치·TitlePanel 여백 (2026-10-07) — 수정 완료 · 정적 검증 완료
+
+- **원인/변경**: Logo·SignBoard·주 메뉴 버튼의 오른쪽 앵커와 고정 픽셀 보정값이 화면 폭에 따라 중심에서 벗어났다. 중앙 앵커/중앙 X로 통일. TitlePanel과 Bg의 Stretch 여백 0, Bg/Art 중앙 배치와 Mask 추가. 배경은 실제 Sprite 종횡비를 한 번 읽고 화면 Rect 크기가 바뀔 때 비율을 유지한 cover 크기를 계산한다. 음악 버튼은 우측 상단 앵커/88×88 클릭 영역, 플랫폼 예약 영역 밖 여백으로 정리.
+- **검증**: UIBuilder 저장·재읽기, 기존 103개 UUID 유지. strict lint 오류 0 / 기존 경고 32. 컨트롤러 LSP 오류 0 / 경고 0. 16:9·4:3·20:9·21:9·세로 비율의 정적 계산에서 로고·판자·주 메뉴 중앙 X=0, 배경 viewport 충족 및 종횡비 유지 확인. 메인화면 기존 판자 이미지와 버튼의 세로 간격은 유지했다.
+- **남은 검증**: Maker MCP 없음 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: Maker Refresh 후 모바일/모니터 비율별 중앙 정렬, 배경 cover/Mask, 판자 위 버튼 정렬, 음악 버튼 위치 확인. 슬롯/외모 하위 화면의 기존 작은 터치 영역·글씨 경고 32건은 이번 중앙 배치 변경과 별개다.
+
+## [사운드] 메인화면 인게임 효과음 차단 (2026-10-07) — 코드 완료 · 정적 검증 완료
+
+- **요청**: 메인화면에서 비·날씨 및 그 밖의 인게임 요소 소리가 나오지 않도록 처리.
+- **변경**: 기존 `BGMManager.MainMenuActive`를 기준으로 날씨 앰비언스 재생을 차단. 메뉴 진입 시 재생 중인 앰비언스와 기록된 인게임 효과음 RUID를 즉시 정지하고, 메뉴 종료 시 현재 맵 음악·날씨 앰비언스를 즉시 갱신한다. `PlayInGameSound`를 통해 채집·스윙·피격·스킬·덫 및 인게임 UI 효과음을 클라이언트별로 차단한다. 다른 플레이어의 Multicast 효과음도 수신 클라이언트의 메뉴 상태를 따른다. 메인메뉴 클릭·호버음과 전용 BGM·음악 토글 유지.
+- **검증**: 변경 스크립트 7개 LSP 오류 0 / 경고 0(`workspaceLoaded=true`, `staleCrossFileResults=false`); `UIQuestController`의 기존 사용자 컴포넌트 참조 Info 3건은 수정 경로 외. 전체 `.mlua` 사운드 재생 경로 재검색: 메인메뉴 클릭·호버 외 효과음 직접 재생은 중앙 메서드만 남음. ModelBuilder로 프로젝트/Global 모델 160개 및 자식, MapBuilder로 맵 10개 점검 — 별도 `SoundComponent` 배치 없음. 수정 파일 diff 공백 검사 통과.
+- **남은 검증**: Maker MCP 없음 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: 비 오는 날 접속해 타이틀·슬롯 화면에서 빗소리가 없는지, 타 유저 공격음이 차단되는지, 게임 진입 시 현재 날씨 소리·채집/스킬음이 복귀하는지, 재진입 시 잔향 정지 및 메인메뉴 클릭·호버음/음악 토글 유지 확인.
+
+## [UI·아트] 메인화면 나무 판자와 음악 버튼 (2026-10-06) — 코드·아트 연결 완료 · 정적 검증 완료
+
+- **후속 스피커 가독성**: 제작자 요청으로 얇고 날카로운 아이콘을 굵고 부드럽게 수정. 음파 크림색 두께 4→8px·음소거 사선 5→10px, 외곽선 7→12px·9→14px. 스피커 모서리 곡선·원호 음파·둥근 끝 사선을 native Polygon GUI로 작성. 103개 엔티티와 버튼/상태 UUID 유지. UIBuilder strict lint 오류 0 / 기존 경고 32, 8개 도형 CCW 방향과 68×68 내 좌표 확인. [켜짐/음소거 미리보기](./design/art/mainmenu/music_icon.preview.png) 재생성·시각 검토. Maker MCP 없음 → refresh 검증 보류 · 런타임 검증 보류(제작자 수행).
+
+- **후속 아트 수정(v2)**: 제작자 요청으로 상단의 다른 모양 장식 판자·잎·꽃도 제거. [wooden_menu_planks_v2.png](./design/art/mainmenu/wooden_menu_planks_v2.png) 및 [편집 프롬프트](./design/art/mainmenu/wooden_menu_planks_v2.prompt.md) 저장. 내장 image_gen 편집, 가로 판자 5개와 기존 배치 시각 검토·RGBA 알파 확인. 기존 v1 PNG 보존. 제작자가 제공한 v2 RUID `a49a5bd9bddf457b881e4e6f7ea5b878`를 UIBuilder로 SignBoard에 연결, 재읽기 일치 확인. refresh 검증 보류 · 런타임 검증 보류(제작자 수행).
+- **후속 음악 UI·전용 곡**: 글자/버튼 배경을 없애고 기본 Polygon/Line GUI로 스피커 아이콘 구성. 켜짐=음파, 음소거=음파 숨김+사선 1줄. 기존 버튼 UUID/클릭·호버음 유지. Maker에서 옮겨 둔 우측 상단 위치를 기준으로 클릭 영역 88×88, 위치 (1604,967), 아이콘 68×68. PC 플랫폼 예약 영역 경고를 해소했다. `BGMDataSet`에 mainmenu 곡 `67540f6a11f04476900190962b9e3d4c`(볼륨 0.45) 추가, 메뉴 표시 중 우선 선택·게임 진입 시 기존 맵별 곡 복귀·음소거 유지. [진단용 아이콘 미리보기](./design/art/mainmenu/music_icon.preview.png).
+- **후속 검증**: 두 변경 스크립트 LSP 오류 0 / 경고 0(workspaceLoaded=true, staleCrossFileResults=false). 최종 UIBuilder strict lint 오류 0 / 경고 32(착수 시 33). UUID 바인딩 3개·raycast·배경 알파 0·빈 문구·초기 사선 숨김 확인. 아이콘 켜짐/음소거 미리보기 검토. BGM CSV 4컬럼·중복 키 없음·전용 곡 RUID 및 기존 4권역 데이터 HEAD 동일 확인. Maker MCP 없음 → refresh 검증 보류. 런타임 검증 보류(제작자 수행): native 도형 렌더·클릭/음소거 표시·메뉴 전용 곡 재생·게임 진입 후 맵 음악 복귀·판자 버튼 정렬.
+
+- **제작자 요청**: 우측 메뉴 표지판의 십자가 기둥을 지우고 나무 판자만 유지. 메인화면에서 음악을 켜고 끄는 버튼 추가.
+- **이미지**: [wooden_menu_planks.png](./design/art/mainmenu/wooden_menu_planks.png), 투명 배경 1254×1254 PNG. 상단 장식 판자 1개·큰 판자 5개 유지, 세로/가로 지지대와 밧줄 제거. 기존 루트 PNG 보존. [편집 프롬프트·등록 안내](./design/art/mainmenu/README.md). 제작자가 등록 후 제공한 RUID `6676188d980946d5b726e1be994c1837`로 SignBoard ImageRUID 연결 완료. 생성본은 원본의 크기·위치를 완전히 동일하게 보존하지 않아 Maker에서 버튼 정렬 확인 필요.
+- **음악 버튼**: UIBuilder로 `TitlePanel/BtnMusic` 추가(좌측 하단 여백 32px, 216×88). 기존 메뉴 버튼 스킨과 클릭/호버음 재사용. 컨트롤러 UUID 연결, `음악 켜짐/꺼짐` 상태 문구, 이벤트 해제 처리. `BGMManager.MusicEnabled` 및 `SetMusicEnabled`로 BGM 볼륨 전환과 곡 변경 시 음소거 유지. 클라이언트 세션 설정이며 재접속 영구 저장은 하지 않는다.
+- **검증**: 변경 스크립트 2개 LSP 오류 0 / 경고 0(workspaceLoaded=true, staleCrossFileResults=false). UIBuilder 검증/UI lint 오류 0 / 기존 경고 32. 음악 버튼 추가 시 HEAD 대비 UIBuilder 비교: 기존 엔티티·UITransform/Sprite/Text/Button 불변, 음악 버튼 1개 추가. 이후 SignBoard ImageRUID만 추가 변경 및 재읽기 일치 확인. 크기·피벗·위치·raycast·UUID 및 DataRef 81개 문자열 확인. PNG 알파·해상도와 기둥 제거 시각 검토 완료. 보조 스크립트 2개 Node 문법 검사·수정 파일 diff 공백 검사 통과.
+- **남은 검증**: 현재 Maker MCP 없음 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: 음악 켜기/끄기·맵 이동 후 음소거 유지·버튼 문구·새 판자/클릭 영역 정렬.
+
+## [아트] 업데이트 썸네일 재디자인 (2026-10-06) — PNG 시안 완료 · 이미지 검증 완료
+
+- **정체성 강화(v3)**: 제작자 요청 — 전투가 전부인 게임처럼 보이지 않도록 생활·크래프팅 중심 재구성. `game_design.md` §2~2.2를 근거로 채집하는 모험가·통나무·작업대·텃밭·집을 크게 배치하고, 전투는 우측 상단 포탈 너머 별도 원정 장면으로 축소. [최신 생활 중심 PNG](./design/art/thumbnail/thumbnail_update_lifecraft_codex_v3.png)·[생성 프롬프트](./design/art/thumbnail/thumbnail_update_lifecraft_codex_v3.prompt.md) 저장. 업데이트 안내·직업 4종 문구 유지. 시각 검토 및 PNG 서명·1672×941·복사본 바이트 일치 확인. 게임 파일 변경 없음. refresh 검증 보류 · 런타임 검증 보류(제작자 수행).
+- **문구 정정(v2)**: 제작자 지시 — 실제 직업 4개이므로 `신규 직업 · 8갈래 전직` → `신규 직업 · 4종`. 내장 image_gen으로 해당 문구 편집, [최신 PNG](./design/art/thumbnail/thumbnail_update_raid_codex_v2.png)·[편집 프롬프트](./design/art/thumbnail/thumbnail_update_raid_codex_v2.prompt.md) 별도 저장. 시각 검토로 교체 문구·다른 문구·기존 구도 확인, 복사본 바이트 일치 및 해상도 1672×941 확인. refresh 검증 보류 · 런타임 검증 보류(제작자 수행).
+- **제작자 요청**: Claude 시안의 왼쪽 문구·오른쪽 전투 배치를 참고해 눈에 띄는 모바일 게임·메이플스토리월드풍 썸네일 제작.
+- **산출물**: [thumbnail_update_raid_codex_v1.png](./design/art/thumbnail/thumbnail_update_raid_codex_v1.png), 1672×941 PNG. 내장 `image_gen`으로 전면 리드로우. 청록·남색 숲 배경, 금빛 우드 로고와 교차 도구 심볼, SD 모험가·버섯·슬라임·멧돼지, 통일된 남색·금색 정보 패널. 기존 `thumbnail_update_raid.png` 별도 보존. [전체 생성 프롬프트](./design/art/thumbnail/thumbnail_update_raid_codex_v1.prompt.md) 기록.
+- **검증**: 생성 이미지 시각 검토 — 제목·부제·업데이트 문구·하단 정보 3줄의 한글 일치와 글자 잘림 없음 확인. PNG 서명·해상도 확인 및 복사본과 생성 원본의 바이트 일치 확인. 게임 코드·모델·맵·UI 변경 없음. 현재 연결 도구에 Maker MCP 없음 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**. 실제 월드 목록 축소 표시·등록은 제작자 확인 대상.
+
 ## [아트] Stone 채집 모델 이미지 교체 (2026-10-06) — 모델 완료 · refresh ok · build 로그 갱신 미확인 · 런타임 검증 보류
 
 - **제작자 요청**: `Stone` 이미지 → `5b4c934a74b14d34977a3f9d107b21d9`. 기존 크기를 크게 바꾸지 않으며, 후속 지시에 따라 드롭 모델·인벤토리 아이콘은 기존 이미지 유지.

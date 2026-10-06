@@ -9,6 +9,9 @@ script UIMainMenuController extends Component
 	property ButtonComponent btnNew = "a41e3af2-2990-4ce6-867b-a026ce64c3f8"
 	property ButtonComponent btnContinue = "add9c6c2-82c4-4608-acd3-d0695f18982e"
 	property ButtonComponent btnQuit = "241f788d-36f4-4ef4-8d60-1740d019bd9e"
+	property ButtonComponent btnMusic = "a1a02771-9f3a-4a89-94a4-a93bd34b2b31"
+	property Entity musicWaves = "2761fd63-7919-40cf-989c-1daee0ebc38a"
+	property Entity musicMuteSlash = "aca95e11-be38-4c8b-9e20-b077c1c8985d"
 	property TextGUIRendererComponent titleHint = "dca47c27-479a-4f20-a856-e2dcba7e2ce3"
 	property Entity titleHintPlate = "4438e7c8-9e1c-46ad-bb09-7bcde1f25c2b"
 	-- 테스트 모드 배지(상단 중앙). .ui 에서 Enable=false 로 저장돼 있고 테스트 모드일 때만 켠다(규칙 30).
@@ -103,6 +106,8 @@ script UIMainMenuController extends Component
 	property string uiHoverSfx = "159bf70a74634bfc8e91a29e527a4be5"
 	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
 	property number uiSfxVolume = 0.8
+	-- 현재 keyart_1_1(1024×1024)과 같은 초기 비율. 로드 전후 cover 크기가 튀지 않게 한다.
+	property number backgroundAspectRatio = 1.0
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
@@ -120,6 +125,8 @@ script UIMainMenuController extends Component
 		self:BindTransparentTitleBtn(self.btnNew, function() self:OnTitleNew() end)
 		self:BindTransparentTitleBtn(self.btnContinue, function() self:OnTitleContinue() end)
 		self:BindTransparentTitleBtn(self.btnQuit, function() self:OnTitleQuit() end)
+		self:BindMusicButton()
+		self:RefreshMusicButton()
 		self:BindBtn(self.btnSlotBack, function() self:ShowPanel("title") end)
 		self:BindBtn(self.btnCustomBack, function() self:ShowPanel("slot") end)
 		self:BindBtn(self.btnCustomStart, function() self:OnCustomStart() end)
@@ -153,6 +160,83 @@ script UIMainMenuController extends Component
 			.. tostring(isvalid(self.customNameInput))
 			.. " nameInput=" .. tostring(isvalid(self.nameInput))
 			.. " sfx=on")
+		self:RefreshBackgroundCover()
+		self:InitializeBackgroundCover()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void InitializeBackgroundCover()
+		if not isvalid(self.bg) then return end
+		local art = self.bg:GetChildByName("Art")
+		if not isvalid(art) or not isvalid(art.SpriteGUIRendererComponent) then return end
+		local ruid = art.SpriteGUIRendererComponent.ImageRUID.DataId
+		if ruid == nil or ruid == "" then return end
+		-- 한 번만 읽는다. 매 프레임 리소스를 로드하지 않는다.
+		local sprite = _ResourceService:LoadSpriteAndWait(ruid)
+		if not isvalid(self) or not isvalid(self.Entity) then return end
+		if sprite ~= nil and sprite.IsLoadComplete and sprite.Width > 0 and sprite.Height > 0 then
+			self._T.BackgroundAspect = sprite.Width / sprite.Height
+			self:RefreshBackgroundCover()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 창 크기·모바일 회전도 같은 배치 규칙으로 처리한다(플랫폼 분기 없음).
+		self:RefreshBackgroundCover()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshBackgroundCover()
+		if not isvalid(self.bg) or not isvalid(self.bg.UITransformComponent) then return end
+		local art = self.bg:GetChildByName("Art")
+		if not isvalid(art) or not isvalid(art.UITransformComponent) then return end
+		local viewport = self.bg.UITransformComponent.RectSize
+		if viewport.x <= 0 or viewport.y <= 0 then return end
+		local aspect = math.max(0.01, self._T.BackgroundAspect or self.backgroundAspectRatio)
+		if self._T.BackgroundWidth == viewport.x and self._T.BackgroundHeight == viewport.y and self._T.LastBackgroundAspect == aspect then return end
+		self._T.BackgroundWidth = viewport.x
+		self._T.BackgroundHeight = viewport.y
+		self._T.LastBackgroundAspect = aspect
+		local width = math.max(viewport.x, viewport.y * aspect)
+		art.UITransformComponent.RectSize = Vector2(width, width / aspect)
+		art.UITransformComponent.anchoredPosition = Vector2(0, 0)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BindMusicButton()
+		-- 음악 버튼은 기존 메뉴와 같은 클릭·호버음을 사용하고 연결 핸들을 보관한다.
+		if not isvalid(self.btnMusic) or not isvalid(self.btnMusic.Entity) then return end
+		local ent = self.btnMusic.Entity
+		self._T.musicClickEvent = ent:ConnectEvent(ButtonClickEvent, function()
+			self:PlayUiClick()
+			if _BGMManager == nil then return end
+			_BGMManager:SetMusicEnabled(not _BGMManager.MusicEnabled)
+			self:RefreshMusicButton()
+		end)
+		self._T.musicHoverEvent = ent:ConnectEvent(ButtonStateChangeEvent, function(ev)
+			if ev ~= nil and ev.state == ButtonState.Hover then self:PlayUiHover() end
+		end)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshMusicButton()
+		-- 음악이 켜져 있으면 음파, 꺼져 있으면 스피커 위 사선 한 줄을 표시한다.
+		local enabled = _BGMManager == nil or _BGMManager.MusicEnabled
+		if isvalid(self.musicWaves) then self.musicWaves.Enable = enabled end
+		if isvalid(self.musicMuteSlash) then self.musicMuteSlash.Enable = not enabled end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 이번에 추가한 음악 버튼 연결을 해제한다.
+		if isvalid(self.btnMusic) and isvalid(self.btnMusic.Entity) then
+			local ent = self.btnMusic.Entity
+			if self._T.musicClickEvent ~= nil then ent:DisconnectEvent(ButtonClickEvent, self._T.musicClickEvent) end
+			if self._T.musicHoverEvent ~= nil then ent:DisconnectEvent(ButtonStateChangeEvent, self._T.musicHoverEvent) end
+		end
+		self._T.musicClickEvent = nil
+		self._T.musicHoverEvent = nil
 	end
 
 	@ExecSpace("ClientOnly")
@@ -398,6 +482,8 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void SetRootEnable(boolean on)
+		-- 메인메뉴 표시 중에는 전용 곡, 게임 진입 후에는 맵별 곡을 선택한다.
+		if _BGMManager ~= nil then _BGMManager:SetMainMenuActive(on) end
 		local root = _EntityService:GetEntityByPath("/ui/MainMenuGroup")
 		if isvalid(root) then root.Enable = on end
 		if isvalid(self.bg) then self.bg.Enable = on end
@@ -411,6 +497,7 @@ script UIMainMenuController extends Component
 		if isvalid(self.customizePanel) then self.customizePanel.Enable = (which == "customize") end
 		if which == "title" then
 			self:SetTitleHint("")
+			self:RefreshMusicButton()
 		end
 		if which == "slot" then
 			self:RefreshSlots()

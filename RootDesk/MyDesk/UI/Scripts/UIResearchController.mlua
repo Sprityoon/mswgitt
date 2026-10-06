@@ -117,7 +117,11 @@ script UIResearchController extends Component
 					iconRuid = ds:GetCell(i, "IconRUID") or "",
 					desc = ds:GetCell(i, "Desc") or "",
 					sortOrder = sortOrder,
+					scrollItem = "",
 				}
+				-- 제출하면 즉시 완료되는 연구 두루마리 (없으면 빈칸)
+				local okS, vS = pcall(function() return ds:GetCell(i, "ScrollItem") end)
+				if okS and vS ~= nil then entry.scrollItem = tostring(vS) end
 				self.researchRows[id] = entry
 				table.insert(sortable, entry)
 			end
@@ -218,6 +222,20 @@ script UIResearchController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method string GetItemDisplayName(string itemName)
+		-- item_dataset.DisplayName (없으면 키 그대로). 화면에는 영문 키 대신 이 이름을 쓴다.
+		local ds = _DataService:GetTable("item_dataset")
+		if ds ~= nil and itemName ~= nil and itemName ~= "" then
+			local row = ds:FindRow("Name", itemName)
+			if row ~= nil then
+				local ok, v = pcall(function() return row:GetItem("DisplayName") end)
+				if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+			end
+		end
+		return itemName or ""
+	end
+
+	@ExecSpace("ClientOnly")
 	method integer GetOwnedCount(string itemName)
 		local player = _UserService.LocalPlayer
 		if not isvalid(player) then return 0 end
@@ -266,6 +284,10 @@ script UIResearchController extends Component
 		if unlocked then
 			status = "이미 해금됨"
 			btnLabel = "완료"
+		elseif row.scrollItem ~= "" and self:GetOwnedCount(row.scrollItem) > 0 then
+			-- 연구 두루마리 보유: 다른 연구가 진행 중이어도 제출 가능. 재료·시간 없이 즉시 완료 (서버 ServerRequestStartResearch 와 같은 조건)
+			status = string.format("%s 보유 — 제출하면 바로 연구를 마칩니다", self:GetItemDisplayName(row.scrollItem))
+			btnLabel = "두루마리 제출"
 		elseif isvalid(inv) and inv.ActiveResearchId ~= nil and inv.ActiveResearchId ~= "" then
 			if inv.ActiveResearchId == row.id then
 				local startT = tonumber(inv.ResearchStartTime) or 0
@@ -283,7 +305,7 @@ script UIResearchController extends Component
 				btnLabel = "대기"
 			end
 		else
-			status = string.format("소요 %d초 · 재료 %s x%d", row.duration, row.inputItem, row.inputCount)
+			status = string.format("소요 %d초 · 재료 %s x%d", row.duration, self:GetItemDisplayName(row.inputItem), row.inputCount)
 			btnLabel = "연구 시작"
 		end
 

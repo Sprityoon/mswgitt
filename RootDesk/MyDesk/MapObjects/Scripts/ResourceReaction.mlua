@@ -32,6 +32,22 @@ script ResourceReaction extends Component
 		end
 	end
 
+	method number GetDownScale()
+		-- Scale 이 1보다 작으면 그 값, 아니면 1. (가림 판정·흔들림 폭 보정용 — Scale ≥ 1 자원은 기존 그대로)
+		-- 평소엔 현재 Scale 을 본다: OriginalScale 은 리스폰 등장 연출(0.05배→1배) 중에 잡힐 수 있어 믿지 않는다.
+		-- 흔들림 중에만 출렁이는 현재값 대신 OriginalScale 을 쓴다.
+		local s = nil
+		if (self.ShakeTime > 0.0 or self.RefusalShakeTime > 0.0) and self.OriginalScale ~= nil then
+			s = self.OriginalScale
+		elseif isvalid(self.Entity.TransformComponent) then
+			s = self.Entity.TransformComponent.Scale
+		end
+		if s == nil then return 1.0 end
+		local v = math.abs(tonumber(s.x) or 1.0)
+		if v <= 0.0001 or v >= 1.0 then return 1.0 end
+		return v
+	end
+
 	@ExecSpace("Client")
 	method void PlayShake()
 		local transform = self.Entity.TransformComponent
@@ -81,13 +97,17 @@ script ResourceReaction extends Component
 					offset = collider.ColliderOffset
 				end
 				
+				-- 판정은 로컬 BoxSize 기준(기존 체감 유지)이되, Scale 이 1보다 작은 모델은 그만큼 줄인다.
+				-- 고해상도 그림을 Scale 0.17 로 줄이고 콜라이더 BoxSize 를 키운 Stone 이 로컬 값 그대로
+				-- 쓰이면 가림 범위가 수 칸으로 부풀었다(규칙 14 — 실물 = BoxSize × Scale). Scale ≥ 1 인 자원은 그대로.
+				local shrink = self:GetDownScale()
 				if boxSize then
-					checkWidth = math.max(1.0, boxSize.x * 0.7)
-					checkHeight = math.max(1.5, boxSize.y * 3.0, boxSize.x * 1.0)
+					checkWidth = math.max(1.0, boxSize.x * shrink * 0.7)
+					checkHeight = math.max(1.5, boxSize.y * shrink * 3.0, boxSize.x * shrink * 1.0)
 				end
-				
-				local distX = math.abs(playerPos.x - (myPos.x + offset.x))
-				local distY = playerPos.y - (myPos.y + offset.y)
+
+				local distX = math.abs(playerPos.x - (myPos.x + offset.x * shrink))
+				local distY = playerPos.y - (myPos.y + offset.y * shrink)
 				
 				local isCovered = (distY > 0.0 and distY < checkHeight and distX < checkWidth)
 				
@@ -119,7 +139,8 @@ script ResourceReaction extends Component
 		
 				local progress = self.ShakeTime / 0.3
 				-- Scale shake (compress/expand)
-				local scaleOffset = math.sin(self.ShakeTime * 50.0) * 0.15 * progress
+				-- 흔들림 폭도 Scale < 1 모델은 비례해 줄인다(0.15 고정이면 Scale 0.17 돌이 88% 출렁임).
+				local scaleOffset = math.sin(self.ShakeTime * 50.0) * 0.15 * self:GetDownScale() * progress
 				transform.Scale = Vector3(self.OriginalScale.x + scaleOffset, self.OriginalScale.y - scaleOffset, self.OriginalScale.z)
 				
 				-- Rotation shake

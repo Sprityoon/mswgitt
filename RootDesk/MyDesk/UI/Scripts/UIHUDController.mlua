@@ -1035,17 +1035,17 @@ script UIHUDController extends Component
 			return { name = "", icon = "" }
 		end
 		if string.sub(mapName, 1, 5) == "Home_" or mapName == "Home" or mapName == "map01" then
-			return { name = "내 영지", icon = "🚩" }
+			return { name = "내 영지", icon = "◆" }
 		elseif mapName == "town" or mapName == "plaza" then
-			return { name = "마을 광장", icon = "🏡" }
+			return { name = "마을 광장", icon = "★" }
 		elseif string.sub(mapName, 1, 9) == "raidlobby" or mapName == "template_raid_lobby" then
-			return { name = "레이드 대기실", icon = "🛡️" }
+			return { name = "레이드 대기실", icon = "■" }
 		elseif string.sub(mapName, 1, 4) == "raid" or mapName == "boss" or mapName == "template_boss" then
-			return { name = "보스 결투장", icon = "⚔️" }
+			return { name = "보스 결투장", icon = "▲" }
 		elseif string.sub(mapName, 1, 4) == "hunt" or string.sub(mapName, 1, 5) == "field" or mapName == "template_field"
 			or string.sub(mapName, 1, 5) == "rocky" or string.sub(mapName, 1, 6) == "desert" or string.sub(mapName, 1, 4) == "snow"
 			or mapName == "template_rocky" or mapName == "template_desert" or mapName == "template_snow" then
-			return { name = "사냥터", icon = "🌲" }
+			return { name = "사냥터", icon = "♣" }
 		end
 		return { name = "", icon = "" }
 	end
@@ -1086,22 +1086,22 @@ script UIHUDController extends Component
 		local toInfo = nil
 		if destMap ~= "" then toInfo = self:ResolveWarpLabel(destMap) end
 
-		local startName = "🚩 출발지"
+		local startName = "◆ 출발지"
 		if fromInfo.name ~= "" then startName = fromInfo.icon .. " " .. fromInfo.name end
 
-		local endName = "목적지 🏰"
+		local endName = "목적지 ★"
 		if toInfo ~= nil and toInfo.name ~= "" then
 			endName = toInfo.name .. " " .. toInfo.icon
 		elseif fromInfo.name == "내 영지" then
-			endName = "마을 광장 🏡"
+			endName = "마을 광장 ★"
 		elseif fromInfo.name == "마을 광장" then
-			endName = "사냥터 & 모험지 🌲"
+			endName = "사냥터 & 모험지 ♣"
 		elseif fromInfo.name == "사냥터" then
-			endName = "마을 광장 🏡"
+			endName = "마을 광장 ★"
 		elseif fromInfo.name == "보스 결투장" then
-			endName = "마을 광장 🏡"
+			endName = "마을 광장 ★"
 		elseif fromInfo.name == "레이드 대기실" then
-			endName = "보스 결투장 ⚔️"
+			endName = "보스 결투장 ▲"
 		end
 
 		local mapContainer = cover:GetChildByName("MapContainer", true)
@@ -1408,7 +1408,7 @@ script UIHUDController extends Component
 			local gameHour = (math.floor(totalMinutes / 60) + 6) % 24 -- 0초를 오전 6시로 기준
 			local gameMin = totalMinutes % 60
 			
-			local icon = isNight and "🌙" or "🌞"
+			local icon = isNight and "●" or "○"
 			local statusStr = isNight and "밤" or "낮"
 			if weatherName ~= nil and weatherName ~= "" then
 				clock.TextComponent.Text = string.format("%s %s %02d:%02d · %s", icon, statusStr, gameHour, gameMin, weatherName)
