@@ -1112,7 +1112,8 @@ script PlayerController extends Component
 				if ds ~= nil then
 					local row = ds:FindRow("Name", baseName)
 					if row ~= nil and row:GetItem("Category") == "consumable" then
-						inv:ServerRequestUseItem(baseName)
+						-- 칸 키를 보낸다: 이름 붙은 가축·호루라기는 키로 개체를 구분한다(서버가 GetBaseItemName 으로 기본 이름을 구함).
+						inv:ServerRequestUseItem(activeItem)
 						return
 					end
 				end
@@ -1193,12 +1194,10 @@ script PlayerController extends Component
 
 		if isPlaceable then
 			local baseName = inv:GetBaseItemName(activeItem)
-			local cropDs = _DataService:GetTable("CropDataSet")
-			local isCropSeed = cropDs ~= nil and cropDs:FindRow("SeedItem", baseName) ~= nil
-			local itemDs = _DataService:GetTable("item_dataset")
-			local itemRow = itemDs ~= nil and itemDs:FindRow("Name", baseName) or nil
-			if not isCropSeed and itemRow ~= nil and (itemRow:GetItem("PlacedTileName") or "") == "" then
-				local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, 2)
+			-- 점유 n×n (가구 기본 2, item_dataset.FootprintSize) — 미리보기·서버 검증과 같은 단일 소스.
+			local footprint = _ResourceSpawner:GetPlaceFootprint(baseName)
+			if footprint > 1 then
+				local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, footprint)
 				targetCell = Vector2Int(origin.x, origin.y)
 			end
 			log("[PLACE] Requesting placement of " .. activeItem .. " at cell (" .. targetCell.x .. ", " .. targetCell.y .. ")")
@@ -2020,13 +2019,15 @@ script PlayerController extends Component
 				local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.8
 				local targetCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
 				if targetCell == nil then return end
-				local is2x2 = placedTileName == "" and not isCropSeed
-				if is2x2 then
-					local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, 2)
+				-- 점유 n×n (바닥 타일·씨앗 = 1, 가구 = item_dataset.FootprintSize, 공란 2) — 설치 요청·서버 검증과 같은 단일 소스.
+				local footprint = _ResourceSpawner:GetPlaceFootprint(inv:GetBaseItemName(activeItem))
+				if footprint > 1 then
+					local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, footprint)
 					targetCell = Vector2Int(origin.x, origin.y)
 				end
-				local cellWorldPos = is2x2 and Vector3(targetCell.x + 1.0, targetCell.y + 1.0, 0) or Vector3(targetCell.x + 0.5, targetCell.y + 0.5, 0)
-				local previewScale = is2x2 and Vector3(2.0, 2.0, 1.0) or Vector3(1.0, 1.0, 1.0)
+				local half = footprint * 0.5
+				local cellWorldPos = Vector3(targetCell.x + half, targetCell.y + half, 0)
+				local previewScale = Vector3(footprint, footprint, 1.0)
 				-- item_dataset.PreviewScale 이 있으면 그 값을 쓴다. 모델 Scale 과 어긋나면 미리보기만 딴 크기로 보인다.
 				local previewScaleNum = tonumber(previewScaleRaw)
 				if previewScaleNum ~= nil and previewScaleNum > 0 then
@@ -2067,8 +2068,9 @@ script PlayerController extends Component
 					-- Client-side occupancy check using collision simulator
 					local simulator = _CollisionService:GetSimulator(self.Entity)
 					if simulator then
-						local checkCenter = is2x2 and Vector2(targetCell.x + 1.0, targetCell.y + 1.0) or Vector2(targetCell.x + 0.5, targetCell.y + 0.5)
-						local checkSize = is2x2 and Vector2(1.8, 1.8) or Vector2(0.9, 0.9)
+						local checkCenter = Vector2(targetCell.x + half, targetCell.y + half)
+						local checkSize = Vector2(footprint - 0.2, footprint - 0.2)
+						if footprint <= 1 then checkSize = Vector2(0.9, 0.9) end
 						local checkShape = BoxShape(checkCenter, checkSize, 0)
 						-- Check all relevant collision groups
 						local groups = { CollisionGroups.Default, CollisionGroups.TriggerBox, CollisionGroups.HitBox }
@@ -2366,6 +2368,7 @@ script PlayerController extends Component
 			"script.VillagerDialog",
 			"script.FishingLeaderboardInteract",
 			"script.Animal",
+			"script.AnimalPen",
 		}
 		for _, typeName in ipairs(typeNames) do
 			local comp = target:GetComponent(typeName)
@@ -2412,6 +2415,18 @@ script PlayerController extends Component
 								out.target = ent
 							end
 						end
+					end
+				end
+			end
+		end
+		-- 가축우리는 맨 마지막: 우리 안 가축을 조준 중이면 먹이 주기가 우선이다(AnimalPen.TryInteract 와 같은 양보 규칙).
+		if not isvalid(out.target) then
+			local pens = currentMap:GetChildComponentsByTypeName("script.AnimalPen", true)
+			if pens then
+				for _, pen in ipairs(pens) do
+					if isvalid(pen) and isvalid(pen.Entity) and self:IsAimTargetCore(pen.Entity, false) then
+						out.target = pen.Entity
+						break
 					end
 				end
 			end

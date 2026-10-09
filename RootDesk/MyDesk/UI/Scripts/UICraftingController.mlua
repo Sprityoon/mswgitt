@@ -728,7 +728,8 @@ script UICraftingController extends Component
 				self.unlockHintText.Text = hint
 			end
 		end
-		
+		self:LayoutDetails()
+
 		if isvalid(self.detailIcon) then
 			self.detailIcon.ImageRUID = recipe.icon
 			if unlocked then
@@ -814,6 +815,82 @@ script UICraftingController extends Component
 				local textComp = self.btnCraft.Entity.TextComponent
 				if isvalid(textComp) then textComp.Text = "재료 부족" end
 			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LayoutDetails()
+		-- 상세 패널을 설명 길이에 맞춰 위에서부터 쌓는다: 설명 → 해금 힌트 → 재료 칸 → 제작 버튼.
+		-- 설명이 짧으면 .ui 원래 자리(재료 위쪽 304 · 버튼 위쪽 416)를 지키고, 길면 그만큼 아래로 민다.
+		-- 아래 끝 상한을 넘으면 글자를 줄이고(24→21→18), 그래도 넘치면 마지막에만 "..."로 자른다.
+		-- 좌표는 Details(420×500) 위쪽 끝에서 잰 거리. 재료 칸·버튼은 아래쪽 앵커라 500 - (위 거리 + 높이)로 바꿔 넣는다.
+		if not isvalid(self.detailDesc) then return end
+		local panelH = 500
+		local descTop = 208
+		local descW = 400
+		local hintH = 28
+		local slotH = 100
+		local btnH = 60
+		local baseSlotTop = 304
+		local slotToBtn = 112
+		local maxBottom = 550
+		local descText = self.detailDesc.Text or ""
+		local showHint = isvalid(self.unlockHintText) and (self.unlockHintText.Text or "") ~= ""
+
+		local function measure(fontSize)
+			self.detailDesc.FontSize = fontSize
+			if descText == "" then return 40 end
+			return math.max(40, math.ceil(self.detailDesc:GetPreferredHeight(descText, descW)) + 6)
+		end
+		local function slotTopFor(descH)
+			local cursor = descTop + descH
+			if showHint then cursor = cursor + 6 + hintH end
+			return math.max(baseSlotTop, cursor + 12)
+		end
+
+		local sizes = { 24, 21, 18 }
+		local descH = 40
+		local fits = false
+		for _, fs in ipairs(sizes) do
+			descH = measure(fs)
+			if slotTopFor(descH) + slotToBtn + btnH <= maxBottom then
+				fits = true
+				break
+			end
+		end
+		if fits then
+			self.detailDesc.Overflow = OverflowType.Overflow
+		else
+			-- 가장 작은 글자로도 넘치면 남는 높이만큼만 쓰고 "..." (칸 높이는 글자 크기×1.5 이상 — pitfalls #69).
+			local room = maxBottom - btnH - slotToBtn - 12 - descTop
+			if showHint then room = room - 6 - hintH end
+			descH = math.max(28, room)
+			self.detailDesc.Overflow = OverflowType.ellipsis
+		end
+		local slotTop = slotTopFor(descH)
+		local btnTop = slotTop + slotToBtn
+
+		local descT = self.detailDesc.Entity.UITransformComponent
+		if isvalid(descT) then
+			descT.RectSize = Vector2(descW, descH)
+			descT.anchoredPosition = Vector2(0, -descTop)
+		end
+		if isvalid(self.unlockHintText) then
+			local hintT = self.unlockHintText.Entity.UITransformComponent
+			if isvalid(hintT) then
+				hintT.anchoredPosition = Vector2(0, -(descTop + descH + 6))
+			end
+		end
+		local slotY = panelH - slotTop - slotH
+		for _, slot in ipairs({ self.ingSlot1, self.ingSlot2 }) do
+			if isvalid(slot) and isvalid(slot.UITransformComponent) then
+				local t = slot.UITransformComponent
+				t.anchoredPosition = Vector2(t.anchoredPosition.x, slotY)
+			end
+		end
+		if isvalid(self.btnCraft) and isvalid(self.btnCraft.Entity.UITransformComponent) then
+			local t = self.btnCraft.Entity.UITransformComponent
+			t.anchoredPosition = Vector2(t.anchoredPosition.x, panelH - btnTop - btnH)
 		end
 	end
 

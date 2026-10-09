@@ -61,6 +61,10 @@ script PlayerInventory extends Component
 	@Sync
 	property string ActivePetId = ""
 
+	-- 보유 동물 명부(가축·펫 개체) JSON 배열 — 서버 전용, 슬롯 세이브 `creatures` 필드. 형식·규칙은 CreatureRoster.mlua.
+	-- 우리 안 가축·가방 속 가축 아이템·이름 붙은 호루라기가 모두 이 명부의 id 를 가리킨다. 한도도 이걸로 센다.
+	property string CreaturesJson = "[]"
+
 	property table Items = {}
 
 	property number _researchTickAccum = 0.0
@@ -82,6 +86,7 @@ script PlayerInventory extends Component
 		self.DexItemsJson = "{}"
 		self.DexMonstersJson = "{}"
 		self.ActivePetId = ""
+		self.CreaturesJson = "[]"
 		self.EnhanceJson = "{}"
 		self._researchTickAccum = 0.0
 		log("PlayerInventory initialized on server for player: " .. self.Entity.Name)
@@ -508,6 +513,15 @@ script PlayerInventory extends Component
 			return
 		end
 
+		-- 이름 변경권(UseRename = creature): 바라보는 내 가축·펫의 이름을 바꾼다. 소모는 새 이름이 확정될 때(CreatureRoster).
+		local okRn, vRn = pcall(function() return row:GetItem("UseRename") end)
+		if okRn and vRn ~= nil and tostring(vRn) == "creature" then
+			if _CreatureRoster ~= nil then
+				_CreatureRoster:OnUseRenameTicket(self.Entity, itemName)
+			end
+			return
+		end
+
 		-- T19: UseAnimalId → 우리 근처 가축 소환 (영지 전용, 티켓 1 소모)
 		local useAnimalId = ""
 		local okA, vA = pcall(function() return row:GetItem("UseAnimalId") end)
@@ -517,8 +531,9 @@ script PlayerInventory extends Component
 			if trimmedA ~= nil then useAnimalId = trimmedA end
 		end
 		if useAnimalId ~= nil and useAnimalId ~= "" then
-			if not self:TrySpawnAnimalFromTicket(useAnimalId, baseName) then
-				return
+			-- 입주권 = 이름짓기 후 우리에 들임 / 이름 붙은 가축 아이템 = 상태 그대로 다시 들임 (CreatureRoster).
+			if _CreatureRoster ~= nil then
+				_CreatureRoster:OnUseAnimalItem(self.Entity, itemName, baseName, useAnimalId)
 			end
 			return
 		end
@@ -532,7 +547,10 @@ script PlayerInventory extends Component
 			if trimmedP ~= nil then usePetId = trimmedP end
 		end
 		if usePetId ~= nil and usePetId ~= "" then
-			self:TrySummonPet(usePetId)
+			-- 빈 호루라기 = 이름짓기 후 들임 / 이름 붙은 호루라기 = 영지에 두기 ↔ 데려오기 (CreatureRoster).
+			if _CreatureRoster ~= nil then
+				_CreatureRoster:OnUsePetItem(self.Entity, itemName, baseName, usePetId)
+			end
 			return
 		end
 
@@ -578,192 +596,87 @@ script PlayerInventory extends Component
 		return self._T.deathEffectNames[effect] or ""
 	end
 
-	@ExecSpace("ServerOnly")
-	method void TrySummonPet(string petId)
-		-- 활성 펫 교체 소환. 소환 아이템 비소모. ActivePetId 영속.
-		local pc = self.Entity:GetComponent("script.PlayerController")
-		local userId = ""
-		if isvalid(self.Entity.PlayerComponent) then
-			userId = self.Entity.PlayerComponent.UserId or ""
-		end
-		if userId == "" then return end
-		local map = self.Entity.CurrentMap
-		if not isvalid(map) then return end
+	-- ── 보유 동물(가축·펫) — 흐름은 CreatureRoster, 여기는 인벤토리 칸·RPC 창구만 ──────────────────
 
-		local ds = _DataService:GetTable("PetDataSet")
-		if ds == nil then
-			if isvalid(pc) then pc:ShowMineFeedback("펫 데이터를 찾을 수 없습니다.") end
-			return
+	@ExecSpace("Server")
+	method void ServerSubmitCreatureName(string itemKey, string creatureName)
+		-- 이름짓기 팝업의 [확인]. 서버가 조건을 전부 다시 검사한 뒤 들이거나 거절한다(CreatureRoster.OnNameSubmitted).
+		local playerComp = self.Entity.PlayerComponent
+		if playerComp == nil or senderUserId ~= playerComp.UserId then return end
+		if _CreatureRoster ~= nil then
+			_CreatureRoster:OnNameSubmitted(self.Entity, itemKey or "", creatureName or "")
 		end
-		local row = ds:FindRow("PetId", petId)
-		if row == nil then
-			if isvalid(pc) then pc:ShowMineFeedback("알 수 없는 펫: " .. petId) end
-			return
-		end
-		local modelName = "Pet_" .. petId
-		local okM, vM = pcall(function() return row:GetItem("ModelName") end)
-		if okM and vM ~= nil and tostring(vM) ~= "" then modelName = tostring(vM) end
-		local modelId = _EntryService:GetModelIdByName(modelName)
-		if modelId == nil or modelId == "" then
-			if isvalid(pc) then pc:ShowMineFeedback("펫 모델 없음: " .. modelName) end
-			return
-		end
+	end
 
-		-- 기존 소유 펫 제거
-		local existing = map:GetChildComponentsByTypeName("script.Pet", true)
-		if existing ~= nil then
-			for _, pet in ipairs(existing) do
-				if isvalid(pet) and pet.OwnerUserId == userId and isvalid(pet.Entity) then
-					pet.Entity:Destroy()
-				end
-			end
+	@ExecSpace("Client")
+	method void ClientOpenNamePrompt(string kind, string speciesName, string itemKey, string suggested, string errorText)
+		-- 서버 → 이 플레이어 클라: 이름짓기 팝업 열기 (ui/NamingGroup.ui · UINamingLogic).
+		if _UINamingLogic ~= nil then
+			_UINamingLogic:Open(kind, speciesName, itemKey, suggested, errorText)
 		end
-		-- 다른 맵에 남은 펫은 해당 맵 컴포넌트가 소유자 부재 시 무시 — 로드 시 ActivePetId로 재소환
+	end
 
-		local pos = self.Entity.TransformComponent.WorldPosition
-		local spawnPos = Vector3(pos.x - 0.8, pos.y, 0)
-		local ent = _SpawnService:SpawnByModelId(modelId, "Pet_" .. petId, spawnPos, map)
-		if not isvalid(ent) then
-			if isvalid(pc) then pc:ShowMineFeedback("펫 소환 실패") end
-			return
+	method boolean IsCreatureItemKey(string itemKey)
+		-- 명부 개체를 가리키는 이름 붙은 칸인가 (가방 속 가축 / 이름 붙은 호루라기).
+		if itemKey == nil or itemKey == "" then return false end
+		local items = self.Items
+		if self:IsClient() then
+			items = self:SafeDecodeJson(self.InventoryDataJson, {})
 		end
-		local petComp = ent:GetComponent("script.Pet")
-		if not isvalid(petComp) then
-			ent:AddComponent("script.Pet")
-			petComp = ent:GetComponent("script.Pet")
+		local entry = items[itemKey]
+		return type(entry) == "table" and entry.creatureId ~= nil and entry.creatureId ~= ""
+	end
+
+	method string GetItemLabel(string itemKey)
+		-- 칸에 보일 이름: 이름 붙은 칸이면 그 이름, 아니면 item_dataset 표시명. 서버·클라 공용.
+		if itemKey == nil or itemKey == "" then return "" end
+		local items = self.Items
+		if self:IsClient() then
+			items = self:SafeDecodeJson(self.InventoryDataJson, {})
 		end
-		if isvalid(petComp) then
-			petComp:Initialize(petId, userId)
+		local entry = items[itemKey]
+		if type(entry) == "table" and entry.label ~= nil and tostring(entry.label) ~= "" then
+			return tostring(entry.label)
 		end
-		self.ActivePetId = petId
-		_PersistenceManager:MarkPlayerDirty(userId)
-		local dn = petId
-		local okD, vD = pcall(function() return row:GetItem("DisplayName") end)
-		if okD and vD ~= nil and tostring(vD) ~= "" then dn = tostring(vD) end
-		if isvalid(pc) then pc:ShowMineFeedback(dn .. "이(가) 따라옵니다!") end
-		log("[PET] summon " .. petId .. " by " .. userId)
+		return self:GetItemDisplayName(self:GetBaseItemName(itemKey))
 	end
 
 	@ExecSpace("ServerOnly")
-	method boolean TrySpawnAnimalFromTicket(string animalId, string ticketItemName)
-		-- AnimalDataSet + 영지 우리(FurnitureKind=pen) 근처 소환. 성공 시 티켓 소모·영속 더티.
-		local pc = self.Entity:GetComponent("script.PlayerController")
-		local userId = ""
-		if isvalid(self.Entity.PlayerComponent) then
-			userId = self.Entity.PlayerComponent.UserId or ""
+	method string AddCreatureItem(string baseName, string creatureId, string creatureLabel)
+		-- 명부 개체 하나를 가리키는 이름 붙은 칸을 만든다. 키 = "<기본 이름>#<개체 id>".
+		-- '#' 구분자는 구세이브 고유키 패턴(_숫자_숫자)과 겹치지 않아 키 병합(Fold)·이름 추정에 걸리지 않는다.
+		if baseName == nil or baseName == "" or creatureId == nil or creatureId == "" then return "" end
+		local key = baseName .. "#" .. creatureId
+		self.Items[key] = { name = baseName, count = 1, durability = 100, creatureId = creatureId, label = creatureLabel or "" }
+		self.InventoryDataJson = self:SafeEncodeJson(self.Items, "{}")
+		self:NotifyQuestInventoryChanged()
+		if _PersistenceManager and self.Entity.PlayerComponent then
+			_PersistenceManager:MarkPlayerDirty(self.Entity.PlayerComponent.UserId)
 		end
-		if userId == "" then return false end
-
-		local map = self.Entity.CurrentMap
-		if not isvalid(map) then return false end
-		local mapName = map.Name or ""
-		if string.sub(mapName, 1, 5) ~= "Home_" then
-			if isvalid(pc) then pc:ShowMineFeedback("가축은 영지에서만 소환할 수 있습니다.") end
-			return false
-		end
-		if mapName ~= ("Home_" .. userId) then
-			if isvalid(pc) then pc:ShowMineFeedback("자신의 영지에서만 소환할 수 있습니다.") end
-			return false
-		end
-
-		local ads = _DataService:GetTable("AnimalDataSet")
-		if ads == nil then
-			if isvalid(pc) then pc:ShowMineFeedback("가축 데이터를 찾을 수 없습니다.") end
-			return false
-		end
-		local arow = ads:FindRow("AnimalId", animalId)
-		if arow == nil then
-			if isvalid(pc) then pc:ShowMineFeedback("알 수 없는 가축: " .. animalId) end
-			return false
-		end
-
-		-- 가장 가까운 pen 가구
-		local itemDs = _DataService:GetTable("item_dataset")
-		local bestPen = nil
-		local bestDist = 9999.0
-		local playerPos = self.Entity.TransformComponent.WorldPosition
-		local furnComps = map:GetChildComponentsByTypeName("script.PlaceableFurniture", true)
-		if furnComps ~= nil then
-			for _, furn in ipairs(furnComps) do
-				if isvalid(furn) and isvalid(furn.Entity) then
-					local isPen = false
-					local itemName = furn.ItemId or ""
-					if itemDs ~= nil and itemName ~= "" then
-						local ir = itemDs:FindRow("Name", itemName)
-						if ir ~= nil then
-							local okK, kind = pcall(function() return ir:GetItem("FurnitureKind") end)
-							if okK and kind == "pen" then isPen = true end
-						end
-					end
-					if isPen then
-						local fp = furn.Entity.TransformComponent.WorldPosition
-						local d = Vector2.Distance(Vector2(playerPos.x, playerPos.y), Vector2(fp.x, fp.y))
-						if d < bestDist then
-							bestDist = d
-							bestPen = furn.Entity
-						end
-					end
-				end
-			end
-		end
-		if not isvalid(bestPen) then
-			if isvalid(pc) then pc:ShowMineFeedback("가축우리 근처에서 사용하세요.") end
-			return false
-		end
-		if bestDist > 4.0 then
-			if isvalid(pc) then pc:ShowMineFeedback("우리에 더 가까이 가서 사용하세요.") end
-			return false
-		end
-
-		local modelName = "Animal_" .. animalId
-		local okM, vM = pcall(function() return arow:GetItem("ModelName") end)
-		if okM and vM ~= nil and tostring(vM) ~= "" then modelName = tostring(vM) end
-		local modelId = _EntryService:GetModelIdByName(modelName)
-		if modelId == nil or modelId == "" then
-			if isvalid(pc) then pc:ShowMineFeedback("가축 모델을 찾을 수 없습니다: " .. modelName) end
-			log_error("[ANIMAL] model missing " .. modelName)
-			return false
-		end
-
-		if not self:RemoveItem(ticketItemName, 1) then
-			if isvalid(pc) then pc:ShowMineFeedback("티켓이 없습니다.") end
-			return false
-		end
-
-		local penPos = bestPen.TransformComponent.WorldPosition
-		local penCellX = 0
-		local penCellY = 0
-		local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
-		if isvalid(tilemap) then
-			local cell = tilemap:ToCellPosition(penPos)
-			if cell ~= nil then
-				penCellX = cell.x
-				penCellY = cell.y
-			end
-		end
-		local spawnPos = Vector3(penPos.x + 0.8, penPos.y, 0)
-		local ent = _SpawnService:SpawnByModelId(modelId, "Animal_" .. animalId .. "_" .. tostring(os.time()), spawnPos, map)
-		if not isvalid(ent) then
-			self:AddItem(ticketItemName, 1)
-			if isvalid(pc) then pc:ShowMineFeedback("가축 소환에 실패했습니다.") end
-			return false
-		end
-		local ac = ent:GetComponent("script.Animal")
-		if not isvalid(ac) then
-			ent:AddComponent("script.Animal")
-			ac = ent:GetComponent("script.Animal")
-		end
-		if isvalid(ac) then
-			ac:InitializeFromSave(animalId, penCellX, penCellY, penPos.x, penPos.y, 0, 0, false, userId)
-		end
-		_PersistenceManager:MarkPlayerDirty(userId)
-		local animalDn = animalId
-		local okA, vA = pcall(function() return arow:GetItem("DisplayName") end)
-		if okA and vA ~= nil and tostring(vA) ~= "" then animalDn = tostring(vA) end
-		if isvalid(pc) then pc:ShowMineFeedback(animalDn .. "을(를) 우리에 들였습니다!") end
-		log("[ANIMAL] spawn " .. animalId .. " by " .. userId .. " pen=(" .. tostring(penCellX) .. "," .. tostring(penCellY) .. ")")
-		return true
+		log("[CREATURE] item added " .. key .. " label=" .. tostring(creatureLabel))
+		return key
 	end
+
+	@ExecSpace("ServerOnly")
+	method string FindCreatureItemKey(string creatureId)
+		-- 개체 id 를 가리키는 칸 키 (없으면 "").
+		if creatureId == nil or creatureId == "" then return "" end
+		for k, v in pairs(self.Items) do
+			if type(v) == "table" and v.creatureId == creatureId then return k end
+		end
+		return ""
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SetCreatureItemLabel(string itemKey, string creatureLabel)
+		-- 이름 붙은 칸의 표시 이름을 바꾼다(명부 이름과 맞추기).
+		local entry = self.Items[itemKey]
+		if type(entry) ~= "table" then return end
+		if entry.label == creatureLabel then return end
+		entry.label = creatureLabel
+		self.InventoryDataJson = self:SafeEncodeJson(self.Items, "{}")
+	end
+
 
 	@ExecSpace("Server")
 	method void ServerRequestStartResearch(string researchId)
@@ -1124,7 +1037,8 @@ script PlayerInventory extends Component
 		local removedCount = 0
 		local keysToRemove = {}
 		for k, v in pairs(self.Items) do
-			if type(v) == "table" and v.name == itemName then
+			-- 이름 기준 제거(입주권 소모·퀘스트 제출 등)는 이름 붙은 칸을 건드리지 않는다 — 그 칸은 키로만 지운다.
+			if type(v) == "table" and v.name == itemName and (v.creatureId == nil or v.creatureId == "") then
 				table.insert(keysToRemove, k)
 				removedCount = removedCount + 1
 				if removedCount >= count then
@@ -1132,7 +1046,9 @@ script PlayerInventory extends Component
 				end
 			end
 		end
-		
+		-- 이름 붙은 칸만 남아 지울 수 있는 수가 모자라면 아무것도 지우지 않고 실패.
+		if removedCount < count then return false end
+
 		for _, k in ipairs(keysToRemove) do
 			self.Items[k] = nil
 			if self.EquippedTool == k then
@@ -1159,6 +1075,12 @@ script PlayerInventory extends Component
 			return
 		end
 		if itemName == nil or itemName == "" then return end
+		-- 이름 붙은 동물(가방 속 가축·이름 붙은 호루라기)은 버릴 수 없다 (2026-10-10 제작자 결정).
+		if self:IsCreatureItemKey(itemName) then
+			local pcD = self.Entity:GetComponent("script.PlayerController")
+			if isvalid(pcD) then pcD:ShowMineFeedback("이름을 지어 준 동물은 버릴 수 없습니다.") end
+			return
+		end
 
 		local baseName = self:GetBaseItemName(itemName)
 		local owned = 0
@@ -1360,7 +1282,8 @@ script PlayerInventory extends Component
 		local extra = 0
 		local keys = {}
 		for k, v in pairs(self.Items) do
-			if k ~= itemName and type(v) == "table" and v.name == itemName then
+			-- 이름 붙은 칸(명부 개체 — 가방 속 가축·이름 붙은 호루라기)은 절대 합치지 않는다. 합치면 이름과 개체 연결이 사라진다.
+			if k ~= itemName and type(v) == "table" and v.name == itemName and (v.creatureId == nil or v.creatureId == "") then
 				extra = extra + (v.count or 1)
 				table.insert(keys, k)
 			end
@@ -2648,15 +2571,25 @@ script PlayerInventory extends Component
 			return
 		end
 		
+		-- 점유 n×n (바닥 타일·씨앗 = 1, 가구 = item_dataset.FootprintSize, 공란 2). cellPos = 블록 원점(왼쪽 아래 칸).
+		local footprint = 1
+		if _ResourceSpawner ~= nil then footprint = _ResourceSpawner:GetPlaceFootprint(self:GetBaseItemName(itemName)) end
+
 		-- 서버 위치와 서버 방향 기준으로 타겟 셀의 거리 및 전방 방향 검증
+		-- 거리 = 플레이어에서 블록 사각형의 가장 가까운 점까지 (원점이나 중심으로 재면 4×4 우리는
+		-- 원점 기준이면 왼쪽·아래, 중심 기준이면 위·오른쪽으로 놓을 때 "너무 멀다"로 조용히 거부된다 — 2026-10-10).
+		-- 뒤쪽 판정은 블록 중심 기준.
 		local playerPos = self.Entity.TransformComponent.WorldPosition
 		if not isvalid(pc) then return end
-		local targetCenterX = cellPos.x + 0.5
-		local targetCenterY = cellPos.y + 0.5
+		local targetCenterX = cellPos.x + footprint * 0.5
+		local targetCenterY = cellPos.y + footprint * 0.5
 		local dx = targetCenterX - playerPos.x
 		local dy = targetCenterY - playerPos.y
-		local distSq = dx * dx + dy * dy
-		if distSq > 12.25 then
+		local nearX = math.max(cellPos.x, math.min(playerPos.x, cellPos.x + footprint))
+		local nearY = math.max(cellPos.y, math.min(playerPos.y, cellPos.y + footprint))
+		local ndx = nearX - playerPos.x
+		local ndy = nearY - playerPos.y
+		if ndx * ndx + ndy * ndy > 12.25 then
 			log_warning("Rejected placement too far from player.")
 			return
 		end
@@ -2752,8 +2685,8 @@ script PlayerInventory extends Component
 			
 			local xMin, xMax, yMin, yMax = cellPos.x, cellPos.x, cellPos.y, cellPos.y
 			if not isCropSeed then
-				xMax = cellPos.x + 1
-				yMax = cellPos.y + 1
+				xMax = cellPos.x + footprint - 1
+				yMax = cellPos.y + footprint - 1
 			end
 			
 			-- Check player collision overlap
@@ -2873,7 +2806,7 @@ script PlayerInventory extends Component
 					if isWalkable then
 						sprite.OrderInLayer = _RenderLayers.MinEntityOrder or 2
 					else
-						sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(spawnedEntity, 0)
+						sprite.OrderInLayer = _RenderLayers:ComputeYOrderWithSortOffset(spawnedEntity)
 					end
 				end
 				if isCropSeed then

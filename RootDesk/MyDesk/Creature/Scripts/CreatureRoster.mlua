@@ -1,0 +1,841 @@
+@Logic
+script CreatureRoster extends Logic
+	-- 보유 동물 명부 (2026-10-10). 가축·펫 하나하나가 이름 있는 개체다(스타듀밸리식).
+	--
+	-- [저장] PlayerInventory.CreaturesJson = JSON 배열, 슬롯 세이브 `creatures` 필드(PersistenceManager — 추가 Yield 없음, 규칙 9).
+	--   원소: { id, kind = "animal" | "pet", species = AnimalId/PetId, name,
+	--           where = 가축 "pen" | "bag" / 펫 "follow" | "home",
+	--           bond, careBonus, fedAt, lastProduce, produced  -- 가축이 가방에 있을 때의 상태 사본
+	--           homeX, homeY }                                  -- 펫을 영지에 둔 자리
+	-- [단일 소스] 이름·위치(where)·한도는 명부가 정한다. 엔티티의 CreatureId/CreatureName 은 사본이다.
+	--   우리 안 가축의 친밀도·급여 상태는 엔티티(homeAnimals 세이브)가 갖고, 가방으로 꺼낼 때 명부에 옮겨 적는다.
+	-- [아이템] 가방 속 가축 = AnimalDataSet.OwnedItem 의 이름 붙은 칸, 펫 = 그 펫의 호루라기(item_dataset.UsePetId)의 이름 붙은 칸.
+	--   칸 키 "<기본 이름>#<id>" · 칸 내용 { name, count = 1, creatureId, label } — PlayerInventory.AddCreatureItem.
+	--   이름 붙은 칸은 병합·이름 기준 제거·버리기·상자 보관에서 제외된다.
+	-- [분실 방어] 접속할 때 ReconcileOnLoad 가 명부·우리 안 엔티티·가방 칸을 서로 맞춘다(빠진 칸은 다시 만들고, 겹친 엔티티는 지운다).
+	--   펫 엔티티는 저장하지 않고 명부로 다시 만든다 → 영지 밖에서 데리고 다니다 접속을 끊어도 잃지 않는다.
+
+	-- 한도 = 기본값 + PlayerController:GetPassiveBonus("AnimalLimit" / "PetLimit") (스킬 패시브 + 장비 특성 PerkStat).
+	-- 레벨·아이템으로 한도를 푸는 것은 이 두 스탯 키를 SkillDataSet/item_dataset 에 붙이면 된다.
+	property integer BaseAnimalLimit = 3
+	property integer BasePetLimit = 1
+	property integer NameMaxChars = 8
+	-- 사용 → 이름짓기 팝업 → 확인 사이 허용 시간(초). 넘으면 다시 사용해야 한다.
+	property integer PendingNameSeconds = 180
+	-- 영지 밖에서 "영지에 두기"를 하면 서는 자리 = 영지 도착 지점(ResolveHomeWarpPosition 기본값과 같음).
+	property number HomeEntranceX = -3
+	property number HomeEntranceY = 0
+
+	-- ── 명부 기본 ────────────────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method any GetInv(Entity player)
+		-- 플레이어 인벤토리 컴포넌트.
+		if not isvalid(player) then return nil end
+		return player:GetComponent("script.PlayerInventory")
+	end
+
+	@ExecSpace("ServerOnly")
+	method table LoadList(any inv)
+		-- 명부 JSON → 배열(망가져 있으면 빈 배열).
+		if inv == nil then return {} end
+		local raw = inv.CreaturesJson or "[]"
+		if raw == "" then return {} end
+		local ok, list = pcall(function() return _HttpService:JSONDecode(raw) end)
+		if not ok or type(list) ~= "table" then
+			log_warning("[CREATURE] roster decode failed — treating as empty")
+			return {}
+		end
+		return list
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SaveList(Entity player, any inv, table list)
+		-- 배열 → 명부 JSON + 세이브 더티.
+		local ok, json = pcall(function() return _HttpService:JSONEncode(list) end)
+		if not ok or json == nil or json == "" then
+			log_error("[CREATURE] roster encode failed — not saved")
+			return
+		end
+		inv.CreaturesJson = json
+		if _PersistenceManager ~= nil and isvalid(player) and player.PlayerComponent ~= nil then
+			_PersistenceManager:MarkPlayerDirty(player.PlayerComponent.UserId)
+		end
+	end
+
+	method any FindEntry(table list, string id)
+		-- id 로 명부 원소 찾기.
+		if id == nil or id == "" then return nil end
+		for _, e in ipairs(list) do
+			if type(e) == "table" and e.id == id then return e end
+		end
+		return nil
+	end
+
+	method integer CountKind(table list, string kind)
+		-- 종류별 보유 수(우리·가방·영지·따라오기 모두 포함).
+		local n = 0
+		for _, e in ipairs(list) do
+			if type(e) == "table" and e.kind == kind then n = n + 1 end
+		end
+		return n
+	end
+
+	@ExecSpace("ServerOnly")
+	method string NewId()
+		-- 개체 id. '#'·'_숫자_숫자' 패턴과 겹치지 않는 영숫자.
+		return "cr" .. tostring(math.floor(os.time())) .. "x" .. tostring(math.random(100000, 999999))
+	end
+
+	@ExecSpace("ServerOnly")
+	method integer GetLimit(Entity player, string kind)
+		-- 종류별 한도 = 기본값 + 패시브/장비 보너스.
+		local base = self.BaseAnimalLimit
+		local stat = "AnimalLimit"
+		if kind == "pet" then
+			base = self.BasePetLimit
+			stat = "PetLimit"
+		end
+		local bonus = 0
+		local pc = isvalid(player) and player:GetComponent("script.PlayerController") or nil
+		if isvalid(pc) then
+			local ok, v = pcall(function() return pc:GetPassiveBonus(stat) end)
+			if ok and v ~= nil then bonus = math.floor(tonumber(v) or 0) end
+		end
+		return math.max(0, base + bonus)
+	end
+
+	method integer Utf8Len(string s)
+		-- UTF-8 글자 수(연속 바이트 0x80~0xBF 는 세지 않는다).
+		local n = 0
+		for i = 1, #s do
+			local b = string.byte(s, i)
+			if b < 0x80 or b >= 0xC0 then n = n + 1 end
+		end
+		return n
+	end
+
+	method string NormalizeName(string s)
+		-- 앞뒤 공백 제거, 줄바꿈·제어문자 제거.
+		if s == nil then return "" end
+		local t, _ = string.gsub(s, "[%c]", "")
+		t = string.match(t, "^%s*(.-)%s*$") or ""
+		return t
+	end
+
+	method string ValidateName(table list, string name, string exceptId)
+		-- 이름 검사. 통과면 "", 아니면 안내 문구.
+		if name == nil or name == "" then return "이름을 입력해 주세요." end
+		if self:Utf8Len(name) > self.NameMaxChars then
+			return "이름은 " .. tostring(self.NameMaxChars) .. "자까지 지을 수 있어요."
+		end
+		for _, e in ipairs(list) do
+			if type(e) == "table" and e.name == name and e.id ~= exceptId then
+				return "이미 같은 이름의 동물이 있어요."
+			end
+		end
+		return ""
+	end
+
+	method string SuggestName(table list, string speciesName)
+		-- 비어 있는 기본 이름 제안 ("닭 1", "닭 2" …).
+		local used = {}
+		for _, e in ipairs(list) do
+			if type(e) == "table" and e.name ~= nil then used[e.name] = true end
+		end
+		local base = speciesName
+		if base == nil or base == "" then base = "동물" end
+		for n = 1, 99 do
+			local cand = base .. " " .. tostring(n)
+			if not used[cand] then return cand end
+		end
+		return base
+	end
+
+	method string GetSpeciesName(string kind, string species)
+		-- 종 표시명 (AnimalDataSet / PetDataSet.DisplayName).
+		local tableName = "AnimalDataSet"
+		local keyCol = "AnimalId"
+		if kind == "pet" then
+			tableName = "PetDataSet"
+			keyCol = "PetId"
+		end
+		local ds = _DataService:GetTable(tableName)
+		local row = ds ~= nil and ds:FindRow(keyCol, species) or nil
+		if row ~= nil then
+			local ok, v = pcall(function() return row:GetItem("DisplayName") end)
+			if ok and v ~= nil and tostring(v) ~= "" then return tostring(v) end
+		end
+		return species or ""
+	end
+
+	method string GetAnimalOwnedItem(string animalId)
+		-- 가방 속 가축 아이템 Name (AnimalDataSet.OwnedItem).
+		local ds = _DataService:GetTable("AnimalDataSet")
+		local row = ds ~= nil and ds:FindRow("AnimalId", animalId) or nil
+		if row == nil then return "" end
+		local ok, v = pcall(function() return row:GetItem("OwnedItem") end)
+		if ok and v ~= nil then return tostring(v) end
+		return ""
+	end
+
+	method string GetPetWhistleItem(string petId)
+		-- 펫을 부르는 아이템 Name (item_dataset.UsePetId == petId 인 첫 행).
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return "" end
+		for i = 1, ds:GetRowCount() do
+			local okP, v = pcall(function() return ds:GetCell(i, "UsePetId") end)
+			if okP and v ~= nil and tostring(v) == petId then
+				return tostring(ds:GetCell(i, "Name") or "")
+			end
+		end
+		return ""
+	end
+
+	method any GetPlayerController(Entity player)
+		-- 안내 문구용 PlayerController.
+		if not isvalid(player) then return nil end
+		return player:GetComponent("script.PlayerController")
+	end
+
+	@ExecSpace("ServerOnly")
+	method void Feedback(Entity player, string msg)
+		-- 화면 안내.
+		local pc = self:GetPlayerController(player)
+		if isvalid(pc) then pc:ShowMineFeedback(msg) end
+	end
+
+	method string GetUserId(Entity player)
+		-- 플레이어 UserId.
+		if not isvalid(player) or player.PlayerComponent == nil then return "" end
+		return player.PlayerComponent.UserId or ""
+	end
+
+	method Entity GetHomeMap(string userId)
+		-- 영지 맵 엔티티(접속 중이면 항상 떠 있다 — PersistenceManager.OnUserEnter 생성, 로그아웃 때 파괴).
+		return _EntityService:GetEntityByPath("/maps/Home_" .. userId)
+	end
+
+	-- ── 우리·스폰 ───────────────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method table FindPenWithRoom(Entity player)
+		-- 플레이어 4칸 안에서 자리가 남은 가장 가까운 우리. 반환 { pen = Entity|nil, reason = 실패 안내 }.
+		local out = { pen = nil, reason = "가축우리 근처에서 사용하세요." }
+		local map = player.CurrentMap
+		if not isvalid(map) then return out end
+		local pp = player.TransformComponent.WorldPosition
+		local best = nil
+		local bestDist = 9999.0
+		local fullCap = 0
+		local anyNear = false
+		for _, pen in ipairs(map:GetChildComponentsByTypeName("script.AnimalPen", true) or {}) do
+			if isvalid(pen) and isvalid(pen.Entity) then
+				local c = pen:GetCenter()
+				local d = Vector2.Distance(Vector2(pp.x, pp.y), c)
+				if d <= 4.0 then
+					anyNear = true
+					local cap = pen:GetCapacity()
+					if cap > 0 and pen:CountAnimalsInside() >= cap then
+						fullCap = cap
+					elseif d < bestDist then
+						bestDist = d
+						best = pen.Entity
+					end
+				elseif d < 9999.0 and out.reason == "가축우리 근처에서 사용하세요." then
+					out.reason = "우리에 더 가까이 가서 사용하세요."
+				end
+			end
+		end
+		if isvalid(best) then
+			out.pen = best
+			out.reason = ""
+		elseif anyNear and fullCap > 0 then
+			out.reason = "이 우리는 가득 찼습니다 (" .. fullCap .. "/" .. fullCap .. "). 우리를 하나 더 지어 주세요."
+		end
+		return out
+	end
+
+	@ExecSpace("ServerOnly")
+	method Entity SpawnAnimal(Entity pen, string userId, table e)
+		-- 우리 안에 가축 엔티티를 만들고 명부 원소 e 의 이름·상태를 입힌다.
+		local map = pen.CurrentMap
+		if not isvalid(map) then return nil end
+		local ads = _DataService:GetTable("AnimalDataSet")
+		local arow = ads ~= nil and ads:FindRow("AnimalId", e.species) or nil
+		if arow == nil then return nil end
+		local modelName = "Animal_" .. e.species
+		local okM, vM = pcall(function() return arow:GetItem("ModelName") end)
+		if okM and vM ~= nil and tostring(vM) ~= "" then modelName = tostring(vM) end
+		local modelId = _EntryService:GetModelIdByName(modelName)
+		if modelId == nil or modelId == "" then
+			log_error("[CREATURE] animal model missing " .. modelName)
+			return nil
+		end
+		local penComp = pen:GetComponent("script.AnimalPen")
+		local center = isvalid(penComp) and penComp:GetCenter() or Vector2(pen.TransformComponent.WorldPosition.x, pen.TransformComponent.WorldPosition.y)
+		local cellX = 0
+		local cellY = 0
+		local tilemap = map:GetFirstChildComponentByTypeName("RectTileMapComponent", true)
+		if isvalid(tilemap) then
+			local cell = tilemap:ToCellPosition(Vector3(center.x, center.y, 0))
+			if cell ~= nil then
+				cellX = cell.x
+				cellY = cell.y
+			end
+		end
+		local ent = _SpawnService:SpawnByModelId(modelId, "Animal_" .. e.species .. "_" .. e.id, Vector3(center.x, center.y, 0), map)
+		if not isvalid(ent) then return nil end
+		local ac = ent:GetComponent("script.Animal")
+		if not isvalid(ac) then
+			ent:AddComponent("script.Animal")
+			ac = ent:GetComponent("script.Animal")
+		end
+		if not isvalid(ac) then
+			ent:Destroy()
+			return nil
+		end
+		ac.CreatureId = e.id
+		ac.CreatureName = e.name or ""
+		ac:InitializeFromSave(e.species, cellX, cellY, center.x, center.y,
+			math.floor(tonumber(e.fedAt) or 0), math.floor(tonumber(e.lastProduce) or 0), e.produced == true, userId)
+		ac.Bond = math.max(0, math.min(100, math.floor(tonumber(e.bond) or 0)))
+		ac.CareBonus = math.max(0, math.min(0.5, tonumber(e.careBonus) or 0))
+		log("[CREATURE] animal placed " .. tostring(e.name) .. " (" .. e.species .. ") id=" .. e.id)
+		return ent
+	end
+
+	@ExecSpace("ServerOnly")
+	method void DestroyPetEntities(Entity player, string creatureId)
+		-- 이 개체의 펫 엔티티를 모두 지운다(플레이어가 있는 맵 + 영지). 다시 만들기 전에 반드시 불러 겹침을 막는다.
+		local uid = self:GetUserId(player)
+		local maps = {}
+		if isvalid(player.CurrentMap) then table.insert(maps, player.CurrentMap) end
+		local home = self:GetHomeMap(uid)
+		if isvalid(home) and home ~= player.CurrentMap then table.insert(maps, home) end
+		for _, map in ipairs(maps) do
+			for _, pet in ipairs(map:GetChildComponentsByTypeName("script.Pet", true) or {}) do
+				if isvalid(pet) and isvalid(pet.Entity) and pet.CreatureId == creatureId then
+					pet.Entity:Destroy()
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method Entity SpawnPet(Entity map, string userId, table e, Vector3 pos, string mode)
+		-- 펫 엔티티를 만들고 명부 원소 e 의 이름·모드를 입힌다.
+		if not isvalid(map) then return nil end
+		local ds = _DataService:GetTable("PetDataSet")
+		local row = ds ~= nil and ds:FindRow("PetId", e.species) or nil
+		if row == nil then return nil end
+		local modelName = "Pet_" .. e.species
+		local okM, vM = pcall(function() return row:GetItem("ModelName") end)
+		if okM and vM ~= nil and tostring(vM) ~= "" then modelName = tostring(vM) end
+		local modelId = _EntryService:GetModelIdByName(modelName)
+		if modelId == nil or modelId == "" then
+			log_error("[CREATURE] pet model missing " .. modelName)
+			return nil
+		end
+		local ent = _SpawnService:SpawnByModelId(modelId, "Pet_" .. e.species .. "_" .. e.id, pos, map)
+		if not isvalid(ent) then return nil end
+		local pc = ent:GetComponent("script.Pet")
+		if not isvalid(pc) then
+			ent:AddComponent("script.Pet")
+			pc = ent:GetComponent("script.Pet")
+		end
+		if isvalid(pc) then
+			pc:InitializeCreature(e.species, userId, e.id, e.name or "", mode, pos.x, pos.y)
+		end
+		return ent
+	end
+
+	-- ── 사용 흐름 ───────────────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method void OpenNamePrompt(Entity player, string kind, string species, string itemKey, string errorText)
+		-- 이름짓기 팝업을 이 플레이어 클라에 연다. 확인은 itemKey 와 함께 돌아온다(PendingNameSeconds 안).
+		local inv = self:GetInv(player)
+		if not isvalid(inv) then return end
+		local uid = self:GetUserId(player)
+		if self._T.pending == nil then self._T.pending = {} end
+		self._T.pending[uid] = { itemKey = itemKey, kind = kind, species = species, at = math.floor(os.time()) }
+		local list = self:LoadList(inv)
+		local speciesName = self:GetSpeciesName(kind, species)
+		inv:ClientOpenNamePrompt(kind, speciesName, itemKey, self:SuggestName(list, speciesName), errorText or "", uid)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnUseAnimalItem(Entity player, string itemKey, string baseName, string animalId)
+		-- 입주권 → 이름짓기 / 가방 속 가축(이름 붙은 칸) → 상태 그대로 우리에 다시 들임.
+		local inv = self:GetInv(player)
+		if not isvalid(inv) then return end
+		local uid = self:GetUserId(player)
+		local map = player.CurrentMap
+		if not isvalid(map) or map.Name ~= ("Home_" .. uid) then
+			self:Feedback(player, "가축은 자신의 영지 우리에만 들일 수 있어요.")
+			return
+		end
+		local found = self:FindPenWithRoom(player)
+		if not isvalid(found.pen) then
+			self:Feedback(player, found.reason)
+			return
+		end
+		local list = self:LoadList(inv)
+		local entry = inv.Items[itemKey]
+		if type(entry) == "table" and entry.creatureId ~= nil and entry.creatureId ~= "" then
+			local e = self:FindEntry(list, entry.creatureId)
+			if e == nil then
+				-- 명부에 없는 칸(손상 복구): 칸 이름으로 개체를 되살린다.
+				e = { id = entry.creatureId, kind = "animal", species = animalId, name = entry.label or self:SuggestName(list, self:GetSpeciesName("animal", animalId)), where = "bag" }
+				table.insert(list, e)
+			end
+			local ent = self:SpawnAnimal(found.pen, uid, e)
+			if not isvalid(ent) then
+				self:Feedback(player, "가축을 들이지 못했어요.")
+				return
+			end
+			inv:RemoveItem(itemKey, 1)
+			e.where = "pen"
+			self:SaveList(player, inv, list)
+			self:Feedback(player, tostring(e.name) .. "을(를) 우리에 다시 들였어요.")
+			return
+		end
+		local limit = self:GetLimit(player, "animal")
+		if self:CountKind(list, "animal") >= limit then
+			self:Feedback(player, "가축은 " .. limit .. "마리까지 기를 수 있어요. 우리에서 꺼낸 가축도 내 가축으로 세요.")
+			return
+		end
+		self:OpenNamePrompt(player, "animal", animalId, itemKey, "")
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnUsePetItem(Entity player, string itemKey, string baseName, string petId)
+		-- 빈 호루라기 → 이름짓기 / 이름 붙은 호루라기 → 영지에 두기 ↔ 데려오기.
+		local inv = self:GetInv(player)
+		if not isvalid(inv) then return end
+		local list = self:LoadList(inv)
+		local entry = inv.Items[itemKey]
+		if type(entry) == "table" and entry.creatureId ~= nil and entry.creatureId ~= "" then
+			local e = self:FindEntry(list, entry.creatureId)
+			if e == nil then
+				e = { id = entry.creatureId, kind = "pet", species = petId, name = entry.label or self:SuggestName(list, self:GetSpeciesName("pet", petId)), where = "follow" }
+				table.insert(list, e)
+				self:SaveList(player, inv, list)
+			end
+			if e.where == "home" then
+				self:CallPetToFollow(player, inv, list, e)
+			else
+				self:SendPetHome(player, inv, list, e)
+			end
+			return
+		end
+		local limit = self:GetLimit(player, "pet")
+		if self:CountKind(list, "pet") >= limit then
+			self:Feedback(player, "펫은 " .. limit .. "마리까지 함께할 수 있어요. 이름이 새겨진 호루라기로 지금 펫을 불러 주세요.")
+			return
+		end
+		self:OpenNamePrompt(player, "pet", petId, itemKey, "")
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnNameSubmitted(Entity player, string itemKey, string rawName)
+		-- 이름짓기 [확인]: 대기 중인 요청과 맞는지 확인하고, 조건을 전부 다시 검사한 뒤 개체를 만든다.
+		local inv = self:GetInv(player)
+		if not isvalid(inv) then return end
+		local uid = self:GetUserId(player)
+		local pending = self._T.pending ~= nil and self._T.pending[uid] or nil
+		if pending == nil or pending.itemKey ~= itemKey or (math.floor(os.time()) - (pending.at or 0)) > self.PendingNameSeconds then
+			self:Feedback(player, "이름짓기 시간이 지났어요. 아이템을 다시 사용해 주세요.")
+			return
+		end
+		local list = self:LoadList(inv)
+		local name = self:NormalizeName(rawName)
+		if pending.kind == "rename" then
+			self:ApplyRename(player, inv, list, pending, itemKey, name)
+			return
+		end
+		local err = self:ValidateName(list, name, "")
+		if err ~= "" then
+			self:OpenNamePrompt(player, pending.kind, pending.species, itemKey, err)
+			return
+		end
+		local baseName = inv:GetBaseItemName(itemKey)
+		local limit = self:GetLimit(player, pending.kind)
+		if self:CountKind(list, pending.kind) >= limit then
+			self._T.pending[uid] = nil
+			self:Feedback(player, "한도(" .. limit .. "마리)에 도달했어요.")
+			return
+		end
+
+		if pending.kind == "animal" then
+			local map = player.CurrentMap
+			if not isvalid(map) or map.Name ~= ("Home_" .. uid) then
+				self:Feedback(player, "가축은 자신의 영지 우리에만 들일 수 있어요.")
+				return
+			end
+			local found = self:FindPenWithRoom(player)
+			if not isvalid(found.pen) then
+				self:Feedback(player, found.reason)
+				return
+			end
+			if not inv:RemoveItem(baseName, 1) then
+				self._T.pending[uid] = nil
+				self:Feedback(player, "입주권이 없어요.")
+				return
+			end
+			local e = { id = self:NewId(), kind = "animal", species = pending.species, name = name, where = "pen" }
+			local ent = self:SpawnAnimal(found.pen, uid, e)
+			if not isvalid(ent) then
+				inv:AddItem(baseName, 1)
+				self:Feedback(player, "가축을 들이지 못했어요. 입주권은 돌려드렸어요.")
+				return
+			end
+			table.insert(list, e)
+			self._T.pending[uid] = nil
+			self:SaveList(player, inv, list)
+			self:Feedback(player, name .. "이(가) 우리에 들어왔어요! (가축 " .. self:CountKind(list, "animal") .. "/" .. limit .. ")")
+			return
+		end
+
+		-- 펫: 빈 호루라기 1개를 이 펫의 이름 붙은 호루라기로 바꾸고 따라오게 한다.
+		if not inv:RemoveItem(baseName, 1) then
+			self._T.pending[uid] = nil
+			self:Feedback(player, "호루라기가 없어요.")
+			return
+		end
+		local e = { id = self:NewId(), kind = "pet", species = pending.species, name = name, where = "follow" }
+		local newKey = inv:AddCreatureItem(baseName, e.id, name)
+		table.insert(list, e)
+		self._T.pending[uid] = nil
+		self:SaveList(player, inv, list)
+		-- 퀵슬롯에 빈 호루라기를 걸어 두었고 그게 다 떨어졌다면, 그 칸을 새 이름 붙은 호루라기로 바꿔 준다.
+		if inv.Items[baseName] == nil and newKey ~= "" then
+			local slots = inv:SafeDecodeJson(inv.QuickSlotsJson, {})
+			local changed = false
+			for i = 1, 10 do
+				if slots[i] == baseName then
+					slots[i] = newKey
+					changed = true
+				end
+			end
+			if changed then
+				inv.QuickSlotsJson = inv:SafeEncodeJson(slots, "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]")
+			end
+		end
+		local pos = player.TransformComponent.WorldPosition
+		self:DestroyPetEntities(player, e.id)
+		self:SpawnPet(player.CurrentMap, uid, e, Vector3(pos.x - 0.8, pos.y, 0), "follow")
+		self:Feedback(player, name .. "이(가) 따라옵니다! 이 호루라기를 다시 불면 영지에 두거나 데려올 수 있어요.")
+	end
+
+	-- ── 이름 변경권 ─────────────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method any FindAimedCreature(Entity player, table list)
+		-- 플레이어가 바라보는(조준 셀 — IsAimTargetCore) 내 동물의 명부 원소. 우리 안 가축 · 따라오는/영지에 둔 펫. 없으면 nil.
+		local pc = self:GetPlayerController(player)
+		local map = player.CurrentMap
+		if not isvalid(pc) or not isvalid(map) then return nil end
+		local pp = player.TransformComponent.WorldPosition
+		local best = nil
+		local bestDist = 9999.0
+		local function consider(ent, creatureId)
+			if creatureId == nil or creatureId == "" or not isvalid(ent) then return end
+			local e = self:FindEntry(list, creatureId)
+			if e == nil then return end
+			if not pc:IsAimTargetCore(ent, false) then return end
+			local p = ent.TransformComponent.WorldPosition
+			local d = Vector2.Distance(Vector2(pp.x, pp.y), Vector2(p.x, p.y))
+			if d < bestDist then
+				bestDist = d
+				best = e
+			end
+		end
+		for _, ac in ipairs(map:GetChildComponentsByTypeName("script.Animal", true) or {}) do
+			if isvalid(ac) then consider(ac.Entity, ac.CreatureId) end
+		end
+		for _, pet in ipairs(map:GetChildComponentsByTypeName("script.Pet", true) or {}) do
+			if isvalid(pet) then consider(pet.Entity, pet.CreatureId) end
+		end
+		return best
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnUseRenameTicket(Entity player, string itemKey)
+		-- 이름 변경권 사용: 바라보는 내 동물을 대상으로 이름짓기 팝업을 연다(지금 이름이 미리 들어 있다). 소모는 확정 때.
+		local inv = self:GetInv(player)
+		if not isvalid(inv) then return end
+		local list = self:LoadList(inv)
+		local e = self:FindAimedCreature(player, list)
+		if e == nil then
+			self:Feedback(player, "이름을 바꿔 줄 내 가축이나 펫을 바라보고 사용하세요. 가방 속 가축은 우리에 넣은 뒤 바꿀 수 있어요.")
+			return
+		end
+		local uid = self:GetUserId(player)
+		if self._T.pending == nil then self._T.pending = {} end
+		self._T.pending[uid] = { itemKey = itemKey, kind = "rename", species = e.species, targetId = e.id, at = math.floor(os.time()) }
+		inv:ClientOpenNamePrompt("rename", tostring(e.name), itemKey, tostring(e.name), "", uid)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplyRename(Entity player, any inv, table list, table pending, string itemKey, string name)
+		-- 새 이름 확정: 검사(자기 자신 제외 중복·글자 수·지금 이름과 같음) → 변경권 1 소모 → 명부·엔티티·이름 붙은 칸 갱신.
+		local uid = self:GetUserId(player)
+		local e = self:FindEntry(list, pending.targetId)
+		if e == nil then
+			self._T.pending[uid] = nil
+			self:Feedback(player, "그 동물을 찾을 수 없어요.")
+			return
+		end
+		local err = self:ValidateName(list, name, e.id)
+		if err == "" and name == e.name then err = "지금 이름과 같아요." end
+		if err ~= "" then
+			pending.at = math.floor(os.time())
+			inv:ClientOpenNamePrompt("rename", tostring(e.name), itemKey, name, err, uid)
+			return
+		end
+		local baseName = inv:GetBaseItemName(itemKey)
+		if not inv:RemoveItem(baseName, 1) then
+			self._T.pending[uid] = nil
+			self:Feedback(player, "이름 변경권이 없어요.")
+			return
+		end
+		local oldName = tostring(e.name)
+		e.name = name
+		self._T.pending[uid] = nil
+		self:SaveList(player, inv, list)
+		-- 화면 사본 갱신: 지금 맵 + 영지의 가축·펫 엔티티, 그리고 그 개체를 가리키는 칸(호루라기·가방 속 가축).
+		local maps = {}
+		if isvalid(player.CurrentMap) then table.insert(maps, player.CurrentMap) end
+		local home = self:GetHomeMap(uid)
+		if isvalid(home) and home ~= player.CurrentMap then table.insert(maps, home) end
+		for _, map in ipairs(maps) do
+			for _, ac in ipairs(map:GetChildComponentsByTypeName("script.Animal", true) or {}) do
+				if isvalid(ac) and ac.CreatureId == e.id then ac.CreatureName = name end
+			end
+			for _, pet in ipairs(map:GetChildComponentsByTypeName("script.Pet", true) or {}) do
+				if isvalid(pet) and pet.CreatureId == e.id then pet.CreatureName = name end
+			end
+		end
+		local key = inv:FindCreatureItemKey(e.id)
+		if key ~= "" then inv:SetCreatureItemLabel(key, name) end
+		self:Feedback(player, oldName .. "의 새 이름은 " .. name .. "이에요!")
+		log("[CREATURE] renamed " .. oldName .. " -> " .. name .. " id=" .. e.id)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SendPetHome(Entity player, any inv, table list, table e)
+		-- 영지에 두기. 영지 안이면 지금 자리, 밖(마을·사냥터·남의 영지)이면 영지 입구에서 기다린다.
+		-- 영지 맵은 접속 중 항상 떠 있으므로 바로 그 맵에 만든다. 혹시 없으면 명부만 바꿔 두고 다음 영지 복원 때 만든다.
+		local uid = self:GetUserId(player)
+		local homeName = "Home_" .. uid
+		local inHome = isvalid(player.CurrentMap) and player.CurrentMap.Name == homeName
+		local spot = Vector2(self.HomeEntranceX, self.HomeEntranceY)
+		if inHome then
+			local p = player.TransformComponent.WorldPosition
+			spot = Vector2(p.x, p.y)
+		end
+		if _ResourceSpawner ~= nil then
+			local clamped = _ResourceSpawner:ClampHomeWorldPosition(spot.x, spot.y)
+			if clamped ~= nil then spot = clamped end
+		end
+		self:DestroyPetEntities(player, e.id)
+		e.where = "home"
+		e.homeX = spot.x
+		e.homeY = spot.y
+		self:SaveList(player, inv, list)
+		local home = self:GetHomeMap(uid)
+		if isvalid(home) then
+			self:SpawnPet(home, uid, e, Vector3(spot.x + 0.6, spot.y, 0), "home")
+		else
+			log_warning("[CREATURE] home map not loaded — pet " .. tostring(e.id) .. " will appear on next home load")
+		end
+		if inHome then
+			self:Feedback(player, tostring(e.name) .. "이(가) 여기서 기다려요. 호루라기를 다시 불면 따라와요.")
+		else
+			self:Feedback(player, tostring(e.name) .. "을(를) 영지로 돌려보냈어요. 영지 입구에서 기다려요.")
+		end
+		log("[CREATURE] pet home " .. tostring(e.name) .. " at (" .. string.format("%.1f,%.1f", spot.x, spot.y) .. ") fromHome=" .. tostring(inHome))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void CallPetToFollow(Entity player, any inv, table list, table e)
+		-- 데려오기: 영지에 있던 펫을 지우고 지금 플레이어 곁에 다시 만든다(어느 맵이든).
+		local uid = self:GetUserId(player)
+		self:DestroyPetEntities(player, e.id)
+		e.where = "follow"
+		self:SaveList(player, inv, list)
+		local pos = player.TransformComponent.WorldPosition
+		self:SpawnPet(player.CurrentMap, uid, e, Vector3(pos.x - 0.8, pos.y, 0), "follow")
+		self:Feedback(player, tostring(e.name) .. "이(가) 다시 따라와요!")
+		log("[CREATURE] pet follow " .. tostring(e.name))
+	end
+
+	@ExecSpace("ServerOnly")
+	method string WithdrawAnimal(Entity player, any animalComp)
+		-- 우리에서 꺼내기: 친밀도·급여 상태를 명부에 옮겨 적고, 이름 붙은 가축 아이템으로 가방에 넣는다. 반환 = 이름("" = 실패).
+		local inv = self:GetInv(player)
+		if not isvalid(inv) or not isvalid(animalComp) then return "" end
+		local list = self:LoadList(inv)
+		local e = self:FindEntry(list, animalComp.CreatureId)
+		if e == nil then
+			-- 명부 도입 전 가축(복구 전에 꺼내는 경우): 그 자리에서 개체로 등록한다.
+			e = { id = (animalComp.CreatureId ~= "" and animalComp.CreatureId) or self:NewId(), kind = "animal", species = animalComp.AnimalId,
+				name = self:SuggestName(list, self:GetSpeciesName("animal", animalComp.AnimalId)), where = "pen" }
+			table.insert(list, e)
+		end
+		local ownedItem = self:GetAnimalOwnedItem(e.species)
+		if ownedItem == "" then
+			log_warning("[CREATURE] no OwnedItem for " .. tostring(e.species))
+			return ""
+		end
+		e.where = "bag"
+		e.bond = animalComp.Bond
+		e.careBonus = animalComp.CareBonus
+		e.fedAt = animalComp.FedAtUnix
+		e.lastProduce = animalComp.LastProduceUnix
+		e.produced = animalComp.ProducedForFeed == true
+		inv:AddCreatureItem(ownedItem, e.id, e.name)
+		animalComp.Entity:Destroy()
+		self:SaveList(player, inv, list)
+		log("[CREATURE] animal withdrawn " .. tostring(e.name) .. " bond=" .. tostring(e.bond))
+		return tostring(e.name)
+	end
+
+	-- ── 접속 복원·분실 방어 ─────────────────────────────────────────────────────
+
+	@ExecSpace("ServerOnly")
+	method void ReconcileOnLoad(Entity player, Entity homeMap)
+		-- 영지 복원 직후(가축 복원 다음, 펫 소환 전): 명부 · 우리 안 엔티티 · 가방 칸을 서로 맞춘다.
+		local inv = self:GetInv(player)
+		if not isvalid(inv) then return end
+		local uid = self:GetUserId(player)
+		local list = self:LoadList(inv)
+		local changed = false
+		local seen = {}
+
+		-- ① 우리 안 가축 엔티티: 명부 도입 전 가축은 개체로 등록, 명부상 가방에 있는 개체는 겹침이라 지운다.
+		if isvalid(homeMap) then
+			for _, ac in ipairs(homeMap:GetChildComponentsByTypeName("script.Animal", true) or {}) do
+				if isvalid(ac) and isvalid(ac.Entity) then
+					local e = self:FindEntry(list, ac.CreatureId)
+					if e == nil then
+						e = { id = (ac.CreatureId ~= "" and ac.CreatureId) or self:NewId(), kind = "animal", species = ac.AnimalId,
+							name = self:SuggestName(list, self:GetSpeciesName("animal", ac.AnimalId)), where = "pen" }
+						table.insert(list, e)
+						changed = true
+						log("[CREATURE] migrated legacy animal " .. tostring(ac.AnimalId) .. " as " .. e.name)
+					end
+					if e.where ~= "pen" or seen[e.id] then
+						log_warning("[CREATURE] duplicate animal entity removed id=" .. tostring(e.id) .. " where=" .. tostring(e.where))
+						ac.Entity:Destroy()
+					else
+						seen[e.id] = true
+						ac.CreatureId = e.id
+						ac.CreatureName = e.name or ""
+					end
+				end
+			end
+		end
+
+		-- ② 명부상 우리에 있는데 엔티티가 없으면(세이브 어긋남) 가방으로 돌린다 — 잃지 않는 쪽으로 복구.
+		for _, e in ipairs(list) do
+			if type(e) == "table" and e.kind == "animal" and e.where == "pen" and not seen[e.id] and isvalid(homeMap) then
+				e.where = "bag"
+				changed = true
+				log_warning("[CREATURE] pen animal missing — moved to bag id=" .. tostring(e.id))
+			end
+		end
+
+		-- ③ 가방 속 칸 ↔ 명부: 칸만 있고 명부에 없으면 개체로 등록, 명부만 있고 칸이 없으면 칸을 다시 만든다.
+		for k, v in pairs(inv.Items) do
+			if type(v) == "table" and v.creatureId ~= nil and v.creatureId ~= "" and self:FindEntry(list, v.creatureId) == nil then
+				local itemDs = _DataService:GetTable("item_dataset")
+				local row = itemDs ~= nil and itemDs:FindRow("Name", v.name) or nil
+				local animalId = ""
+				local petId = ""
+				if row ~= nil then
+					local okA, a = pcall(function() return row:GetItem("UseAnimalId") end)
+					if okA and a ~= nil then animalId = tostring(a) end
+					local okP, p = pcall(function() return row:GetItem("UsePetId") end)
+					if okP and p ~= nil then petId = tostring(p) end
+				end
+				if animalId ~= "" then
+					table.insert(list, { id = v.creatureId, kind = "animal", species = animalId, name = v.label or animalId, where = "bag" })
+					changed = true
+				elseif petId ~= "" then
+					table.insert(list, { id = v.creatureId, kind = "pet", species = petId, name = v.label or petId, where = "follow" })
+					changed = true
+				end
+			end
+		end
+
+		-- ④ 구세이브 펫(ActivePetId): 개체로 등록하고 빈 호루라기 하나를 이름 붙은 호루라기로 바꾼다.
+		local legacyPet = inv.ActivePetId or ""
+		if legacyPet ~= "" and self:CountKind(list, "pet") == 0 then
+			local e = { id = self:NewId(), kind = "pet", species = legacyPet,
+				name = self:SuggestName(list, self:GetSpeciesName("pet", legacyPet)), where = "follow" }
+			table.insert(list, e)
+			local whistle = self:GetPetWhistleItem(legacyPet)
+			if whistle ~= "" and type(inv.Items[whistle]) == "number" and inv.Items[whistle] > 0 then
+				inv:RemoveItem(whistle, 1)
+			end
+			changed = true
+			log("[CREATURE] migrated legacy pet " .. legacyPet .. " as " .. e.name)
+		end
+		if legacyPet ~= "" then inv.ActivePetId = "" end
+
+		-- ⑤ 개체마다 가리키는 칸이 있어야 한다(가방 속 가축 · 모든 펫의 호루라기). 이름도 맞춘다.
+		for _, e in ipairs(list) do
+			if type(e) == "table" then
+				local needItem = (e.kind == "pet") or (e.kind == "animal" and e.where == "bag")
+				if needItem then
+					local key = inv:FindCreatureItemKey(e.id)
+					if key == "" then
+						local base = ""
+						if e.kind == "pet" then base = self:GetPetWhistleItem(e.species) else base = self:GetAnimalOwnedItem(e.species) end
+						if base ~= "" then
+							inv:AddCreatureItem(base, e.id, e.name or "")
+							changed = true
+							log_warning("[CREATURE] restored missing item for " .. tostring(e.name))
+						end
+					else
+						inv:SetCreatureItemLabel(key, e.name or "")
+					end
+				end
+			end
+		end
+
+		if changed then self:SaveList(player, inv, list) end
+		log("[CREATURE] reconciled " .. uid .. " animals=" .. self:CountKind(list, "animal") .. " pets=" .. self:CountKind(list, "pet"))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SpawnPetsOnLoad(Entity player, Entity homeMap)
+		-- 명부의 펫을 다시 만든다: 따라오기 = 플레이어 곁(맵 이동은 Pet.WarpToOwner), 영지에 두기 = 영지의 그 자리.
+		local inv = self:GetInv(player)
+		if not isvalid(inv) then return end
+		local uid = self:GetUserId(player)
+		local list = self:LoadList(inv)
+		for _, e in ipairs(list) do
+			if type(e) == "table" and e.kind == "pet" then
+				self:DestroyPetEntities(player, e.id)
+				if e.where == "home" then
+					local spot = Vector2(tonumber(e.homeX) or self.HomeEntranceX, tonumber(e.homeY) or self.HomeEntranceY)
+					if _ResourceSpawner ~= nil then
+						local clamped = _ResourceSpawner:ClampHomeWorldPosition(spot.x, spot.y)
+						if clamped ~= nil then spot = clamped end
+					end
+					self:SpawnPet(homeMap, uid, e, Vector3(spot.x + 0.6, spot.y, 0), "home")
+				else
+					local map = player.CurrentMap
+					if not isvalid(map) then map = homeMap end
+					local pos = player.TransformComponent.WorldPosition
+					self:SpawnPet(map, uid, e, Vector3(pos.x - 0.8, pos.y, 0), "follow")
+				end
+			end
+		end
+	end
+
+end

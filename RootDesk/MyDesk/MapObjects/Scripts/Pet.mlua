@@ -18,6 +18,24 @@ script Pet extends Component
 
 	property number warpCooldown = 0.0
 
+	-- 보유 동물 명부(CreatureRoster) 개체. 이름은 명부가 단일 소스이고 여기엔 표시용 사본만 둔다.
+	@Sync property string CreatureId = ""
+	@Sync property string CreatureName = ""
+	-- "follow" = 주인을 따라다님(맵 이동 시 재스폰) / "home" = 영지에 두기(HomeX/HomeY 주변을 돌아다니고 맵을 옮기지 않음)
+	@Sync property string Mode = "follow"
+	property number HomeX = 0
+	property number HomeY = 0
+	property number HomeWanderRadius = 2.0
+	property number HomeStandMin = 1.5
+	property number HomeStandMax = 4.0
+	property number HomeWalkMin = 0.8
+	property number HomeWalkMax = 2.0
+
+	-- 상태별 애니메이션 클립(PetDataSet): 정지=SpriteRUID, 이동=MoveRUID. CurrentClipRUID로 중복 재지정(프레임 리셋) 방지.
+	property string StandClipRUID = ""
+	property string MoveClipRUID = ""
+	property string CurrentClipRUID = ""
+
 	method void OnBeginPlay()
 		-- 데이터셋 스탯 적용.
 		if self:IsServer() then
@@ -54,8 +72,16 @@ script Pet extends Component
 		end
 		local okR, ruid = pcall(function() return row:GetItem("SpriteRUID") end)
 		if okR and ruid ~= nil and ruid ~= "" then
+			self.StandClipRUID = ruid
 			local spr = self.Entity.SpriteRendererComponent
-			if isvalid(spr) then spr.SpriteRUID = ruid end
+			if isvalid(spr) then
+				spr.SpriteRUID = ruid
+				self.CurrentClipRUID = ruid
+			end
+		end
+		local okM, mruid = pcall(function() return row:GetItem("MoveRUID") end)
+		if okM and mruid ~= nil then
+			self.MoveClipRUID = mruid
 		end
 		local move = self.Entity.MovementComponent
 		if isvalid(move) then
@@ -64,9 +90,25 @@ script Pet extends Component
 	end
 
 	@ExecSpace("ServerOnly")
+	method void InitializeCreature(string petId, string ownerUserId, string creatureId, string creatureName, string mode, number homeX, number homeY)
+		-- 명부 개체로 소환/복원. mode = "follow" | "home" (home 이면 HomeX/HomeY 주변을 돌아다닌다).
+		self.CreatureId = creatureId or ""
+		self.CreatureName = creatureName or ""
+		self.Mode = (mode == "home") and "home" or "follow"
+		self.HomeX = homeX or 0
+		self.HomeY = homeY or 0
+		self:Initialize(petId, ownerUserId)
+		log("[PET] creature " .. tostring(self.CreatureName) .. " id=" .. tostring(self.CreatureId) .. " mode=" .. self.Mode)
+	end
+
+	@ExecSpace("ServerOnly")
 	method void OnUpdate(number delta)
-		-- 소유자 추종. 맵이 다르면 재스폰 워프.
+		-- 따라오기 = 소유자 추종(맵이 다르면 재스폰 워프) / 영지에 두기 = 제자리 주변 배회.
 		if self.OwnerUserId == nil or self.OwnerUserId == "" then return end
+		if self.Mode == "home" then
+			self:TickHomeWander(delta)
+			return
+		end
 		if self.warpCooldown > 0 then
 			self.warpCooldown = self.warpCooldown - delta
 			return
@@ -98,10 +140,13 @@ script Pet extends Component
 			move:MoveToDirection(dir, delta)
 			local spr = self.Entity.SpriteRendererComponent
 			if isvalid(spr) and dir.x ~= 0 then
-				spr.FlipX = dir.x < 0
+				-- 리소스는 왼쪽을 보고 그려져 있다 → 오른쪽으로 갈 때 FlipX=true (반대로 걸면 뒷걸음질).
+				spr.FlipX = dir.x > 0
 			end
+			self:ApplyClip(true)
 		else
 			move:MoveToDirection(Vector2(0, 0), 0)
+			self:ApplyClip(false)
 		end
 		-- 너무 멀면 순간이동
 		if dist > 12.0 then
@@ -113,11 +158,87 @@ script Pet extends Component
 	end
 
 	@ExecSpace("ServerOnly")
+	method void TickHomeWander(number delta)
+		-- 영지에 두기: HomeX/HomeY 반경 안에서 쉬다가 걷다가를 반복한다. 영지에 아무도 없으면 쉰다.
+		local move = self.Entity.MovementComponent
+		if not isvalid(move) then return end
+		local t = (self._T.occCheck or 0) - delta
+		if t <= 0 then
+			t = 1.0
+			local occupied = false
+			local map = self.Entity.CurrentMap
+			if isvalid(map) and isvalid(map.MapComponent) then
+				local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+				occupied = users ~= nil and #users > 0
+			end
+			self._T.occupied = occupied
+		end
+		self._T.occCheck = t
+		if self._T.occupied ~= true then
+			move:MoveToDirection(Vector2(0, 0), 0)
+			self:ApplyClip(false)
+			return
+		end
+		local pos = self.Entity.TransformComponent.WorldPosition
+		local dx = self.HomeX - pos.x
+		local dy = self.HomeY - pos.y
+		local dist = math.sqrt(dx * dx + dy * dy)
+		local dir = self._T.wanderDir
+		if dist > self.HomeWanderRadius then
+			-- 반경 밖이면 집 쪽으로 걸어 돌아온다.
+			dir = Vector2(dx / dist, dy / dist)
+			self._T.wanderDir = dir
+			self._T.wanderLeft = 0.6
+		end
+		local left = (self._T.wanderLeft or 0) - delta
+		if left <= 0 then
+			if dir ~= nil then
+				-- 걷기 끝 → 쉬기
+				self._T.wanderDir = nil
+				dir = nil
+				left = self.HomeStandMin + _UtilLogic:RandomDouble() * (self.HomeStandMax - self.HomeStandMin)
+			else
+				-- 쉬기 끝 → 아무 방향으로 걷기
+				local ang = _UtilLogic:RandomDouble() * 6.2831853
+				dir = Vector2(math.cos(ang), math.sin(ang))
+				self._T.wanderDir = dir
+				left = self.HomeWalkMin + _UtilLogic:RandomDouble() * (self.HomeWalkMax - self.HomeWalkMin)
+			end
+		end
+		self._T.wanderLeft = left
+		if dir ~= nil then
+			move:MoveToDirection(dir, delta)
+			local spr = self.Entity.SpriteRendererComponent
+			if isvalid(spr) and dir.x ~= 0 then spr.FlipX = dir.x > 0 end
+			self:ApplyClip(true)
+		else
+			move:MoveToDirection(Vector2(0, 0), 0)
+			self:ApplyClip(false)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplyClip(boolean moving)
+		-- 이동 중이면 이동 클립, 아니면 정지 클립. 바뀔 때만 SpriteRUID 재지정(@Sync → 클라 반영, 프레임 리셋 방지).
+		local spr = self.Entity.SpriteRendererComponent
+		if not isvalid(spr) then return end
+		local target = self.StandClipRUID
+		if moving and self.MoveClipRUID ~= "" then
+			target = self.MoveClipRUID
+		end
+		if target == "" or target == self.CurrentClipRUID then return end
+		spr.SpriteRUID = target
+		self.CurrentClipRUID = target
+	end
+
+	@ExecSpace("ServerOnly")
 	method void WarpToOwner(Entity owner)
 		-- 맵 변경 동반: 현재 펫 제거 후 소유자 맵에 재스폰.
 		self.warpCooldown = 0.5
 		local petId = self.PetId
 		local ownerId = self.OwnerUserId
+		local creatureId = self.CreatureId
+		local creatureName = self.CreatureName
 		local map = owner.CurrentMap
 		if not isvalid(map) then
 			self.Entity:Destroy()
@@ -145,7 +266,8 @@ script Pet extends Component
 			pc = ent:GetComponent("script.Pet")
 		end
 		if isvalid(pc) then
-			pc:Initialize(petId, ownerId)
+			-- 명부 개체 정보(ID·이름)를 그대로 옮긴다 — 빠뜨리면 맵을 옮길 때마다 이름 없는 펫이 된다.
+			pc:InitializeCreature(petId, ownerId, creatureId, creatureName, "follow", 0, 0)
 		end
 		log("[PET] warp " .. tostring(petId) .. " to map " .. tostring(map.Name))
 	end

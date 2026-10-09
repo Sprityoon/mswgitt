@@ -59,6 +59,12 @@ script Chest extends Component
 			log_warning("Chest: Player does not own item key " .. itemKey)
 			return
 		end
+		-- 이름 붙은 동물(명부 개체)은 상자에 넣지 않는다 — 상자 저장 형식에는 개체 연결이 없다 (2026-10-10 제작자 결정).
+		if type(entry) == "table" and entry.creatureId ~= nil and entry.creatureId ~= "" then
+			local pcC = player:GetComponent("script.PlayerController")
+			if isvalid(pcC) then pcC:ShowMineFeedback("이름을 지어 준 동물은 상자에 넣을 수 없습니다.") end
+			return
+		end
 
 		local items = self:GetItems()
 		local baseName = ""

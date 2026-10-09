@@ -926,7 +926,12 @@ script UIInventoryController extends Component
 		local baseName = isvalid(inv) and inv:GetBaseItemName(itemKey) or itemKey
 		
 		if isvalid(self.tooltipName) then
-			self.tooltipName.Text = self:GetItemDisplayName(baseName)
+			-- 이름 붙은 칸(가방 속 가축·이름 붙은 호루라기)은 그 동물의 이름을 보인다.
+			if isvalid(inv) then
+				self.tooltipName.Text = inv:GetItemLabel(itemKey)
+			else
+				self.tooltipName.Text = self:GetItemDisplayName(baseName)
+			end
 			local rarity = self:GetItemRarity(baseName)
 			self.tooltipName.FontColor = self:GetRarityColor(rarity)
 		end
@@ -1174,6 +1179,13 @@ script UIInventoryController extends Component
 		if self.inspectedItem == "" then return end
 		if self.inspectedCount <= 0 then return end
 		if not isvalid(self.discardPopup) then return end
+		-- 이름 붙은 동물(가방 속 가축·이름 붙은 호루라기)은 버릴 수 없다 — 서버도 거부한다.
+		local playerD = _UserService.LocalPlayer
+		local invD = isvalid(playerD) and playerD:GetComponent("script.PlayerInventory") or nil
+		if isvalid(invD) and invD:IsCreatureItemKey(self.inspectedItem) then
+			_ScreenMessageLogic:PrivateMsg("이름을 지어 준 동물은 버릴 수 없습니다.")
+			return
+		end
 
 		self.discardMax = self.inspectedCount
 		self.discardCount = 1

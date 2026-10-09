@@ -1,0 +1,134 @@
+@Logic
+script UINamingLogic extends Logic
+	-- 동물 이름짓기 팝업 (ui/NamingGroup.ui, 2026-10-10). 서버 CreatureRoster.OpenNamePrompt → PlayerInventory.ClientOpenNamePrompt → Open.
+	-- [확인]/Enter → PlayerInventory.ServerSubmitCreatureName(itemKey, name). 서버가 모든 조건을 다시 검사하고,
+	-- 이름이 안 맞으면 오류 문구와 함께 이 팝업을 다시 연다. 클라 검사(글자 수)는 편의일 뿐 최종 판정이 아니다.
+
+	-- [바인딩] ui/NamingGroup.ui — UIBuilder 가 UUID 를 주입한다.
+	property Entity modal = "98b1ba51-dfd7-45ce-ad31-01b6b2300771"
+	property TextGUIRendererComponent titleText = "12a525a3-f529-45e5-acd0-46e37a22c94c"
+	property TextGUIRendererComponent messageText = "07f5077c-af7f-4d01-9ba0-59ceea6605dd"
+	property TextGUIRendererInputComponent nameInput = "5a54825b-ab13-4b6d-8f08-c8681c860906"
+	property ButtonComponent btnOk = "563f99f2-4420-4d5c-bae1-6b1036fdd433"
+	property ButtonComponent btnCancel = "10abb45b-7bc9-44b1-8b9d-0305f4eab8eb"
+
+	property integer NameMaxChars = 8
+	property Color MessageColor = Color(0.79, 0.75, 0.70, 1)
+	property Color ErrorColor = Color(1.0, 0.5, 0.4, 1)
+
+	@HideFromInspector property string PendingItemKey = ""
+	@HideFromInspector property string DefaultMessage = ""
+	property any okHandler = nil
+	property any cancelHandler = nil
+	property any submitHandler = nil
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 팝업은 .ui 에서 Enable=false 로 저장돼 있다(규칙 30). 버튼·Enter 연결.
+		if isvalid(self.modal) then self.modal.Enable = false end
+		if isvalid(self.btnOk) then
+			self.okHandler = self.btnOk.Entity:ConnectEvent(ButtonClickEvent, function() self:Submit() end)
+		end
+		if isvalid(self.btnCancel) then
+			self.cancelHandler = self.btnCancel.Entity:ConnectEvent(ButtonClickEvent, function() self:Close() end)
+		end
+		if isvalid(self.nameInput) then
+			self.submitHandler = self.nameInput.Entity:ConnectEvent(TextInputSubmitEvent, function() self:Submit() end)
+		end
+		log("[NAMING] ready modal=" .. tostring(isvalid(self.modal)) .. " input=" .. tostring(isvalid(self.nameInput)))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 핸들러 해제.
+		if self.okHandler ~= nil and isvalid(self.btnOk) then self.btnOk.Entity:DisconnectEvent(ButtonClickEvent, self.okHandler) end
+		if self.cancelHandler ~= nil and isvalid(self.btnCancel) then self.btnCancel.Entity:DisconnectEvent(ButtonClickEvent, self.cancelHandler) end
+		if self.submitHandler ~= nil and isvalid(self.nameInput) then self.nameInput.Entity:DisconnectEvent(TextInputSubmitEvent, self.submitHandler) end
+		self.okHandler = nil
+		self.cancelHandler = nil
+		self.submitHandler = nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Open(string kind, string speciesName, string itemKey, string suggested, string errorText)
+		-- 팝업 열기. errorText 가 있으면 안내 줄을 빨갛게 그 문구로 바꾼다(서버가 이름을 거절한 경우).
+		if not isvalid(self.modal) then
+			log_warning("[NAMING] modal missing")
+			return
+		end
+		self.PendingItemKey = itemKey or ""
+		local who = speciesName
+		if who == nil or who == "" then who = "새 친구" end
+		if kind == "rename" then
+			-- 이름 변경권: speciesName 자리에 지금 이름이 온다.
+			if isvalid(self.titleText) then self.titleText.Text = "이름 바꾸기" end
+			self.DefaultMessage = who .. "의 새 이름을 지어 주세요 (" .. tostring(self.NameMaxChars) .. "자까지)"
+		else
+			if isvalid(self.titleText) then self.titleText.Text = "이름 짓기" end
+			self.DefaultMessage = who .. "에게 이름을 지어 주세요 (" .. tostring(self.NameMaxChars) .. "자까지)"
+		end
+		if errorText ~= nil and errorText ~= "" then
+			self:ShowMessage(errorText, true)
+		else
+			self:ShowMessage(self.DefaultMessage, false)
+		end
+		if isvalid(self.nameInput) then
+			self.nameInput.CharacterLimit = self.NameMaxChars
+			self.nameInput.Text = suggested or ""
+		end
+		self.modal.Enable = true
+		if isvalid(self.nameInput) then self.nameInput:ActivateInputField() end
+		log("[NAMING] open kind=" .. tostring(kind) .. " key=" .. tostring(itemKey))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowMessage(string text, boolean isError)
+		-- 안내 줄(오류면 빨강).
+		if not isvalid(self.messageText) then return end
+		self.messageText.Text = text or ""
+		if isError then
+			self.messageText.FontColor = self.ErrorColor
+		else
+			self.messageText.FontColor = self.MessageColor
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		-- 닫기(취소). 서버 쪽 대기 요청은 시간이 지나면 저절로 무효가 된다.
+		if isvalid(self.modal) then self.modal.Enable = false end
+		self.PendingItemKey = ""
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Submit()
+		-- 확인: 글자 수만 미리 보고 서버로 보낸다.
+		if self.PendingItemKey == "" then return end
+		if not isvalid(self.modal) or not self.modal.Enable then return end
+		local raw = ""
+		if isvalid(self.nameInput) then raw = self.nameInput.Text or "" end
+		local name = string.match(raw, "^%s*(.-)%s*$") or ""
+		if name == "" then
+			self:ShowMessage("이름을 입력해 주세요.", true)
+			return
+		end
+		local n = 0
+		for i = 1, #name do
+			local b = string.byte(name, i)
+			if b < 0x80 or b >= 0xC0 then n = n + 1 end
+		end
+		if n > self.NameMaxChars then
+			self:ShowMessage("이름은 " .. tostring(self.NameMaxChars) .. "자까지 지을 수 있어요.", true)
+			return
+		end
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return end
+		local inv = lp:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return end
+		local key = self.PendingItemKey
+		self:Close()
+		inv:ServerSubmitCreatureName(key, name)
+		log("[NAMING] submit key=" .. tostring(key) .. " name=" .. name)
+	end
+
+end

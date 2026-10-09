@@ -210,7 +210,23 @@ script TileDurabilityManager extends Logic
 				return
 			end
 		end
-		
+
+		-- 가축이 든 우리는 해체 불가 — 해체하면 가축만 남고(우리 없는 가축) 우리 아이템을 다시 놓을 때 꼬인다(2026-10-10).
+		if isFurniture and isvalid(resourceEntity) then
+			local pen = resourceEntity:GetComponent("script.AnimalPen")
+			if isvalid(pen) and pen:CountAnimalsInside() > 0 then
+				local pcPen = isvalid(attacker) and attacker:GetComponent("script.PlayerController") or nil
+				if isvalid(pcPen) then
+					pcPen:ShowMineFeedback("가축이 있는 우리는 해체할 수 없습니다. 우리에 F를 두 번 눌러 가축을 먼저 꺼내 주세요.")
+				end
+				local reactionPen = resourceEntity:GetComponent("script.ResourceReaction")
+				if isvalid(reactionPen) then
+					reactionPen:PlayRefusalShake()
+				end
+				return
+			end
+		end
+
 		local damageKey = mapName .. "_" .. pivotKey
 		local data = self.DamagedResources[damageKey]
 		if data == nil then

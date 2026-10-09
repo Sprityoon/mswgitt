@@ -1,4 +1,4 @@
-AnimalId,DisplayName,PurchaseItem,FeedItem,FeedInterval,ProduceItem,ProduceInterval,SpriteRUID,WanderRadius,ModelName,MoveRUID,FeedXp
-Chicken,닭,Chicken Ticket,Carrot Seed,60,Egg,120,50faf654ee5d479cb2958edce9feaef0,2.5,Animal_Chicken,,10
-Sheep,양,Sheep Ticket,Grass,60,Wool,180,dc932872543f4a02bf41e977ab79e5ad,2.5,Animal_Sheep,,12
-Cat,고양이,Cat Ticket,Carp,60,,,0332ffea3a7d441287d9f56234fab57d,2.5,Animal_Cat,6334e1be7706458da0b48d8927179217,8
+AnimalId,DisplayName,PurchaseItem,FeedItem,FeedInterval,ProduceItem,ProduceInterval,SpriteRUID,WanderRadius,ModelName,MoveRUID,FeedXp,OwnedItem
+Chicken,닭,Chicken Ticket,Carrot Seed,60,Egg,120,c1bc28ed67e54de4ba4eeb7fcd36cde3,2.5,Animal_Chicken,72520c557a7a484d9ab4d4b6e854df92,10,Animal Chicken
+Sheep,양,Sheep Ticket,Grass,60,Wool,180,bb0d2f1ec25443ce818de52cd0e5b87b,2.5,Animal_Sheep,644a4bd3d1034d5eb2f70f4a4af1d0bd,12,Animal Sheep
+Cat,고양이,Cat Ticket,Carp,60,,,0332ffea3a7d441287d9f56234fab57d,2.5,Animal_Cat,6334e1be7706458da0b48d8927179217,8,Animal Cat

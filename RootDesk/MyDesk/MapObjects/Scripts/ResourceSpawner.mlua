@@ -500,6 +500,23 @@ script ResourceSpawner extends Logic
 		return { x = ox, y = oy, size = n }
 	end
 
+	method integer GetPlaceFootprint(string itemName)
+		-- 설치 아이템의 점유 한 변 칸 수. 🔴 클라 미리보기·설치 요청·서버 검증 공용 단일 소스(규칙 18).
+		-- 바닥 타일(PlacedTileName)·작물 씨앗(CropDataSet.SeedItem) = 1, 가구 = item_dataset.FootprintSize(공란 = 2).
+		-- 모델의 ResourceOccupiedArea 오프셋(0..n-1)과 반드시 같은 값이어야 한다.
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil or itemName == nil or itemName == "" then return 1 end
+		local row = ds:FindRow("Name", itemName)
+		if row == nil then return 1 end
+		if (row:GetItem("PlacedTileName") or "") ~= "" then return 1 end
+		local cropDs = _DataService:GetTable("CropDataSet")
+		if cropDs ~= nil and cropDs:FindRow("SeedItem", itemName) ~= nil then return 1 end
+		local okF, vF = pcall(function() return row:GetItem("FootprintSize") end)
+		local n = okF and tonumber(vF) or nil
+		if n == nil or n < 1 then return 2 end
+		return math.floor(n)
+	end
+
 	-- ── 되메우기 자투리 방지 (⚖️ 2026-09-04) ────────────────────────────────────
 	-- 파기·되메우기의 최소 단위는 2×2다. 그래서 2×3처럼 한 변이 홀수인 영역에서 2×2를
 	-- 되메우면 폭 1칸(2×1)이 남는데, 이 칸은 ① 2×2 도구로 다시 다룰 수 없고
@@ -3491,7 +3508,7 @@ script ResourceSpawner extends Logic
 							-- 밟고 올라가는 데크/발판/카펫: 플레이어 발 밑 레이어(MinEntityOrder)로 고정
 							sprite.OrderInLayer = _RenderLayers.MinEntityOrder or 2
 						else
-							sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(spawnedEntity, 0)
+							sprite.OrderInLayer = _RenderLayers:ComputeYOrderWithSortOffset(spawnedEntity)
 						end
 					end
 
@@ -3687,7 +3704,7 @@ script ResourceSpawner extends Logic
 			if isWalkable then
 				sprite.OrderInLayer = _RenderLayers.MinEntityOrder or 2
 			else
-				sprite.OrderInLayer = _RenderLayers:ComputeYOrderForEntity(ent, 0)
+				sprite.OrderInLayer = _RenderLayers:ComputeYOrderWithSortOffset(ent)
 			end
 		end
 

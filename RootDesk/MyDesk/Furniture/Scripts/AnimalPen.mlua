@@ -1,0 +1,178 @@
+@Component
+script AnimalPen extends Component
+	-- 가축우리: 우리 안 가축 집계(수용량·해체 차단 단일 소스) + F 상호작용으로 가축 꺼내기(이름 붙은 가축 아이템 — CreatureRoster.WithdrawAnimal).
+	-- 우리에 든 가축 = Home 이 우리 중심(Trigger 실효 박스 중심)에서 HomeRadius 이내인 Animal.
+	-- 소환 시 Home = 우리 위치, Animal.ResolvePenBounds 도 같은 중심을 쓴다.
+
+	property any keyHandler = nil
+	property any interactRequestHandler = nil
+
+	-- 조준 가이드 (PlayerController:ReadInteractLabel 이 읽음). 조준 판정은 Trigger AABB 경로.
+	property integer AimFootprintW = 1
+	property integer AimFootprintH = 1
+	property string InteractLabel = "가축 꺼내기"
+
+	property number HomeRadius = 1.0
+	-- 실수로 꺼내지 않게 두 번 눌러야 한다: 첫 F = 안내, ConfirmSeconds 안에 다시 F = 꺼내기.
+	property number ConfirmSeconds = 3.0
+	property number confirmUntil = 0
+
+	method void OnBeginPlay()
+		-- 클라: F + InteractRequestEvent(모바일 브리지) 이중 연결 (design-policy "월드 클릭 금지").
+		if self:IsClient() then
+			self.keyHandler = _InputService:ConnectEvent(KeyDownEvent, self.OnKeyDown)
+			local lp = _UserService.LocalPlayer
+			if isvalid(lp) then
+				self.interactRequestHandler = lp:ConnectEvent(InteractRequestEvent, function()
+					self:TryInteract()
+				end)
+			end
+		end
+	end
+
+	method void OnEndPlay()
+		-- 클라 키/브리지 핸들러 해제.
+		if self:IsClient() then
+			if self.keyHandler ~= nil then
+				_InputService:DisconnectEvent(KeyDownEvent, self.keyHandler)
+				self.keyHandler = nil
+			end
+			if self.interactRequestHandler ~= nil then
+				local lp = _UserService.LocalPlayer
+				if isvalid(lp) then
+					lp:DisconnectEvent(InteractRequestEvent, self.interactRequestHandler)
+				end
+				self.interactRequestHandler = nil
+			end
+		end
+	end
+
+	method Vector2 GetCenter()
+		-- 우리 중심 = Trigger 실효 박스 중심 (BoxSize·ColliderOffset × Scale — pitfalls #14).
+		local p = self.Entity.TransformComponent.WorldPosition
+		local trig = self.Entity.TriggerComponent
+		if not isvalid(trig) then return Vector2(p.x, p.y) end
+		local s = self.Entity.TransformComponent.Scale
+		return Vector2(p.x + trig.ColliderOffset.x * math.abs(s.x), p.y + trig.ColliderOffset.y * math.abs(s.y))
+	end
+
+	method table GetAnimalsInside()
+		-- 이 우리에 든 Animal 컴포넌트 목록 (HomeX/HomeY 는 @Sync 라 서버·클라 모두 같은 결과).
+		local out = {}
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return out end
+		local center = self:GetCenter()
+		local comps = map:GetChildComponentsByTypeName("script.Animal", true)
+		if comps == nil then return out end
+		for _, ac in ipairs(comps) do
+			if isvalid(ac) and isvalid(ac.Entity) then
+				if Vector2.Distance(Vector2(ac.HomeX, ac.HomeY), center) < self.HomeRadius then
+					table.insert(out, ac)
+				end
+			end
+		end
+		return out
+	end
+
+	method integer CountAnimalsInside()
+		-- 우리에 든 가축 수.
+		return #self:GetAnimalsInside()
+	end
+
+	method integer GetCapacity()
+		-- item_dataset.PenCapacity (공란·0 = 제한 없음).
+		local furn = self.Entity:GetComponent("script.PlaceableFurniture")
+		local itemName = isvalid(furn) and (furn.ItemId or "") or ""
+		if itemName == "" then return 0 end
+		local ds = _DataService:GetTable("item_dataset")
+		local row = ds ~= nil and ds:FindRow("Name", itemName) or nil
+		if row == nil then return 0 end
+		local okC, vC = pcall(function() return row:GetItem("PenCapacity") end)
+		return okC and math.floor(tonumber(vC) or 0) or 0
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnKeyDown(KeyDownEvent event)
+		-- F 입력.
+		if event.key ~= KeyboardKey.F then return end
+		self:TryInteract()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void TryInteract()
+		-- 조준 게이트 → (가축을 조준 중이면 먹이 주기가 우선이라 양보) → 두 번 눌러 꺼내기.
+		local lp = _UserService.LocalPlayer
+		if not isvalid(lp) then return end
+		local pc = lp:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		if not pc:IsAimTargetCore(self.Entity, false) then return end
+		for _, ac in ipairs(self:GetAnimalsInside()) do
+			if pc:IsAimTargetCore(ac.Entity, false) then return end
+		end
+		local count = self:CountAnimalsInside()
+		if count <= 0 then
+			_ScreenMessageLogic:PrivateMsg("우리에 가축이 없습니다.")
+			return
+		end
+		local now = _UtilLogic.ElapsedSeconds
+		if self.confirmUntil > 0 and now <= self.confirmUntil then
+			self.confirmUntil = 0
+			log("[PEN] withdraw request")
+			self:ServerRequestWithdraw()
+			return
+		end
+		self.confirmUntil = now + self.ConfirmSeconds
+		_ScreenMessageLogic:PrivateMsg("한 번 더 F를 누르면 가장 가까운 가축을 가방에 담아요 (친밀도·먹이 상태는 그대로).")
+	end
+
+	@ExecSpace("Server")
+	method void ServerRequestWithdraw()
+		-- 서버 검증: 자기 영지·조준 → 가장 가까운 가축 1마리를 입주권(AnimalDataSet.PurchaseItem)으로 돌려주고 제거.
+		local userId = senderUserId
+		if userId == nil or userId == "" then return end
+		local player = _UserService:GetUserEntityByUserId(userId)
+		if not isvalid(player) then return end
+		local pc = player:GetComponent("script.PlayerController")
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) or map.Name ~= ("Home_" .. userId) then
+			if isvalid(pc) then pc:ShowMineFeedback("자신의 영지 우리에서만 가축을 꺼낼 수 있습니다.") end
+			return
+		end
+		if not isvalid(pc) or not pc:IsAimTarget(self.Entity) then return end
+
+		local animals = self:GetAnimalsInside()
+		if #animals == 0 then
+			pc:ShowMineFeedback("우리에 가축이 없습니다.")
+			return
+		end
+		local pp = player.TransformComponent.WorldPosition
+		local best = nil
+		local bestDist = 9999.0
+		for _, ac in ipairs(animals) do
+			local ap = ac.Entity.TransformComponent.WorldPosition
+			local d = Vector2.Distance(Vector2(pp.x, pp.y), Vector2(ap.x, ap.y))
+			if d < bestDist then
+				bestDist = d
+				best = ac
+			end
+		end
+		if not isvalid(best) then return end
+
+		-- 명부(CreatureRoster)가 친밀도·급여 상태를 옮겨 적고 이름 붙은 가축 아이템으로 가방에 넣는다.
+		local animalId = best.AnimalId or ""
+		local name = ""
+		if _CreatureRoster ~= nil then
+			name = _CreatureRoster:WithdrawAnimal(player, best)
+		end
+		if name == "" then
+			pc:ShowMineFeedback("이 가축은 꺼낼 수 없습니다: " .. animalId)
+			return
+		end
+		local left = #animals - 1
+		local cap = self:GetCapacity()
+		local capLabel = cap > 0 and (" · 우리 " .. left .. "/" .. cap) or ""
+		pc:ShowMineFeedback(name .. "을(를) 가방에 담았어요. 우리 근처에서 사용하면 다시 들어가요" .. capLabel)
+		log("[PEN] withdraw " .. animalId .. " name=" .. name .. " by " .. userId .. " left=" .. left)
+	end
+
+end

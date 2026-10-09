@@ -28,10 +28,23 @@ script Animal extends Component
 	property boolean ProducedForFeed = false
 
 	property string OwnerUserId = ""
+	-- 보유 동물 명부(CreatureRoster) 개체 ID·이름. 이름은 명부가 단일 소스이고 여기엔 표시용 사본만 둔다.
+	@Sync property string CreatureId = ""
+	@Sync property string CreatureName = ""
 	@Sync property integer Bond = 0
 	@Sync property number CareBonus = 0
 
 	property number WanderRadius = 2.5
+
+	-- 우리 안쪽 배회 사각형 반폭(Home 기준). 0 = 아직 우리를 못 찾음 → WanderRadius 원으로 대체.
+	property number PenHalfW = 0
+	property number PenHalfH = 0
+	-- 배회 사각형 = 우리 Trigger 실효 박스(BoxSize×Scale) 반폭·반높이에 대한 비율(발밑 기준).
+	-- 가축 스프라이트는 발밑 피벗이라 몸이 위로 그려진다 → 발이 앞 울타리 윗선~뒤 울타리 밑동 사이에 있어야 안에 선 것처럼 보인다.
+	-- 실측(furniture_v2 우리 256px, 2026-10-10): 뒤 울타리 밑동 +0.47·앞 울타리 윗선 −0.32(반높이 비), 안쪽 벽 ±0.72(반폭 비) — 몸 폭만큼 더 안쪽.
+	property number PenInnerHalfWRatio = 0.4
+	property number PenInnerTopRatio = 0.38
+	property number PenInnerBottomRatio = -0.27
 
 	property number StateTimer = 0.0
 
@@ -132,6 +145,9 @@ script Animal extends Component
 		self.LastProduceUnix = lastProduce or 0
 		self.ProducedForFeed = produced == true
 		self.OwnerUserId = ownerUserId or ""
+		self.PenHalfW = 0
+		self.PenHalfH = 0
+		self._T.penResolveTimer = 0
 		self:ApplyDatasetVisual()
 		if isvalid(self.Entity.TransformComponent) then
 			local body = self.Entity.KinematicbodyComponent
@@ -198,11 +214,24 @@ script Animal extends Component
 	method void TickWander(number delta)
 		-- 우리(Home) 반경 내 랜덤 배회. 반경 밖이면 홈 방향으로 복귀.
 		if not isvalid(self.Entity) or not isvalid(self.Entity.TransformComponent) then return end
+		if self.PenHalfW <= 0 then
+			-- 영지 복원 순서상 우리가 가축보다 늦게 생길 수 있어 2초마다 다시 찾는다.
+			local t = (self._T.penResolveTimer or 0) - delta
+			if t <= 0 then
+				t = 2.0
+				self:ResolvePenBounds()
+			end
+			self._T.penResolveTimer = t
+		end
 		local pos = self.Entity.TransformComponent.WorldPosition
 		local dx = pos.x - self.HomeX
 		local dy = pos.y - self.HomeY
 		local dist = math.sqrt(dx * dx + dy * dy)
-		if dist > self.WanderRadius then
+		local outside = dist > self.WanderRadius
+		if self.PenHalfW > 0 then
+			outside = math.abs(dx) > self.PenHalfW or math.abs(dy) > self.PenHalfH
+		end
+		if outside then
 			local len = dist
 			if len < 0.001 then len = 0.001 end
 			self.MoveDir = Vector2(-dx / len, -dy / len)
@@ -213,12 +242,100 @@ script Animal extends Component
 		end
 		self.StateTimer = self.StateTimer - delta
 		if self.CurrentAIState == "WANDER" then
+			if self.PenHalfW > 0 then
+				-- 다음 걸음이 울타리 안쪽 사각형을 벗어나면 그 축만 방향을 뒤집는다(튕기듯 돌아섬).
+				local nx = dx + self.MoveDir.x * 0.25
+				local ny = dy + self.MoveDir.y * 0.25
+				local mx = self.MoveDir.x
+				local my = self.MoveDir.y
+				if math.abs(nx) > self.PenHalfW then mx = -mx end
+				if math.abs(ny) > self.PenHalfH then my = -my end
+				if mx ~= self.MoveDir.x or my ~= self.MoveDir.y then
+					self.MoveDir = Vector2(mx, my)
+				end
+			end
 			self:MoveDirVec(self.MoveDir, delta)
 			if self.StateTimer <= 0 then self:EnterState("STAND") end
 		else
 			if self.CurrentAIState ~= "STAND" then self:EnterState("STAND") end
 			if self.StateTimer <= 0 then self:EnterState("WANDER") end
 		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean ResolvePenBounds()
+		-- Home 에서 가장 가까운 가축우리(item_dataset.FurnitureKind = pen, 3칸 이내)의 Trigger 실효 박스로 배회 사각형을 정한다.
+		-- 실효 크기 = BoxSize × Transform.Scale (pitfalls #14). Home 은 박스 중심으로 옮긴다.
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return false end
+		local itemDs = _DataService:GetTable("item_dataset")
+		if itemDs == nil then return false end
+		local furnComps = map:GetChildComponentsByTypeName("script.PlaceableFurniture", true)
+		if furnComps == nil then return false end
+		local bestPen = nil
+		local bestDist = 3.0
+		for _, furn in ipairs(furnComps) do
+			if isvalid(furn) and isvalid(furn.Entity) then
+				local itemName = furn.ItemId or ""
+				local ir = itemName ~= "" and itemDs:FindRow("Name", itemName) or nil
+				if ir ~= nil then
+					local okK, kind = pcall(function() return ir:GetItem("FurnitureKind") end)
+					if okK and kind == "pen" then
+						local fp = furn.Entity.TransformComponent.WorldPosition
+						local d = Vector2.Distance(Vector2(self.HomeX, self.HomeY), Vector2(fp.x, fp.y))
+						if d < bestDist then
+							bestDist = d
+							bestPen = furn.Entity
+						end
+					end
+				end
+			end
+		end
+		local adopted = false
+		if not isvalid(bestPen) then
+			-- 우리 없는 가축(예: 가축이 든 채 우리가 해체된 옛 세이브): 10초(2초×5회) 동안 못 찾으면
+			-- 자리가 남은 다른 우리로 옮긴다. 유예는 영지 복원 때 우리가 가축보다 늦게 생기는 경우를 오인하지 않기 위함.
+			self._T.penMiss = (self._T.penMiss or 0) + 1
+			if self._T.penMiss < 5 then return false end
+			for _, pen in ipairs(map:GetChildComponentsByTypeName("script.AnimalPen", true) or {}) do
+				if isvalid(pen) and isvalid(pen.Entity) then
+					local cap = pen:GetCapacity()
+					if cap <= 0 or pen:CountAnimalsInside() < cap then
+						bestPen = pen.Entity
+						adopted = true
+						break
+					end
+				end
+			end
+			if not isvalid(bestPen) then return false end
+		end
+		local trig = bestPen.TriggerComponent
+		if not isvalid(trig) then return false end
+		local scale = bestPen.TransformComponent.Scale
+		local sx = math.abs(scale.x)
+		local sy = math.abs(scale.y)
+		local p = bestPen.TransformComponent.WorldPosition
+		local boxHalfW = trig.BoxSize.x * sx * 0.5
+		local boxHalfH = trig.BoxSize.y * sy * 0.5
+		local top = self.PenInnerTopRatio * boxHalfH
+		local bottom = self.PenInnerBottomRatio * boxHalfH
+		self.HomeX = p.x + trig.ColliderOffset.x * sx
+		self.HomeY = p.y + trig.ColliderOffset.y * sy + (top + bottom) * 0.5
+		self.PenHalfW = math.max(0.1, self.PenInnerHalfWRatio * boxHalfW)
+		self.PenHalfH = math.max(0.1, (top - bottom) * 0.5)
+		self._T.penMiss = 0
+		if adopted then
+			-- 새 우리 안으로 바로 옮기고(걸어서 맵을 가로지르지 않게) 세이브에 새 Home 을 남긴다.
+			local body = self.Entity.KinematicbodyComponent
+			if isvalid(body) then
+				body:SetWorldPosition(Vector2(self.HomeX, self.HomeY))
+			end
+			self:MarkOwnerDirty()
+			log(string.format("[ANIMAL] adopted %s into pen at (%.2f,%.2f)", tostring(self.AnimalId), self.HomeX, self.HomeY))
+		end
+		log(string.format("[ANIMAL] pen bounds %s home=(%.2f,%.2f) half=(%.2f,%.2f)",
+			tostring(self.AnimalId), self.HomeX, self.HomeY, self.PenHalfW, self.PenHalfH))
+		return true
 	end
 
 	@ExecSpace("ServerOnly")
@@ -403,7 +520,9 @@ script Animal extends Component
 		self.FedAtUnix = now
 		self.ProducedForFeed = false
 		self:MarkOwnerDirty()
-		self:Feedback(player, self.AnimalId .. "에게 먹이를 줬습니다. 친밀도 " .. self.Bond .. "/100 · 생산 대기 -" .. math.floor(self.CareBonus * 100 + 0.5) .. "%")
+		local who = self.CreatureName
+		if who == nil or who == "" then who = self.AnimalId end
+		self:Feedback(player, who .. "에게 먹이를 줬습니다. 친밀도 " .. self.Bond .. "/100 · 생산 대기 -" .. math.floor(self.CareBonus * 100 + 0.5) .. "%")
 		log("[ANIMAL] feed " .. self.AnimalId .. " item=" .. feedItem .. " by=" .. userId)
 
 		-- 사육 숙련 XP (AnimalDataSet.FeedXp, 공란이면 10)
@@ -458,7 +577,8 @@ script Animal extends Component
 			fedAt = self.FedAtUnix,
 			lastProduceAt = self.LastProduceUnix,
 			produced = self.ProducedForFeed,
-			ownerUserId = self.OwnerUserId
+			ownerUserId = self.OwnerUserId,
+			creatureId = self.CreatureId
 		}
 	end
 

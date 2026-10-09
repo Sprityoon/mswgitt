@@ -25,6 +25,11 @@ script UISkillBarController extends Component
 		self.UpdateTimer = _TimerService:SetTimerRepeat(function()
 			if not isvalid(self) or not isvalid(self.Entity) then return end
 			self:UpdateSlots()
+			-- 커서가 칸을 벗어났는데 Normal 이벤트를 놓치면 툴팁이 계속 남는다 → 떠 있는 동안 직접 확인해 닫는다.
+			if self.hoverSlotIndex > 0 and self._T.cursorCheckOff ~= true and not self:IsCursorOverSlot(self.hoverSlotIndex) then
+				self.hoverSlotIndex = 0
+				self:HideTooltip()
+			end
 		end, 0.04)
 		log("[SKILL-BAR] OnBeginPlay")
 	end
@@ -107,6 +112,11 @@ script UISkillBarController extends Component
 		if ev == nil then return end
 		if ev.state == ButtonState.Hover then
 			self.hoverSlotIndex = slotIndex
+			-- 자체 점검: Hover 순간엔 커서가 반드시 칸 안이다. 여기서 밖으로 나오면 좌표 변환을 못 믿으니 폴링 검사를 끈다.
+			if self._T.cursorCheckOff ~= true and not self:IsCursorOverSlot(slotIndex) then
+				self._T.cursorCheckOff = true
+				log_warning("[SKILL-BAR] cursor rect check disagrees with Hover — falling back to events only")
+			end
 			self:ShowTooltipForSlot(slotIndex)
 		elseif ev.state == ButtonState.Clicked then
 			self.hoverSlotIndex = 0
@@ -117,6 +127,22 @@ script UISkillBarController extends Component
 				self:HideTooltip()
 			end
 		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsCursorOverSlot(integer slotIndex)
+		-- 커서(화면 좌표)가 슬롯 사각형 안인지. 슬롯 모서리(피벗 기준 로컬 UI) → 월드 → 화면으로 바꿔 비교한다(여유 6px).
+		local slot = self.Entity:GetChildByName("SkillSlot" .. slotIndex, true)
+		if not isvalid(slot) or not isvalid(slot.UITransformComponent) then return false end
+		local t = slot.UITransformComponent
+		local size = t.RectSize
+		local piv = t.Pivot
+		local s1 = _UILogic:WorldToScreenPosition(_UILogic:LocalUIToWorldPosition(Vector2(-size.x * piv.x, -size.y * piv.y), t))
+		local s2 = _UILogic:WorldToScreenPosition(_UILogic:LocalUIToWorldPosition(Vector2(size.x * (1 - piv.x), size.y * (1 - piv.y)), t))
+		local c = _InputService:GetCursorPosition()
+		local pad = 6
+		return c.x >= math.min(s1.x, s2.x) - pad and c.x <= math.max(s1.x, s2.x) + pad
+			and c.y >= math.min(s1.y, s2.y) - pad and c.y <= math.max(s1.y, s2.y) + pad
 	end
 
 	@ExecSpace("ClientOnly")

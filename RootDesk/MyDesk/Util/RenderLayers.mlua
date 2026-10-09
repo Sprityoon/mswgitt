@@ -90,5 +90,15 @@ script RenderLayers extends Logic
 		return order
 	end
 
+	method integer ComputeYOrderWithSortOffset(Entity entity)
+		-- 엔티티에 YSortSprite 가 있으면 그 SortYOffset 을 더해 정렬한다(클라 YSortSprite.ApplyYSort 와 같은 값).
+		-- 서버 가구 설치·복원이 이걸 써야 클라 값과 어긋나지 않는다. 예: 가축우리는 정렬선을 뒤 울타리 밑동으로 올려 안의 가축이 앞에 그려진다.
+		if not isvalid(entity) then return self.MinEntityOrder end
+		local offset = 0
+		local ysort = entity:GetComponent("script.YSortSprite")
+		if isvalid(ysort) and ysort.SortYOffset ~= nil then offset = ysort.SortYOffset end
+		return self:ComputeYOrderForEntity(entity, offset)
+	end
+
 end
 

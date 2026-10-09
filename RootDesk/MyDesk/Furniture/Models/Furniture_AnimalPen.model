@@ -23,7 +23,9 @@
         "MOD.Core.TouchReceiveComponent",
         "script.PlaceableFurniture",
         "script.ResourceOccupiedArea",
-        "MOD.Core.TriggerComponent"
+        "MOD.Core.TriggerComponent",
+        "script.YSortSprite",
+        "script.AnimalPen"
       ],
       "Properties": [
         {
@@ -144,7 +146,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 1
+          "Value": 3
         },
         {
           "TargetType": "script.ResourceOccupiedArea",
@@ -162,7 +164,7 @@
             "$type": "MODNativeType",
             "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
           },
-          "Value": 1
+          "Value": 3
         },
         {
           "TargetType": "MOD.Core.SpriteRendererComponent",
@@ -244,10 +246,28 @@
           },
           "Value": {
             "$type": "MOD.Core.MODVector3, MOD.Core",
-            "x": 0.7868561921296297,
-            "y": 0.7868561921296297,
+            "x": 1.5737123842592593,
+            "y": 1.5737123842592593,
             "z": 1
           }
+        },
+        {
+          "TargetType": "script.YSortSprite",
+          "Name": "Dynamic",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": false
+        },
+        {
+          "TargetType": "script.YSortSprite",
+          "Name": "SortYOffset",
+          "ValueType": {
+            "$type": "MODNativeType",
+            "type": "System.Double, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+          },
+          "Value": 1.9
         }
       ],
       "EventLinks": [],

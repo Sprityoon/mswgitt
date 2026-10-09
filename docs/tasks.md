@@ -1,5 +1,61 @@
 # 작업 목록 (Tasks)
 
+## [목장·펫] 이름 변경권 + 개 호루라기 열 밀림 회귀 수정 (2026-10-10) — 코드·데이터 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **이름 변경권** (`Rename Ticket` / 이름 변경권, consumable, 아이콘 = 원작 "펫이름 작명쿠폰" `2e4916cc…`, 토리 상점 150코인 — 임시값): `item_dataset.UseRename` 새 열(`creature`)로 분기한다(이름 분기 금지). 사용하면 `CreatureRoster.OnUseRenameTicket`이 **바라보는(조준 셀) 내 동물**을 찾는다 — 우리 안 가축 · 따라오는 펫 · 영지에 둔 펫. 이름짓기 팝업을 "이름 바꾸기"로 열고 지금 이름을 미리 넣어 둔다. 확정(`ApplyRename`) 때 중복(자기 자신 제외)·글자 수·"지금 이름과 같음"을 검사하고 변경권 1개를 소모한 뒤, 명부 이름 → 맵·영지의 Animal/Pet `CreatureName` → 그 개체를 가리키는 칸(이름 붙은 호루라기·가방 속 가축)의 label 순서로 갱신한다. 취소하면 소모되지 않는다. 가방 속 가축은 우리에 넣은 뒤 바꾼다(안내 문구).
+- 🔴 **회귀 수정**: 직전 작업에서 고친 `Dog Whistle` 설명에 **따옴표 없는 쉼표**가 있어(pitfalls #51) 그 행 뒤쪽 열이 한 칸씩 밀렸다 → `UsePetId`가 비어 **호루라기가 작동하지 않는 상태**였다. 쉼표를 빼서 바로잡았다(재확인 `UsePetId = Dog`, 전 행 54열). 이번에 넣은 설명들에도 쉼표가 없다.
+- **백업**: `scratch/item_dataset-before-rename-20261010.csv`, `scratch/ShopItemDataSet-before-rename-20261010.csv`.
+- **검증**: CSV 전 행 열 수 일치 · `check_dataset_columns` 불일치 0. CreatureRoster·UINamingLogic·PlayerInventory LSP 오류 0. refresh ok, build 04:54:05 갱신 · Error 0 · Warning 16(기준선). **런타임 검증 보류(제작자 수행)**: 우리 안 가축/따라오는 펫/영지에 둔 펫을 바라보고 사용 → "이름 바꾸기" 팝업(지금 이름이 들어 있음) → 새 이름 → 먹이 문구·호루라기 상세 카드에 새 이름 / 같은 이름·다른 동물 이름·9자 거절 / 취소 시 변경권 유지 / 아무것도 안 바라보고 쓰면 안내.
+
+## [목장·펫] 가축·펫 이름 있는 개체화 — 명부 · 이름짓기 팝업 · 꺼내도 상태 유지 · 한도 · 호루라기 영지에 두기/데려오기 (2026-10-10) — 코드·데이터·UI 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 결정**: 꺼내도 친밀도·먹이 상태 유지, 스타듀밸리식 이름짓기(최대 8자 · 중복 금지), 꺼내면 그 가축 이름의 아이템, 한도 가축 3 · 펫 1(따로) + 나중에 해금, 첫 호루라기 = 이름짓기, 이후 = 영지에 두기 ↔ 데려오기(영지 안 = 그 자리 / 밖 = 영지 입구), 이름 붙은 아이템은 버리기·상자 보관 막기, 영지 밖에서 데리고 있다 접속을 끊어도 잃지 않게. 정책은 design-policy "가축·펫 = 이름 있는 개체".
+- **신규 `Creature/Scripts/CreatureRoster.mlua` (@Logic, 서버)**: 명부 = `PlayerInventory.CreaturesJson` JSON 배열(`{id, kind, species, name, where, bond, careBonus, fedAt, lastProduce, produced, homeX, homeY}`), 슬롯 세이브 `creatures` 필드(기존 선캡처 블록에 추가 — 추가 Yield 0, 규칙 9). 주요 메서드: `OnUseAnimalItem`(입주권 → 이름짓기 / 이름 붙은 가축 아이템 → 상태 그대로 다시 들임), `OnUsePetItem`(빈 호루라기 → 이름짓기 / 이름 붙은 호루라기 → `SendPetHome` ↔ `CallPetToFollow`), `OnNameSubmitted`(대기 요청 일치·180초·이름·한도·영지·우리·입주권 전부 재검사), `WithdrawAnimal`, `ReconcileOnLoad`, `SpawnPetsOnLoad`. 한도 = `BaseAnimalLimit 3`/`BasePetLimit 1` + `GetPassiveBonus("AnimalLimit"/"PetLimit")`(스킬 패시브 + 장비 PerkStat).
+- **아이템**: 이름 붙은 칸 키 = `<기본 이름>#<개체 id>`, 내용 `{name, count=1, creatureId, label}` (`PlayerInventory.AddCreatureItem`). 가축 = 새 행 `Animal Chicken/Sheep/Cat`(item_dataset, consumable, Tradable=false, `UseAnimalId`) ↔ `AnimalDataSet.OwnedItem` 새 열. 펫 = 개 호루라기 그 자체. 보호: `FoldStackableToolKeys`(로드·AddItem 때 도는 묶음 병합 — 그대로 두면 다음 접속에 이름 붙은 칸이 일반 묶음으로 합쳐져 사라졌다)·이름 기준 `RemoveItem`(이름 붙은 칸만 남으면 이제 실패를 돌려준다)·`ServerRequestDiscard`·`Chest.ServerRequestPutItem`에서 제외/거부. 퀵슬롯 사용은 이제 칸 키를 보낸다(`PlayerController`). 인벤 상세 카드 제목 = `GetItemLabel`(동물 이름).
+- **분실 방어 (`ReconcileOnLoad`, 영지 복원 직후)**: ① 우리 안 가축 중 명부에 없는 것(구세이브)은 "닭 1" 등으로 등록하고, 명부상 가방에 있는 개체의 엔티티는 겹침이라 지운다 ② 명부상 우리인데 엔티티가 없으면 가방으로 돌린다 ③ 칸만 있고 명부에 없으면 등록, 명부만 있고 칸이 없으면 칸을 다시 만든다 ④ 구세이브 `ActivePetId` 펫을 개체로 등록하고 빈 호루라기 1개를 이름 붙은 호루라기로 바꾼다 ⑤ 칸 이름을 명부 이름에 맞춘다. 펫 엔티티는 저장하지 않고 `SpawnPetsOnLoad`가 명부로 다시 만든다. 따라오기 = 플레이어 곁(맵 이동은 `Pet.WarpToOwner`, 이제 ID·이름을 옮긴다 — `InitializeCreature`), 영지에 두기 = 영지의 그 자리. 영지 맵은 접속 중 항상 떠 있다(OnUserEnter 생성, 로그아웃 때 파괴). 그래서 영지 밖에서 "영지에 두기"를 하면 바로 영지에 만든다. 새 캐릭터 기본값(`SetDefaultPlayerData`)에서 명부를 비운다.
+- **엔티티**: `Animal`·`Pet`에 `CreatureId`/`CreatureName`(@Sync 사본). `Animal.ToSaveEntry`에 creatureId, 먹이 문구에 이름. `Pet`에 `Mode`(follow/home)·`HomeX/Y`·`TickHomeWander`(반경 2 배회, 영지에 아무도 없으면 쉰다). `AnimalPen` 꺼내기 = `WithdrawAnimal`(입주권 반환 폐지).
+- **UI `ui/NamingGroup.ui` + `UINamingLogic` (@Logic, 클라)**: `scripts/build_naming_group_20261010.cjs`(UIBuilder, 바인딩 6개 주입, lint clean). 그룹 순서 9, 모달은 Enable=false로 저장(#30), 덮개 3840×2160(#43), 나무 카드 크롬, 글자는 스프라이트에 얹음(#50), 배경을 먼저 만듦(#47). 입력 8자 제한, Enter/확인 = 제출, 취소. 서버가 이름을 거절하면 같은 팝업이 빨간 안내로 다시 열린다.
+- **백업**: `scratch/item_dataset-before-creatures-20261010.csv`, `scratch/AnimalDataSet-before-creatures-20261010.csv`, `scratch/PlayerInventory-before-creatures-20261010.mlua`(지운 `TrySummonPet`/`TrySpawnAnimalFromTicket` 원문은 `scratch/PlayerInventory-removed-summon-20261010.txt`).
+- **검증**: 신규 `.mlua` 2개의 `.codeblock` 생성 확인. refresh ok, build 01:15:37 갱신 · Error 0 · Warning 16(기준선 — `NormalizeName` 다중 반환 경고는 수정). `check_dataset_columns` 불일치 0. **런타임 검증 보류(제작자 수행)**: ① 입주권 사용 → 팝업 → 이름 → 우리에 들어옴, 같은 이름·9자 이상 거절, 취소 시 입주권 유지 ② 4마리째 입주권 거절(가축 3) ③ 우리 F 두 번 → 이름 붙은 가축 아이템(상세 카드 제목 = 이름), 다시 사용 → 친밀도 유지 ④ 첫 호루라기 → 이름 → 따라옴, 호루라기가 이름 붙은 칸으로 바뀌고 퀵슬롯도 따라 바뀜 ⑤ 영지 안에서 불기 = 그 자리에서 대기 / 마을에서 불기 = 영지 입구에서 대기 / 다시 불기 = 곁으로 ⑥ 따라오기 상태로 마을에서 접속 종료 → 재접속 시 다시 따라옴 ⑦ 기존 세이브(슬롯 1) 닭·양·강아지가 "닭 1"·"양 1"·"강아지 1"로 등록되고 개 호루라기가 이름 붙은 칸이 되는지 ⑧ 이름 붙은 칸 버리기·상자 넣기 거부 ⑨ 팝업 모양(나무 카드 톤, 글자 보임).
+
+## [목장] 우리 가축 꺼내기 · 가축 든 우리 해체 금지 · 4×4 설치 방향 회귀 수정 · 우리 잃은 가축 재입주 (2026-10-10) — 코드·모델 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작자 보고**: 가축이 든 우리를 타격해 아이템으로 만들면 가축만 남는다. 그 우리를 다시 놓으면 원래 자리가 아니면 안 놓인다.
+- **"원래 자리에만 놓임"의 원인 = 직전 작업의 회귀**: 4×4 확대 때 서버 설치 거리 검사를 블록 **중심** 기준으로 바꿨다. 그 결과 위·오른쪽을 보고 놓으면 중심이 약 3.8칸 떨어져 허용 3.5칸을 넘어 조용히 거부됐다(로그 `Rejected placement too far from player.`만 남음). 그 전의 원점 기준은 왼쪽·아래가 거부된다. 이제 **플레이어에서 블록 사각형의 가장 가까운 점까지** 잰다(`PlayerInventory.ServerRequestPlace`, 뒤쪽 판정은 중심 기준 유지). 해체 경로(`ResourceSpawner.RemoveEntity`)는 점유 칸을 전부 지우므로 원인이 아니었다.
+- **새 컴포넌트 `Furniture/Scripts/AnimalPen.mlua`** (우리 모델에 부착, `.codeblock` 생성 확인):
+  - 우리 안 가축 = Home이 우리 중심(Trigger 실효 박스 중심)에서 1칸 이내인 Animal. `GetAnimalsInside`/`CountAnimalsInside`/`GetCapacity`가 수용량(PlayerInventory 소환)·해체 차단·꺼내기의 단일 기준이다.
+  - **F 두 번 = 가장 가까운 가축 꺼내기**: 첫 F는 안내만 띄우고, 3초 안에 다시 F를 누르면 서버가 처리한다. 서버는 자기 영지(`Home_<보낸 사람>`)와 조준을 확인한 뒤 `AnimalDataSet.PurchaseItem`(입주권)을 가방에 넣고 가축을 지운다. 세이브는 맵의 Animal을 스캔하므로 지우면 저장에서도 빠진다. 친밀도·급여 상태는 사라진다(안내 문구에 명시). 우리 안 가축을 조준 중이면 먹이 주기가 우선이고 꺼내기는 양보한다. 조준 가이드 라벨 "가축 꺼내기"(`PlayerController.FindAimedDistributedInteractable` — 우리는 맨 마지막 후보).
+- **해체 차단 (`TileDurabilityManager`)**: 가축이 든 우리를 치면 내구도를 깎지 않고 거부 흔들림과 함께 "가축이 있는 우리는 해체할 수 없습니다. 우리에 F를 두 번 눌러 가축을 먼저 꺼내 주세요."를 띄운다.
+- **우리 잃은 가축 재입주 (`Animal.ResolvePenBounds`)**: 3칸 안에 우리가 없는 채로 10초(2초×5회)가 지나면 같은 영지에서 자리가 남은 우리로 옮기고(위치 이동 + 세이브 dirty) `[ANIMAL] adopted` 로그를 남긴다. 유예는 영지 복원 때 우리가 가축보다 늦게 생기는 경우를 잘못 입주시키지 않기 위함이다. 자리가 남은 우리가 없으면 예전처럼 제자리 주변을 돈다.
+- **검증**: AnimalPen·Animal·TileDurabilityManager·PlayerInventory·PlayerController LSP 오류 0(info는 동적 호출). refresh ok, build 00:48:14 갱신 · Error 0 · Warning 16(기존). **런타임 검증 보류(제작자 수행)**: ① 우리 4×4를 네 방향으로 설치 ② 우리 빈 칸 조준 F → 안내 → 다시 F → 입주권 +1·가축 사라짐·"남은 가축 N/3" ③ 가축 조준 F는 여전히 먹이 주기 ④ 가축 든 우리 타격 거부 / 빈 우리는 해체됨 ⑤ 우리 잃은 가축이 있는 세이브에서 새 우리를 놓으면 10초 안에 그 안으로 옮겨지는지.
+
+## [UI] 스킬바 툴팁이 커서가 벗어나도 남는 문제 (2026-10-10) — 코드 완료 · refresh 검증 보류(Play 중) · 런타임 검증 보류
+
+- **왜 안 고쳐졌나**: 10-07 수정("퀵슬롯 스킬 툴팁이 클릭·탭 후 남는 문제")은 짧은 클릭이 `Released`가 아니라 `Clicked`로 끝나는 경로만 막았다. 툴팁을 닫는 근거가 여전히 `ButtonStateChangeEvent`(Normal/Released/Clicked) 하나뿐이어서, 커서가 나갈 때 Normal을 한 번이라도 놓치면 툴팁이 영원히 남는 구조였다. 판정 영역은 보이는 칸과 같다(UIBuilder 확인: SkillSlot 120×120, 자식은 RaycastTarget 꺼짐).
+- **수정 (`UISkillBarController`)**: 툴팁이 떠 있는 동안 0.04초 갱신 틱마다 `IsCursorOverSlot`으로 커서가 그 칸(여유 6px) 안인지 확인하고, 벗어나면 닫는다. 칸 모서리는 `LocalUIToWorldPosition` → `WorldToScreenPosition`으로 화면 좌표로 바꾸고, `_InputService:GetCursorPosition()`과 비교한다. **자체 점검**: Hover 이벤트 순간에 판정이 "밖"이면 좌표 변환을 믿을 수 없다고 보고 이 검사를 끄고 이벤트 방식으로 돌아간다(경고 로그 `[SKILL-BAR] cursor rect check disagrees with Hover`). 이렇게 해서 툴팁이 아예 안 뜨는 회귀를 막는다.
+- **검증**: Maker가 Play 중이라 refresh 불가 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: 툴팁이 뜬 상태로 칸 밖으로 천천히·빠르게 빠져나갈 때 닫히는지, 칸 안에서 툴팁이 깜빡이지 않는지, 위 경고 로그가 찍히지 않는지. 버프 아이콘 툴팁(`UIBuffBarController`)도 같은 이벤트 방식이다. 같은 증상이 보이면 같은 방법으로 고친다.
+
+## [목장] 가축·펫 걷기 모션 + 개 뒷걸음 + 리트리버 교체 + 우리 4×4·수용량 3 (2026-10-10) — 코드·데이터·모델 완료 · refresh ok · build Error 0 · Play 일부 확인(슬롯 1)
+
+- **걷기 모션**: 닭·양은 `AnimalDataSet.MoveRUID`가 비어 있어서 걸을 때도 서 있기 클립이 나왔다. 닭은 `mob/9600001` move `72520c55…`, 양은 `mob/9600003` move `644a4bd3…`을 넣었다. 펫에는 상태별 클립이 아예 없었다. `PetDataSet.MoveRUID` 열과 `Pet.ApplyClip`(따라올 때 이동 클립 / 멈추면 정지 클립)을 추가했다.
+- **개 뒷걸음**: `Pet.FollowOwner`의 `FlipX = dir.x < 0`이 반대였다. 리소스는 왼쪽을 보고 그려져 있어서 오른쪽으로 갈 때 뒤집어야 하므로 `dir.x > 0`으로 고쳤다. `Animal`과 같은 규약이다.
+- **강아지 교체(제작자 선택: 리트리버)**: 들개(`mob/9410000`)를 공식 펫 `item/pet/5000622` 리트리버로 바꿨다(stand0 `d2e513aa…` · move `aafb4658…`). 원본이 40×36px이라 `Pet_Dog` Scale을 2 → 3으로 올렸다. 후보 비교 이미지는 세션 scratchpad에 있다(갈색 강아지·허스키·황금 멍뭉이·멈뭄미·카라멜 와와).
+- **우리 2×2 → 4×4**: 가구 점유가 여러 곳에 2×2로 박혀 있었다. `item_dataset.FootprintSize` 열(공란 = 2)과 `ResourceSpawner.GetPlaceFootprint`(바닥 타일·씨앗 = 1)로 일반화했다. 이 값은 클라 설치 요청, 미리보기(위치·배율·겹침 박스), 서버 검증(점유 칸·플레이어 겹침)이 공통으로 쓴다. 서버 거리·방향 검증은 원점 대신 블록 중심으로 잰다(4×4를 왼쪽·아래로 놓을 때 "너무 멀다"로 거부되는 문제 예방). `Furniture_AnimalPen`은 Scale 0.787 → 1.574, 점유 0..3이다. 판정 박스는 Scale을 따라 실효 3.6×2.6이 된다. `PreviewScale`도 2배로 맞췄다. 점유 등록·복원·이동 차단은 원래 모델 `ResourceOccupiedArea`를 따른다.
+- **우리 안 배회**: 반지름 2.5 원 → `Animal.ResolvePenBounds`. 가장 가까운 우리(3칸 이내)의 Trigger 실효 박스를 비율로 써서 발밑 사각형을 정한다(`PenInner*Ratio`, 우리 256px 원본 실측 — 뒤 울타리 밑동 +0.47 · 앞 울타리 윗선 −0.32 · 몸 폭만큼 안쪽 ±0.4). 다음 걸음이 사각형을 벗어나면 그 축만 뒤집는다. 우리가 가축보다 늦게 복원되면 2초마다 다시 찾는다.
+- **우리 정렬**: 접지선이 박스 아랫변이라 우리 안의 가축이 울타리·둥지 밑에 깔렸다. 우리 모델에 `YSortSprite`(고정, `SortYOffset` +1.9 = 뒤 울타리 밑동)를 붙였다. 서버 가구 설치·복원 3곳은 `RenderLayers.ComputeYOrderWithSortOffset`으로 클라와 같은 값을 쓴다.
+- **수용량**: `item_dataset.PenCapacity`(우리 = 3, 공란·0 = 무제한). 티켓을 쓰면 4칸 이내에서 자리가 남은 가장 가까운 우리에 들인다. 모두 차 있으면 "이 우리는 가득 찼습니다 (3/3)"를 띄우고 티켓은 소모하지 않는다. 우리에 든 가축은 Home이 우리 중심에서 1칸 이내인 것으로 센다.
+- **백업**: `scratch/models-before-petfix-20261010/`(Pet_Dog·Furniture_AnimalPen 빌더 JSON), `scratch/item_dataset-before-penfootprint-20261010.csv`.
+- **검증**: refresh ok, build 00:22:07 갱신 · Error 0 · Warning 16(기존). 제작자 지시로 슬롯 1을 Play해서 확인했다. ① 기존 우리가 4×4(Scale 1.574)로 복원됨 ② 닭·양 `pen bounds half=(0.72,0.42)`, WANDER 중 이동 클립 ③ 가축이 울타리 안 바닥 위에 그려짐(우리 정렬 9239) ④ 리트리버가 따라옴 ⑤ 런타임 Error 0. **런타임 검증 보류(제작자 수행)**: 새 우리 설치 미리보기(4칸 크기·왼쪽/아래 방향 설치), 4번째 가축 티켓 거부 문구, 리트리버가 좌우로 걸을 때의 방향, 2×2 가구(침대·냄비 등) 설치가 예전과 같은지.
+- ⚠ **기존 세이브의 우리**는 같은 원점 칸에서 +X/+Y 방향으로 2칸씩 커진다(슬롯 1: 중심 (−4,6) → (−3,7)). 근처에 다른 물체가 있으면 겹칠 수 있다.
+- **남은 것**: 와일드키퍼 버프 액티브 스킬과 생명 펄스 재설계(아직 착수 전).
+
+## [버그] 제작대 설명 잘림 + 가축·펫이 슬라임으로 보임 (2026-10-09) — 코드·데이터 완료 · LSP 오류 0 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **제작대 설명**: `CraftingPopup/Details/Desc`(360×56)에 설명과 능력치 줄을 이어 붙여 넣어서, 일괄 "..." 처리 뒤로 2줄 이후가 잘렸다. `UICraftingController.LayoutDetails`(`UpdateDetails`에서 호출)가 `GetPreferredHeight`(폭 400)로 설명 높이를 잰다. 그다음 위에서부터 설명 → 해금 힌트 → 재료 칸 → 제작 버튼 순서로 다시 쌓는다. 설명이 짧으면 .ui의 원래 자리(재료 위쪽 304·버튼 416)를 지키고, 길면 그만큼 아래로 민다(Details는 배경 없는 컨테이너). 아래 끝 상한은 Details 위쪽에서 550까지(종이 아래 여백 안)로 두었다. 넘치면 글자 크기를 24→21→18로 줄이고, 그래도 넘칠 때만 남은 높이에서 "..."로 자른다. .ui는 수정하지 않았다.
+- **가축·펫 슬라임**: T49 작업에서 모델의 SpriteRUID만 바꾸고 데이터셋은 placeholder로 남아 있었다. `Animal`/`Pet.ApplyDatasetVisual`이 이 값으로 모델 스프라이트를 덮어써 슬라임이 보였다. `AnimalDataSet` 닭 `50faf654…`(슬라임) → `c1bc28ed…`(닭 stand), 양 `dc932872…`(슬라임) → `bb0d2f1e…`(양 stand), `PetDataSet` 강아지 `50faf654…` → `180fcf49…`(들개 stand)로 바꿨다. 셋 다 모델 값과 같다. 이미 소환된 가축·펫은 로드할 때 다시 적용된다. 백업 `scratch/{Animal,Pet}DataSet-before-ruidfix-20261009.csv`.
+- **검증**: UICraftingController LSP 오류 0(남은 info는 기존 동적 호출). refresh ok, build 00:03:54 갱신 · Error 0. 제작자 지시로 Play에 들어갔지만 가축우리 확인 전에 중단했다(테스트 모드를 잠시 켰다가 원복함 — 최종 diff 0). **런타임 검증 보류(제작자 수행)**: 긴 설명 레시피(장비류)에서 설명이 전부 보이는지와 재료·버튼 겹침, 닭·양·강아지 외형.
+- **보류(제작자 요청으로 중단)**: ① 가축우리가 작고 가축이 울타리 밖으로 나감. 원인은 우리 실효 크기 약 1.8×1.3(Scale 0.787, 점유 2×2)인데 가축 배회가 우리 중심 반경 2.5 원이라는 것이다(`Animal.TickWander`, 가축은 `ObstacleQuery` 차단 대상이 아님). 제작자가 우리를 새로 만든 뒤 이어서 하기로 했다. ② 와일드키퍼 버프 액티브 스킬과 생명 펄스 재설계 — 아직 착수하지 않았다.
+
 ## [디버그·설정] 테스트 모드(TestModeConfig) 해제 (2026-10-07) — 일반 플레이 모드 복구 완료 · refresh ok · 빌드 Error 0
 
 - **제작자 요청**: 테스트 모드 해제 요청.
