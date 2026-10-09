@@ -55,8 +55,10 @@ script RenderLayers extends Logic
 			if isvalid(collider) and collider.BoxSize ~= nil then
 				groundY = worldY + (collider.ColliderOffset.y * sy) - (collider.BoxSize.y * 0.5 * sy)
 			else
+				-- 박스가 없으면 엔티티 위치 + SortYOffset. YSortSprite 는 같은 값을 extraOffset 으로 넘기므로
+				-- 그때는 여기서 더하지 않는다(이중 가산 방지 — 2026-10-07 GrownGrass 정렬 조사).
 				local ysort = entity:GetComponent("script.YSortSprite")
-				if isvalid(ysort) and ysort.SortYOffset ~= nil then
+				if isvalid(ysort) and ysort.SortYOffset ~= nil and (extraOffset == nil or extraOffset == 0) then
 					groundY = worldY + ysort.SortYOffset
 				end
 			end

@@ -28,6 +28,10 @@ script UIMyInfo extends Component
 
 		self.nameText = _EntityService:GetEntityByPath(base .. "/info_top/text_name").TextComponent
 		self.levelText = _EntityService:GetEntityByPath(base .. "/info_top/text_level").TextComponent
+		-- 직업 칸: .ui 기본값 "모험가"가 전직 뒤에도 그대로 남던 문제 — 캐릭터창과 같은 GetJobName(JobId)로 채운다.
+		local classEnt = _EntityService:GetEntityByPath(base .. "/info_top/text_class")
+		if isvalid(classEnt) then self._T.classText = classEnt.TextComponent end
+		self._T.classJobId = nil
 
 		self.hpBar = _EntityService:GetEntityByPath(base .. "/info_bottom/Hp/img_bar").UITransformComponent
 		self.hpText = _EntityService:GetEntityByPath(base .. "/info_bottom/Hp/text_value").TextComponent
@@ -76,6 +80,15 @@ script UIMyInfo extends Component
 			---@type PlayerController
 			local pcon = ctrl
 			if isvalid(self.levelText) then self.levelText.Text = "Lv " .. pcon.Level end
+			-- 직업 이름은 JobId 가 바뀔 때만 다시 구한다(매 프레임 데이터셋 조회 방지).
+			local jobId = pcon.JobId or ""
+			if isvalid(self._T.classText) and self._T.classJobId ~= jobId then
+				self._T.classJobId = jobId
+				local title = "모험가"
+				local okJ, jName = pcall(function() return pcon:GetJobName(jobId) end)
+				if okJ and jName ~= nil and jName ~= "" then title = jName end
+				self._T.classText.Text = title
+			end
 
 			-- GetMaxMana() 는 number 라 표기는 정수로 맞춘다 (스킬바 MP 표기와 같은 규약).
 			local maxMp = pcon:GetMaxMana()

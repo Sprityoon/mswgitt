@@ -3366,15 +3366,41 @@ script ResourceSpawner extends Logic
 			end
 		end
 
+		-- 설치 타일 복원. 지금 어떤 아이템의 PlacedTileName 도 아닌 타일(삭제된 아이템, 예: 구 Wood Floor = Baram_167)이나
+		-- 이 맵 tileset 에 없어 SetTile 이 거부되는 타일(LEA-3005 — LoadPlayerData 전체가 끊긴다)은 깔지 않고 기록에서도 지운다.
+		local validTileNames = {}
+		local itemDs = _DataService:GetTable("item_dataset")
+		if itemDs ~= nil then
+			for i = 1, itemDs:GetRowCount() do
+				local okT, tName = pcall(function() return itemDs:GetCell(i, "PlacedTileName") end)
+				if okT and tName ~= nil and tName ~= "" then validTileNames[tName] = true end
+			end
+		end
 		local tilesJson = self:GetPlacedTilesJson(mapName)
 		local placedTiles = (tilesJson ~= nil and tilesJson ~= "") and _HttpService:JSONDecode(tilesJson) or {}
+		local keptTiles = {}
+		local droppedTiles = 0
 		for _, t in ipairs(placedTiles) do
-			local tx, ty = math.floor(t.x), math.floor(t.y)
-			if layer3Tilemap then
-				layer3Tilemap:SetTile(t.tileName, tx, ty)
+			local tx, ty = math.floor(tonumber(t.x) or 0), math.floor(tonumber(t.y) or 0)
+			local keep = itemDs == nil or validTileNames[t.tileName] == true
+			if keep and layer3Tilemap then
+				local okTile, tileErr = pcall(function() layer3Tilemap:SetTile(t.tileName, tx, ty) end)
+				if not okTile then
+					keep = false
+					log_warning("ResourceSpawner: placed tile '" .. tostring(t.tileName) .. "' not in " .. mapName .. " RectTileMap3 tileset (" .. tostring(tileErr) .. ")")
+				end
 			end
-			local key = tx .. "_" .. ty
-			gridToEntity[key] = { entity = nil, pivotX = tx, pivotY = ty, isTile = true, tileName = t.tileName }
+			if keep then
+				table.insert(keptTiles, t)
+				local key = tx .. "_" .. ty
+				gridToEntity[key] = { entity = nil, pivotX = tx, pivotY = ty, isTile = true, tileName = t.tileName }
+			else
+				droppedTiles = droppedTiles + 1
+			end
+		end
+		if droppedTiles > 0 then
+			self:SetPlacedTilesJson(mapName, _HttpService:JSONEncode(keptTiles))
+			log("ResourceSpawner: dropped " .. droppedTiles .. " obsolete placed tile(s) in " .. mapName)
 		end
 		
 		local placedFurniture = (furnitureJson ~= nil and furnitureJson ~= "") and _HttpService:JSONDecode(furnitureJson) or {}

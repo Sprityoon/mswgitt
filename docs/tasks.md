@@ -1,5 +1,236 @@
 # 작업 목록 (Tasks)
 
+## [디버그·설정] 테스트 모드(TestModeConfig) 해제 (2026-10-07) — 일반 플레이 모드 복구 완료 · refresh ok · 빌드 Error 0
+
+- **제작자 요청**: 테스트 모드 해제 요청.
+- **작업 내용**:
+  - [`RootDesk/MyDesk/DevTools/Scripts/TestModeConfig.mlua`](../RootDesk/MyDesk/DevTools/Scripts/TestModeConfig.mlua)의 `EnableTestMode` 프로퍼티를 `false`로 원복.
+  - 일반 플레이 모드(실제 저장 슬롯 1~5 사용, 디버그 핫키 비활성화)로 정상 전환.
+- **검증**:
+  - `maker_refresh_workspace`: status ok.
+  - `maker_logs(kind="build")`: Error 0 / Warning 0 확인.
+
+
+## [UI] 좌상단 프로필 직업 표시 (2026-10-07) — 수정 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **원인**: `UIMyInfo`가 이름·레벨만 갱신하고 직업 칸(`info_top/text_class`)은 건드리지 않아 .ui 기본값 "모험가"가 전직 뒤에도 남았다.
+- **수정**: 캐릭터창(`UICharacterController`)과 같은 `PlayerController:GetJobName(JobId)`로 채운다. `JobId`(@Sync)가 바뀔 때만 다시 구한다. 제작자 확인: "..." 보정 후 이름·레벨 다시 보임.
+- **검증**: LSP 오류 0. refresh ok, build Info 10:41:00 갱신 · Error 0. **런타임 검증 보류(제작자 수행)**: 전직 직후 좌상단 직업명 변경.
+
+## [UI] "..." 일괄 처리 후 정보창 이름·레벨 소멸 보정 (2026-10-07) — 수정 완료 · refresh 검증 보류(Play 중) · 런타임 검증 보류
+
+- **원인**: 칸 높이가 한 줄에 빠듯한 글자(높이 < 글자크기×1.5)는 Ellipsis/Truncate 모드에서 통째로 그려지지 않는다(pitfalls #69). HUD 프로필 이름·레벨·직업, 캐릭터창 프로필 등이 해당됐다.
+- **수정**: `scripts/ui_text_ellipsis_revert_tight_20261007.cjs` — 지난 일괄 처리로 바뀐 칸 중 빠듯한 74곳(HUD 33·PopupGroup 41)을 백업의 원래 값(넘침 허용)으로 되돌렸다. 높이에 여유가 있는 칸만 "..."를 유지한다. 빠듯한 높이에 잘라내기가 걸린 칸이 11곳 남아 있지만, 모두 이번 작업 이전부터의 설정이라 건드리지 않았다.
+- **검증**: 프로필 이름·레벨·직업 Overflow 0 확인(HUD·캐릭터창). Maker Play 중이라 refresh 불가 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**.
+
+## [UI·퀘스트] 퀘스트 트래커 진행 줄 자동 높이 + 결정화 실험(324) 지참물 변경 (2026-10-07) — 코드·데이터 완료 · LSP 오류 0 · refresh 검증 보류(Play 중) · 런타임 검증 보류
+
+- **제작자 확인**: 충전 공격 퀘스트 조건 동작 확인, 퀘스트창 휠 스크롤 동작 확인.
+- **트래커**: 일괄 "..." 처리 후 진행 줄(Progress, 26px 한 줄 칸·조건마다 한 줄)이 첫 조건만 보이게 됐다. 안내 줄(녹색 [보고 가능])·이름은 BestFit 이라 일괄 변경에서 빠져 있었다. `UIQuestController.LayoutTracker`: 진행 줄 높이를 `GetPreferredHeight`로 재서 최대 `TrackerMaxProgressLines`(3)줄까지 트래커·배경·클릭 영역을 아래로 늘리고, 각 칸을 위에서부터 .ui 원래 위치로 다시 놓는다(넘으면 "..."). 3줄이면 접힌 채팅창 바로 위까지 내려온다. 녹색 안내 줄이 여전히 안 보이면 재확인 필요.
+- **324 결정화 실험**: 지참물을 슬라임 젤리 5 → **뿔 조각(Horn Fragment) 3**으로 바꿨다(뿔버섯 드롭 35%. 6마리 처치 시 평균 약 2개). QuestConditionDataSet(조건), QuestDataSet(Desc/ProgressingDesc/ConsumeItems), StoryDialogDataSet(엘렌 offer 2 대사)을 수정했다. 백업 `scratch/*-before-q324-20261007.csv`.
+- **검증**: UIQuestController LSP 오류 0. refresh는 Maker Play 중이라 불가 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**.
+
+## [UI·전투] 긴 글자 넘침 정리 + 퀘스트 상세 스크롤 + 마법봉 충전 모션 (2026-10-07) — 반영 완료 · lint 오류 0 · build 로그 갱신 미확인 · 런타임 검증 보류
+
+- **퀘스트창 상세 스크롤**: `PopupGroup/QuestPopup/Details/InfoScroll`(392×204, 세로 ScrollLayoutGroup + Mask, 퀘스트 목록과 같은 스크롤바)을 만들고, 설명·힌트·"목표"·목표 내용을 그 안으로 옮겼다(순서대로 쌓임). `UIQuestLogController.LayoutDetailScroll`이 각 칸을 `GetPreferredHeight` 높이로 맞추고, 빈 칸은 끄고, 맨 위로 스크롤을 되돌린다. 컨트롤러는 이름으로 찾으므로 영향이 없고, 속성 UUID 3개도 다시 연결했다. 스크립트 `scripts/quest_detail_scroll_20261007.cjs`.
+- **전체 UI 넘침 = "..."**: `scripts/ui_text_ellipsis_20261007.cjs` — 9개 .ui의 글자 칸 347곳을 Overflow=Ellipsis로 바꿨다(TextGUIRenderer 1 / 구형 TextComponent 2). HUD 퀘스트 트래커(이름·진행·가이드), 퀘스트 목록 행, 각종 버튼·슬롯·라벨이 해당된다. 제외한 칸: 입력창, 런타임이 크기를 정하는 칸(툴팁·인벤토리 상세·스킬 상세·퀘스트 상세 스크롤), 채팅 로그, NPC 대화 본문, 이미 넘침 방식이 정해진 칸, BestFit/SizeFit, 글자 크기 1 컨테이너, 글자보다 작은 칸. lint 비교 결과 새 오류 0(PopupGroup 새 항목은 InfoScroll L011 info와, 런타임 레이아웃 전 겹침 L023 — 의도). 백업 `scratch/ui-before-textoverflow-20261007/`.
+- **남은 후보(제작자 확인)**: 제작 상세 설명(CraftingPopup/Details/Desc 360×56), 연구 상세 설명(ResearchPopup Details/Desc 340×80), NPC 대화 본문(DialogWindow/BodyText)은 지금 "..."이거나(제작·연구) 그대로(대화)다. 내용 전체를 봐야 하면 퀘스트창처럼 스크롤로 바꿀 수 있다.
+- **마법봉 충전 모션**: `WeaponAttackDataSet` Wand_Charge_1/2의 CastAction을 `shoot1`(활 쏘기) → `swingO1`(완드 평소 휘두르기, item_dataset.SwingAction과 같음)로 바꿨다.
+- **검증**: UIQuestLogController LSP 오류 0. refresh ok, build Info 10:26:12(refresh 10:27 직전) — **build 로그 갱신 미확인**, Error 0. **런타임 검증 보류(제작자 수행)**: 긴 퀘스트 설명 휠 스크롤, HUD 트래커 "..." 처리, 마법봉 충전 시 휘두르기 모션.
+
+## [디버그·설정] 테스트 모드(TestModeConfig) 활성화 (2026-10-07) — 설정 완료 · refresh ok · 빌드 Error 0
+
+- **제작자 요청**: 테스트 모드 활성화 요청.
+- **작업 내용**:
+  - [`RootDesk/MyDesk/DevTools/Scripts/TestModeConfig.mlua`](../RootDesk/MyDesk/DevTools/Scripts/TestModeConfig.mlua)의 `EnableTestMode` 프로퍼티를 `true`로 전환.
+  - 메인 메뉴 "테스트 모드" 배지 활성화, 테스트 격리 슬롯(101~105) 분리 보존, 전 포탈 해금(`UnlockAllPortals = true`) 및 디버그 핫키(F1~F12, Shift+F12 등) 사용 가능 상태로 전환.
+- **검증**:
+  - `maker_refresh_workspace`: status ok.
+  - `maker_logs(kind="build")`: dateTime 10:15:36 일치, Error 0 / Warning 0 확인.
+
+
+## [마을·렌더] town 정렬 원인 조사 + GrownGrass Y정렬 (2026-10-07) — 맵 반영 · refresh ok · build 로그 갱신 미확인 · 런타임 검증 보류
+
+- **원인 조사** (`scratch/audit_town_sorting.cjs`):
+  ① 나무·장식 149개(YSortSprite)와 건물 10개(WalkBehindFade)는 실행 시 `OrderInLayer = (100 − 접지선Y)×100`(6311~12962)으로 덮어쓴다. Maker에서 손으로 정한 OrderInLayer는 무시된다(예: tree_small 5, mailbox 11, 주민 12). 강제 앞뒤는 `YSortSprite.SortYOffset`으로 조정해야 한다.
+  ② GrownGrass 24개는 YSortSprite가 없어 고정 0/5로 항상 맨 아래에 그려졌다.
+  ③ 접지선 = Trigger 아랫변. Trigger가 2유닛을 넘는 건물 등 13개는 그림 바닥과 어긋나면 앞뒤가 뒤집힌다(연구소 9.27·대장간 6.21·버섯 집 7.1 등). 그림 바닥과 맞는지는 제작자 시각 확인이 필요하다.
+- **조치(①은 안내만, ②만 수정)**: `scripts/add_ysort_to_town_grass.cjs`로 town.map GrownGrass 24개 인스턴스에 `script.YSortSprite`(Dynamic false, SortYOffset 0)를 추가했다(공식 맵 오브젝트 모델이라 모델은 수정 불가 — pitfalls #13). Trigger·충돌 박스가 없으므로 엔티티 위치가 접지선이 된다. 재읽기 24/24. 백업 `scratch/town-before-grassysort-20261007.map`.
+- **검증**: refresh ok. build 로그 시각(10:01/10:07)이 refresh(10:10)와 달라 **build 로그 갱신 미확인**(로그상 Error 0). **런타임 검증 보류(제작자 수행)**: 캐릭터가 잔디 북쪽에 서면 잔디가 앞에 오는지. Maker에서 town을 열어 둔 상태라면 다시 연 다음 저장해야 한다(pitfalls #68).
+- **후속(낚시터 옆 나무 앞 풀이 뒤로 들어감)**: GrownGrass 스프라이트(88×104)의 피벗이 그림 한가운데(43,52)라, 엔티티 위치 = 바닥 + 0.52×Scale이었다. 인스턴스마다 `SortYOffset = −0.52×Scale.y`를 넣었다(예: GrownGrass ground −8.78 → 10878 > Tree_Wide_2 10856). 또 `RenderLayers.ComputeYOrderForEntity`가 박스 없는 YSortSprite 엔티티에 SortYOffset을 두 번 더하던 버그를 고쳤다(extraOffset이 있으면 대체 경로에서 더하지 않음). 기존에 이 이중 가산에 기대던 엔티티는 0개(전 맵·모델 확인). refresh ok, build Info 10:14:33 갱신·Error 0(Warning은 10:07 시각). ⚠ 백업 `town-before-grassysort-20261007.map`은 재실행으로 덮여 "YSortSprite 1차 추가 후" 상태다. 스크립트는 이제 첫 백업을 덮지 않는다.
+
+## [직업·UI] 충전 공격 안내(퀘스트·팁) + 채팅창 접기 (2026-10-07) — 코드·데이터 완료 · LSP 오류 0 · refresh 검증 보류 · 런타임 검증 보류
+
+- **충전 공격 퀘스트**: 새 행동 `ActionEnum.ChargeAttack = 12`, 조건 `ActionConditionData_ChargeAttack`(CondArg = 무기 종류 Wand/Nature, `ActionConditionEnum`에 등록). `ServerRequestChargeRelease`에서 충전 발사가 성공한 직후 `_ActionSignals:EmitToPlayer(..., ChargeAttack, weaponType, 1)`. `QuestConditionDataSet`에 323 "충전 마법탄 1회 쏘기"(Wand), 333 "생명 펄스 1회 쓰기"(Nature)를 추가했다(Action). 323·333의 `Desc`/`ProgressingDesc`에 사용법을 적었다(공격 키(Ctrl·모바일 공격 버튼)를 꾹 눌렀다 떼기, 0.5초/1.2초 단계, 펄스 효과·3초 재충전). 전직 시험 보상(푸른 불씨 완드 / 네이처 바인)으로 무기가 있어 달성 가능. 백업 `scratch/Quest*-before-charge-20261007.csv`.
+- **플레이 중 팁**: 충전 무기로 탭만 쓰면 첫 탭과 이후 `ChargeHintEveryTaps`(20)번마다 "[팁] 공격 키를 꾹 눌렀다 떼면 충전 마법탄/생명 펄스!"를 띄운다. 이번 접속에서 충전을 한 번 쓰면 다시 띄우지 않는다. 키보드는 `UpdateCharge` 미룬 탭 경로, 모바일은 `UIHUDController` BtnMine 클릭 경로에서 호출한다.
+- **채팅창 접기(B안, 제작자 결정)**: `HUDGroup/ChatPanel/BtnToggle`(100×88, 우상단)를 추가하고, 탭 3개를 폭 110으로 줄였다. TextLog 높이 120. `UIChatController.SetCollapsed`: 기본은 접힘(높이 100, 최근 2줄, 탭·입력·전송 끔), 펼치면 300·5줄. Enter/T 입력 시작 시 자동으로 펼치고, 펼친 채 12초(`AutoCollapseSeconds`) 활동이 없으면 다시 접는다. 플랫폼 분기 없음. lint 새 항목은 L016(탭 줄이 접기 버튼 자리만큼 왼쪽으로 치우침 — 의도)과 L011 info뿐. 백업 `scratch/ui-before-chatcollapse-20261007/`.
+- **검증**: LSP 오류 0 / 경고 0(PlayerController, UIHUDController, UIChatController, ActionConditionData_ChargeAttack — info는 동적 호출). Maker MCP 미연결 → **refresh 검증 보류**(신규 `.mlua`의 `.codeblock` 생성도 refresh 후 확인). **런타임 검증 보류(제작자 수행)**: 323/333 진행 중 충전 1회로 조건 충족, 팁 표시·중단, 채팅 접기/펼치기·자동 접기·Enter 펼침.
+
+## [와일드키퍼] 소환수 머리 위 체력바 + 생명 펄스 소환수 강화 (2026-10-07) — 코드 완료 · LSP 오류 0 · refresh 검증 보류 · 런타임 검증 보류
+
+- **결정(제작자)**: 체력바는 머리 위 방식(B). 버프·힐 묶기는 ②안 — 무기 홀드 생명 펄스가 소환수에게 회복과 공격 강화를 함께 준다(슬롯 소모 없음).
+- **체력바**: `Summon.NotifyOwner`가 HP·강화가 바뀔 때(소환·피격·회복·강화·사라짐) 주인 클라에만 `PlayerController.ClientSummonHp`(Client RPC)를 보낸다. 주인 클라 `UpdateSummonHpBars`(로컬 OnUpdate)가 HUD 아래에 uisprite 바탕+Fill을 만들어, 매 프레임 소환수 피격 박스 위쪽(+0.25)으로 옮긴다(`WorldToScreenPosition`→`ScreenToUIPosition`, InteractGuideLabel과 같은 패턴). 색은 초록 >60% · 노랑 · 빨강 ≤30%이고, 강화 중에는 바탕이 금색이다. 크기 96×14(`SummonHpBar*`, @HideFromInspector).
+- **펄스 강화**: `WeaponAttackDataSet`에 `SummonBuffPct`·`SummonBuffSeconds` 열을 추가했다(1단계 0.15/4초, 만충전 0.25/6초). `DoHealPulse` → `BuffAllSummonsNear` → `Summon.ApplyAttackBuff`(더 센 강화가 남아 있으면 세기 유지·시간만 연장). 소환수 공격(단일·광역)에 `GetAttackBuffScale`을 곱한다. 펄스 안내 문구에 "소환수 공격 +N% N초"를 덧붙였다.
+- **검증**: LSP 오류 0 / 경고 0(Summon, PlayerController — 남은 info는 기존 줄). Maker MCP 미연결 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: 소환 직후 막대 표시, 피격 시 감소, 자연의 활력·펄스로 회복, 펄스 후 금색 테두리와 `[SUMMON] buff` 로그, 소환수가 사라지면 막대 제거, 소환수 2마리일 때 겹침 정도.
+
+## [아트·충돌] 사막 장식 3종 충돌박스 재조정 (2026-10-07) — 모델·맵 반영 · refresh 검증 보류 · 런타임 검증 보류
+
+- **대상**: `Tree_Desert_DeadTree`·`Deco_Desert_YuccaFlower`·`Deco_Desert_AnimalBone`(스프라이트 = `desert/redraw_v2/sprites`, Scale 0.5, 피벗 기본값(중앙) — 제작자 확인). 오프셋 0이라 박스가 스프라이트 중앙에 떠 있었다. 포탈·Deco_DryBush는 이미 조정돼 있어 제외했다.
+- **방법**: 이미지 아래쪽 띠(나무 13%·유카 12%·뼈 45%)에서 채워진 열의 폭을 쟀다(나무는 뿌리를 빼려고 85% 이상 채워진 열, 뼈는 bbox 폭의 80%). 그 크기를 충돌 박스로, 같은 중심의 1.15배를 Trigger로 잡았다. 월드 크기 기준으로 나무 0.61×0.35, 유카 0.89×0.24, 뼈 0.96×0.46. 미리보기 `scratch/desert_colliders_preview.png`, 계산 `scratch/desert_colliders.py`.
+- **반영**: ModelBuilder 3개(validate 0). template_desert.map 인스턴스 17개(34개 컴포넌트, 재읽기 17/17)는 `scripts/sync_winter_colliders_to_maps.cjs _Desert_`로 맞췄다(이 스크립트는 모델명 패턴을 인자로 받도록 일반화). 백업은 `scratch/desert-models-before-colliders-20261007/`, `scratch/template_desert-before-desertcolliders-20261007.map`.
+- **검증**: Maker MCP 미연결 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: 밑동 충돌, 뒤로 지나갈 때 정렬·반투명. Maker에 template_desert를 열어 둔 상태라면 다시 연 다음 저장해야 한다(pitfalls #68).
+
+## [버그] 영지 로드 시 LEA-3005 'tileName' — 삭제된 Wood Floor 바닥 정리 (2026-10-07) — 코드·데이터 완료 · LSP 0 · refresh 검증 보류 · 런타임 검증 보류
+
+- **원인**: 과거에 만든 `Wood Floor` 아이템(`Baram_167`)으로 깔아 둔 바닥이 세이브에 남아 있었고, 복원 시 `ResourceSpawner.ReconstructWorldPlacementsForMap`의 `SetTile`이 이 이름을 거부했다(제작자 확인: 원인은 구 아이템).
+- **수정**: 복원 시 ① 현재 `item_dataset.PlacedTileName`에 없는 타일, ② SetTile이 거부된 타일은 깔지 않고 `PlacedTilesJson`에서 지운다(로그 `dropped N obsolete placed tile(s)`). `PlayerInventory` 타일 설치도 pcall로 감싸 실패하면 아이템을 돌려준다. 제작자 지시(아이템 삭제)에 따라 `item_dataset.csv`의 `wood_floor/Wood Floor` 줄을 지웠다(백업 `scratch/item_dataset-before-woodfloor-20261007.csv`). wall.tileset에 Baram_167을 잠깐 추가했다가 원복했다(Rock/Snow 교체만 남음).
+- **남은 것**: `item/Models/Item_WoodFloor.model`, `item/Scripts/build_item_models.js`의 항목, `BuildingRoomPrototype.FloorTileName = Baram_167`(프로토타입)은 그대로 두었다(삭제 여부는 제작자 확인). 인벤토리에 Wood Floor가 남은 세이브가 있으면 데이터셋에 없는 아이템이 된다(레시피에서 빠진 지 오래라 가능성은 낮다).
+- **검증**: LSP 오류 0 / 경고 0(ResourceSpawner, PlayerInventory). Maker MCP 미연결 → **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: 영지 입장 시 LEA-3005가 사라지고 `dropped ... obsolete placed tile(s)` 로그가 1회 찍힌 뒤 다음 입장부터는 안 찍히는지.
+
+## [UI·모바일] 메인화면·대화 암전 화면 누수 + 우하단 조작 버튼 확대 (2026-10-07) — 수정 완료 · refresh ok · build Error 0 · 런타임 검증 보류
+
+- **원인**: `MainMenuGroup/Bg`(Mask)·`DialogGroup/Dimmer`가 stretch 1920×1080이라, 런타임에도 RectSize 그대로 그려진다(pitfalls #10). 16:9보다 넓은 모바일 화면에서 양옆에 게임 화면(잔디)이 보였다.
+- **수정**:
+  - `DialogGroup/Dimmer`, `HUDGroup/SpawnFade` → middle-center 3840×2160(pitfalls #43 표준).
+  - `MainMenuGroup/Bg` → middle-center. `UIMainMenuController.GetViewportUISize`가 `_UILogic.ScreenWidth/Height` + `ScreenToUIPosition`으로 실제 화면을 UI 좌표로 재서(최소 1920×1080, +4px) Bg(Mask) 크기와 Art cover 크기를 매 프레임 맞춘다(변화가 있을 때만 갱신).
+- **HUD 우하단**(단일 레이아웃 정책 유지, PC 공통): 공격 110→190 · 점프/상호작용 88→130 · 스킬 4칸 88→120(간격 12→22) · 정보/제작/가방 88→110(간격 24). 하위 아이콘·라벨·쿨다운은 같은 배율로 크기·위치·글자 크기를 키웠다(`UIScale` 미사용 — 프로젝트 사용례가 없어 렌더·터치 판정 확인 불가). 스크립트 `scripts/mobile_ui_fix_20261007.cjs`, 백업 `scratch/ui-before-mobilefix-20261007/`.
+- **검증**: UIBuilder 저장, lint 오류 0. lint 결과는 수정 전후 동일(Dialog 18 / MainMenu 54 / HUD 391건, 새 항목 0). 좌표 계산상 바꾼 버튼끼리 간격은 모두 16px 이상이다(기존 Collection~Minimap 14px만 그대로). `scratch/hud_layout_after.png`. 컨트롤러 LSP 오류 0. refresh ok, build Info 06:55:22 갱신 · Error 0. Warning 13은 06:49 시각이라 갱신 미확인. `ui-aesthetics.md` §7 루브릭 파일이 저장소에 없어, ui-fundamentals §9.6 체크리스트로 대신 점검했다.
+- **런타임 검증 보류(제작자 수행)**: 모바일(20:9 등)에서 메인화면 가장자리, NPC 대화 암전, 입장 암전이 화면을 꽉 채우는지. 우하단 버튼 터치감·겹침, PC 화면에서 커진 버튼이 거슬리지 않는지.
+
+## [사막·모델·조경] 사막 소품 3종(마른 나무·유카 꽃·동물 뼈) 모델 생성, template_desert 맵 반영 및 Cattail 제거 (2026-10-07) — 모델 3종 완료 · Cattail 3개 제거 · 맵 배치 완료 · refresh ok · 런타임 검증 보류
+
+- **제작자 요청**: 메이커에 추가된 `animal_bone`, `dead_tree`, `yucca_flower` 3종 이미지로 모델을 생성하여 사막 템플릿 맵(`template_desert.map`) 곳곳에 분산 추가하고, 사막에 어울리지 않는 부들(`cattail`) 엔티티 전량 삭제.
+- **RUID 확인 (워크스페이스 .sprite 연동)**:
+  - `RootDesk/MyDesk/animal_bone.sprite`: `378103312bc742109fa01ff7b098471d`
+  - `RootDesk/MyDesk/dead_tree.sprite`: `da60b97c82664ff5a8cf7fb237e0b1b7`
+  - `RootDesk/MyDesk/yucca_flower.sprite`: `5327537b4e8c43d0b008da6227e4a727`
+- **모델 3종 신규 생성 ([RootDesk/MyDesk/MapObjects/Models/](../RootDesk/MyDesk/MapObjects/Models/))**:
+  - `Tree_Desert_DeadTree.model` (Model ID: `tree_desert_deadtree`): 마른 나무, Scale 0.5, 벌목 가능(DropItem: Wood), PhysicsCollider/Trigger/YSortSprite/ResourceReaction 완비.
+  - `Deco_Desert_YuccaFlower.model` (Model ID: `deco_desert_yuccaflower`): 유카 꽃 소품, Scale 0.5, 밑동 충돌/YSortSprite/Trigger 완비.
+  - `Deco_Desert_AnimalBone.model` (Model ID: `deco_desert_animalbone`): 동물 뼈 소품, Scale 0.5, 밑동 충돌/YSortSprite/Trigger 완비.
+- **template_desert 맵 갱신 ([map/template_desert.map](../map/template_desert.map))**:
+  - 백업: [`scratch/template_desert_before_desert_props.map`](../scratch/template_desert_before_desert_props.map) 생성.
+  - **Cattail 3종 전량 삭제**: `D21_Deco_Cattail`, `D23_Deco_Cattail`, `D25_Deco_Cattail` 완전 제거 (잔여 0건).
+  - **신규 3종 17개 엔티티 분산 배치**:
+    - 오아시스 수역(중앙/북동/남서 및 만 6곳) 완벽 회피, 포탈 거리 > 3.0유닛 확보, 기존 DryBush와의 최소 거리 2.0유닛 확보.
+    - `Tree_Desert_DeadTree` 6개 (`Desert_DeadTree_01~06`): 사구 및 주요 사막 길목에 랜드마크 배치.
+    - `Deco_Desert_YuccaFlower` 6개 (`Desert_Yucca_01~06`): 오아시스 둘레 및 도로변 모래땅에 배치.
+    - `Desert_Bone_01~05` 5개 (`Desert_Bone_01~05`): 황량한 사막 외곽 모래 능선에 분위기 소품으로 배치.
+  - 엔티티 수: 38 ➔ 52개 (3개 삭제 + 17개 추가).
+- **검증**:
+  - MapBuilder 재로딩 검사: Cattail 잔여 0건, 신규 17개 엔티티 정상 로드 및 RUID/Scale/컴포넌트 무결성 확인.
+  - `maker_refresh_workspace`: status ok.
+  - `maker_logs(kind="build")`: Error 0 / Warning 0 확인.
+  - **런타임 검증 보류(제작자 수행)**: Play 모드에서 `template_desert` 맵 진입 후 사막 오브젝트 외형, YSort 캐릭터 전후 겹침 처리, 마른 나무 타격/채집 동작 확인.
+
+
+## [아트·충돌] 겨울 나무·소품 27종 충돌박스 재조정 (2026-10-07) — 모델·맵 반영 · refresh ok · build 로그 갱신 미확인 · 런타임 검증 보류
+
+- **원인**: `Tree_Winter_*`·`Deco_Winter_*` 27종이 템플릿 기본값(오프셋 0, 0.88×0.52 등)이라 박스가 스프라이트 중앙에 떠 있었다. 원본(비겨울) 모델은 밑동에 맞춰 개별 조정돼 있다(중앙 피벗 기준, 박스 아래 끝 = 스프라이트 아래 끝).
+- **방법**: 원본 박스를 원본 이미지의 불투명 덩어리 bbox 비율로 바꾼 다음 겨울 이미지 bbox에 옮겼다. 떨어진 반짝이·꽃잎은 침식 2px(TreeStump 4px)으로 제외했고, FallenLeaves는 전체 bbox를 썼다. 피벗은 제작자 확인 결과 기본값(중앙)이다. 스크립트 `scratch/winter_colliders.py`, 미리보기 `scratch/winter_colliders_preview.png`.
+- **반영**: ModelBuilder로 27개 모델의 Trigger와 (있는 경우) PhysicsCollider BoxSize·ColliderOffset을 바꿨다(validate 오류 0). 프로퍼티 레벨 덮어쓰기는 0건. `scripts/sync_winter_colliders_to_maps.cjs`로 template_snow.map 인스턴스 18개(36개 컴포넌트)도 맞췄다(재읽기 18/18). 백업은 `scratch/winter-models-before-colliders-20261007/`, `scratch/template_snow-before-wintercolliders-20261007.map`.
+- **검증**: refresh ok. build 로그 시각 06:39:26(refresh 06:44)이라 **build 로그 갱신 미확인**. **런타임 검증 보류(제작자 수행)**: template_snow에서 밑동 충돌, 뒤로 지나갈 때 반투명, 채집 판정을 확인한다.
+- **재적용 (06:47)**: 06:44:08 Maker 저장이 template_snow.map 을 예전 값(오프셋 0)으로 다시 덮었다(pitfalls #68 과 같은 현상, 맵에도 해당). 같은 스크립트로 재적용(18/18), refresh ok, 20초 뒤에도 파일이 유지됐다. 제작자에게 Maker에서 template_snow 를 다시 연 다음 저장하도록 안내.
+- **별건**: 겨울 스프라이트 RUID(예: `8e0ca714…`)는 워크스페이스 `.sprite`·계정·공식 검색 어디에서도 조회되지 않는다. Play에서 렌더 여부를 확인해야 한다(pitfalls #45 가능성).
+
+## [아트·가구] 냄비·침대·가축 우리 아이콘/스프라이트 경량화 (2026-10-07) — PNG·RUID 연결 완료 · 정적/시각 검증 완료 · refresh ok · build 로그 갱신 미확인
+
+- **요청**: 이전 가구 3종의 과도한 이미지 해상도/용량 축소. 기존 6개 원본 PNG 및 게임 연결은 보존하고 `docs/design/art/furniture_v2/optimized/`에 아이콘 128×128 3장, 설치 스프라이트 256×256 3장 준비.
+- **결과**: 6장 PNG 합계 6,063,576 → 322,997 bytes(약 94.7% 감소), RGBA8 계산치 37,742,840 → 983,040 bytes(36.00MiB → 0.9375MiB, 약 97.4% 감소). 실제 엔진 메모리/FPS 측정값은 아님. 중앙 피벗·원본 캔버스 비율·기존 디자인 유지, 알파를 곱한 색의 면적 평균으로 축소.
+- **연결 완료**: 제작자가 제공한 [새 RUID 6개](./design/art/furniture_v2/optimized/ruids.json)를 설치/아이템 모델 6개, item_dataset/RecipeDataSet 15개 셀에 연결. ModelBuilder snapshot → patch → write → 재읽기 검증으로 SpriteRUID·Transform Scale·Trigger BoxSize/Offset을 적용하고 냄비 Furnace Idle/Active도 교체. item_dataset의 PreviewRUID/PreviewScale·IconRUID·DropScaleMultiplier와 RecipeDataSet 아이콘 동기화. 모델 XY 배율 냄비 0.8652784593 / 침대 0.9989161850 / 우리 0.7868561921. 표시 크기·Trigger 실효 크기·2×2 점유·Z 배율 보존. 관련 Inspector의 TargetType:null override 없음 확인. CSV는 해당 셀만 치환해 BOM·줄바꿈·다른 값 유지.
+- **산출물**: [안내 및 개별 PNG](./design/art/furniture_v2/optimized/README.md), [비교 미리보기](./design/art/furniture_v2/optimized/preview.png), [풀밭 위 비교](./design/art/furniture_v2/optimized/preview_game.png), [등록용 ZIP](./design/art/furniture_v2/optimized/furniture_optimized.zip).
+- **검증**: Node 문법·재출력/verify 통과. 6개 원본/출력 SHA-256·규격·투명 코너·중앙 좌표 변환, 새 배율에서 실루엣 외곽 오차 <0.38px, Trigger 실효 크기/오프셋 보존 확인. 설치 표시 크기 및 48px UI를 투명/풀밭 배경에서 비교 검토. ZIP 9개 엔트리 SHA-256 전수 일치. 기존 원본과 다른 작업 보존.
+- **Maker 검증**: 도구 목록에는 직접 노출되지 않았으나 프로젝트 `scratch/mcp_probe.py` 클라이언트로 Maker MCP에 접속, `maker_refresh_workspace` status ok(06:47:13 KST). refresh 후 `connect.cjs --verify`로 6개 모델/15개 CSV 셀·배율 재읽기 확인. 반환된 build 스냅샷 시각 06:39:26은 이번 refresh보다 이전이라 **build 로그 갱신 미확인**이며 Error=0을 이번 성공 근거로 사용하지 않음. 이전 스냅샷 Warning 13 / Info 876; Warning 소유는 snowman 3, stone_golem 2, deu 3, catus 1, prop_uc_constructionsite 4(모두 LWA-4012, 작업 대상 가구 경고 없음). [검증 기록](./design/art/furniture_v2/optimized/maker-verification.json).
+- **최종 정적 검증**: `check_dataset_columns.cjs` 열 참조 실재 359 / 미실재 0, 모델 설정 정합 2 / 불일치 0(기존 추적 불가 226은 수동 확인 범위); Node 문법·모델/CSV verify·PNG verify·대상 파일 git diff --check 통과. RUID/연결 완료 안내를 넣어 ZIP을 갱신하고 9개 엔트리 SHA-256 전수 일치 확인.
+- **남은 검증**: **런타임 검증 보류(제작자 수행)**. 설치/복원/드롭, 인벤토리·제작법, 터치·통행 및 접지선 확인. Play/저장/입력 시뮬레이션 미수행.
+
+## [조경·모델] 겨울 에셋 27종 그룹 리소스 RUID 자동 매핑 및 모델·template_snow 맵 반영 (2026-10-07) — RUID 연결 완료 · 모델 27종 완료 · 맵 반영 완료 · refresh ok · 런타임 검증 보류
+
+- **제작자 요청**: Maker에 임포트된 겨울 에셋들의 이름을 기반으로 RUID를 자동 수집하여 27종 모델에 적용하고 `template_snow` 맵에 배치 반영 요청.
+- **RUID 수집 및 매핑**:
+  - 그룹 월드(`groupId: "lCGzK"`)의 그룹 리소스 API(`asset_list_group_resources`)를 통해 최근 등록된 `tree_winter_01~18`, `prop_winter_01~09` 총 27종의 공식 RUID 전수 자동 매칭 및 [`scratch/winter_sprites_ruid_map.json`](../scratch/winter_sprites_ruid_map.json) 저장 완료.
+- **모델 27종 RUID 일괄 갱신**:
+  - [`scripts/create_winter_trees_and_props.cjs`](../scripts/create_winter_trees_and_props.cjs) 실행으로 27개 `.model` 파일의 `SpriteRendererComponent.SpriteRUID`를 실제 RUID로 100% 교체 완료 (Missing RUIDs: 0).
+- **template_snow 맵 배치 갱신**:
+  - [`scripts/update_template_snow_decorations.cjs`](../scripts/update_template_snow_decorations.cjs) 재실행으로 깨끗한 베이스 맵 기준 울타리 7개 제거 및 4종 18개 엔티티(`Tree_Winter_Fir` 5, `Deco_Winter_Rock` 5, `Deco_Winter_TreeStump` 4, `Deco_Winter_FallenLog` 4)의 `SpriteRUID`를 최신 발급 RUID로 동기화 완료 (엔티티 수 30 -> 41개).
+- **검증**:
+  - MapBuilder 재조회 검증: `Snow_Fir_01`(`61db1dfc...`), `Snow_Rock_01`(`99125eb3...`), `Snow_Stump_01`(`6523260f...`), `Snow_FallenLog_01`(`706d1853...`) 등 신규 RUID 정상 주입 확인.
+  - `maker_refresh_workspace`: status ok.
+  - 빌드 로그(`maker_logs(kind="build")`): Error 0 / Warning 0 확인.
+  - **런타임 검증 보류(제작자 수행)**: Play 모드에서 `template_snow` 맵 진입 후 겨울 나무/소품의 스프라이트 렌더링, YSort 전후 겹침, 충돌/채집 상호작용 확인.
+
+## [아트·사막] 마른 나무·유카 꽃·동물 두개골 고해상도 리드로우 및 개별 추출 (2026-10-07) — PNG 완료 · 정적/시각 검증 완료
+
+- **요청**: `B9D01CA8-2232-44EA-A253-509D92DD8341.jpg`의 낮은 해상도를 개선하도록 다시 그리고 각 요소 추출. 첨부 로딩 실패 후 프로젝트 루트 원본을 찾아 확인. 기존 사막 추출본을 덮어쓰지 않고 `docs/design/art/desert/redraw_v2/`에 저장.
+- **제작**: 내장 image_gen으로 대상별 독립 리드로우 3회. 원본의 뒤틀린 나무·방사형 잎과 크림 꽃대·대각선 두개골과 두 뿔 유지. 배경/글자/색상표/모래 지면/바닥 그림자 제외. 고해상도 개별 원본 3장, 게임용 512×640·384×448·256×224, 아이콘 128×128 3장, 투명 컬렉션·지형 비교 미리보기·ZIP·프롬프트·재출력 도구 준비.
+- **산출물**: [안내 및 개별 PNG](./design/art/desert/redraw_v2/README.md), [전체 미리보기](./design/art/desert/redraw_v2/preview.png), [지형 위 배율 검토](./design/art/desert/redraw_v2/preview_game.png). 게임용 권장 시작 Scale=0.5, 하단 중앙 피벗, 3px 도트 마감. 실제 모델에 적용한 값은 아니다.
+- **검증**: 생성 원본/게임용을 두 차례 시각 검토해 잔색·낮은 알파 외곽 정리, PNG 9장 해시/투명 코너, 게임용 규격·이진 알파·중앙 X·하단 여백 2px·위/좌우 여백 검증, 원본 복사 SHA-256 일치 확인. Node 문법 검사 통과. 등록·모델·맵·RUID 변경 미수행. 기존 사막 파일 및 다른 에이전트 작업 보존.
+- **범위**: 앞선 Rock/Snow 등록은 제작자가 다른 에이전트에 맡김. 이번 작업은 이미지 제작/추출까지. **refresh 검증 보류 · 런타임 검증 보류(제작자 수행)**: Maker에서 등록 후 배율·Y정렬·바닥 접지선·콜라이더 확인.
+
+## [타일] Rock·Snow 지형 타일 교체 (2026-10-07) — 적용 완료 · refresh ok · build 로그 갱신 미확인 · 런타임 검증 보류
+
+- 26장을 `upload-tiles.cjs`로 계정(UGC) Sprite에 올리고 wall.tileset 183~208에 적용했으나, **pitfalls #45**(계정 업로드 스프라이트는 Play에서 `RUID is unavailable`로 안 보임)에 따라 지형 전체가 사라질 위험이 있어 **tileset을 즉시 원복**했다. 원복 후 refresh ok, git diff 없음.
+- 확인: 동작하는 Winter 모델 RUID(`819b6951…`)는 Maker [가져오기]로 생긴 워크스페이스 스프라이트(assetKind 1, PUBLIC_READ)이고, 업로드분은 계정 UGC(assetKind 2)다.
+- **다음**: 제작자가 `docs/design/art/biome_ground_v2/tiles/` 26장을 Maker [가져오기] → `collect-ruids.cjs` → `apply.cjs --apply` → refresh.
+- 계정 업로드 26장은 제작자 지시로 삭제(26/26, 목록 재조회로 확인). 제작자가 Maker에 직접 업로드함 → 워크스페이스 `.sprite` 저장 후 `collect-ruids.cjs`부터 진행.
+- Maker 저장 뒤 확인하니 Rock·Snow 26칸에 삭제한 업로드 RUID가 다시 기록돼 있었다(pitfalls #68). git HEAD 버전으로 원복하고 refresh ok. 저장 뒤에도 새 `.sprite`는 0개라, 제작자가 올린 이미지의 위치는 아직 확인하지 못했다.
+- **적용**: 제작자가 Maker [가져오기]로 26장 import → `RootDesk/MyDesk/{Name}.sprite` 26개 생성. `collect-ruids.cjs` 26/26 → `apply.cjs --apply`로 wall.tileset 183~208 Id만 교체(이름·IsCollidable·길이 261 유지, 26/26 일치, 백업 `wall.before-1791322669078.tileset`). refresh ok. build 로그 시각 06:17:46(현재 06:38)이라 **build 로그 갱신 미확인**. `.sprite` 의 upload_hash 는 원본 PNG SHA-256 이 아니어서(기존 board_cat 도 불일치) 대응은 이름 일치로만 확인했다. **런타임 검증 보류(제작자 수행)**: template_snow / template_rocky 등에서 2×2 이음매, 외곽·안쪽 코너 방향 확인.
+
+## [맵·설원·조경] template_snow 맵 울타리 제거 및 겨울 에셋 4종(fir·rock·stump·fallen_log) 분산 배치 (2026-10-07) — 맵 편집 완료 · refresh ok · 런타임 검증 보류
+
+- **제작자 요청**: `template_snow` 맵에서 울타리 모델들을 제거하고, 방금 제작한 겨울 에셋 중 `stump`(그루터기), `fallen_log`(쓰러진 나무), `rock`(바위), `fir`(전나무) 4종을 물 위가 아닌 정상적인 눈 타일 위에 너무 조밀하지 않게 곳곳에 분산 배치.
+- **맵 분석 및 지형 검증**:
+  - 백업: [`scratch/template_snow_before_placement.map`](file:///d:/메이플월도/scratch/template_snow_before_placement.map) 안전 저장.
+  - 수역 회피: 만년 설원 바이옴 레이아웃(`build_all_hunting_maps.cjs`의 `layoutSnow`) 기준 호수(`pond`) 4곳 및 만(`cove`) 6곳을 수학적으로 완벽 배제. 18개 후보 좌표 전수 타일 검사(`is_snow == True`) 통과.
+  - 포탈 이격: 시작 지점(`[-23, -20]`, `[-18, -20]`) 및 전진 포탈(`[22, 23]`) 이동 동선을 가로막지 않도록 3유닛 이상 안전 이격.
+- **작업 내용 (MapBuilder 프로토콜 준수)**:
+  - **울타리 모델 7종 전량 제거**: `D03`, `D06`, `D12`, `D16`, `D22`, `D24`, `D26_Deco_LogFence` 삭제.
+  - **겨울 에셋 4종 18개 분산 배치**:
+    - `Tree_Winter_Fir` (전나무 5개): `[-21, 16]`, `[-17.5, -14]`, `[18, -18]`, `[6, 18]`, `[23, 6]` (설원 랜드마크 숲길 조성)
+    - `Deco_Winter_Rock` (바위 5개): `[5.5, 5]`, `[17.5, -1]`, `[-14, -23]`, `[-24, -4]`, `[-15, 23]` (설원 암석 포인트)
+    - `Deco_Winter_TreeStump` (그루터기 4개): `[-25, -24.5]`, `[11, -13]`, `[5, -8]`, `[-5, 16]` (외곽 벌목 운치)
+    - `Deco_Winter_FallenLog` (쓰러진 나무 4개): `[9, -22.5]`, `[15, 16.5]`, `[-14, 18]`, `[13, 8]` (자연 통나무 쉼터)
+  - 엔티티 수: 30 ➔ 41개 (울타리 7개 제거 + 신규 18개 배치).
+  - 배치 스크립트: [`scripts/update_template_snow_decorations.cjs`](file:///d:/메이플월도/scripts/update_template_snow_decorations.cjs)
+- **검증**:
+  - `MapBuilder.load` 재조회 검증: 울타리 잔여 0건, 신규 18개 엔티티 정상 로드 및 Transform/Origin/Component 무결성 확인.
+  - `maker_refresh_workspace` status ok.
+  - 빌드 로그 확인: Error 0 / Warning 13 (기존 베이스라인 불변).
+  - **런타임 검증 보류(제작자 수행)**: Play 모드 진입 후 `template_snow` 맵(snow01~03)에서 겨울 오브젝트의 시각적 자연스러움, YSort 전후 겹침, 충돌/채집 동작 확인.
+
+## [UI] 퀵슬롯 스킬 툴팁이 클릭·탭 후 남는 문제 (2026-10-07) — 수정 완료 · refresh ok · 런타임 검증 보류
+
+- **원인**: 슬롯 ButtonStateChangeEvent 가 짧은 클릭/탭에서는 `Released` 가 아니라 `Clicked` 로 끝난다. UISkillBarController.OnSlotHoverState 는 `Normal`/`Released` 에서만 닫아 툴팁이 남았다(꾹 누르기는 `Released` 라 정상).
+- **수정**: `ButtonState.Clicked` 에서 hoverSlotIndex 초기화 + HideTooltip. PC 에서는 포인터가 남아 있으면 다시 Hover 로 뜨고, 벗어나면 Normal 로 닫힌다.
+- **검증**: LSP 오류 0 / 경고 0. refresh status ok, build Info 시각 06:17:46 갱신·Error 0. Warning 13건은 이전 시각(05:22:36) 그대로라 갱신 미확인. **런타임 검증 보류(제작자 수행)**: PC 클릭 후 마우스 이탈, 모바일 짧은 탭/길게 누르기.
+
+## [아트·지형] Rock·Snow 64px 타일과 프린지 리드로우 (2026-10-07) — 이미지 완료 · 정적 검증 완료 · 리소스 연결 대기
+
+- **요청/디자인**: 64px 네 칸이 한 덩어리로 보이는 배치에 맞춰 작은 입자를 없애고 Rock은 큰 돌 면, Snow는 넓은 눈 바탕과 완만한 둔덕으로 제작. image_gen 초안 후 팔레트 격자 정리, 고립 픽셀 제거, 바위 색 보정, 눈 반복 경계 재제작 및 두 차례 시각 검토.
+- **산출물**: [등록 안내](./design/art/biome_ground_v2/README.md), [기존/신규 2×2 비교](./design/art/biome_ground_v2/comparison.png), `docs/design/art/biome_ground_v2/tiles/` PNG 26장(종류별 기본 1 + 프린지 12), PXG 원본·스트립·방향별 manifest·등록 RUID 템플릿. `apply.cjs`는 기존 261개 타일의 순서·이름·충돌 플래그를 보존하며 대상 26개 Id만 교체한다.
+- **검증**: PNG 26장 64×64 및 해시 확인, 프린지 24장 알파 전 픽셀 기존 Soil 마스크와 일치, 기본 타일 좌우·상하 경계 픽셀 일치. 2×2/4×4 반복과 잔디·흙 경계 합성 검토. 교체 도구 메모리 검증에서 대상 Id 26개만 변경, 잘못된/중복/범위 밖 매핑 거부, 실제 wall.tileset 무변경 확인. 기존 tileimg/Sand 및 맵 데이터 무변경.
+- **대기**: 제작자가 Maker 재연결을 알렸지만 이 세션 도구 목록에 Maker API가 노출되지 않음. Sprite 등록과 신규 RUID 연결은 미수행이며 **refresh 검증 보류**. **런타임 검증 보류(제작자 수행)**: 등록 후 게임 맵의 기본·외곽·안쪽 코너와 축척/필터링 확인. 연결 없이 리소스 적용이나 빌드 오류 0을 주장하지 않는다.
+
+## [마을·조경·아트] 겨울 시즌 나무 & 소품 27종 에셋 추출 및 모델 사전 생성 (2026-10-07) — 에셋 추출·모델 생성 완료 · 정적 검증 완료
+
+- **제작자 요청**: 시트 이미지 내 요소들(겨울 시즌 나무 18종 + 추가 소품 9종, 총 27종) 개별 이미지 추출 및 모델 제작 준비.
+- **알파 디매팅 & 품질 개선**: 경계 인접 1-pixel 안티에일리어싱(Boundary AA) 및 컬러 언블렌딩(Color Unmatting) 기법 적용. 수관 상단 하얀 눈(Snow)의 내부 채움을 100% 온전히 보존(Hole=0)하면서, 외부 파스텔 하늘색 배경과 스파클(별빛) 노이즈를 완전 분리하고 테두리 하늘색 후광(Fringing) 제거. 27개 에셋 전수 코너/엣지 컷 오류 0건 달성.
+- **산출물**:
+  - 개별 투명 PNG 27종: [`docs/design/art/trees/winter/trees/`](./design/art/trees/winter/trees/) (나무 18종), [`docs/design/art/trees/winter/props/`](./design/art/trees/winter/props/) (소품 9종)
+  - 종합 쇼케이스 시트: [`docs/design/art/trees/winter/preview_winter_showcase.png`](./design/art/trees/winter/preview_winter_showcase.png) (1350×1180 px, 체커보드 및 에셋별 규격/명칭 표기)
+  - 인게임 설원 타일 실배치 목업: [`docs/design/art/trees/winter/preview_winter_ingame_mockup.png`](./design/art/trees/winter/preview_winter_ingame_mockup.png) (1280×768 px, Y-Sort 레이어링 시뮬레이션)
+  - 원본 시트 보존: `docs/design/art/trees/winter/raw_winter_collection_sheet.jpg`
+  - 상세 안내 문서: [`docs/design/art/trees/winter/README.md`](./design/art/trees/winter/README.md)
+- **모델(.model) 사전 준비**:
+  - 27종 모델 골격 파일 생성: `RootDesk/MyDesk/MapObjects/Models/` (`Tree_Winter_*.model` 18종, `Deco_Winter_*.model` 9종).
+  - 컴포넌트 완비: `TransformComponent`(Scale 1.5), `SpriteRendererComponent`(MapLayer5, Order 2), `script.YSortSprite`, `TriggerComponent`, 자원형의 경우 `PhysicsColliderComponent` 및 `script.ResourceReaction`(`Wood`, `Apple`, `Stone`).
+  - 일괄 동기화 스크립트: [`scripts/create_winter_trees_and_props.cjs`](../scripts/create_winter_trees_and_props.cjs)
+  - RUID 매핑 템플릿: [`scratch/winter_sprites_ruid_map.json`](../scratch/winter_sprites_ruid_map.json)
+- **검증**:
+  - 27개 PNG 투명도/외곽선/내부 홀/엣지 컷 전수 검사 통과 (오류 0건).
+  - ModelBuilder 27개 모델 빌드 및 유효성 검증 오류 0건 통과.
+- **인계 안내 (규칙 45 준수)**: Maker 실행 -> `[내 리소스] -> [가져오기]`로 27개 PNG 임포트 후 피벗 `Bottom Center` 설정 -> 발급된 RUID를 `scratch/winter_sprites_ruid_map.json`에 기재 후 스크립트 실행으로 1초 만에 실제 스프라이트 연동 완료.
+
 ## [건축·연구·마을·필드] 오두막 타일·공사중 모델·연구 두루마리·필드 장식 교체 (2026-10-07) — 코드·데이터 완료 · refresh ok · build 로그 갱신 미확인
 
 - **건축/타일**: wall.tileset 213~260을 Cabin_* 이름으로 바꾸고 IsCollidable 설정(백업 scratch/wall.tileset-before-cabin-20261006). 오두막 아이콘 4종 IconRUID 연결. 테스트 모드 활성(TestModeConfig).
@@ -4133,4 +4364,3 @@ F9 슬롯 (벌목 실루엣, 전투·네온 제외):
   - `node scripts/check_skill_quest_pipeline.cjs` -> 결함 없음 통과.
   - `maker_refresh_workspace` status ok & `maker_logs(kind="build")` 타임스탬프 일치, **Error 0건, Warning 0건**.
   - **런타임 검증 보류(제작자 수행)**: 인게임 대화 연출 및 전직 수락 시 타 직업 포기 거동.
-

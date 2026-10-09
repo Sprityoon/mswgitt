@@ -7,7 +7,7 @@
   "Usage": 0,
   "UsePublish": 1,
   "UseService": 0,
-  "CoreVersion": "26.7.0.0",
+  "CoreVersion": "26.10.0.0",
   "StudioVersion": "0.1.0.0",
   "DynamicLoading": 0,
   "ContentProto": {
@@ -200074,7 +200074,7 @@
       {
         "id": "3c28a882-937a-41a9-97bd-cc08622aedf8",
         "path": "/maps/town/GrownGrass",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass",
           "path": "/maps/town/GrownGrass",
@@ -200129,6 +200129,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.792
             }
           ],
           "@version": 1
@@ -200137,7 +200144,7 @@
       {
         "id": "76ebbe13-62c9-467d-9a60-52db568f95cc",
         "path": "/maps/town/GrownGrass_1",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_1",
           "path": "/maps/town/GrownGrass_1",
@@ -200186,6 +200193,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.52
             }
           ],
           "@version": 1
@@ -200194,7 +200208,7 @@
       {
         "id": "236ab925-e618-455a-9911-dd9b60c45d45",
         "path": "/maps/town/GrownGrass_2",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_2",
           "path": "/maps/town/GrownGrass_2",
@@ -200248,6 +200262,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -1.005
             }
           ],
           "@version": 1
@@ -200256,7 +200277,7 @@
       {
         "id": "73bc35bb-6d95-41b0-b610-5bf4088cbd3a",
         "path": "/maps/town/GrownGrass_3",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_3",
           "path": "/maps/town/GrownGrass_3",
@@ -200310,6 +200331,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.582
             }
           ],
           "@version": 1
@@ -212514,7 +212542,7 @@
       {
         "id": "173b76ac-70d2-4154-b723-8adaf16896f8",
         "path": "/maps/town/GrownGrass_4",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_4",
           "path": "/maps/town/GrownGrass_4",
@@ -212568,6 +212596,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.734
             }
           ],
           "@version": 1
@@ -212576,7 +212611,7 @@
       {
         "id": "ffe3a55b-2d39-427e-9f1e-5c42b345ae4e",
         "path": "/maps/town/GrownGrass_5",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_5",
           "path": "/maps/town/GrownGrass_5",
@@ -212630,6 +212665,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.657
             }
           ],
           "@version": 1
@@ -213462,7 +213504,7 @@
       {
         "id": "51bcd8a4-50f9-4b14-b249-e6b12ccc3534",
         "path": "/maps/town/GrownGrass_7",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_7",
           "path": "/maps/town/GrownGrass_7",
@@ -213516,6 +213558,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.612
             }
           ],
           "@version": 1
@@ -214887,7 +214936,7 @@
       {
         "id": "84c38ba6-d481-44f0-82af-b1d5fff1aa70",
         "path": "/maps/town/GrownGrass_6",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_6",
           "path": "/maps/town/GrownGrass_6",
@@ -214937,6 +214986,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.52
             }
           ],
           "@version": 1
@@ -215705,7 +215761,7 @@
       {
         "id": "78b28f64-dae1-44fc-be09-5dbe597f998f",
         "path": "/maps/town/GrownGrass_8",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_8",
           "path": "/maps/town/GrownGrass_8",
@@ -215759,6 +215815,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.657
             }
           ],
           "@version": 1
@@ -215767,7 +215830,7 @@
       {
         "id": "516f7bed-2600-4834-9290-4fee2d45f662",
         "path": "/maps/town/GrownGrass_9",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_9",
           "path": "/maps/town/GrownGrass_9",
@@ -215821,6 +215884,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.657
             }
           ],
           "@version": 1
@@ -215829,7 +215899,7 @@
       {
         "id": "77812217-adc6-4d38-b5c2-70066e00f362",
         "path": "/maps/town/GrownGrass_10",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_10",
           "path": "/maps/town/GrownGrass_10",
@@ -215883,6 +215953,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.657
             }
           ],
           "@version": 1
@@ -215891,7 +215968,7 @@
       {
         "id": "826dce7b-7dbb-41d0-aa5e-e5a081850cf1",
         "path": "/maps/town/GrownGrass_11",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_11",
           "path": "/maps/town/GrownGrass_11",
@@ -215945,6 +216022,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.566
             }
           ],
           "@version": 1
@@ -216523,7 +216607,7 @@
       {
         "id": "60978d3a-45e7-447e-af1f-f3177a97332c",
         "path": "/maps/town/GrownGrass_12",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_12",
           "path": "/maps/town/GrownGrass_12",
@@ -216577,6 +216661,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.63
             }
           ],
           "@version": 1
@@ -216585,7 +216676,7 @@
       {
         "id": "5c16841e-7b74-445e-bceb-bb847f0b88fd",
         "path": "/maps/town/GrownGrass_13",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_13",
           "path": "/maps/town/GrownGrass_13",
@@ -216639,6 +216730,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.63
             }
           ],
           "@version": 1
@@ -216647,7 +216745,7 @@
       {
         "id": "b6ea1fe7-b5b1-434d-b76d-44f2d4ffe5b4",
         "path": "/maps/town/GrownGrass_14",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_14",
           "path": "/maps/town/GrownGrass_14",
@@ -216701,6 +216799,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.53
             }
           ],
           "@version": 1
@@ -216709,7 +216814,7 @@
       {
         "id": "c14d8a6b-632e-4d7e-b066-eda33f099dd4",
         "path": "/maps/town/GrownGrass_15",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_15",
           "path": "/maps/town/GrownGrass_15",
@@ -216763,6 +216868,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -1.005
             }
           ],
           "@version": 1
@@ -216771,7 +216883,7 @@
       {
         "id": "42ab2462-892c-499b-a993-7216ef5029b2",
         "path": "/maps/town/GrownGrass_16",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_16",
           "path": "/maps/town/GrownGrass_16",
@@ -216825,6 +216937,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.873
             }
           ],
           "@version": 1
@@ -216833,7 +216952,7 @@
       {
         "id": "57a71341-7267-4734-a29f-3d182c10a2bc",
         "path": "/maps/town/GrownGrass_17",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_17",
           "path": "/maps/town/GrownGrass_17",
@@ -216887,6 +217006,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.644
             }
           ],
           "@version": 1
@@ -216895,7 +217021,7 @@
       {
         "id": "8184f9c0-eec6-4cd4-96f8-a8e30fe94b52",
         "path": "/maps/town/GrownGrass_18",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_18",
           "path": "/maps/town/GrownGrass_18",
@@ -216949,6 +217075,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.644
             }
           ],
           "@version": 1
@@ -216957,7 +217090,7 @@
       {
         "id": "8338b564-03eb-4920-afe4-637c99b91a4c",
         "path": "/maps/town/GrownGrass_19",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_19",
           "path": "/maps/town/GrownGrass_19",
@@ -217011,6 +217144,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.644
             }
           ],
           "@version": 1
@@ -217874,7 +218014,7 @@
       {
         "id": "0c49cd41-9f00-47fc-a20e-8e4bc64cd9e7",
         "path": "/maps/town/GrownGrass_20",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_20",
           "path": "/maps/town/GrownGrass_20",
@@ -217929,6 +218069,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.687
             }
           ],
           "@version": 1
@@ -217937,7 +218084,7 @@
       {
         "id": "5f65ce63-3388-41e2-8339-182e4ceff522",
         "path": "/maps/town/GrownGrass_21",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_21",
           "path": "/maps/town/GrownGrass_21",
@@ -217992,6 +218139,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.687
             }
           ],
           "@version": 1
@@ -218000,7 +218154,7 @@
       {
         "id": "cbded49c-7371-4e7b-80f6-527290be665c",
         "path": "/maps/town/GrownGrass_22",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_22",
           "path": "/maps/town/GrownGrass_22",
@@ -218055,6 +218209,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.711
             }
           ],
           "@version": 1
@@ -218063,7 +218224,7 @@
       {
         "id": "43a07d64-67c2-4088-b5ff-f612d4038d2a",
         "path": "/maps/town/GrownGrass_23",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,script.ResourceOccupiedArea,script.ResourceReaction,script.YSortSprite",
         "jsonString": {
           "name": "GrownGrass_23",
           "path": "/maps/town/GrownGrass_23",
@@ -218118,6 +218279,13 @@
             {
               "@type": "script.ResourceReaction",
               "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": -0.711
             }
           ],
           "@version": 1

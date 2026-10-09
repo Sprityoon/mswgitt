@@ -191,16 +191,36 @@ script UIMainMenuController extends Component
 		if not isvalid(self.bg) or not isvalid(self.bg.UITransformComponent) then return end
 		local art = self.bg:GetChildByName("Art")
 		if not isvalid(art) or not isvalid(art.UITransformComponent) then return end
-		local viewport = self.bg.UITransformComponent.RectSize
+		-- Bg(Mask)의 RectSize 는 화면을 따라 늘지 않는다(pitfalls #10). 실제 화면을 UI 좌표로 재서 Mask·키아트를 함께 맞춘다.
+		-- 16:9보다 넓은 모바일 화면에서 양옆으로 게임 화면(잔디)이 새던 문제.
+		local viewport = self:GetViewportUISize()
 		if viewport.x <= 0 or viewport.y <= 0 then return end
 		local aspect = math.max(0.01, self._T.BackgroundAspect or self.backgroundAspectRatio)
 		if self._T.BackgroundWidth == viewport.x and self._T.BackgroundHeight == viewport.y and self._T.LastBackgroundAspect == aspect then return end
 		self._T.BackgroundWidth = viewport.x
 		self._T.BackgroundHeight = viewport.y
 		self._T.LastBackgroundAspect = aspect
+		self.bg.UITransformComponent.RectSize = viewport
+		self.bg.UITransformComponent.anchoredPosition = Vector2(0, 0)
 		local width = math.max(viewport.x, viewport.y * aspect)
 		art.UITransformComponent.RectSize = Vector2(width, width / aspect)
 		art.UITransformComponent.anchoredPosition = Vector2(0, 0)
+	end
+
+	@ExecSpace("ClientOnly")
+	method Vector2 GetViewportUISize()
+		-- 화면 네 모서리를 UI 좌표로 바꿔 실제 보이는 영역 크기를 잰다. 최소 1920×1080, 경계 틈 방지로 4px 여유.
+		local sw = _UILogic.ScreenWidth
+		local sh = _UILogic.ScreenHeight
+		local w = 1920
+		local h = 1080
+		if sw ~= nil and sh ~= nil and sw > 0 and sh > 0 then
+			local p0 = _UILogic:ScreenToUIPosition(Vector2(0, 0))
+			local p1 = _UILogic:ScreenToUIPosition(Vector2(sw, sh))
+			w = math.max(w, math.abs(p1.x - p0.x))
+			h = math.max(h, math.abs(p1.y - p0.y))
+		end
+		return Vector2(math.ceil(w) + 4, math.ceil(h) + 4)
 	end
 
 	@ExecSpace("ClientOnly")

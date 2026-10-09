@@ -10,9 +10,9 @@ script UIQuestLogController extends Component
 	property Entity listScroll = "33154196-ac96-4e3f-80c4-a1fe25c1b1d3"
 	property Entity rowTemplate = "91dc43a3-c516-455b-8a5f-a7d09f6d7bc9"
 	property Entity detailName = "8427cbc5-62fa-481f-bcd0-bba1a9ea27d3"
-	property Entity detailDesc = "9826af9f-163f-4fe8-9472-81055d008689"
-	property Entity detailGoal = "39918cc9-9071-44eb-a7df-a6ab9caaabf9"
-	property Entity detailHint = "ac88fa1b-4ed3-43aa-886a-d62ae81b7a92"
+	property Entity detailDesc = "fbb1ddfd-c96a-4aa6-ad04-cbfec49fdf6c"
+	property Entity detailGoal = "f6bae22c-23a0-4d8d-995a-ca7cc437c78d"
+	property Entity detailHint = "422bef3a-0b6c-4ea1-8236-2501ac729778"
 	property Entity rewardSlot1 = "5565ca2c-1ad5-4766-8d83-6a7f2655ce20"
 	property Entity rewardSlot2 = "f94ab98a-f6fb-4925-8098-6f5a9a3fd578"
 	property Entity rewardSlot3 = "d1909f52-bd91-479f-b147-cfd00472d1f0"
@@ -456,6 +456,7 @@ script UIQuestLogController extends Component
 			hint = data.ProgressingDesc or ""
 		end
 		self:SetLabel(self._T.detailHint, hint)
+		self:LayoutDetailScroll()
 		self:FillRewards(data)
 		local abandonable = false
 		pcall(function() abandonable = userData:IsAbandonable(data) end)
@@ -564,6 +565,7 @@ script UIQuestLogController extends Component
 		self:SetLabel(self._T.detailDesc, "왼쪽에서 퀘스트를 선택하세요.")
 		self:SetLabel(self._T.detailGoal, "")
 		self:SetLabel(self._T.detailHint, "")
+		self:LayoutDetailScroll()
 		local slots = { self._T.slot1, self._T.slot2, self._T.slot3, self._T.slot4 }
 		for i = 1, #slots do
 			if isvalid(slots[i]) then slots[i].Enable = false end
@@ -676,6 +678,35 @@ script UIQuestLogController extends Component
 		log("[QUEST-LOG] Abandon request id=" .. tostring(id))
 		self.selectedId = 0
 		self:RebuildList()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LayoutDetailScroll()
+		-- 상세 스크롤(InfoScroll) 안의 설명·힌트·"목표"·목표 내용을 실제 글자 높이로 맞춘다(2026-10-07).
+		-- 고정 높이 칸에 긴 설명이 넘쳐 겹치던 문제 — 넘치는 만큼은 휠/드래그로 내려 읽는다. 빈 칸은 끈다.
+		if self._T.goalLabel == nil then self._T.goalLabel = self.Entity:GetChildByName("GoalLabel", true) end
+		if self._T.infoScroll == nil then self._T.infoScroll = self.Entity:GetChildByName("InfoScroll", true) end
+		local goalText = ""
+		local goal = self._T.detailGoal
+		if isvalid(goal) and isvalid(goal.TextGUIRendererComponent) then goalText = goal.TextGUIRendererComponent.Text or "" end
+		for _, ent in ipairs({ self._T.detailDesc, self._T.detailHint, self._T.goalLabel, self._T.detailGoal }) do
+			if isvalid(ent) and isvalid(ent.TextGUIRendererComponent) and isvalid(ent.UITransformComponent) then
+				local c = ent.TextGUIRendererComponent
+				local text = c.Text or ""
+				local show = text ~= ""
+				if ent == self._T.goalLabel then show = goalText ~= "" end
+				ent.Enable = show
+				if show then
+					local tf = ent.UITransformComponent
+					local h = math.max(math.ceil(c.FontSize + 6), math.ceil(c:GetPreferredHeight(text, tf.RectSize.x)) + 4)
+					tf.RectSize = Vector2(tf.RectSize.x, h)
+				end
+			end
+		end
+		local scroll = self._T.infoScroll
+		if isvalid(scroll) and isvalid(scroll.ScrollLayoutGroupComponent) then
+			scroll.ScrollLayoutGroupComponent:ResetScrollPosition(UITransformAxis.Vertical)
+		end
 	end
 
 	@ExecSpace("ClientOnly")

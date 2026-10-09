@@ -1,0 +1,125 @@
+{
+  "version": 2,
+  "source": "source.jpg",
+  "sourceSha256": "e6fab84ded64a1e2027054dc91c2ecb87cbf2f868b21c0866e9c49c58deb01d7",
+  "generation": "image_gen referenced redraw, one call per asset",
+  "assets": [
+    {
+      "name": "dead_tree",
+      "files": {
+        "master": "masters/dead_tree.png",
+        "sprite": "sprites/dead_tree.png",
+        "icon": "icons/dead_tree.png"
+      },
+      "hashes": {
+        "master": "096cc26add1a4243622b1eebd242935dc92a78c31f541a9da7ea65ce6b64b1e4",
+        "sprite": "ff5fe7101f54bb54a20952bc058afde6a745797f9cf7f2e751b7b0fbe38a094b",
+        "icon": "fe2e1e5637e51251afd734d73a62df4b7ff30328ebdd2458704410469bbf41f6"
+      },
+      "generatedCanvas": [
+        1189,
+        1323
+      ],
+      "masterCanvas": [
+        1186,
+        1292
+      ],
+      "canvas": [
+        512,
+        640
+      ],
+      "dot": 3,
+      "recommendedScale": 0.5,
+      "worldWidthPx": 247.5,
+      "worldHeightPx": 273,
+      "pivot": [
+        256,
+        0
+      ],
+      "bbox": [
+        9,
+        92,
+        503,
+        637
+      ]
+    },
+    {
+      "name": "yucca_flower",
+      "files": {
+        "master": "masters/yucca_flower.png",
+        "sprite": "sprites/yucca_flower.png",
+        "icon": "icons/yucca_flower.png"
+      },
+      "hashes": {
+        "master": "f78728130c959b544397fdc60bc13568fe056bbeb3020e03cc8a6d9ee24bc540",
+        "sprite": "1f0c2e1e4ff256632ff743faa2a010325ba52c6f69b50de92b37b101f9677849",
+        "icon": "db88a0ef94499dc7a7d72aeb020c4d2ca7737b92384e085a1b912e6368ab1ccd"
+      },
+      "generatedCanvas": [
+        1214,
+        1295
+      ],
+      "masterCanvas": [
+        1190,
+        1269
+      ],
+      "canvas": [
+        384,
+        448
+      ],
+      "dot": 3,
+      "recommendedScale": 0.5,
+      "worldWidthPx": 183,
+      "worldHeightPx": 196.5,
+      "pivot": [
+        192,
+        0
+      ],
+      "bbox": [
+        9,
+        53,
+        374,
+        445
+      ]
+    },
+    {
+      "name": "animal_bone",
+      "files": {
+        "master": "masters/animal_bone.png",
+        "sprite": "sprites/animal_bone.png",
+        "icon": "icons/animal_bone.png"
+      },
+      "hashes": {
+        "master": "11b3929bc0df3b9819fed5ff8e8463d312974b169f474042db3236a04832eb3f",
+        "sprite": "f1f519f9fe20ff7467710379192d7cdcfc345ce3858125c8df59fce84b281d95",
+        "icon": "5eb9737463925f5bf0a48b48d8cc3508c51f0fa507e46079bcb63b3aa3b9e0eb"
+      },
+      "generatedCanvas": [
+        1392,
+        1130
+      ],
+      "masterCanvas": [
+        1180,
+        1002
+      ],
+      "canvas": [
+        256,
+        224
+      ],
+      "dot": 3,
+      "recommendedScale": 0.5,
+      "worldWidthPx": 120,
+      "worldHeightPx": 102,
+      "pivot": [
+        128,
+        0
+      ],
+      "bbox": [
+        8,
+        18,
+        247,
+        221
+      ]
+    }
+  ]
+}

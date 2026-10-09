@@ -1,0 +1,335 @@
+{
+  "version": 1,
+  "method": "premultiplied-alpha area average, uniform fit of original canvas, center pivot preserved",
+  "registration": "connected; Maker refresh ok; build log refresh unconfirmed; runtime verification pending developer",
+  "pivot": [
+    0.5,
+    0.5
+  ],
+  "assets": [
+    {
+      "key": "cooking_pot",
+      "itemName": "Cooking Pot",
+      "images": {
+        "sprite": {
+          "file": "cooking_pot_sprite.png",
+          "sourceCanvas": [
+            1254,
+            1254
+          ],
+          "canvas": [
+            256,
+            256
+          ],
+          "resizeFactor": 0.20414673046251994,
+          "sourceSha256": "b461dd9d301bbcd6af139ea07094f35761b21cd4a69be9d937739e9194b73ed6",
+          "sha256": "73716a360b9dc4ac306bccda1de6014d856e5c77c28490036706c2541a9cdb99",
+          "beforeBytes": 1425672,
+          "afterBytes": 107517,
+          "beforeRGBA8Bytes": 6290064,
+          "afterRGBA8Bytes": 262144,
+          "opaqueBounds": {
+            "x0": 24,
+            "y0": 13,
+            "x1": 231,
+            "y1": 244,
+            "w": 208,
+            "h": 232,
+            "count": 37964
+          },
+          "maxWorldEdgeDifferencePx": 0.3325870951913572,
+          "ruid": "f490fd4358c94c23b7cf16c197574ded"
+        },
+        "icon": {
+          "file": "cooking_pot_icon.png",
+          "sourceCanvas": [
+            1254,
+            1254
+          ],
+          "canvas": [
+            128,
+            128
+          ],
+          "resizeFactor": 0.10207336523125997,
+          "sourceSha256": "eb4733fd43f21dccaacaf65ba04c9a18c14324d1411e76104c53814bcb5d733c",
+          "sha256": "e93d2413ab5d909e96b96d07602f7c90204f6b68f3b4bd2e3aef69bcfb45bce9",
+          "beforeBytes": 769509,
+          "afterBytes": 22464,
+          "beforeRGBA8Bytes": 6290064,
+          "afterRGBA8Bytes": 65536,
+          "opaqueBounds": {
+            "x0": 4,
+            "y0": 16,
+            "x1": 123,
+            "y1": 116,
+            "w": 120,
+            "h": 101,
+            "count": 7826
+          },
+          "maxWorldEdgeDifferencePx": 0.33952702702702453,
+          "ruid": "dbe50d325e50451ca26200f944dd472f"
+        }
+      },
+      "integration": {
+        "furniturePath": "RootDesk/MyDesk/Furniture/Models/Furniture_CookingPot.model",
+        "dropPath": "RootDesk/MyDesk/item/Models/Item_CookingPot.model",
+        "oldIconRUID": "81a8b2d8738b4c4d8490ee0278be4d66",
+        "oldSpriteRUID": "c494472e96614b0cbd1c76b344d51dfe",
+        "oldModelScale": [
+          0.17664376840039253,
+          0.17664376840039253
+        ],
+        "oldDropModelScale": [
+          0.08108108108108109,
+          0.08108108108108109
+        ],
+        "oldTriggerBox": [
+          9.623888888888889,
+          9.623888888888889
+        ],
+        "oldColliderOffset": [
+          0,
+          0
+        ],
+        "occupiedAreaUnchanged": true,
+        "newModelScale": [
+          0.8652784592737978,
+          0.8652784592737978
+        ],
+        "newTriggerBox": [
+          1.9646854510012404,
+          1.9646854510012404
+        ],
+        "newColliderOffset": [
+          0,
+          0
+        ],
+        "newPreviewScale": 0.8652784592737978,
+        "newDropModelScale": [
+          0.7943412162162162,
+          0.7943412162162162
+        ],
+        "newDropScaleMultiplier": 0.26478040540540543,
+        "applied": true
+      }
+    },
+    {
+      "key": "bed",
+      "itemName": "Bed",
+      "images": {
+        "sprite": {
+          "file": "bed_sprite.png",
+          "sourceCanvas": [
+            1244,
+            1264
+          ],
+          "canvas": [
+            256,
+            256
+          ],
+          "resizeFactor": 0.20253164556962025,
+          "sourceSha256": "5af7d87d860cd8224393619fd66772f40e48d0621e2a45447ce8950fc7959512",
+          "sha256": "e5906abaf5143266e8ef7c085739b046e5bf1e9ea4ee19c7a68e6b27f0e70a2c",
+          "beforeBytes": 966099,
+          "afterBytes": 70320,
+          "beforeRGBA8Bytes": 6289664,
+          "afterRGBA8Bytes": 262144,
+          "opaqueBounds": {
+            "x0": 58,
+            "y0": 18,
+            "x1": 197,
+            "y1": 233,
+            "w": 140,
+            "h": 216,
+            "count": 25254
+          },
+          "maxWorldEdgeDifferencePx": 0.37933526011561014,
+          "ruid": "d24c49e9ef4b4e119a520ef7c45df837"
+        },
+        "icon": {
+          "file": "bed_icon.png",
+          "sourceCanvas": [
+            1254,
+            1254
+          ],
+          "canvas": [
+            128,
+            128
+          ],
+          "resizeFactor": 0.10207336523125997,
+          "sourceSha256": "d76defbd92e99f032216b687153f8557c43c67ce505b2f87bf3230ca844da105",
+          "sha256": "4ae1fe5e051bc8de11670196be54854736c8fb3177066170bee8d79abafed5e4",
+          "beforeBytes": 788817,
+          "afterBytes": 21573,
+          "beforeRGBA8Bytes": 6290064,
+          "afterRGBA8Bytes": 65536,
+          "opaqueBounds": {
+            "x0": 25,
+            "y0": 9,
+            "x1": 102,
+            "y1": 118,
+            "w": 78,
+            "h": 110,
+            "count": 7080
+          },
+          "maxWorldEdgeDifferencePx": 0.27411873840445367,
+          "ruid": "defccbb251f84016a941adae219a5eeb"
+        }
+      },
+      "integration": {
+        "furniturePath": "RootDesk/MyDesk/Furniture/Models/Furniture_Bed.model",
+        "dropPath": "RootDesk/MyDesk/item/Models/Item_Bed.model",
+        "oldIconRUID": "b733c148a20d41a481c613d682e1f780",
+        "oldSpriteRUID": "03031ab084354c8581e84239e2f6f83f",
+        "oldModelScale": [
+          0.2023121387283237,
+          0.2023121387283237
+        ],
+        "oldDropModelScale": [
+          0.08905380333951762,
+          0.08905380333951762
+        ],
+        "oldTriggerBox": [
+          6.919999999999999,
+          8.402857142857142
+        ],
+        "oldColliderOffset": [
+          0,
+          0
+        ],
+        "occupiedAreaUnchanged": true,
+        "newModelScale": [
+          0.9989161849710984,
+          0.9989161849710984
+        ],
+        "newTriggerBox": [
+          1.401518987341772,
+          1.7018444846292946
+        ],
+        "newColliderOffset": [
+          0,
+          0
+        ],
+        "newPreviewScale": 0.9989161849710984,
+        "newDropModelScale": [
+          0.8724489795918368,
+          0.8724489795918368
+        ],
+        "newDropScaleMultiplier": 0.29081632653061223,
+        "applied": true
+      }
+    },
+    {
+      "key": "animal_pen",
+      "itemName": "Animal Pen",
+      "images": {
+        "sprite": {
+          "file": "animal_pen_sprite.png",
+          "sourceCanvas": [
+            1374,
+            1145
+          ],
+          "canvas": [
+            256,
+            256
+          ],
+          "resizeFactor": 0.18631732168850074,
+          "sourceSha256": "1968f32c14019792f623decc8b630b9c1be2d9aef9e5de692d1f79924f24e5be",
+          "sha256": "d794cf1f5e74f1edfe0a3a25a92adc5d7c13f20c49ec0c4d736c9e96090a090c",
+          "beforeBytes": 1104815,
+          "afterBytes": 74584,
+          "beforeRGBA8Bytes": 6292920,
+          "afterRGBA8Bytes": 262144,
+          "opaqueBounds": {
+            "x0": 7,
+            "y0": 41,
+            "x1": 248,
+            "y1": 200,
+            "w": 242,
+            "h": 160,
+            "count": 20808
+          },
+          "maxWorldEdgeDifferencePx": 0.20959924768517624,
+          "ruid": "2026fc42c4814e1da9bad2e32afdff83"
+        },
+        "icon": {
+          "file": "animal_pen_icon.png",
+          "sourceCanvas": [
+            1254,
+            1254
+          ],
+          "canvas": [
+            128,
+            128
+          ],
+          "resizeFactor": 0.10207336523125997,
+          "sourceSha256": "af658c05029d3af71652aaa5529a83d7c54747af4fcc0bce43af2e10b6372d81",
+          "sha256": "c4691f2cf091c72bcdbb057923e3ccdbbbff6a6d73bce087d823d78568133262",
+          "beforeBytes": 1008664,
+          "afterBytes": 26539,
+          "beforeRGBA8Bytes": 6290064,
+          "afterRGBA8Bytes": 65536,
+          "opaqueBounds": {
+            "x0": 1,
+            "y0": 16,
+            "x1": 126,
+            "y1": 110,
+            "w": 126,
+            "h": 95,
+            "count": 7741
+          },
+          "maxWorldEdgeDifferencePx": 0.33009708737863974,
+          "ruid": "2ae5cafb050044c792eaed6435ec2177"
+        }
+      },
+      "integration": {
+        "furniturePath": "RootDesk/MyDesk/Furniture/Models/Furniture_AnimalPen.model",
+        "dropPath": "RootDesk/MyDesk/item/Models/Item_AnimalPen.model",
+        "oldIconRUID": "105b1739f4f14dfaafb5a73638e1ade3",
+        "oldSpriteRUID": "7256286180e948d8841e2b22337dc60b",
+        "oldModelScale": [
+          0.14660493827160495,
+          0.14660493827160495
+        ],
+        "oldDropModelScale": [
+          0.07766990291262137,
+          0.07766990291262137
+        ],
+        "oldTriggerBox": [
+          12.277894736842104,
+          8.867368421052632
+        ],
+        "oldColliderOffset": [
+          0,
+          0
+        ],
+        "occupiedAreaUnchanged": true,
+        "newModelScale": [
+          0.7868561921296297,
+          0.7868561921296297
+        ],
+        "newTriggerBox": [
+          2.2875844633417604,
+          1.652144334635716
+        ],
+        "newColliderOffset": [
+          0,
+          0
+        ],
+        "newPreviewScale": 0.7868561921296297,
+        "newDropModelScale": [
+          0.7609223300970874,
+          0.7609223300970874
+        ],
+        "newDropScaleMultiplier": 0.2536407766990291,
+        "applied": true
+      }
+    }
+  ],
+  "totals": {
+    "beforeBytes": 6063576,
+    "afterBytes": 322997,
+    "beforeRGBA8Bytes": 37742840,
+    "afterRGBA8Bytes": 983040
+  }
+}

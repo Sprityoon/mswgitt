@@ -202,6 +202,8 @@ script UIHUDController extends Component
 					local controller = player:GetComponent("script.PlayerController")
 					if isvalid(controller) then
 						controller:TryMine()
+						-- 충전 무기로 탭만 쓰면 "꾹 누르면 충전" 팁(키보드는 UpdateCharge 의 미룬 탭 경로가 같은 팁을 띄운다).
+						if controller:ShouldDeferTap() then controller:MaybeShowChargeHint() end
 					end
 				end
 			end)

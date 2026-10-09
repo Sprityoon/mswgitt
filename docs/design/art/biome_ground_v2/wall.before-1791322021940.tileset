@@ -1,0 +1,1327 @@
+{
+  "Id": "",
+  "GameId": "",
+  "EntryKey": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
+  "ContentType": "x-mod/tileset",
+  "Content": "",
+  "Usage": 0,
+  "UsePublish": 1,
+  "UseService": 0,
+  "CoreVersion": "26.7.0.0",
+  "StudioVersion": "0.1.0.0",
+  "DynamicLoading": 0,
+  "ContentProto": {
+    "Use": "Json",
+    "Json": {
+      "name": "wall",
+      "id": "tileset://2361293b-a3c2-4138-8dec-4fb4d1f9acf4",
+      "datas": [
+        {
+          "Id": "e8fa88200e4f4a92865c49940595db6f",
+          "Name": "Big Wall",
+          "IsCollidable": true
+        },
+        {
+          "Id": "f7be7415f7d146fe9a2bb4e69a9b58d2",
+          "Name": "GrassLT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "aac20bb495344139939decfa732cbf89",
+          "Name": "GrassT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "c82042fd7df142289852c902a34df99a",
+          "Name": "GrassRT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "94adcd2fd937421ea92f93a7101526a2",
+          "Name": "xx",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0b7ec789153a453690d29704c21814ce",
+          "Name": "x",
+          "IsCollidable": false
+        },
+        {
+          "Id": "81f821354fe94826ae6eb4e2131bf7e4",
+          "Name": "GrassRDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0ea60a0512bd4741b46f095afc90bce9",
+          "Name": "GrassLDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2dbf4313fda6415e8cac3c882d89b025",
+          "Name": "GrassL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "cd02ba25dcc845ab81b547c2c0dad872",
+          "Name": "Soil",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d9dafab9199248a0b5d149be04992acc",
+          "Name": "GrassR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "b5e14f48f1d442768c67c7453e7b58ea",
+          "Name": "SubGrassRTLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d65bb593bc4d4871b14067818496bb57",
+          "Name": "SubGrassLTRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "8301526c62994831a5b2e8fe805c3170",
+          "Name": "Name15",
+          "IsCollidable": false
+        },
+        {
+          "Id": "b43d2416bdd54f638ac10792fc963f50",
+          "Name": "Name16",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2ccc3ad7f5a549ffbaef126fafda5bb3",
+          "Name": "GrassLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "efa878ae075a4bdb9b49c304adabead5",
+          "Name": "GrassD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9858813fea4741888cd0493a68265d21",
+          "Name": "GrassRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d1d4e4f527a845bebe6e6f77efccc843",
+          "Name": "FullGrass",
+          "IsCollidable": false
+        },
+        {
+          "Id": "422dc13583154a10b653ff51671b1f0c",
+          "Name": "Name23",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2954be36fb754281ab1b869db8fa3b8f",
+          "Name": "Name24",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a66c8e3e86f141af8e846d770f0cdb2c",
+          "Name": "Name25",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d43d616e80b84d83ba9112fde68f03e8",
+          "Name": "Name28",
+          "IsCollidable": false
+        },
+        {
+          "Id": "42db6e8c690b4c9a893f014adb6cede2",
+          "Name": "Name29",
+          "IsCollidable": false
+        },
+        {
+          "Id": "c4ae7dfeff894933b2fe61b3de5b6bc4",
+          "Name": "Name30",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d815b85b6b8d4fdd91c950ae93183b58",
+          "Name": "Name31",
+          "IsCollidable": false
+        },
+        {
+          "Id": "b7cb0d96116a481b899b492a72a43147",
+          "Name": "Name32",
+          "IsCollidable": false
+        },
+        {
+          "Id": "ec1d52cfbe13476cad284281c0db253d",
+          "Name": "GrassRTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "53016849530c4a78a4357237d96baddf",
+          "Name": "GrassLTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "244a42c9a82a4aed91affa55d671c4a0",
+          "Name": "TerraceTopLT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "385ad1705a4444b8b6b91130fe41389f",
+          "Name": "TerraceTopT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "57e325f1c39f44e3bb1d3f4df924421c",
+          "Name": "TerraceTopRT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "8af7a0b695414be39fc8b57462803503",
+          "Name": "Name40",
+          "IsCollidable": false
+        },
+        {
+          "Id": "4e13fc0f3b744ed3b225e9dec0d6cc71",
+          "Name": "Name41",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9f727da674e64fc190f87f41deceff2f",
+          "Name": "Name42",
+          "IsCollidable": false
+        },
+        {
+          "Id": "ac6f4eb9d4a641b1b8a0241a5a06654a",
+          "Name": "Name43",
+          "IsCollidable": false
+        },
+        {
+          "Id": "3c6111c73f204d7bb3d0d06f77f18793",
+          "Name": "Name44",
+          "IsCollidable": false
+        },
+        {
+          "Id": "cfdd0ff134e74903a684459ef8335c7f",
+          "Name": "Name45",
+          "IsCollidable": false
+        },
+        {
+          "Id": "73e5b86af8854608af92dce997e34e63",
+          "Name": "TerraceTopL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "71e97c35e15b423789fa477868ec7223",
+          "Name": "TerraceTop",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f967149a0ff84080b23f3b9e21a78bac",
+          "Name": "TerraceTopR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "1ae0acae013542f68f28395116cad59f",
+          "Name": "Name49",
+          "IsCollidable": false
+        },
+        {
+          "Id": "74edaceab78b431cb79b527b1733395c",
+          "Name": "Name50",
+          "IsCollidable": false
+        },
+        {
+          "Id": "1fee4b723d0943419f5d62532f7b948b",
+          "Name": "Name51",
+          "IsCollidable": false
+        },
+        {
+          "Id": "3f4db2a50f444befb3d967c7418af43d",
+          "Name": "Water",
+          "IsCollidable": true
+        },
+        {
+          "Id": "8e70d034f73a4ffc81ea0138cc72519e",
+          "Name": "Name53",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9f2f50aba906453f844836c0f195afa9",
+          "Name": "Name54",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f86d2b91a8964f6f8c299beb0242ba42",
+          "Name": "TerraceTopLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "24256e11cab143b5a1f8bcf00e96bff8",
+          "Name": "TerraceTopD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "5e0fb307fda049d5bc5e5f5cde7ee90e",
+          "Name": "TerraceTopRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "3938ad9c2dcd4a6cb93f203f703925d6",
+          "Name": "Name58",
+          "IsCollidable": false
+        },
+        {
+          "Id": "113a5fadcc064753a0eef20bd6325a17",
+          "Name": "Name59",
+          "IsCollidable": false
+        },
+        {
+          "Id": "51f65cafa4db44f78783e99a9408112b",
+          "Name": "Name60",
+          "IsCollidable": false
+        },
+        {
+          "Id": "6dbc56072ee748468b9c928b1b3a70c9",
+          "Name": "Name61",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f9aeffef47e443d4a4eb7ed0c019de66",
+          "Name": "Name62",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a6853d438de949208b31377c9d21c7df",
+          "Name": "Name63",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0584029114fe4d57a0f600b9b429e30c",
+          "Name": "CliffFaceL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "c6ece2e6f90344f29da1d86927f387aa",
+          "Name": "CliffFaceM",
+          "IsCollidable": true
+        },
+        {
+          "Id": "e9ee9c3d786c4c3f8042d24eac632dd2",
+          "Name": "CliffFaceR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "2ac625634f124315a1399dc1972b02d2",
+          "Name": "Name67",
+          "IsCollidable": false
+        },
+        {
+          "Id": "135ccc7c42a14a2bbeff45189ca41007",
+          "Name": "Name68",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9c6a4674c62541a2ad21b92679ef04e2",
+          "Name": "Name69",
+          "IsCollidable": false
+        },
+        {
+          "Id": "5754212b9d5042c0a725c7c6cdfe3233",
+          "Name": "Name70",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0f4bcd9547f94bba92a89f558cd48cc0",
+          "Name": "Name71",
+          "IsCollidable": false
+        },
+        {
+          "Id": "318944f336b1463c92751d6b0dd41909",
+          "Name": "Name72",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f453b25694124512863dba2bee8d6c5b",
+          "Name": "CliffFaceLD",
+          "IsCollidable": true
+        },
+        {
+          "Id": "e2e49205ea6a40afa56b07a40067ed04",
+          "Name": "CliffFaceD",
+          "IsCollidable": true
+        },
+        {
+          "Id": "eaa82e5fcfa34d2798e610df028f1100",
+          "Name": "CliffFaceRD",
+          "IsCollidable": true
+        },
+        {
+          "Id": "744a4b1f37b84feb8a258b9da2521004",
+          "Name": "Name76",
+          "IsCollidable": false
+        },
+        {
+          "Id": "c7e47f25bb594de9bc9e594ea0e507fd",
+          "Name": "Name77",
+          "IsCollidable": false
+        },
+        {
+          "Id": "20d194c149ff41e9aa392e83d07863dd",
+          "Name": "Name78",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2e1d40cfba24418cb5e46a06a8421aa7",
+          "Name": "Name79",
+          "IsCollidable": false
+        },
+        {
+          "Id": "31557ed40a48436bb6be889f3a1e7263",
+          "Name": "Name80",
+          "IsCollidable": false
+        },
+        {
+          "Id": "68058cf16bb94f5c9a19681bdd3e28e6",
+          "Name": "Name81",
+          "IsCollidable": false
+        },
+        {
+          "Id": "7ff5844cf16146739cd33cf6281692d1",
+          "Name": "Name82",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d8bcb820e647428c9cc4225d27e42425",
+          "Name": "Name83",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0c9afdf060e3400387e7f1adb57821b7",
+          "Name": "Name84",
+          "IsCollidable": false
+        },
+        {
+          "Id": "8faf6095d34f45f6b7ca33a0cb0ad629",
+          "Name": "Name85",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9c31f40016ec45f6b315d103971db06e",
+          "Name": "Name86",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f1d9f0097a8b44cd9f3c94a1bf4f3470",
+          "Name": "Name87",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0a2d5937253141afa58ad7b039c8d75b",
+          "Name": "Name88",
+          "IsCollidable": false
+        },
+        {
+          "Id": "3128e73393f44f069e225825c521c830",
+          "Name": "Name89",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0f4642b209bc4e7aa474b8e65d8e35d9",
+          "Name": "Name90",
+          "IsCollidable": false
+        },
+        {
+          "Id": "cf39a873ef724db3aaffb4358a84b41c",
+          "Name": "Name91",
+          "IsCollidable": false
+        },
+        {
+          "Id": "fb9db3e5d7ab4cd19f204ea901c58ba0",
+          "Name": "Name92",
+          "IsCollidable": false
+        },
+        {
+          "Id": "da36fee7b540414a8f38ffe08698f814",
+          "Name": "Name93",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9b531767a73a44069a9a57ca45156f65",
+          "Name": "Name94",
+          "IsCollidable": false
+        },
+        {
+          "Id": "124cd6eef1f348c391388c755c23e255",
+          "Name": "Name95",
+          "IsCollidable": false
+        },
+        {
+          "Id": "7289444bd7744a759b3aaa29b28b2af4",
+          "Name": "Name96",
+          "IsCollidable": false
+        },
+        {
+          "Id": "48dc3de768504611a6075e45c5b88778",
+          "Name": "Name97",
+          "IsCollidable": false
+        },
+        {
+          "Id": "eead3bb2bd594844936ba82cdf661d37",
+          "Name": "Name98",
+          "IsCollidable": false
+        },
+        {
+          "Id": "72f14f091c21486bbac2c03cf51aee63",
+          "Name": "Name99",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0983233431424b64a06695b96453e87d",
+          "Name": "Name100",
+          "IsCollidable": false
+        },
+        {
+          "Id": "ee8a0bbc304748b58cbfdc4c4ca623ba",
+          "Name": "Name101",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2b208284795d4edabe8e7f94d92befe4",
+          "Name": "Name102",
+          "IsCollidable": false
+        },
+        {
+          "Id": "42185798008043ec930f282efcc7244e",
+          "Name": "Name104",
+          "IsCollidable": false
+        },
+        {
+          "Id": "341eda0208f44c8890a9e9c24f4814d6",
+          "Name": "Name105",
+          "IsCollidable": false
+        },
+        {
+          "Id": "1098cb5cd28349f988458009706d1b94",
+          "Name": "Name106",
+          "IsCollidable": false
+        },
+        {
+          "Id": "16b4ce16997148da870d4dee7f9d9da8",
+          "Name": "Name107",
+          "IsCollidable": false
+        },
+        {
+          "Id": "5dca108aea9847508f3ea46249ebe1f9",
+          "Name": "Name108",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0e47ef6d4d594e2f9893083b98e9b7ec",
+          "Name": "Name109",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2288c880232540139a5a6c4fab542ac3",
+          "Name": "Name110",
+          "IsCollidable": false
+        },
+        {
+          "Id": "85adb6c9a6c1407585c6985fea53bbbc",
+          "Name": "Name111",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9c03bd7b3e444e2f82c3c8624faa2b35",
+          "Name": "Name112",
+          "IsCollidable": false
+        },
+        {
+          "Id": "fb4447749b344f66816dee79ca41623b",
+          "Name": "Name113",
+          "IsCollidable": false
+        },
+        {
+          "Id": "b77ce52450bb4983bca6c60efb2f8fa2",
+          "Name": "Name114",
+          "IsCollidable": false
+        },
+        {
+          "Id": "90559d1489d94ca98f2c2a5b9472a0f4",
+          "Name": "Name117",
+          "IsCollidable": false
+        },
+        {
+          "Id": "b088d7d6f352413fbb380437690d0a4e",
+          "Name": "Name118",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d466b31c257f4c88a4461c9eebfbdd80",
+          "Name": "Name120",
+          "IsCollidable": false
+        },
+        {
+          "Id": "12f96768ff9e4950b396378fffe1c911",
+          "Name": "Name121",
+          "IsCollidable": false
+        },
+        {
+          "Id": "6bae6fb11d9a48e7a06ffce9d4012aa5",
+          "Name": "Name122",
+          "IsCollidable": false
+        },
+        {
+          "Id": "7faa0c9fcca74d1b9f8cb95745680171",
+          "Name": "Name123",
+          "IsCollidable": false
+        },
+        {
+          "Id": "de517dc562ef4cffbffabe49fa513e0c",
+          "Name": "Name127",
+          "IsCollidable": false
+        },
+        {
+          "Id": "5ed4d2ecd6154b969f92b3f3fedf991c",
+          "Name": "Name128",
+          "IsCollidable": false
+        },
+        {
+          "Id": "7687216286084e489f1460ea1fb20df4",
+          "Name": "Name129",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2bfc592b811746ccbebf1cab652eb8a7",
+          "Name": "WetRimLT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "8a84eb2e096044f6bb051aaaf57ab14b",
+          "Name": "WetRimT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "30b94b26e59842fbb2a6a74f43124f83",
+          "Name": "WetRimRT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "be69f0da883248d8a3bbb7e61c3b65bb",
+          "Name": "WetRimL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "e715afde255e41d8ae761ae63362b4ad",
+          "Name": "WetRimR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0ca71da39768477d9b8ce83a427eb6b7",
+          "Name": "WetRimLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "adb53c37a4f7478e872b3d81655e584a",
+          "Name": "WetRimD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "01ba6158eca14ab19c272f6ce4c24d20",
+          "Name": "WetRimRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "7d5d4de5d01e424b99e5cc05ab4808b6",
+          "Name": "WetRimLTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "191729b03b0646baa149d2e2a66690fd",
+          "Name": "WetRimRTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f764a02e7b7e4b62b986f0aec6325001",
+          "Name": "WetRimLDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f3b281baa67c4cee907b2ad467e123a1",
+          "Name": "WetRimRDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f2301a14d5bd4fd088e13962c0e867d7",
+          "Name": "SoilLT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "4e6a19d784a14a3d9afdd94924b96bac",
+          "Name": "SoilT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2c86a97568f74a54ad215c6b6746bc7b",
+          "Name": "SoilRT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "b32043f6fc63442d8445d8ce9086a331",
+          "Name": "SoilL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f122ee164fd04985aef1e8dd5c189fe8",
+          "Name": "SoilR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "3be290024d254b179a8cade0c99ce7fa",
+          "Name": "SoilLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "cc2daaede9a04206bc351c70accc7475",
+          "Name": "SoilD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "163046f8e5b0427eb02ed557ed9d6532",
+          "Name": "SoilRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a5e12d5209294644b2231bcfdcb95475",
+          "Name": "SoilLTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "35ddc4e7d7eb410a908a687e263f5f67",
+          "Name": "SoilRTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "55d44503bc2b495589070b57e0f9a828",
+          "Name": "SoilLDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "18e393e84b714c8985e3c2becad22498",
+          "Name": "SoilRDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "5657a8a7d23946eb83a062770748ca1c",
+          "Name": "WaterLT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "ce7d9b7d934742c3bf52fdf220d4ffc5",
+          "Name": "WaterT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "8f1a0622734e4d0ea63511862c9c95c8",
+          "Name": "WaterRT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "97d16bb599c841e789de8d0d29977dbe",
+          "Name": "WaterL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a6cecb2749544fbdba1ada01354bddf7",
+          "Name": "WaterR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0e6f0bb83f354edab672b88da6ff79cc",
+          "Name": "WaterLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f72b1d0d439b4d1685deb694a7254332",
+          "Name": "WaterD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "997b7efa495d4017b8aba53403039fef",
+          "Name": "WaterRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "49884babf4e84239b9e7a30d79d82d47",
+          "Name": "WaterLTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "ea5769c8179e49a2883fce1800c1aa1c",
+          "Name": "WaterRTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "61e69a2238f54d10a4b4dd7172aa6f2f",
+          "Name": "WaterLDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "cc0fe50ffe384973a85babe9defb5ef0",
+          "Name": "WaterRDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "fbb9843ff11347658c17846eace5da2f",
+          "Name": "WaterLTRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a7d97bea8162490e8eaa337ed54e9ede",
+          "Name": "WaterRTLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9a88de5e5118425296660bc32b00a704",
+          "Name": "SoilLTRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "8f9ccbd15d92463b93dbf597387f3c18",
+          "Name": "SoilRTLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a6f0405d87bf4a89847ebfeca5f0a034",
+          "Name": "FullFarm",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a3c4e99253974eda9c8154c39a9a2724",
+          "Name": "FarmLT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "70e7951716704270807160ac6bd34de1",
+          "Name": "FarmT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "b562738a01524c48b293b3449a0f6f2e",
+          "Name": "FarmRT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "b319670e161142b6a26130861150107b",
+          "Name": "FarmL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "e9e6c6ff67cb46d0b5a54add8d2baf15",
+          "Name": "FarmR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "bada525b1be6402e9fa3de89a7a01ed8",
+          "Name": "FarmLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2e543655e44e48dd932fe2a9a9ddcf05",
+          "Name": "FarmD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2a915a4aa31c404e998b7dd33ecb6d93",
+          "Name": "FarmRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "63ae2627df1349d3afe419b16e175209",
+          "Name": "FarmLTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d44f728789bf4faf9ea8af1772d22137",
+          "Name": "FarmRTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "7b2e3b6b99284956b748fc081f5e8f3f",
+          "Name": "FarmLDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "7e4e6510a7df434daa6d920436338430",
+          "Name": "FarmRDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "e992cb2b882a4facb65bba5422c275f0",
+          "Name": "FarmLTRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "3e07c130cde74cdb88ba16e273eee6d7",
+          "Name": "FarmRTLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a660b6977f8f4a1cadcd9dc02b377ffd",
+          "Name": "Sand",
+          "IsCollidable": false
+        },
+        {
+          "Id": "1b926f9422b04ff892e582df84796d71",
+          "Name": "SandLT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "41206d6c9ddf487196aa78910257f95d",
+          "Name": "SandLDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "482b0cf76897403eb6eabade2c0d3acb",
+          "Name": "SandRTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0d69b0ebab1a44a3929b87fc3ab993da",
+          "Name": "SandD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "4e6b7c2f74ae43e3a4f34a4a8e99ed7c",
+          "Name": "SandRDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "005fb34ca2b343e196b2638a5bcf61ab",
+          "Name": "SandLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "90ec4a7f5e5b4610a4bbf33e3a915ff4",
+          "Name": "SandLTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d30d63153b4949a68edb4744ce0a521b",
+          "Name": "SandT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "4e5a3eb498b34808a72309d70958765e",
+          "Name": "SandR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "2728ec99b32143cf846a576dc52ecc39",
+          "Name": "SandRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "17cb3979ed09498680e9897d3a84a835",
+          "Name": "SandL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "3021f3404652487e83563df1b4b1d904",
+          "Name": "SandRT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "de47e70c1c854997b6c5c93eff16d1b3",
+          "Name": "Rock",
+          "IsCollidable": false
+        },
+        {
+          "Id": "6c0f535f6fa44ffd92272a32bc79f1e1",
+          "Name": "RockLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "85bd06e5d9f34bdaa952b1e590d6d2d1",
+          "Name": "RockT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "68463b9bbf804ae081303868ed51ca26",
+          "Name": "RockR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f335b8c5ec784ffa987e07272a9b3b87",
+          "Name": "RockLT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "1639c148ecd7498ab160ab59a13cb553",
+          "Name": "RockRT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "24444d9cfa3344d9afdc6af4d3000b68",
+          "Name": "RockD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "aaf9e4916f8e49ec8cf6da512fc5af5a",
+          "Name": "RockL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "c21ae0e32b1f4b8b8f764ac370ceea27",
+          "Name": "RockLDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "bdcffce55d1e4e0ca8697affa7362752",
+          "Name": "RockRDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "b9c5c76334b14aa19557fbc8745c5d16",
+          "Name": "RockRTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9584a9c890c440bdaa3847e8597ebeb6",
+          "Name": "RockRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "bc331b1e0878427bb0ced3fa386e48a2",
+          "Name": "RockLTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0663e3879d734439b53fc29523e4f736",
+          "Name": "Snow",
+          "IsCollidable": false
+        },
+        {
+          "Id": "f7137c0767d94322aa68918d942c4dbd",
+          "Name": "SnowLT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "8d0113bd85ad4fc481ebb31b90f97b5f",
+          "Name": "SnowLD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "4d335d0acfde4593b64f87b198887250",
+          "Name": "SnowLTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "c5adf1230b2340438713245a120d57df",
+          "Name": "SnowLDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "c8dc909b3dca40d29e100732860abe77",
+          "Name": "SnowRDCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "7909c4da526e4f4c808a10e25066303b",
+          "Name": "SnowT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "9f4bb888acf84b78884c08980d2dfd8f",
+          "Name": "SnowR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "efd3604d458d4fd79dc41bf55cbfee90",
+          "Name": "SnowRTCorner",
+          "IsCollidable": false
+        },
+        {
+          "Id": "1095f7c538924e658ae2bc48474f7c0b",
+          "Name": "SnowD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "902fdbb0a0bc4423b1bafa686a5ec725",
+          "Name": "SnowRT",
+          "IsCollidable": false
+        },
+        {
+          "Id": "842bc500127a4cfc936a38c82477533a",
+          "Name": "SnowL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "5824b297faa743378998f06cec052f0e",
+          "Name": "SnowRD",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d6c46b0244cf4a69bda9d7784c9acfe2",
+          "Name": "GrassLTRound",
+          "IsCollidable": false
+        },
+        {
+          "Id": "86259d31d90e4bc68f85af80fe747f53",
+          "Name": "GrassRTRound",
+          "IsCollidable": false
+        },
+        {
+          "Id": "ba384e18ff0f4640a0535fee9e682c9f",
+          "Name": "GrassLDRound",
+          "IsCollidable": false
+        },
+        {
+          "Id": "d31d507527974b7aa6d2bf1eaa18e8a0",
+          "Name": "GrassRDRound",
+          "IsCollidable": false
+        },
+        {
+          "Id": "385994e872c34c10971a8fec76e901c6",
+          "Name": "Cabin_top_outer_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "0aa33acf53424b5e9d63cba92c1b5876",
+          "Name": "Cabin_top_edge_T",
+          "IsCollidable": true
+        },
+        {
+          "Id": "eb3644aa46064c45a9160d66cb4f37c2",
+          "Name": "Cabin_top_outer_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "2813b36dfd9a41999e82cc0f803c1ea4",
+          "Name": "Cabin_top_edge_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "bcc4b8545cc848a59bc6863420122cbf",
+          "Name": "Cabin_top_fill",
+          "IsCollidable": true
+        },
+        {
+          "Id": "1da80be238284dba809861965e333678",
+          "Name": "Cabin_top_edge_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "453f39edf33b457e92b1171f052085d3",
+          "Name": "Cabin_top_nub_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "80206feb7d854552a94a3fb678e3d5a8",
+          "Name": "Cabin_top_nub_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "18c57120afc54770a529a9da27dbc973",
+          "Name": "Cabin_face_INT_U_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "83142ec2390a412f989d64fd3f5c25d2",
+          "Name": "Cabin_face_INT_U_M",
+          "IsCollidable": true
+        },
+        {
+          "Id": "ff291ac2a9b14329b29ff9febe8db2ca",
+          "Name": "Cabin_face_INT_U_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "8bb99f0dadd64c918468f2b7ed703b3c",
+          "Name": "Cabin_face_INT_D_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "d679869816b14522979e5ed542cd71c8",
+          "Name": "Cabin_face_INT_D_M",
+          "IsCollidable": true
+        },
+        {
+          "Id": "a45550ef2ee44d66b23dd71c86af969f",
+          "Name": "Cabin_face_INT_D_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "56f2cdb25ab34b95aa89652d21ab21be",
+          "Name": "Cabin_face_EXT_U_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "c943c594adcb4f7a9de1ebde991ece78",
+          "Name": "Cabin_face_EXT_U_M",
+          "IsCollidable": true
+        },
+        {
+          "Id": "8c7a47e60c7e4484aa2a08526f24f63b",
+          "Name": "Cabin_face_EXT_U_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "5e8864672f5c44d4ada69ee0950d62ae",
+          "Name": "Cabin_face_EXT_D_L",
+          "IsCollidable": true
+        },
+        {
+          "Id": "208bb6b2b75a4f5fb8415e81d69d9fe5",
+          "Name": "Cabin_face_EXT_D_M",
+          "IsCollidable": true
+        },
+        {
+          "Id": "65b30c85166e4bbfbc7f61435995c143",
+          "Name": "Cabin_face_EXT_D_R",
+          "IsCollidable": true
+        },
+        {
+          "Id": "90b6ac8a07cc4219a49c9bffff2b7911",
+          "Name": "Cabin_door_INT_closed_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "0431a26eb53044898fa654b419be9362",
+          "Name": "Cabin_door_INT_closed_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "bf127310763b487484060e2ceb3f60da",
+          "Name": "Cabin_door_INT_closed_BL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "4a2dd8266f0943f8bf7af734ffc07813",
+          "Name": "Cabin_door_INT_closed_BR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "1c867c4023934e83b3534c4a55b2e805",
+          "Name": "Cabin_door_INT_open_TL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "cb8803adcfaa47e79702db131e49a6b6",
+          "Name": "Cabin_door_INT_open_TR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "de28673f71154b4a8f757f106296eaa8",
+          "Name": "Cabin_door_INT_open_BL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "50f667b364ff4eebaaf0c5420d8ea355",
+          "Name": "Cabin_door_INT_open_BR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "69074d4b879042aca2a7465c57470782",
+          "Name": "Cabin_door_EXT_closed_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "5d4182ab99bf4fe49bd2a4f8b44add83",
+          "Name": "Cabin_door_EXT_closed_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "00368c7d6b384fc3bb74052501529c39",
+          "Name": "Cabin_door_EXT_closed_BL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "66f89e294237436cacf98bffb61b1eac",
+          "Name": "Cabin_door_EXT_closed_BR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "57a315b4625e43db8685f67cc2ba6cb5",
+          "Name": "Cabin_door_EXT_open_TL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "37913a5335204c3cb2a760d256e3f2c5",
+          "Name": "Cabin_door_EXT_open_TR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0dcbe302635b4b7f9b4c39d02c585b64",
+          "Name": "Cabin_door_EXT_open_BL",
+          "IsCollidable": false
+        },
+        {
+          "Id": "e63437b6e9884f3f80e9789da7bdb3da",
+          "Name": "Cabin_door_EXT_open_BR",
+          "IsCollidable": false
+        },
+        {
+          "Id": "0c972d5e486e4e7fb9edd5387f7e7f83",
+          "Name": "Cabin_window_INT_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "8c4f9846c4d54858a2043e9ed1a37c3e",
+          "Name": "Cabin_window_INT_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "a2bf454e1a034828b74aa859b97bbcc7",
+          "Name": "Cabin_window_INT_BL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "46e83906729c4a2592f389824229e625",
+          "Name": "Cabin_window_INT_BR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "c17d74f91a1a45e98961f00ac1d1d397",
+          "Name": "Cabin_window_EXT_TL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "de65c876ca7c4a9d8d2444db4bc0f510",
+          "Name": "Cabin_window_EXT_TR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "f7737e7d72c3467abf5008eb0369c707",
+          "Name": "Cabin_window_EXT_BL",
+          "IsCollidable": true
+        },
+        {
+          "Id": "26e9c089297248da887cf20eb204ded5",
+          "Name": "Cabin_window_EXT_BR",
+          "IsCollidable": true
+        },
+        {
+          "Id": "a4065b7e26824f94a4101edf6011a315",
+          "Name": "Cabin_floor1",
+          "IsCollidable": false
+        },
+        {
+          "Id": "a4ef95bcc3f9493c824cb1c938a73d47",
+          "Name": "Cabin_floor2",
+          "IsCollidable": false
+        },
+        {
+          "Id": "fedc1156a7af483eada95837e3d2e664",
+          "Name": "Cabin_floor3",
+          "IsCollidable": false
+        },
+        {
+          "Id": "02c0c06610684a32ad704bcc26932fcc",
+          "Name": "Cabin_floor4",
+          "IsCollidable": false
+        }
+      ]
+    }
+  }
+}

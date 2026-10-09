@@ -7,7 +7,7 @@
   "Usage": 0,
   "UsePublish": 1,
   "UseService": 0,
-  "CoreVersion": "26.7.0.0",
+  "CoreVersion": "26.10.0.0",
   "StudioVersion": "0.1.0.0",
   "DynamicLoading": 0,
   "ContentProto": {
@@ -144,31 +144,31 @@
             {
               "@type": "MOD.Core.UITransformComponent",
               "ActivePlatform": 255,
-              "AlignmentOption": 15,
+              "AlignmentOption": 0,
               "AnchorsMax": {
-                "x": 1.0,
-                "y": 1.0
+                "x": 0.5,
+                "y": 0.5
               },
               "AnchorsMin": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 0.5,
+                "y": 0.5
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 1920.0,
+                "y": 1080.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -1920.0,
+                "y": -1080.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 1920.0,
-                "y": 1080.0
+                "x": 3840.0,
+                "y": 2160.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -19902,7 +19902,7 @@
                 "a": 1.0
               },
               "OutlineWidth": 0.22,
-              "Overflow": 0,
+              "Overflow": 1,
               "OverrideSorting": false,
               "Padding": {
                 "left": 0,

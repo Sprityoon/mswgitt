@@ -27,6 +27,9 @@ script Summon extends Component
 	property number AttackEffectScale = 1
 	property number AttackAnimSeconds = 0.5
 	property Color BaseTint = Color(1, 1, 1, 1)
+	-- 생명 펄스(WeaponAttackDataSet.SummonBuffPct/Seconds)가 거는 소환수 공격 강화. 만료 시각은 서버 시계.
+	property number AttackBuffPct = 0
+	property number AttackBuffUntil = 0
 
 	@ExecSpace("ServerOnly")
 	method boolean Setup(Entity owner, string skillId, string summonId, number duration, number hpBase)
@@ -74,7 +77,41 @@ script Summon extends Component
 		self:SetAnim("stand")
 		self._T.ready = true
 		log("[SUMMON] setup " .. summonId .. " skill=" .. skillId .. " hp=" .. tostring(self.MaxHp) .. " life=" .. string.format("%.1f", duration))
+		self:NotifyOwner(true)
 		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method void NotifyOwner(boolean alive)
+		-- 주인 클라이언트의 머리 위 체력바를 갱신한다(HP·버프 변화 · 사라짐). 다른 유저에게는 보내지 않는다.
+		local owner = self.Owner
+		if not isvalid(owner) then return end
+		local pc = owner:GetComponent("script.PlayerController")
+		local playerComp = owner.PlayerComponent
+		if not isvalid(pc) or playerComp == nil then return end
+		local buffLeft = math.max(0, self.AttackBuffUntil - _UtilLogic.ElapsedSeconds)
+		if self.AttackBuffPct <= 0 then buffLeft = 0 end
+		---@type PlayerController
+		local controller = pc
+		controller:ClientSummonHp(self.Entity, self.Hp, self.MaxHp, buffLeft, alive, playerComp.UserId)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplyAttackBuff(number pct, number seconds)
+		-- 생명 펄스의 소환수 강화. 이미 더 센 강화가 남아 있으면 세기는 유지하고 시간만 늘린다.
+		if self._T.ready ~= true or self.Hp <= 0 or pct <= 0 or seconds <= 0 then return end
+		local now = _UtilLogic.ElapsedSeconds
+		if now >= self.AttackBuffUntil or pct >= self.AttackBuffPct then self.AttackBuffPct = pct end
+		self.AttackBuffUntil = math.max(self.AttackBuffUntil, now + seconds)
+		log("[SUMMON] buff " .. tostring(self.SummonId) .. " +" .. tostring(math.floor(self.AttackBuffPct * 100)) .. "% " .. string.format("%.1f", self.AttackBuffUntil - now) .. "s")
+		self:NotifyOwner(true)
+	end
+
+	@ExecSpace("ServerOnly")
+	method number GetAttackBuffScale()
+		-- 강화가 살아 있으면 1 + pct, 아니면 1.
+		if self.AttackBuffPct > 0 and _UtilLogic.ElapsedSeconds < self.AttackBuffUntil then return 1 + self.AttackBuffPct end
+		return 1
 	end
 
 	@ExecSpace("ServerOnly")
@@ -177,8 +214,9 @@ script Summon extends Component
 		local controller = pc
 		local myPos = self.Entity.TransformComponent.WorldPosition
 		local hits = 0
+		local buffScale = self:GetAttackBuffScale()
 		if self.AttackRadius > 0 then
-			hits = controller:DamageSkillArea(self.SkillId, myPos, self.AttackRadius * 2, controller:GetSummonPowerScale())
+			hits = controller:DamageSkillArea(self.SkillId, myPos, self.AttackRadius * 2, controller:GetSummonPowerScale() * buffScale)
 		else
 			local combat = self.Owner:GetComponent("script.PlayerCombat")
 			if isvalid(combat) then
@@ -186,7 +224,7 @@ script Summon extends Component
 				local c = combat
 				local ds = _DataService:GetTable("SkillDataSet")
 				local row = ds ~= nil and ds:FindRow("SkillId", self.SkillId) or nil
-				local dmg = controller:ComputeSummonDamage(self.SkillId)
+				local dmg = math.floor(controller:ComputeSummonDamage(self.SkillId) * buffScale)
 				c:DealSkillHit(target, dmg, self.SkillId, controller:SkillText(row, "HitEffectRUID"), controller:SkillNumber(row, "HitEffectScale", 1))
 				hits = 1
 			end
@@ -250,14 +288,17 @@ script Summon extends Component
 				if isvalid(self.Entity) and isvalid(self.Entity.SpriteRendererComponent) then self.Entity.SpriteRendererComponent.Color = self.BaseTint end
 			end, 0.1)
 		end
-		if self.Hp <= 0 then self:Dismiss("down") end
+		if self.Hp <= 0 then self:Dismiss("down") return end
+		self:NotifyOwner(true)
 	end
 
 	@ExecSpace("ServerOnly")
 	method void Heal(integer amount)
 		-- 회복 오라·생명 펄스가 소환수도 회복한다.
 		if self._T.ready ~= true or self.Hp <= 0 or amount <= 0 then return end
+		local before = self.Hp
 		self.Hp = math.min(self.MaxHp, self.Hp + amount)
+		if self.Hp ~= before then self:NotifyOwner(true) end
 	end
 
 	@ExecSpace("ServerOnly")
@@ -267,6 +308,7 @@ script Summon extends Component
 		self._T.dismissed = true
 		self._T.ready = false
 		log("[SUMMON] dismiss " .. tostring(self.SummonId) .. " reason=" .. reason)
+		self:NotifyOwner(false)
 		self.Entity:Destroy()
 	end
 

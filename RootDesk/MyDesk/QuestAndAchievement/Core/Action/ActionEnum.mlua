@@ -24,4 +24,6 @@ script ActionEnum extends Logic
 
 	property integer LearnSkill = 11
 
+	property integer ChargeAttack = 12
+
 end

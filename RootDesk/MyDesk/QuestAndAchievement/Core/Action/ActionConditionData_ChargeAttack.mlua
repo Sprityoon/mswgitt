@@ -1,0 +1,32 @@
+@Struct
+script ActionConditionData_ChargeAttack extends ActionConditionData
+
+	-- 충전 평타(공격키를 꾹 눌렀다 떼기) 발동 횟수. 마법봉 충전탄·자연 무기 생명 펄스가 서버에서 실제로 나갔을 때 센다.
+	-- CondArg = 무기 종류(WeaponAttackDataSet.WeaponType — Wand / Nature, 빈 값 = 아무 충전 무기). ActionEvent.Args = { weaponType, count }
+	property string Target = ""
+
+	method any Clone()
+		return ActionConditionData_ChargeAttack()
+	end
+
+	method boolean LoadArg(string str)
+		self.Target = str or ""
+		return true
+	end
+
+	method table GetActionEnumList()
+		return { _ActionEnum.ChargeAttack }
+	end
+
+	method boolean Check(Entity userEntity, ActionEvent evt, integer userValue, integer condValue)
+		if _Util:IsNilorEmptyString(self.Target) then
+			return true
+		end
+		return evt.Args[1] == self.Target
+	end
+
+	method integer GetNextUserValue(Entity userEntity, ActionEvent evt, integer userValue, integer condValue)
+		return userValue + (evt.Args[2] or 1)
+	end
+
+end

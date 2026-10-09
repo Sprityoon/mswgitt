@@ -38,6 +38,15 @@ script UIChatController extends Component
 	-- (FocusInput() 미호출) 매 프레임 포커스 상태 변화를 감지해서 활동 알림을 보낸다.
 	property boolean lastInputFocusedState = false
 
+	-- 접기(기본): 패널을 위쪽 띠로 줄이고 최근 몇 줄 + [펼치기] 만 남긴다. 모바일에서 왼쪽 아래 조이스틱과 겹치지 않게(2026-10-07).
+	-- 플랫폼 분기 없이 모든 환경 공통. Enter/T 로 입력을 시작하면 자동으로 펼친다.
+	@HideFromInspector property boolean IsCollapsed = true
+	@HideFromInspector property number ExpandedHeight = 300
+	@HideFromInspector property number CollapsedHeight = 100
+	@HideFromInspector property integer ExpandedLines = 5
+	@HideFromInspector property integer CollapsedLines = 2
+	@HideFromInspector property number AutoCollapseSeconds = 12
+
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
 		self.AllLogs = {}
@@ -49,7 +58,7 @@ script UIChatController extends Component
 		self:InitEntities()
 		self:BindUIEvents()
 		self:UpdateTabButtonVisuals()
-		self:RefreshLogDisplay()
+		self:SetCollapsed(true)
 
 		-- 시작 시 즉시(트윈 없이) 유휴 상태로 — 부팅 때 잠깐 밝았다 꺼지는 깜빡임 방지.
 		local group = self.Entity:GetComponent("CanvasGroupComponent")
@@ -82,6 +91,12 @@ script UIChatController extends Component
 			self:NotifyActivity()
 		end
 		self.lastInputFocusedState = focused
+		-- 펼친 채 AutoCollapseSeconds 동안 아무 활동이 없으면 다시 접는다(모바일 조이스틱 영역을 오래 가리지 않게).
+		if not self.IsCollapsed and not focused and not self.IsFocused then
+			if _UtilLogic.ElapsedSeconds - (self._T.lastActivityAt or 0) >= self.AutoCollapseSeconds then
+				self:SetCollapsed(true)
+			end
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -105,6 +120,7 @@ script UIChatController extends Component
 	@ExecSpace("ClientOnly")
 	method void NotifyActivity()
 		-- 포커스/송신/수신이 있을 때마다 호출 — 또렷하게 밝히고 유휴 타이머를 재시작한다.
+		self._T.lastActivityAt = _UtilLogic.ElapsedSeconds
 		self:SetPanelAlpha(self.ActiveAlpha)
 		if self.idleTimerId ~= 0 then
 			_TimerService:ClearTimer(self.idleTimerId)
@@ -129,6 +145,39 @@ script UIChatController extends Component
 		if not isvalid(self.textLogEntity) then self.textLogEntity = self.Entity:GetChildByName("TextLog", true) end
 		if not isvalid(self.inputEntity) then self.inputEntity = self.Entity:GetChildByName("ChatInput", true) end
 		if not isvalid(self.btnSendEntity) then self.btnSendEntity = self.Entity:GetChildByName("BtnSend", true) end
+		if not isvalid(self._T.btnToggle) then self._T.btnToggle = self.Entity:GetChildByName("BtnToggle", true) end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetCollapsed(boolean collapsed)
+		-- 접기/펼치기. 패널은 왼쪽 위 기준(피벗 0,1)이라 높이만 바꾸면 아래쪽이 줄어든다.
+		-- 자식은 패널 왼쪽 아래 기준이므로 로그 위치·크기도 상태마다 다시 잡는다. 탭·입력·전송은 접으면 끈다.
+		self.IsCollapsed = collapsed
+		if not isvalid(self.textLogEntity) then self:InitEntities() end
+		local panelT = self.Entity.UITransformComponent
+		if isvalid(panelT) then
+			panelT.RectSize = Vector2(panelT.RectSize.x, collapsed and self.CollapsedHeight or self.ExpandedHeight)
+		end
+		for _, ent in ipairs({ self.btnTabAllEntity, self.btnTabWhisperEntity, self.btnTabSystemEntity, self.inputEntity, self.btnSendEntity }) do
+			if isvalid(ent) then ent.Enable = not collapsed end
+		end
+		if isvalid(self.textLogEntity) and isvalid(self.textLogEntity.UITransformComponent) then
+			local t = self.textLogEntity.UITransformComponent
+			if collapsed then
+				t.anchoredPosition = Vector2(10, 6)
+				t.RectSize = Vector2(354, self.CollapsedHeight - 12)
+			else
+				t.anchoredPosition = Vector2(10, 84)
+				t.RectSize = Vector2(460, 120)
+			end
+		end
+		local toggle = self._T.btnToggle
+		if isvalid(toggle) then
+			local label = toggle:GetComponent("TextGUIRendererComponent")
+			if isvalid(label) then label.Text = collapsed and "펼치기" or "접기" end
+		end
+		if collapsed and self.IsFocused then self.IsFocused = false end
+		self:RefreshLogDisplay()
 	end
 
 	@ExecSpace("ClientOnly")
@@ -147,6 +196,10 @@ script UIChatController extends Component
 		SafeConnectButton(self.btnTabWhisperEntity, function() self:SetChannel("whisper") end)
 		SafeConnectButton(self.btnTabSystemEntity, function() self:SetChannel("system") end)
 		SafeConnectButton(self.btnSendEntity, function() self:SubmitChat() end)
+		SafeConnectButton(self._T.btnToggle, function()
+			self:SetCollapsed(not self.IsCollapsed)
+			self:NotifyActivity()
+		end)
 
 		-- ChatInput은 TextGUIRendererInputComponent 자체의 RaycastTarget으로 클릭/터치 포커스를 처리한다
 		-- (MainMenuGroup의 NameInput과 동일한 검증된 패턴 — 별도 ButtonComponent 불필요).
@@ -194,6 +247,8 @@ script UIChatController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void FocusInput()
+		-- 접혀 있으면 먼저 펼친다(입력창이 꺼져 있다).
+		if self.IsCollapsed then self:SetCollapsed(false) end
 		if not isvalid(self.inputEntity) then self:InitEntities() end
 		if not isvalid(self.inputEntity) then return end
 		local input = self.inputEntity:GetComponent("TextGUIRendererInputComponent")
@@ -330,8 +385,8 @@ script UIChatController extends Component
 			currentList = self.SystemLogs
 		end
 
-		-- 최근 6줄만 표시 (채팅창을 퀘스트 트래커 위치로 이전하며 로그 영역 확대: 폰트 20 기준)
-		local maxDisplay = 6
+		-- 최근 N줄만 표시: 펼침 ExpandedLines · 접힘 CollapsedLines (폰트 20 기준)
+		local maxDisplay = self.IsCollapsed and self.CollapsedLines or self.ExpandedLines
 		local startIdx = math.max(1, #currentList - maxDisplay + 1)
 		local displayLines = {}
 		for i = startIdx, #currentList do

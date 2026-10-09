@@ -1,0 +1,73 @@
+{
+  "refreshRequestedAtUTC": "2026-10-06T21:47:13.845489+00:00",
+  "refresh": {
+    "status": "ok"
+  },
+  "refreshCompletedAtUTC": "2026-10-06T21:47:13.850665+00:00",
+  "build": {
+    "status": "ok",
+    "returnedSnapshotCounts": {
+      "Error": 0,
+      "Warning": 13,
+      "Info": 876
+    },
+    "dateTimes": [
+      "2026-10-07T06:39:26"
+    ],
+    "refreshConfirmed": false,
+    "warnings": [
+      {
+        "owner": "model://snowman",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>MinionSummonCount</MODIssueArg><MODIssueArg>MonsterAI</MODIssueArg>"
+      },
+      {
+        "owner": "model://snowman",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>BossDropMin</MODIssueArg><MODIssueArg>Monster</MODIssueArg>"
+      },
+      {
+        "owner": "model://snowman",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>BossDropMax</MODIssueArg><MODIssueArg>Monster</MODIssueArg>"
+      },
+      {
+        "owner": "model://stone_golem",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>LeapAirFrameIndex</MODIssueArg><MODIssueArg>MonsterAI</MODIssueArg>"
+      },
+      {
+        "owner": "model://stone_golem",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>MinionSummonCount</MODIssueArg><MODIssueArg>MonsterAI</MODIssueArg>"
+      },
+      {
+        "owner": "model://prop_uc_constructionsite",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>OrderAboveRoot</MODIssueArg><MODIssueArg>GroupSortChild</MODIssueArg>"
+      },
+      {
+        "owner": "model://prop_uc_constructionsite",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>OrderAboveRoot</MODIssueArg><MODIssueArg>GroupSortChild</MODIssueArg>"
+      },
+      {
+        "owner": "model://prop_uc_constructionsite",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>OrderAboveRoot</MODIssueArg><MODIssueArg>GroupSortChild</MODIssueArg>"
+      },
+      {
+        "owner": "model://prop_uc_constructionsite",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>OrderAboveRoot</MODIssueArg><MODIssueArg>GroupSortChild</MODIssueArg>"
+      },
+      {
+        "owner": "model://deu",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>LeapAirFrameIndex</MODIssueArg><MODIssueArg>MonsterAI</MODIssueArg>"
+      },
+      {
+        "owner": "model://deu",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>MinionSummonCount</MODIssueArg><MODIssueArg>MonsterAI</MODIssueArg>"
+      },
+      {
+        "owner": "model://deu",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>ProjectileDamage</MODIssueArg><MODIssueArg>MonsterAI</MODIssueArg>"
+      },
+      {
+        "owner": "model://catus",
+        "message": "<MODIssueFormat>LWA&Default&4012&0</MODIssueFormat><MODIssueArg>ProjectileDamage</MODIssueArg><MODIssueArg>MonsterAI</MODIssueArg>"
+      }
+    ]
+  }
+}

@@ -103,10 +103,14 @@ script UISkillBarController extends Component
 	@ExecSpace("ClientOnly")
 	method void OnSlotHoverState(integer slotIndex, ButtonStateChangeEvent ev)
 		-- description: PC hover shows SkillTooltip; leave hides. Mobile has no hover — no-op path is fine.
+		-- 짧은 클릭/탭은 Released 가 아니라 Clicked 로 끝난다 — 이걸 닫지 않으면 툴팁이 남는다(꾹 누르기는 Released 라 정상).
 		if ev == nil then return end
 		if ev.state == ButtonState.Hover then
 			self.hoverSlotIndex = slotIndex
 			self:ShowTooltipForSlot(slotIndex)
+		elseif ev.state == ButtonState.Clicked then
+			self.hoverSlotIndex = 0
+			self:HideTooltip()
 		elseif ev.state == ButtonState.Normal or ev.state == ButtonState.Released then
 			if self.hoverSlotIndex == slotIndex then
 				self.hoverSlotIndex = 0

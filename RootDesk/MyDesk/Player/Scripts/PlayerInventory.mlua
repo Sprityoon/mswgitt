@@ -2797,10 +2797,18 @@ script PlayerInventory extends Component
 			-- Paint tile on RectTileMap3 (Layer 3)
 			local layer3 = currentMap:GetChildByName("RectTileMap3")
 			if isvalid(layer3) and isvalid(layer3.RectTileMapComponent) then
-				layer3.RectTileMapComponent:SetTile(placedTileName, cellPos.x, cellPos.y)
-				log("[PLACE] Painted tile " .. placedTileName .. " at cell " .. tostring(cellPos))
-				resourceSpawner:AddPlacedTile(currentMap.Name, placedTileName, cellPos.x, cellPos.y)
-				placementSucceeded = true
+				-- 맵마다 RectTileMap3 의 tileset 이 다르다(map01 = wall, 그 외 = tile1). 없는 이름이면 LEA-3005 로 중단되어
+				-- 아이템만 사라지므로 pcall 로 감싸고 실패 시 아래 환불 경로를 탄다.
+				local tileOk, tileErr = pcall(function()
+					layer3.RectTileMapComponent:SetTile(placedTileName, cellPos.x, cellPos.y)
+				end)
+				if tileOk then
+					log("[PLACE] Painted tile " .. placedTileName .. " at cell " .. tostring(cellPos))
+					resourceSpawner:AddPlacedTile(currentMap.Name, placedTileName, cellPos.x, cellPos.y)
+					placementSucceeded = true
+				else
+					log_warning("[PLACE] tile '" .. placedTileName .. "' not in this map's RectTileMap3 tileset; refunding " .. itemName .. " (" .. tostring(tileErr) .. ")")
+				end
 			else
 				log_error("[PLACE] RectTileMap3 unavailable; refunding " .. itemName)
 			end

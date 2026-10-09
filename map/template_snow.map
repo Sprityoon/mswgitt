@@ -33,12 +33,12 @@
               "@type": "MOD.Core.MapComponent",
               "IsInstanceMap": false,
               "LeftBottom": {
-                "x": -55,
-                "y": -55
+                "x": -55.0,
+                "y": -55.0
               },
               "RightTop": {
-                "x": 55,
-                "y": 55
+                "x": 55.0,
+                "y": 55.0
               },
               "TileMapMode": 1,
               "UseCustomBound": true,
@@ -52,13 +52,18 @@
             {
               "@type": "MOD.Core.PhysicsSimulatorComponent",
               "Gravity": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
+              "NativePositionIteration": 3,
+              "NativeVelocityIteration": 8,
               "Paused": false,
+              "PositionIteration": 3,
+              "ServerSimulation": false,
+              "VelocityIteration": 8,
               "WorldBounds": {
-                "x": 10000,
-                "y": 10000
+                "x": 10000.0,
+                "y": 10000.0
               },
               "Enable": true
             }
@@ -77,7 +82,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 1,
+          "displayOrder": 0,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -92,27 +97,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": -23,
-                "y": -20,
-                "z": 0
+                "x": -23.0,
+                "y": -20.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 2,
-                "y": 2,
-                "z": 1
+                "x": 2.0,
+                "y": 2.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -126,22 +131,22 @@
               "SpriteRUID": "aba58d2139ca4736bab39f6b4c39aa37",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
               },
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 1,
+                "x": 1.0,
                 "y": 1.25
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -151,8 +156,8 @@
               "Enable": true,
               "TargetMapName": "Home",
               "TargetPosition": {
-                "x": -3,
-                "y": 0
+                "x": -3.0,
+                "y": 0.0
               },
               "DestinationGroup": "home",
               "PortalColor": "blue"
@@ -176,7 +181,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 2,
+          "displayOrder": 1,
           "pathConstraints": "///",
           "revision": 0,
           "modelId": null,
@@ -184,38 +189,38 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
+                "x": 0.0,
                 "y": -28.5,
-                "z": 0
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 58,
-                "y": 2
+                "x": 58.0,
+                "y": 2.0
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -223,10 +228,10 @@
             {
               "@type": "script.ResourceOccupiedArea",
               "Enable": true,
-              "OffsetXMin": -29,
-              "OffsetXMax": 29,
-              "OffsetYMin": -1,
-              "OffsetYMax": 1,
+              "OffsetXMin": -29.0,
+              "OffsetXMax": 29.0,
+              "OffsetYMin": -1.0,
+              "OffsetYMax": 1.0,
               "BlocksMovement": true
             }
           ],
@@ -244,7 +249,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 3,
+          "displayOrder": 2,
           "pathConstraints": "///",
           "revision": 0,
           "modelId": null,
@@ -252,38 +257,38 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
+                "x": 0.0,
                 "y": 28.5,
-                "z": 0
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 58,
-                "y": 2
+                "x": 58.0,
+                "y": 2.0
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -291,10 +296,10 @@
             {
               "@type": "script.ResourceOccupiedArea",
               "Enable": true,
-              "OffsetXMin": -29,
-              "OffsetXMax": 29,
-              "OffsetYMin": -1,
-              "OffsetYMax": 1,
+              "OffsetXMin": -29.0,
+              "OffsetXMax": 29.0,
+              "OffsetYMin": -1.0,
+              "OffsetYMax": 1.0,
               "BlocksMovement": true
             }
           ],
@@ -312,7 +317,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 4,
+          "displayOrder": 3,
           "pathConstraints": "///",
           "revision": 0,
           "modelId": null,
@@ -320,38 +325,38 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
                 "x": 28.5,
-                "y": 0,
-                "z": 0
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 2,
-                "y": 58
+                "x": 2.0,
+                "y": 58.0
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -359,10 +364,10 @@
             {
               "@type": "script.ResourceOccupiedArea",
               "Enable": true,
-              "OffsetXMin": -1,
-              "OffsetXMax": 1,
-              "OffsetYMin": -29,
-              "OffsetYMax": 29,
+              "OffsetXMin": -1.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": -29.0,
+              "OffsetYMax": 29.0,
               "BlocksMovement": true
             }
           ],
@@ -380,7 +385,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 5,
+          "displayOrder": 4,
           "pathConstraints": "///",
           "revision": 0,
           "modelId": null,
@@ -388,38 +393,38 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
                 "x": -28.5,
-                "y": 0,
-                "z": 0
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 2,
-                "y": 58
+                "x": 2.0,
+                "y": 58.0
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -427,10 +432,10 @@
             {
               "@type": "script.ResourceOccupiedArea",
               "Enable": true,
-              "OffsetXMin": -1,
-              "OffsetXMax": 1,
-              "OffsetYMin": -29,
-              "OffsetYMax": 29,
+              "OffsetXMin": -1.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": -29.0,
+              "OffsetYMax": 29.0,
               "BlocksMovement": true
             }
           ],
@@ -448,7 +453,7 @@
           "enable": false,
           "visible": true,
           "localize": true,
-          "displayOrder": 6,
+          "displayOrder": 5,
           "pathConstraints": "///",
           "revision": 0,
           "modelId": null,
@@ -456,27 +461,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -488,7 +493,7 @@
               "SpriteRUID": "ecb83722d7fa4a3ab425302401032701",
               "Color": {
                 "r": 0.2,
-                "g": 1,
+                "g": 1.0,
                 "b": 0.2,
                 "a": 0.6
               },
@@ -509,7 +514,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 7,
+          "displayOrder": 6,
           "pathConstraints": "///",
           "revision": 1,
           "modelId": null,
@@ -520,7 +525,7 @@
                 "r": 0.18,
                 "g": 0.45,
                 "b": 0.72,
-                "a": 1
+                "a": 1.0
               },
               "TemplateRUID": "794ad8421e2543d8a6d2c70307637450",
               "Type": 2,
@@ -541,7 +546,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 8,
+          "displayOrder": 7,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -577,7 +582,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 9,
+          "displayOrder": 8,
           "pathConstraints": "///",
           "revision": 6,
           "origin": {
@@ -592,22 +597,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -99201,7 +99206,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 10,
+          "displayOrder": 9,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -99237,7 +99242,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 11,
+          "displayOrder": 10,
           "pathConstraints": "///",
           "revision": 6,
           "origin": {
@@ -99252,22 +99257,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -119245,7 +119250,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 12,
+          "displayOrder": 11,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -119281,7 +119286,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 13,
+          "displayOrder": 12,
           "pathConstraints": "///",
           "revision": 6,
           "origin": {
@@ -119296,22 +119301,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 1000
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1000.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -119336,7 +119341,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 14,
+          "displayOrder": 13,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -119372,7 +119377,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 15,
+          "displayOrder": 14,
           "pathConstraints": "///",
           "revision": 6,
           "origin": {
@@ -119387,22 +119392,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -119427,7 +119432,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 16,
+          "displayOrder": 15,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -119463,7 +119468,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 17,
+          "displayOrder": 16,
           "pathConstraints": "///",
           "revision": 6,
           "origin": {
@@ -119478,22 +119483,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -119518,7 +119523,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 18,
+          "displayOrder": 17,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -119554,7 +119559,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 19,
+          "displayOrder": 18,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -119569,22 +119574,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 997
+                "x": 0.0,
+                "y": 0.0,
+                "z": 997.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -122346,7 +122351,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 20,
+          "displayOrder": 19,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -122361,27 +122366,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 998
+                "x": 0.0,
+                "y": 0.0,
+                "z": 998.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -199951,7 +199956,7 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 21,
+          "displayOrder": 20,
           "pathConstraints": "///",
           "revision": 1,
           "origin": {
@@ -199966,27 +199971,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": -18,
-                "y": -20,
-                "z": 0
+                "x": -18.0,
+                "y": -20.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 2,
-                "y": 2,
-                "z": 1
+                "x": 2.0,
+                "y": 2.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -200000,22 +200005,22 @@
               "SpriteRUID": "aba58d2139ca4736bab39f6b4c39aa37",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
               },
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 1,
+                "x": 1.0,
                 "y": 1.25
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -200025,8 +200030,8 @@
               "Enable": true,
               "TargetMapName": "",
               "TargetPosition": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "DestinationGroup": "hunt",
               "PortalColor": "white"
@@ -200042,636 +200047,6 @@
         }
       },
       {
-        "id": "88e470e7-a3da-4501-a883-e15df554393f",
-        "path": "/maps/template_snow/D03_Deco_LogFence",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D03_Deco_LogFence",
-          "path": "/maps/template_snow/D03_Deco_LogFence",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 124,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_log_fence",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -25,
-                "y": -24.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "d53a41842a8e430b89377c73832194de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.82,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.21
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_log_fence",
-            "sub_entity_id": null,
-            "root_entity_id": "88e470e7-a3da-4501-a883-e15df554393f",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "e0ffa23e-1f6f-4741-9008-a812d4247ac2",
-        "path": "/maps/template_snow/D06_Deco_LogFence",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D06_Deco_LogFence",
-          "path": "/maps/template_snow/D06_Deco_LogFence",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 127,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_log_fence",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 15,
-                "y": 17.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "d53a41842a8e430b89377c73832194de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.82,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.21
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_log_fence",
-            "sub_entity_id": null,
-            "root_entity_id": "e0ffa23e-1f6f-4741-9008-a812d4247ac2",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "9044c438-06f2-4b67-b2ee-9fbff647ba37",
-        "path": "/maps/template_snow/D12_Deco_LogFence",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D12_Deco_LogFence",
-          "path": "/maps/template_snow/D12_Deco_LogFence",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 133,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_log_fence",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 9,
-                "y": -22.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "d53a41842a8e430b89377c73832194de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.82,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.21
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_log_fence",
-            "sub_entity_id": null,
-            "root_entity_id": "9044c438-06f2-4b67-b2ee-9fbff647ba37",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "e1e5053c-7ae1-4d94-a60f-9dda1d956bef",
-        "path": "/maps/template_snow/D16_Deco_LogFence",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D16_Deco_LogFence",
-          "path": "/maps/template_snow/D16_Deco_LogFence",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 137,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_log_fence",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -21,
-                "y": 15.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "d53a41842a8e430b89377c73832194de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.82,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.21
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_log_fence",
-            "sub_entity_id": null,
-            "root_entity_id": "e1e5053c-7ae1-4d94-a60f-9dda1d956bef",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "4913e31c-ba46-4c03-a00f-a81ea7a1a54c",
-        "path": "/maps/template_snow/D22_Deco_LogFence",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D22_Deco_LogFence",
-          "path": "/maps/template_snow/D22_Deco_LogFence",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 143,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_log_fence",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -17.5,
-                "y": -14,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "d53a41842a8e430b89377c73832194de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.82,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.21
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_log_fence",
-            "sub_entity_id": null,
-            "root_entity_id": "4913e31c-ba46-4c03-a00f-a81ea7a1a54c",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "c7bf46f8-b9bf-4044-8fe7-31aeab95573a",
-        "path": "/maps/template_snow/D24_Deco_LogFence",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D24_Deco_LogFence",
-          "path": "/maps/template_snow/D24_Deco_LogFence",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 145,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_log_fence",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 5.5,
-                "y": 5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "d53a41842a8e430b89377c73832194de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.82,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.21
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_log_fence",
-            "sub_entity_id": null,
-            "root_entity_id": "c7bf46f8-b9bf-4044-8fe7-31aeab95573a",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "ff9c3543-c782-4dd1-aedf-434bc69d4e1b",
-        "path": "/maps/template_snow/D26_Deco_LogFence",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D26_Deco_LogFence",
-          "path": "/maps/template_snow/D26_Deco_LogFence",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 147,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_log_fence",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 17.5,
-                "y": -1,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "d53a41842a8e430b89377c73832194de",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.82,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.21
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_log_fence",
-            "sub_entity_id": null,
-            "root_entity_id": "ff9c3543-c782-4dd1-aedf-434bc69d4e1b",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
         "id": "822da41c-7aac-4114-a41a-65f3afcd6d78",
         "path": "/maps/template_snow/PortalForward",
         "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.PortalGate,script.PlaceableFurniture",
@@ -200682,29 +200057,42 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 162,
+          "displayOrder": 21,
           "pathConstraints": "///",
           "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b1",
+            "sub_entity_id": null,
+            "root_entity_id": "822da41c-7aac-4114-a41a-65f3afcd6d78",
+            "replaced_model_id": null
+          },
           "modelId": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b1",
           "@components": [
             {
               "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
               "Position": {
-                "x": 22,
-                "y": 23,
-                "z": 0
+                "x": 22.0,
+                "y": 23.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 2,
-                "y": 2,
-                "z": 1
+                "x": 2.0,
+                "y": 2.0,
+                "z": 1.0
               },
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -200718,22 +200106,22 @@
               "SpriteRUID": "aba58d2139ca4736bab39f6b4c39aa37",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
               },
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 1,
+                "x": 1.0,
                 "y": 1.25
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -200743,8 +200131,8 @@
               "Enable": true,
               "TargetMapName": "",
               "TargetPosition": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "DestinationGroup": "hunt",
               "PortalColor": "white"
@@ -200754,14 +200142,2293 @@
               "Enable": true
             }
           ],
-          "@version": 1,
+          "@version": 1
+        }
+      },
+      {
+        "id": "49613d83-ea8d-42d9-bd91-71f5d9f7ea26",
+        "path": "/maps/template_snow/Snow_Fir_01",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Fir_01",
+          "path": "/maps/template_snow/Snow_Fir_01",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 22,
+          "pathConstraints": "///",
+          "revision": 1,
           "origin": {
             "type": "Model",
-            "entry_id": "f2d3a4b5-67c8-49d0-bfd1-ebd3c4a2a1b1",
+            "entry_id": "tree_winter_fir",
             "sub_entity_id": null,
-            "root_entity_id": "822da41c-7aac-4114-a41a-65f3afcd6d78",
+            "root_entity_id": "49613d83-ea8d-42d9-bd91-71f5d9f7ea26",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "tree_winter_fir",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -21.0,
+                "y": 16.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "61db1dfc7c7e4f85b3f3bc29b010c49f",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "0fea65ca-7298-4b80-9cf5-f9260337c5aa",
+        "path": "/maps/template_snow/Snow_Fir_02",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Fir_02",
+          "path": "/maps/template_snow/Snow_Fir_02",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 23,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_winter_fir",
+            "sub_entity_id": null,
+            "root_entity_id": "0fea65ca-7298-4b80-9cf5-f9260337c5aa",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_winter_fir",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -17.5,
+                "y": -14.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "61db1dfc7c7e4f85b3f3bc29b010c49f",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "c1f970e4-4d5f-4348-879b-4e6fa7c74215",
+        "path": "/maps/template_snow/Snow_Fir_03",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Fir_03",
+          "path": "/maps/template_snow/Snow_Fir_03",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 24,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_winter_fir",
+            "sub_entity_id": null,
+            "root_entity_id": "c1f970e4-4d5f-4348-879b-4e6fa7c74215",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_winter_fir",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 18.0,
+                "y": -18.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "61db1dfc7c7e4f85b3f3bc29b010c49f",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "cf42d470-7dee-4c12-928c-9f36569b9824",
+        "path": "/maps/template_snow/Snow_Fir_04",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Fir_04",
+          "path": "/maps/template_snow/Snow_Fir_04",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 25,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_winter_fir",
+            "sub_entity_id": null,
+            "root_entity_id": "cf42d470-7dee-4c12-928c-9f36569b9824",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_winter_fir",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 6.0,
+                "y": 18.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "61db1dfc7c7e4f85b3f3bc29b010c49f",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "001b3307-208f-44aa-a367-152ee8372696",
+        "path": "/maps/template_snow/Snow_Fir_05",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Fir_05",
+          "path": "/maps/template_snow/Snow_Fir_05",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 26,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_winter_fir",
+            "sub_entity_id": null,
+            "root_entity_id": "001b3307-208f-44aa-a367-152ee8372696",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_winter_fir",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 23.0,
+                "y": 6.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "61db1dfc7c7e4f85b3f3bc29b010c49f",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 0.352,
+                "y": 0.597
+              },
+              "ColliderOffset": {
+                "x": 0.017,
+                "y": -0.701
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "f2a35795-bdce-4728-ae8a-01d9a66059bf",
+        "path": "/maps/template_snow/Snow_Rock_01",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Rock_01",
+          "path": "/maps/template_snow/Snow_Rock_01",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 27,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_rock",
+            "sub_entity_id": null,
+            "root_entity_id": "f2a35795-bdce-4728-ae8a-01d9a66059bf",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_rock",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 5.950386,
+                "y": 6.769435,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "99125eb31b9f46479efc1cec9e371ae2",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "e9913fe1-2451-41e9-bd9b-6a48df1300e9",
+        "path": "/maps/template_snow/Snow_Rock_02",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Rock_02",
+          "path": "/maps/template_snow/Snow_Rock_02",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 28,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_rock",
+            "sub_entity_id": null,
+            "root_entity_id": "e9913fe1-2451-41e9-bd9b-6a48df1300e9",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_rock",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 17.5,
+                "y": -1.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "99125eb31b9f46479efc1cec9e371ae2",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "c8efc7a3-2708-4890-bc18-3c6f1987b704",
+        "path": "/maps/template_snow/Snow_Rock_03",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Rock_03",
+          "path": "/maps/template_snow/Snow_Rock_03",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 29,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_rock",
+            "sub_entity_id": null,
+            "root_entity_id": "c8efc7a3-2708-4890-bc18-3c6f1987b704",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_rock",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -14.0,
+                "y": -23.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "99125eb31b9f46479efc1cec9e371ae2",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "10fc709f-8331-4ee7-b506-dce0e44d3442",
+        "path": "/maps/template_snow/Snow_Rock_04",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Rock_04",
+          "path": "/maps/template_snow/Snow_Rock_04",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 30,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_rock",
+            "sub_entity_id": null,
+            "root_entity_id": "10fc709f-8331-4ee7-b506-dce0e44d3442",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_rock",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -24.0,
+                "y": -4.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "99125eb31b9f46479efc1cec9e371ae2",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "753d227a-0667-4a25-85e1-e98d292defac",
+        "path": "/maps/template_snow/Snow_Rock_05",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Rock_05",
+          "path": "/maps/template_snow/Snow_Rock_05",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 31,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_rock",
+            "sub_entity_id": null,
+            "root_entity_id": "753d227a-0667-4a25-85e1-e98d292defac",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_rock",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -15.0,
+                "y": 23.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "99125eb31b9f46479efc1cec9e371ae2",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.295,
+                "y": 0.502
+              },
+              "ColliderOffset": {
+                "x": 0.021,
+                "y": -0.185
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "04e6c54f-f189-42fc-bb80-1d69ee660e6b",
+        "path": "/maps/template_snow/Snow_Stump_01",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Stump_01",
+          "path": "/maps/template_snow/Snow_Stump_01",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 32,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_treestump",
+            "sub_entity_id": null,
+            "root_entity_id": "04e6c54f-f189-42fc-bb80-1d69ee660e6b",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_treestump",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -25.0,
+                "y": -24.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "6523260fa99a486db0817acca64bde02",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.895,
+                "y": 0.67
+              },
+              "ColliderOffset": {
+                "x": -0.036,
+                "y": 0.01
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 0.895,
+                "y": 0.67
+              },
+              "ColliderOffset": {
+                "x": -0.036,
+                "y": 0.01
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "0cb381cf-9e93-4393-9409-051871554325",
+        "path": "/maps/template_snow/Snow_Stump_02",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Stump_02",
+          "path": "/maps/template_snow/Snow_Stump_02",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 33,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_treestump",
+            "sub_entity_id": null,
+            "root_entity_id": "0cb381cf-9e93-4393-9409-051871554325",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_treestump",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 11.0,
+                "y": -13.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "6523260fa99a486db0817acca64bde02",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.895,
+                "y": 0.67
+              },
+              "ColliderOffset": {
+                "x": -0.036,
+                "y": 0.01
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 0.895,
+                "y": 0.67
+              },
+              "ColliderOffset": {
+                "x": -0.036,
+                "y": 0.01
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "1516d147-c7ec-4d1e-95bb-b24a1dae426a",
+        "path": "/maps/template_snow/Snow_Stump_03",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Stump_03",
+          "path": "/maps/template_snow/Snow_Stump_03",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 34,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_treestump",
+            "sub_entity_id": null,
+            "root_entity_id": "1516d147-c7ec-4d1e-95bb-b24a1dae426a",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_treestump",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 5.0,
+                "y": -8.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "6523260fa99a486db0817acca64bde02",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.895,
+                "y": 0.67
+              },
+              "ColliderOffset": {
+                "x": -0.036,
+                "y": 0.01
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 0.895,
+                "y": 0.67
+              },
+              "ColliderOffset": {
+                "x": -0.036,
+                "y": 0.01
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "56ea99a7-6d94-475c-ae1c-354a08786e3e",
+        "path": "/maps/template_snow/Snow_Stump_04",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_Stump_04",
+          "path": "/maps/template_snow/Snow_Stump_04",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 35,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_treestump",
+            "sub_entity_id": null,
+            "root_entity_id": "56ea99a7-6d94-475c-ae1c-354a08786e3e",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_treestump",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -5.0,
+                "y": 16.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "6523260fa99a486db0817acca64bde02",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.895,
+                "y": 0.67
+              },
+              "ColliderOffset": {
+                "x": -0.036,
+                "y": 0.01
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 0.895,
+                "y": 0.67
+              },
+              "ColliderOffset": {
+                "x": -0.036,
+                "y": 0.01
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "ccb8d437-6101-45aa-b3e6-81f00918317a",
+        "path": "/maps/template_snow/Snow_FallenLog_01",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_FallenLog_01",
+          "path": "/maps/template_snow/Snow_FallenLog_01",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 36,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_fallenlog",
+            "sub_entity_id": null,
+            "root_entity_id": "ccb8d437-6101-45aa-b3e6-81f00918317a",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_fallenlog",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 9.0,
+                "y": -22.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "706d1853db8b48d792ead500b0a317ad",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.25,
+                "y": 0.748
+              },
+              "ColliderOffset": {
+                "x": -0.001,
+                "y": 0.0
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.25,
+                "y": 0.748
+              },
+              "ColliderOffset": {
+                "x": -0.001,
+                "y": 0.0
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "0e304733-5f2e-4710-a214-d41fb4355fb8",
+        "path": "/maps/template_snow/Snow_FallenLog_02",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_FallenLog_02",
+          "path": "/maps/template_snow/Snow_FallenLog_02",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 37,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_fallenlog",
+            "sub_entity_id": null,
+            "root_entity_id": "0e304733-5f2e-4710-a214-d41fb4355fb8",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_fallenlog",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 18.4102268,
+                "y": 15.5991879,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "706d1853db8b48d792ead500b0a317ad",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.25,
+                "y": 0.748
+              },
+              "ColliderOffset": {
+                "x": -0.001,
+                "y": 0.0
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.25,
+                "y": 0.748
+              },
+              "ColliderOffset": {
+                "x": -0.001,
+                "y": 0.0
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "b21c2e93-03ef-4b2d-9abe-000355fc8f3d",
+        "path": "/maps/template_snow/Snow_FallenLog_03",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_FallenLog_03",
+          "path": "/maps/template_snow/Snow_FallenLog_03",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 38,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_fallenlog",
+            "sub_entity_id": null,
+            "root_entity_id": "b21c2e93-03ef-4b2d-9abe-000355fc8f3d",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_fallenlog",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -14.0,
+                "y": 18.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "706d1853db8b48d792ead500b0a317ad",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.25,
+                "y": 0.748
+              },
+              "ColliderOffset": {
+                "x": -0.001,
+                "y": 0.0
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.25,
+                "y": 0.748
+              },
+              "ColliderOffset": {
+                "x": -0.001,
+                "y": 0.0
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "fd717b95-44c4-4a71-bf3b-f0504f4c65f6",
+        "path": "/maps/template_snow/Snow_FallenLog_04",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Snow_FallenLog_04",
+          "path": "/maps/template_snow/Snow_FallenLog_04",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 39,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_winter_fallenlog",
+            "sub_entity_id": null,
+            "root_entity_id": "fd717b95-44c4-4a71-bf3b-f0504f4c65f6",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_winter_fallenlog",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 13.0,
+                "y": 8.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "706d1853db8b48d792ead500b0a317ad",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.25,
+                "y": 0.748
+              },
+              "ColliderOffset": {
+                "x": -0.001,
+                "y": 0.0
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.25,
+                "y": 0.748
+              },
+              "ColliderOffset": {
+                "x": -0.001,
+                "y": 0.0
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
         }
       }
     ]

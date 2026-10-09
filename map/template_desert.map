@@ -7,7 +7,7 @@
   "Usage": 0,
   "UsePublish": 1,
   "UseService": 0,
-  "CoreVersion": "26.7.0.0",
+  "CoreVersion": "26.10.0.0",
   "StudioVersion": "0.1.0.0",
   "DynamicLoading": 0,
   "ContentProto": {
@@ -33,12 +33,12 @@
               "@type": "MOD.Core.MapComponent",
               "IsInstanceMap": false,
               "LeftBottom": {
-                "x": -55,
-                "y": -55
+                "x": -55.0,
+                "y": -55.0
               },
               "RightTop": {
-                "x": 55,
-                "y": 55
+                "x": 55.0,
+                "y": 55.0
               },
               "TileMapMode": 1,
               "UseCustomBound": true,
@@ -52,13 +52,18 @@
             {
               "@type": "MOD.Core.PhysicsSimulatorComponent",
               "Gravity": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
+              "NativePositionIteration": 3,
+              "NativeVelocityIteration": 8,
               "Paused": false,
+              "PositionIteration": 3,
+              "ServerSimulation": false,
+              "VelocityIteration": 8,
               "WorldBounds": {
-                "x": 10000,
-                "y": 10000
+                "x": 10000.0,
+                "y": 10000.0
               },
               "Enable": true
             }
@@ -92,27 +97,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 22,
-                "y": 23,
-                "z": 0
+                "x": 22.0,
+                "y": 23.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 2,
-                "y": 2,
-                "z": 1
+                "x": 2.0,
+                "y": 2.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -126,22 +131,22 @@
               "SpriteRUID": "aba58d2139ca4736bab39f6b4c39aa37",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
               },
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 1,
+                "x": 1.0,
                 "y": 1.25
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -151,8 +156,8 @@
               "Enable": true,
               "TargetMapName": "",
               "TargetPosition": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "DestinationGroup": "hunt",
               "PortalColor": "white"
@@ -191,27 +196,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": -23,
-                "y": -20,
-                "z": 0
+                "x": -23.0,
+                "y": -20.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 2,
-                "y": 2,
-                "z": 1
+                "x": 2.0,
+                "y": 2.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -225,22 +230,22 @@
               "SpriteRUID": "aba58d2139ca4736bab39f6b4c39aa37",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
               },
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 1,
+                "x": 1.0,
                 "y": 1.25
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -250,8 +255,8 @@
               "Enable": true,
               "TargetMapName": "Home",
               "TargetPosition": {
-                "x": -3,
-                "y": 0
+                "x": -3.0,
+                "y": 0.0
               },
               "DestinationGroup": "home",
               "PortalColor": "blue"
@@ -283,38 +288,38 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
+                "x": 0.0,
                 "y": -28.5,
-                "z": 0
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 58,
-                "y": 2
+                "x": 58.0,
+                "y": 2.0
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -322,10 +327,10 @@
             {
               "@type": "script.ResourceOccupiedArea",
               "Enable": true,
-              "OffsetXMin": -29,
-              "OffsetXMax": 29,
-              "OffsetYMin": -1,
-              "OffsetYMax": 1,
+              "OffsetXMin": -29.0,
+              "OffsetXMax": 29.0,
+              "OffsetYMin": -1.0,
+              "OffsetYMax": 1.0,
               "BlocksMovement": true
             }
           ],
@@ -351,38 +356,38 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
+                "x": 0.0,
                 "y": 28.5,
-                "z": 0
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 58,
-                "y": 2
+                "x": 58.0,
+                "y": 2.0
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -390,10 +395,10 @@
             {
               "@type": "script.ResourceOccupiedArea",
               "Enable": true,
-              "OffsetXMin": -29,
-              "OffsetXMax": 29,
-              "OffsetYMin": -1,
-              "OffsetYMax": 1,
+              "OffsetXMin": -29.0,
+              "OffsetXMax": 29.0,
+              "OffsetYMin": -1.0,
+              "OffsetYMax": 1.0,
               "BlocksMovement": true
             }
           ],
@@ -419,38 +424,38 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
                 "x": 28.5,
-                "y": 0,
-                "z": 0
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 2,
-                "y": 58
+                "x": 2.0,
+                "y": 58.0
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -458,10 +463,10 @@
             {
               "@type": "script.ResourceOccupiedArea",
               "Enable": true,
-              "OffsetXMin": -1,
-              "OffsetXMax": 1,
-              "OffsetYMin": -29,
-              "OffsetYMax": 29,
+              "OffsetXMin": -1.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": -29.0,
+              "OffsetYMax": 29.0,
               "BlocksMovement": true
             }
           ],
@@ -487,38 +492,38 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
                 "x": -28.5,
-                "y": 0,
-                "z": 0
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 2,
-                "y": 58
+                "x": 2.0,
+                "y": 58.0
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -526,10 +531,10 @@
             {
               "@type": "script.ResourceOccupiedArea",
               "Enable": true,
-              "OffsetXMin": -1,
-              "OffsetXMax": 1,
-              "OffsetYMin": -29,
-              "OffsetYMax": 29,
+              "OffsetXMin": -1.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": -29.0,
+              "OffsetYMax": 29.0,
               "BlocksMovement": true
             }
           ],
@@ -555,27 +560,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -587,7 +592,7 @@
               "SpriteRUID": "ecb83722d7fa4a3ab425302401032701",
               "Color": {
                 "r": 0.2,
-                "g": 1,
+                "g": 1.0,
                 "b": 0.2,
                 "a": 0.6
               },
@@ -619,7 +624,7 @@
                 "r": 0.18,
                 "g": 0.45,
                 "b": 0.72,
-                "a": 1
+                "a": 1.0
               },
               "TemplateRUID": "794ad8421e2543d8a6d2c70307637450",
               "Type": 2,
@@ -691,22 +696,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -99351,22 +99356,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -119179,22 +119184,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 1000
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1000.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -119270,22 +119275,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -119361,22 +119366,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -119452,22 +119457,22 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 997
+                "x": 0.0,
+                "y": 0.0,
+                "z": 997.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -122100,27 +122105,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": 0,
-                "y": 0,
-                "z": 998
+                "x": 0.0,
+                "y": 0.0,
+                "z": 998.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -199097,27 +199102,27 @@
             {
               "@type": "MOD.Core.TransformComponent",
               "Rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
               },
               "Position": {
-                "x": -18,
-                "y": -20,
-                "z": 0
+                "x": -18.0,
+                "y": -20.0,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "x": 2,
-                "y": 2,
-                "z": 1
+                "x": 2.0,
+                "y": 2.0,
+                "z": 1.0
               },
-              "ZRotation": 0,
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
@@ -199131,22 +199136,22 @@
               "SpriteRUID": "aba58d2139ca4736bab39f6b4c39aa37",
               "StartFrameIndex": 0,
               "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
               },
               "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
               "BoxSize": {
-                "x": 1,
+                "x": 1.0,
                 "y": 1.25
               },
               "ColliderOffset": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "IsLegacy": true,
               "Enable": true
@@ -199156,8 +199161,8 @@
               "Enable": true,
               "TargetMapName": "",
               "TargetPosition": {
-                "x": 0,
-                "y": 0
+                "x": 0.0,
+                "y": 0.0
               },
               "DestinationGroup": "hunt",
               "PortalColor": "white"
@@ -199183,83 +199188,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 122,
+          "displayOrder": 22,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -25,
-                "y": -16.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "80f513d3-f900-4241-acea-5f2bce3a9ae2",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -25.0,
+                "y": -16.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -199273,83 +199283,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 126,
+          "displayOrder": 23,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 15,
-                "y": 25.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "908ca244-6fd2-4d9b-891c-6136a2a1ebbf",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 15.0,
+                "y": 25.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -199363,83 +199378,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 130,
+          "displayOrder": 24,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -8,
-                "y": 8.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "8a5de41e-cc6b-4543-b391-a88c3c420ffd",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -7.67830658,
+                "y": 9.658173,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -199453,83 +199473,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 134,
+          "displayOrder": 25,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 14,
-                "y": -10.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "fa2a5a07-a995-4c72-9806-6cf65d94f38d",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 14.0,
+                "y": -10.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -199543,353 +199568,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 138,
+          "displayOrder": 26,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -23,
-                "y": 21.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "6a61f609-e861-4df1-9f5f-d0f717e6218e",
             "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "82c1db33-e728-4ef3-b8ad-5be9ab97b09a",
-        "path": "/maps/template_desert/D21_Deco_Cattail",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D21_Deco_Cattail",
-          "path": "/maps/template_desert/D21_Deco_Cattail",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 142,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_cattail",
+          },
+          "modelId": "deco_dry_bush",
           "@components": [
             {
               "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
               "Position": {
-                "x": -4.5,
-                "y": 5.5,
-                "z": 0
+                "x": -23.0,
+                "y": 21.5,
+                "z": 0.0
               },
               "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
               },
               "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
               },
+              "ZRotation": 0.0,
               "Enable": true
             },
             {
               "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "55250c705312434287c73b58bf2a2fd0",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
+              "ActionSheet": {},
               "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
               "FlipX": false,
               "FlipY": false,
-              "PlayRate": 1,
               "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
               "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
             },
             {
               "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
               "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.28,
+                "x": 0.48,
                 "y": 0.3
               },
               "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.17
+                "x": 0.02,
+                "y": -0.18
               },
+              "IsLegacy": false,
               "IsPassive": true,
-              "IsLegacy": false
+              "Enable": true
             },
             {
               "@type": "script.YSortSprite",
               "Enable": true,
               "Dynamic": false,
               "IsUnit": false,
-              "SortYOffset": 0
+              "SortYOffset": 0.0
             }
           ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_cattail",
-            "sub_entity_id": null,
-            "root_entity_id": "82c1db33-e728-4ef3-b8ad-5be9ab97b09a",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "fa355580-4dc1-41a0-baee-3a72022bec0d",
-        "path": "/maps/template_desert/D23_Deco_Cattail",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D23_Deco_Cattail",
-          "path": "/maps/template_desert/D23_Deco_Cattail",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 144,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_cattail",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 13.5,
-                "y": 12.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "55250c705312434287c73b58bf2a2fd0",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.28,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.17
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_cattail",
-            "sub_entity_id": null,
-            "root_entity_id": "fa355580-4dc1-41a0-baee-3a72022bec0d",
-            "replaced_model_id": null
-          }
-        }
-      },
-      {
-        "id": "ba344bd5-64e3-465c-9c32-6df48de00c24",
-        "path": "/maps/template_desert/D25_Deco_Cattail",
-        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite",
-        "jsonString": {
-          "name": "D25_Deco_Cattail",
-          "path": "/maps/template_desert/D25_Deco_Cattail",
-          "nameEditable": true,
-          "enable": true,
-          "visible": true,
-          "localize": false,
-          "displayOrder": 146,
-          "pathConstraints": "///",
-          "revision": 1,
-          "modelId": "deco_cattail",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -20.5,
-                "y": -3.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "55250c705312434287c73b58bf2a2fd0",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.28,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0,
-                "y": -0.17
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
-          "origin": {
-            "type": "Model",
-            "entry_id": "deco_cattail",
-            "sub_entity_id": null,
-            "root_entity_id": "ba344bd5-64e3-465c-9c32-6df48de00c24",
-            "replaced_model_id": null
-          }
+          "@version": 1
         }
       },
       {
@@ -199903,83 +199663,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 148,
+          "displayOrder": 27,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -17.5,
-                "y": -14,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "69e4ca40-ea86-4e6c-a4f2-9d8b16bd8819",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -17.5,
+                "y": -14.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -199993,83 +199758,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 149,
+          "displayOrder": 28,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 11,
-                "y": 3.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "a818bfb6-11bb-4323-b58b-e6c4c3fc54dc",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 11.0,
+                "y": 3.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -200083,83 +199853,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 150,
+          "displayOrder": 29,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 11,
-                "y": -3.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "a418c08f-d576-469a-954d-2eb0548c4fae",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 11.0,
+                "y": -3.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -200173,83 +199948,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 154,
+          "displayOrder": 30,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -7.5,
-                "y": -22.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "90eb7e7d-2dfe-4e8c-aee0-062a5801f532",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -7.5,
+                "y": -22.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -200263,83 +200043,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 157,
+          "displayOrder": 31,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -0.5,
-                "y": -24.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "c2535987-3c61-482b-a5af-60c0e9cc711a",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -0.5,
+                "y": -24.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -200353,83 +200138,88 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 160,
+          "displayOrder": 32,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": -0.5,
-                "y": 23.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "de5dd770-397e-41b3-8504-1c228a838159",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -0.5,
+                "y": 23.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
         }
       },
       {
@@ -200443,83 +200233,2082 @@
           "enable": true,
           "visible": true,
           "localize": false,
-          "displayOrder": 163,
+          "displayOrder": 33,
           "pathConstraints": "///",
           "revision": 1,
-          "modelId": "deco_dry_bush",
-          "@components": [
-            {
-              "@type": "MOD.Core.TransformComponent",
-              "Position": {
-                "x": 9.5,
-                "y": 24.5,
-                "z": 0
-              },
-              "QuaternionRotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "w": 1
-              },
-              "Scale": {
-                "$type": "MOD.Core.MODVector3, MOD.Core",
-                "x": 2,
-                "y": 2,
-                "z": 2
-              },
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.SpriteRendererComponent",
-              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
-              "Color": {
-                "r": 1,
-                "g": 1,
-                "b": 1,
-                "a": 1
-              },
-              "DrawMode": 0,
-              "FlipX": false,
-              "FlipY": false,
-              "PlayRate": 1,
-              "OrderInLayer": 2,
-              "StartFrameIndex": 0,
-              "EndFrameIndex": 2147483647,
-              "Enable": true,
-              "SortingLayer": "MapLayer5"
-            },
-            {
-              "@type": "MOD.Core.TriggerComponent",
-              "Enable": true,
-              "BoxSize": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.48,
-                "y": 0.3
-              },
-              "ColliderOffset": {
-                "$type": "MOD.Core.MODVector2, MOD.Core",
-                "x": 0.02,
-                "y": -0.18
-              },
-              "IsPassive": true,
-              "IsLegacy": false
-            },
-            {
-              "@type": "script.YSortSprite",
-              "Enable": true,
-              "Dynamic": false,
-              "IsUnit": false,
-              "SortYOffset": 0
-            }
-          ],
-          "@version": 1,
           "origin": {
             "type": "Model",
             "entry_id": "deco_dry_bush",
             "sub_entity_id": null,
             "root_entity_id": "f6b7caf8-f9d5-4665-9a6e-b70f19dfff42",
             "replaced_model_id": null
-          }
+          },
+          "modelId": "deco_dry_bush",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 9.5,
+                "y": 24.5,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "e3f3ef8bfa394344a7b8fa2820f688a4",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 0.48,
+                "y": 0.3
+              },
+              "ColliderOffset": {
+                "x": 0.02,
+                "y": -0.18
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "574b8f84-172c-44a8-9a40-455955460aca",
+        "path": "/maps/template_desert/Desert_DeadTree_01",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Desert_DeadTree_01",
+          "path": "/maps/template_desert/Desert_DeadTree_01",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 34,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_desert_deadtree",
+            "sub_entity_id": null,
+            "root_entity_id": "574b8f84-172c-44a8-9a40-455955460aca",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_desert_deadtree",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -14.0,
+                "y": -18.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "da60b97c82664ff5a8cf7fb237e0b1b7",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.397,
+                "y": 0.805
+              },
+              "ColliderOffset": {
+                "x": 0.275,
+                "y": -2.83
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.215,
+                "y": 0.7
+              },
+              "ColliderOffset": {
+                "x": 0.275,
+                "y": -2.83
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "be3c8724-d06d-4111-801f-ef1b10951b74",
+        "path": "/maps/template_desert/Desert_DeadTree_02",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Desert_DeadTree_02",
+          "path": "/maps/template_desert/Desert_DeadTree_02",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 35,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_desert_deadtree",
+            "sub_entity_id": null,
+            "root_entity_id": "be3c8724-d06d-4111-801f-ef1b10951b74",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_desert_deadtree",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -10.0,
+                "y": 15.0214481,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "da60b97c82664ff5a8cf7fb237e0b1b7",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.397,
+                "y": 0.805
+              },
+              "ColliderOffset": {
+                "x": 0.275,
+                "y": -2.83
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 2.589169,
+                "y": 1.68150115
+              },
+              "ColliderOffset": {
+                "x": 0.278827667,
+                "y": -2.359249
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "f7b40704-6e18-468c-9816-20a452d7cd0e",
+        "path": "/maps/template_desert/Desert_DeadTree_03",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Desert_DeadTree_03",
+          "path": "/maps/template_desert/Desert_DeadTree_03",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 36,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_desert_deadtree",
+            "sub_entity_id": null,
+            "root_entity_id": "f7b40704-6e18-468c-9816-20a452d7cd0e",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_desert_deadtree",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 10.0,
+                "y": -15.9862213,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "da60b97c82664ff5a8cf7fb237e0b1b7",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.397,
+                "y": 0.805
+              },
+              "ColliderOffset": {
+                "x": 0.275,
+                "y": -2.83
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 2.03324437,
+                "y": 1.38402212
+              },
+              "ColliderOffset": {
+                "x": 0.192855835,
+                "y": -2.507988
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "f9a11192-5b37-418e-9044-2743b737d971",
+        "path": "/maps/template_desert/Desert_DeadTree_04",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Desert_DeadTree_04",
+          "path": "/maps/template_desert/Desert_DeadTree_04",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 37,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_desert_deadtree",
+            "sub_entity_id": null,
+            "root_entity_id": "f9a11192-5b37-418e-9044-2743b737d971",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_desert_deadtree",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 18.0,
+                "y": -5.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "da60b97c82664ff5a8cf7fb237e0b1b7",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.397,
+                "y": 0.805
+              },
+              "ColliderOffset": {
+                "x": 0.275,
+                "y": -2.83
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 2.28890085,
+                "y": 1.31689012
+              },
+              "ColliderOffset": {
+                "x": 0.193031311,
+                "y": -2.54155445
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "2a11d4e4-9b41-4ad4-84d4-0644ae229cb2",
+        "path": "/maps/template_desert/Desert_DeadTree_05",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Desert_DeadTree_05",
+          "path": "/maps/template_desert/Desert_DeadTree_05",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 38,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_desert_deadtree",
+            "sub_entity_id": null,
+            "root_entity_id": "2a11d4e4-9b41-4ad4-84d4-0644ae229cb2",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_desert_deadtree",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 8.0,
+                "y": 16.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "da60b97c82664ff5a8cf7fb237e0b1b7",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.83849859,
+                "y": 1.702949
+              },
+              "ColliderOffset": {
+                "x": 0.225200653,
+                "y": -2.34852219
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.215,
+                "y": 0.7
+              },
+              "ColliderOffset": {
+                "x": 0.275,
+                "y": -2.83
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "41a22a7a-1cdd-4e9d-a408-a37375d93156",
+        "path": "/maps/template_desert/Desert_DeadTree_06",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent,script.ResourceOccupiedArea,script.ResourceReaction",
+        "jsonString": {
+          "name": "Desert_DeadTree_06",
+          "path": "/maps/template_desert/Desert_DeadTree_06",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 39,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "tree_desert_deadtree",
+            "sub_entity_id": null,
+            "root_entity_id": "41a22a7a-1cdd-4e9d-a408-a37375d93156",
+            "replaced_model_id": null
+          },
+          "modelId": "tree_desert_deadtree",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -18.0,
+                "y": 2.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "da60b97c82664ff5a8cf7fb237e0b1b7",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.397,
+                "y": 0.805
+              },
+              "ColliderOffset": {
+                "x": 0.275,
+                "y": -2.83
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.215,
+                "y": 0.7
+              },
+              "ColliderOffset": {
+                "x": 0.275,
+                "y": -2.83
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": false,
+              "Enable": true
+            },
+            {
+              "@type": "script.ResourceOccupiedArea",
+              "Enable": true,
+              "OffsetXMin": 0.0,
+              "OffsetXMax": 1.0,
+              "OffsetYMin": 0.0,
+              "OffsetYMax": 1.0
+            },
+            {
+              "@type": "script.ResourceReaction",
+              "Enable": true,
+              "DropItemName": "Wood",
+              "DropMinCount": 1.0,
+              "DropMaxCount": 1.0
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "7d3d5232-4524-4858-8c56-1e606c091bba",
+        "path": "/maps/template_desert/Desert_Yucca_01",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Yucca_01",
+          "path": "/maps/template_desert/Desert_Yucca_01",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 40,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_yuccaflower",
+            "sub_entity_id": null,
+            "root_entity_id": "7d3d5232-4524-4858-8c56-1e606c091bba",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_yuccaflower",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -8.751987,
+                "y": -4.92357826,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "5327537b4e8c43d0b008da6227e4a727",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 2.6174798,
+                "y": 0.748096764
+              },
+              "ColliderOffset": {
+                "x": -0.0365123749,
+                "y": 0.119047165
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.782,
+                "y": 0.47
+              },
+              "ColliderOffset": {
+                "x": -0.06,
+                "y": -1.985
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "6dad60ad-c460-4027-95c6-2fd03bb4f114",
+        "path": "/maps/template_desert/Desert_Yucca_02",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Yucca_02",
+          "path": "/maps/template_desert/Desert_Yucca_02",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 41,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_yuccaflower",
+            "sub_entity_id": null,
+            "root_entity_id": "6dad60ad-c460-4027-95c6-2fd03bb4f114",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_yuccaflower",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 6.33912468,
+                "y": -9.270786,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "5327537b4e8c43d0b008da6227e4a727",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 2.48879361,
+                "y": 0.8767831
+              },
+              "ColliderOffset": {
+                "x": 0.156524658,
+                "y": 0.183389664
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.782,
+                "y": 0.47
+              },
+              "ColliderOffset": {
+                "x": -0.06,
+                "y": -1.985
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "39f9fc31-9d28-431e-9f70-11639abf2473",
+        "path": "/maps/template_desert/Desert_Yucca_03",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Yucca_03",
+          "path": "/maps/template_desert/Desert_Yucca_03",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 42,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_yuccaflower",
+            "sub_entity_id": null,
+            "root_entity_id": "39f9fc31-9d28-431e-9f70-11639abf2473",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_yuccaflower",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 12.0,
+                "y": 7.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "5327537b4e8c43d0b008da6227e4a727",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 2.4244504,
+                "y": 1.19849885
+              },
+              "ColliderOffset": {
+                "x": -0.133033752,
+                "y": 0.34425354
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.782,
+                "y": 0.47
+              },
+              "ColliderOffset": {
+                "x": -0.06,
+                "y": -1.985
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "7105f9f2-a638-4697-a1de-14cb5ecfc081",
+        "path": "/maps/template_desert/Desert_Yucca_04",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Yucca_04",
+          "path": "/maps/template_desert/Desert_Yucca_04",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 43,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_yuccaflower",
+            "sub_entity_id": null,
+            "root_entity_id": "7105f9f2-a638-4697-a1de-14cb5ecfc081",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_yuccaflower",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -13.0,
+                "y": -7.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "5327537b4e8c43d0b008da6227e4a727",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 2.295764,
+                "y": 0.6837536
+              },
+              "ColliderOffset": {
+                "x": 0.05999756,
+                "y": 0.08687401
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.782,
+                "y": 0.47
+              },
+              "ColliderOffset": {
+                "x": -0.06,
+                "y": -1.985
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "78b5a07e-03d2-4735-8c8d-0b36c94e44a8",
+        "path": "/maps/template_desert/Desert_Yucca_05",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Yucca_05",
+          "path": "/maps/template_desert/Desert_Yucca_05",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 44,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_yuccaflower",
+            "sub_entity_id": null,
+            "root_entity_id": "78b5a07e-03d2-4735-8c8d-0b36c94e44a8",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_yuccaflower",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -3.0,
+                "y": 12.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "5327537b4e8c43d0b008da6227e4a727",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.52364612,
+                "y": 0.9411262
+              },
+              "ColliderOffset": {
+                "x": 0.0599966049,
+                "y": 0.215564728
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.782,
+                "y": 0.47
+              },
+              "ColliderOffset": {
+                "x": -0.06,
+                "y": -1.985
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "2f82334d-95e0-4d1d-88b7-d7815a82fdae",
+        "path": "/maps/template_desert/Desert_Yucca_06",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Yucca_06",
+          "path": "/maps/template_desert/Desert_Yucca_06",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 45,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_yuccaflower",
+            "sub_entity_id": null,
+            "root_entity_id": "2f82334d-95e0-4d1d-88b7-d7815a82fdae",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_yuccaflower",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 20.0,
+                "y": 15.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "5327537b4e8c43d0b008da6227e4a727",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.58798921,
+                "y": 0.8124399
+              },
+              "ColliderOffset": {
+                "x": -0.0365104675,
+                "y": 0.151226044
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.782,
+                "y": 0.47
+              },
+              "ColliderOffset": {
+                "x": -0.06,
+                "y": -1.985
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "ef3d05d2-2f43-497e-b9d9-53395e612095",
+        "path": "/maps/template_desert/Desert_Bone_01",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Bone_01",
+          "path": "/maps/template_desert/Desert_Bone_01",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 46,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_animalbone",
+            "sub_entity_id": null,
+            "root_entity_id": "ef3d05d2-2f43-497e-b9d9-53395e612095",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_animalbone",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -23.9678268,
+                "y": -12.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "378103312bc742109fa01ff7b098471d",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.27313673,
+                "y": 0.631421
+              },
+              "ColliderOffset": {
+                "x": -0.643440247,
+                "y": -0.159290314
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.92,
+                "y": 0.91
+              },
+              "ColliderOffset": {
+                "x": 0.0,
+                "y": -0.645
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "90eb840f-e63f-4796-92ec-d44ca31fff20",
+        "path": "/maps/template_desert/Desert_Bone_02",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Bone_02",
+          "path": "/maps/template_desert/Desert_Bone_02",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 47,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_animalbone",
+            "sub_entity_id": null,
+            "root_entity_id": "90eb840f-e63f-4796-92ec-d44ca31fff20",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_animalbone",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 18.5,
+                "y": -20.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "378103312bc742109fa01ff7b098471d",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.65919566,
+                "y": 0.8244505
+              },
+              "ColliderOffset": {
+                "x": -0.45041275,
+                "y": -0.06277847
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.92,
+                "y": 0.91
+              },
+              "ColliderOffset": {
+                "x": 0.0,
+                "y": -0.645
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "fc8f520c-51cc-4af6-ad56-e83358b9b937",
+        "path": "/maps/template_desert/Desert_Bone_03",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Bone_03",
+          "path": "/maps/template_desert/Desert_Bone_03",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 48,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_animalbone",
+            "sub_entity_id": null,
+            "root_entity_id": "fc8f520c-51cc-4af6-ad56-e83358b9b937",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_animalbone",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -3.0,
+                "y": -20.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "378103312bc742109fa01ff7b098471d",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.85222518,
+                "y": 0.438391536
+              },
+              "ColliderOffset": {
+                "x": -0.353889465,
+                "y": -0.255805969
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.92,
+                "y": 0.91
+              },
+              "ColliderOffset": {
+                "x": 0.0,
+                "y": -0.645
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "ad6b5d46-c3c2-401b-8680-de1fa6558f64",
+        "path": "/maps/template_desert/Desert_Bone_04",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Bone_04",
+          "path": "/maps/template_desert/Desert_Bone_04",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 49,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_animalbone",
+            "sub_entity_id": null,
+            "root_entity_id": "ad6b5d46-c3c2-401b-8680-de1fa6558f64",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_animalbone",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": 4.0,
+                "y": 22.0214481,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "378103312bc742109fa01ff7b098471d",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.74498665,
+                "y": 0.824450433
+              },
+              "ColliderOffset": {
+                "x": -0.4075079,
+                "y": -0.06277084
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.92,
+                "y": 0.91
+              },
+              "ColliderOffset": {
+                "x": 0.0,
+                "y": -0.645
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
+        }
+      },
+      {
+        "id": "353c0ddb-0336-427c-92c3-74fe56498240",
+        "path": "/maps/template_desert/Desert_Bone_05",
+        "componentNames": "MOD.Core.TransformComponent,MOD.Core.SpriteRendererComponent,MOD.Core.TriggerComponent,script.YSortSprite,MOD.Core.PhysicsColliderComponent",
+        "jsonString": {
+          "name": "Desert_Bone_05",
+          "path": "/maps/template_desert/Desert_Bone_05",
+          "nameEditable": true,
+          "enable": true,
+          "visible": true,
+          "localize": false,
+          "displayOrder": 50,
+          "pathConstraints": "///",
+          "revision": 1,
+          "origin": {
+            "type": "Model",
+            "entry_id": "deco_desert_animalbone",
+            "sub_entity_id": null,
+            "root_entity_id": "353c0ddb-0336-427c-92c3-74fe56498240",
+            "replaced_model_id": null
+          },
+          "modelId": "deco_desert_animalbone",
+          "@components": [
+            {
+              "@type": "MOD.Core.TransformComponent",
+              "Rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "Position": {
+                "x": -18.0,
+                "y": 18.0,
+                "z": 0.0
+              },
+              "QuaternionRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+              },
+              "Scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 1.0
+              },
+              "ZRotation": 0.0,
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.SpriteRendererComponent",
+              "ActionSheet": {},
+              "DrawMode": 0,
+              "EndFrameIndex": 2147483647,
+              "FlipX": false,
+              "FlipY": false,
+              "OrderInLayer": 2,
+              "PlayRate": 1.0,
+              "RenderSetting": 0,
+              "SortingLayer": "MapLayer5",
+              "SpriteRUID": "378103312bc742109fa01ff7b098471d",
+              "StartFrameIndex": 0,
+              "Color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "Enable": true
+            },
+            {
+              "@type": "MOD.Core.TriggerComponent",
+              "BoxSize": {
+                "x": 1.33747983,
+                "y": 0.8244505
+              },
+              "ColliderOffset": {
+                "x": -0.6112633,
+                "y": -0.06277466
+              },
+              "IsLegacy": false,
+              "IsPassive": true,
+              "Enable": true
+            },
+            {
+              "@type": "script.YSortSprite",
+              "Enable": true,
+              "Dynamic": false,
+              "IsUnit": false,
+              "SortYOffset": 0.0
+            },
+            {
+              "@type": "MOD.Core.PhysicsColliderComponent",
+              "BoxSize": {
+                "x": 1.92,
+                "y": 0.91
+              },
+              "ColliderOffset": {
+                "x": 0.0,
+                "y": -0.645
+              },
+              "ColliderScale": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "IsLegacy": true,
+              "Enable": true
+            }
+          ],
+          "@version": 1
         }
       }
     ]

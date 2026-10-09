@@ -1,0 +1,229 @@
+{
+  "version": 1,
+  "tileset": "RootDesk/MyDesk/wall.tileset",
+  "sourceTilesetSha256": "3a31b9e2e77e464c1e0fd7fe38e1d2b60c027c3a8de1720533ec978dff55f59f",
+  "fringeOrder": [
+    "LT",
+    "T",
+    "RT",
+    "L",
+    "R",
+    "LD",
+    "D",
+    "RD",
+    "LTCorner",
+    "RTCorner",
+    "LDCorner",
+    "RDCorner"
+  ],
+  "tiles": [
+    {
+      "name": "Rock",
+      "index": 183,
+      "oldRuid": "de47e70c1c854997b6c5c93eff16d1b3",
+      "file": "tiles/Rock.png",
+      "sha256": "a400b0f5775efc9e5c618c19bb2bd0dbd617b93bae6cd07c0e29a7d6c022bc0b",
+      "alphaSha256": "f47a8ec3e9aff2318d896942282ad4fe37d6391c82914f54a5da8a37de1300c6"
+    },
+    {
+      "name": "RockLT",
+      "index": 187,
+      "oldRuid": "f335b8c5ec784ffa987e07272a9b3b87",
+      "file": "tiles/RockLT.png",
+      "sha256": "9d475e43f60705b9aae3f6115f7b8438e024e68e515315c409fd80e584bfcba2",
+      "alphaSha256": "cf5e8cc7347ef8e5928a4e0a4f6dea853213b9b5fa18e7df5527d02694b522bd"
+    },
+    {
+      "name": "RockT",
+      "index": 185,
+      "oldRuid": "85bd06e5d9f34bdaa952b1e590d6d2d1",
+      "file": "tiles/RockT.png",
+      "sha256": "ac381a5a34b11e356dd875b44d9d748ba39b2ae1ffa3831f6ec337b703a9f3a8",
+      "alphaSha256": "ede9ebe66df23d44ad538304b48b6dedfb0d1e6fc2d023e518d7e31c6267a4f3"
+    },
+    {
+      "name": "RockRT",
+      "index": 188,
+      "oldRuid": "1639c148ecd7498ab160ab59a13cb553",
+      "file": "tiles/RockRT.png",
+      "sha256": "6f739ddf2f24299439fb390880f17887c1dc1ad1e58e596f85bc3fb0808debe4",
+      "alphaSha256": "0712ae3bde4d2a7f6f2d666d19105a807c951734b65434e5f9d585fe45ae4d58"
+    },
+    {
+      "name": "RockL",
+      "index": 190,
+      "oldRuid": "aaf9e4916f8e49ec8cf6da512fc5af5a",
+      "file": "tiles/RockL.png",
+      "sha256": "33159b03a3dee954f26d7897168873b8a59229d7a634e88f2c9c08053468b511",
+      "alphaSha256": "7f1a470222cd457a15f2a582d1ad7780783fcf53efae6bc45dc7ae9d17475f71"
+    },
+    {
+      "name": "RockR",
+      "index": 186,
+      "oldRuid": "68463b9bbf804ae081303868ed51ca26",
+      "file": "tiles/RockR.png",
+      "sha256": "5455478fd1cc888ee62ff927214bff4b66eb953bc0845e14646e35e10fc58ba1",
+      "alphaSha256": "bdd299ef8496c9b2e2cfb6a32e93578d9dabdd3d5bc3101a8a69d8f05e81a97a"
+    },
+    {
+      "name": "RockLD",
+      "index": 184,
+      "oldRuid": "6c0f535f6fa44ffd92272a32bc79f1e1",
+      "file": "tiles/RockLD.png",
+      "sha256": "23b077a9a2138ceef5ef66df0c72b7affb3de3ebf62c9c473f80b09f2a317674",
+      "alphaSha256": "6e6eb79e67c770c8e71d98b30256c30d62c8c0708ab0115d83d68e41ab18ea68"
+    },
+    {
+      "name": "RockD",
+      "index": 189,
+      "oldRuid": "24444d9cfa3344d9afdc6af4d3000b68",
+      "file": "tiles/RockD.png",
+      "sha256": "c4c872dbca7e7d5131c9425b20a664a1406eacbcba590bdd975d204d6db06589",
+      "alphaSha256": "1fa563b7f87bb4e421db06d81b2afbc35dea513b7c8056997fa101dd22b9f23b"
+    },
+    {
+      "name": "RockRD",
+      "index": 194,
+      "oldRuid": "9584a9c890c440bdaa3847e8597ebeb6",
+      "file": "tiles/RockRD.png",
+      "sha256": "0cf93f1160c7c0b2d1dbf0352de107e809ad0a1832c60e677043aa05040bf37c",
+      "alphaSha256": "17ad8d016cfdababc126ff24e1422d169c3d72fb0a70ee1eb1a3186909fdb34f"
+    },
+    {
+      "name": "RockLTCorner",
+      "index": 195,
+      "oldRuid": "bc331b1e0878427bb0ced3fa386e48a2",
+      "file": "tiles/RockLTCorner.png",
+      "sha256": "9d1b7bbe9bbeef555e266a4f9318817e7b2acede58c43d23287f9617d6c19c34",
+      "alphaSha256": "7d2bca07b0cb31fe3cb24bd62d8403d796ff7ba0ced7b0b64967456789b25014"
+    },
+    {
+      "name": "RockRTCorner",
+      "index": 193,
+      "oldRuid": "b9c5c76334b14aa19557fbc8745c5d16",
+      "file": "tiles/RockRTCorner.png",
+      "sha256": "958759d1f3c9cc92f3803c2d124a861da6d9922b49e4c58d7348723294148d00",
+      "alphaSha256": "7348086f73b0cf81a5a7bcb0e2deb04a245a53d36eb7dbd0b26ce6add7774651"
+    },
+    {
+      "name": "RockLDCorner",
+      "index": 191,
+      "oldRuid": "c21ae0e32b1f4b8b8f764ac370ceea27",
+      "file": "tiles/RockLDCorner.png",
+      "sha256": "518e9befd2d3014b407a4a77d4c0cf9f97547c6c7c79a196b1501f16f44abb8e",
+      "alphaSha256": "f851b294b3218f152c67754a0abb8978d482c13c80adef85fa018713d0b222b1"
+    },
+    {
+      "name": "RockRDCorner",
+      "index": 192,
+      "oldRuid": "bdcffce55d1e4e0ca8697affa7362752",
+      "file": "tiles/RockRDCorner.png",
+      "sha256": "e6f6f92ad1f70ad11956c6557811e838e448ee7697954c8e243e57bc151b1bda",
+      "alphaSha256": "c037b0062a9357807b9a56a969181917c219d68018af433ba19d418d11c2ecd0"
+    },
+    {
+      "name": "Snow",
+      "index": 196,
+      "oldRuid": "0663e3879d734439b53fc29523e4f736",
+      "file": "tiles/Snow.png",
+      "sha256": "4fa86a3cc0736e6fcd3d27b7efc69c7f7bece259f8c3db593134b4bb3090be47",
+      "alphaSha256": "f47a8ec3e9aff2318d896942282ad4fe37d6391c82914f54a5da8a37de1300c6"
+    },
+    {
+      "name": "SnowLT",
+      "index": 197,
+      "oldRuid": "f7137c0767d94322aa68918d942c4dbd",
+      "file": "tiles/SnowLT.png",
+      "sha256": "c4b162bad5f237ccfb6b501f800750986b4ea566b55aa059dae61392f8136d25",
+      "alphaSha256": "cf5e8cc7347ef8e5928a4e0a4f6dea853213b9b5fa18e7df5527d02694b522bd"
+    },
+    {
+      "name": "SnowT",
+      "index": 202,
+      "oldRuid": "7909c4da526e4f4c808a10e25066303b",
+      "file": "tiles/SnowT.png",
+      "sha256": "b0ff1c4c32e671bec12bf459169dbb440ab1ed1b861d0757cfe2e00b82f91b7c",
+      "alphaSha256": "ede9ebe66df23d44ad538304b48b6dedfb0d1e6fc2d023e518d7e31c6267a4f3"
+    },
+    {
+      "name": "SnowRT",
+      "index": 206,
+      "oldRuid": "902fdbb0a0bc4423b1bafa686a5ec725",
+      "file": "tiles/SnowRT.png",
+      "sha256": "24c3010931a868f13c8b94962439d013c339df255d2ad0feda868a8ab2c24432",
+      "alphaSha256": "0712ae3bde4d2a7f6f2d666d19105a807c951734b65434e5f9d585fe45ae4d58"
+    },
+    {
+      "name": "SnowL",
+      "index": 207,
+      "oldRuid": "842bc500127a4cfc936a38c82477533a",
+      "file": "tiles/SnowL.png",
+      "sha256": "964c089a9aaa1c414527bf7045f4b1cf97175b61925043b69c6256b7c2dd9eb5",
+      "alphaSha256": "7f1a470222cd457a15f2a582d1ad7780783fcf53efae6bc45dc7ae9d17475f71"
+    },
+    {
+      "name": "SnowR",
+      "index": 203,
+      "oldRuid": "9f4bb888acf84b78884c08980d2dfd8f",
+      "file": "tiles/SnowR.png",
+      "sha256": "a08b409498c36d8ca9218acaaf89f941bbe5b6a98a68c9462aefc36f84cfa6e3",
+      "alphaSha256": "bdd299ef8496c9b2e2cfb6a32e93578d9dabdd3d5bc3101a8a69d8f05e81a97a"
+    },
+    {
+      "name": "SnowLD",
+      "index": 198,
+      "oldRuid": "8d0113bd85ad4fc481ebb31b90f97b5f",
+      "file": "tiles/SnowLD.png",
+      "sha256": "37edfd354611f5d60b535f67f57384f3df6c078c55c6895a11b036425ea1c58c",
+      "alphaSha256": "6e6eb79e67c770c8e71d98b30256c30d62c8c0708ab0115d83d68e41ab18ea68"
+    },
+    {
+      "name": "SnowD",
+      "index": 205,
+      "oldRuid": "1095f7c538924e658ae2bc48474f7c0b",
+      "file": "tiles/SnowD.png",
+      "sha256": "4b739568755ee69163797e021d65dbc84feaec39ea20b99513f4e471180011ed",
+      "alphaSha256": "1fa563b7f87bb4e421db06d81b2afbc35dea513b7c8056997fa101dd22b9f23b"
+    },
+    {
+      "name": "SnowRD",
+      "index": 208,
+      "oldRuid": "5824b297faa743378998f06cec052f0e",
+      "file": "tiles/SnowRD.png",
+      "sha256": "c273a551a6b89c4b85e4ebabe6c80d6d221b215a58effd76b686b3ae7e7e60ec",
+      "alphaSha256": "17ad8d016cfdababc126ff24e1422d169c3d72fb0a70ee1eb1a3186909fdb34f"
+    },
+    {
+      "name": "SnowLTCorner",
+      "index": 199,
+      "oldRuid": "4d335d0acfde4593b64f87b198887250",
+      "file": "tiles/SnowLTCorner.png",
+      "sha256": "0e2a7a64366e9a71e83e73780ed45f3a6fa35ac19fa1441ca57392f0b5b793cb",
+      "alphaSha256": "7d2bca07b0cb31fe3cb24bd62d8403d796ff7ba0ced7b0b64967456789b25014"
+    },
+    {
+      "name": "SnowRTCorner",
+      "index": 204,
+      "oldRuid": "efd3604d458d4fd79dc41bf55cbfee90",
+      "file": "tiles/SnowRTCorner.png",
+      "sha256": "4cf4fc27a86c080eccb6cda7078336a22807b8faf60bd37ae5c3de22792d1ac2",
+      "alphaSha256": "7348086f73b0cf81a5a7bcb0e2deb04a245a53d36eb7dbd0b26ce6add7774651"
+    },
+    {
+      "name": "SnowLDCorner",
+      "index": 200,
+      "oldRuid": "c5adf1230b2340438713245a120d57df",
+      "file": "tiles/SnowLDCorner.png",
+      "sha256": "5087db72f61f5f493ab618c1cc130fc81002e5e562cf90b828da32e43a2400f1",
+      "alphaSha256": "f851b294b3218f152c67754a0abb8978d482c13c80adef85fa018713d0b222b1"
+    },
+    {
+      "name": "SnowRDCorner",
+      "index": 201,
+      "oldRuid": "c8dc909b3dca40d29e100732860abe77",
+      "file": "tiles/SnowRDCorner.png",
+      "sha256": "0e284098d44343c71b9982e738ac64e2d0be2214d4fd7d84d9b01fd2d6ee2090",
+      "alphaSha256": "c037b0062a9357807b9a56a969181917c219d68018af433ba19d418d11c2ecd0"
+    }
+  ]
+}

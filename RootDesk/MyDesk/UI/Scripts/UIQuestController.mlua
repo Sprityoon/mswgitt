@@ -25,6 +25,9 @@ script UIQuestController extends Component
 
 	property number uiSfxVolume = 1.0
 
+	-- 트래커 진행 줄 최대 줄 수(넘으면 "..."). 3줄이면 접힌 채팅창 바로 위까지 내려온다.
+	@HideFromInspector property integer TrackerMaxProgressLines = 3
+
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
 		self:HideToast()
@@ -95,6 +98,64 @@ script UIQuestController extends Component
 		self:SetText("Guide", "클릭하면 목록을 엽니다")
 		self:SetGuideColor(nil)
 		self:SetText("Progress", "")
+		self:LayoutTracker()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LayoutTracker()
+		-- 진행 줄(조건마다 한 줄)이 여러 줄이면 트래커를 그만큼 아래로 늘린다(최대 TrackerMaxProgressLines 줄, 넘으면 "...").
+		-- 고정 26px 칸에 여러 조건이 겹치거나 첫 줄만 보이던 문제(2026-10-07). 트래커는 왼쪽 위 기준(피벗 0,1)이라 아래로만 자란다.
+		-- 자식은 트래커 가운데 기준이므로 높이가 바뀌면 위치를 다시 잡는다. 위쪽 세 칸(헤더·이름·안내)의 위치는 .ui 값을 유지한다.
+		local root = self.Entity
+		local rootT = root.UITransformComponent
+		local prog = root:GetChildByName("Progress", true)
+		if not isvalid(rootT) or not isvalid(prog) or not isvalid(prog.TextComponent) then return end
+		if self._T.trackerBase == nil then
+			-- .ui 에 저장된 원래 높이·각 칸의 "위에서부터" 위치를 첫 호출 때 기록한다.
+			local base = { height = rootT.RectSize.y, tops = {} }
+			for _, n in ipairs({ "Header", "QuestName", "Guide", "Progress" }) do
+				local e = root:GetChildByName(n, true)
+				if isvalid(e) and isvalid(e.UITransformComponent) then
+					local t = e.UITransformComponent
+					base.tops[n] = base.height * 0.5 - t.anchoredPosition.y - t.RectSize.y * 0.5
+				end
+			end
+			base.progH = prog.UITransformComponent.RectSize.y
+			self._T.trackerBase = base
+		end
+		local base = self._T.trackerBase
+		local tc = prog.TextComponent
+		local text = tc.Text or ""
+		local lineH = math.max(base.progH, tc.FontSize * 1.35)
+		local want = base.progH
+		if text ~= "" then want = math.ceil(tc:GetPreferredHeight(text, prog.UITransformComponent.RectSize.x)) + 4 end
+		local progH = math.max(base.progH, math.min(want, lineH * self.TrackerMaxProgressLines))
+		local progTop = base.tops["Progress"] or (base.height - base.progH - 20)
+		local bottomPad = base.height - progTop - base.progH
+		local height = math.max(base.height, progTop + progH + bottomPad)
+		if self._T.trackerHeight == height and self._T.trackerProgH == progH then return end
+		self._T.trackerHeight = height
+		self._T.trackerProgH = progH
+		rootT.RectSize = Vector2(rootT.RectSize.x, height)
+		for _, n in ipairs({ "Bg", "BtnOpen" }) do
+			local e = root:GetChildByName(n, true)
+			if isvalid(e) and isvalid(e.UITransformComponent) then
+				e.UITransformComponent.RectSize = Vector2(e.UITransformComponent.RectSize.x, height)
+				e.UITransformComponent.anchoredPosition = Vector2(e.UITransformComponent.anchoredPosition.x, 0)
+			end
+		end
+		for n, top in pairs(base.tops) do
+			local e = root:GetChildByName(n, true)
+			if isvalid(e) and isvalid(e.UITransformComponent) then
+				local t = e.UITransformComponent
+				local h = t.RectSize.y
+				if n == "Progress" then
+					h = progH
+					t.RectSize = Vector2(t.RectSize.x, h)
+				end
+				t.anchoredPosition = Vector2(t.anchoredPosition.x, height * 0.5 - top - h * 0.5)
+			end
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -207,6 +268,7 @@ script UIQuestController extends Component
 		end
 		self:SetText("Guide", guide)
 		self:SetGuideColor(guideColor)
+		self:LayoutTracker()
 
 		local state = "normal"
 		if guideColor ~= nil then state = guide end

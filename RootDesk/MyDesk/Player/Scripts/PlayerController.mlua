@@ -279,6 +279,12 @@ script PlayerController extends Component
 
 	-- 상호작용 가이드: 조준 대상 하이라이트 틴트 (SpriteRenderer 한정 — 아바타 NPC는 라벨만)
 	property Color InteractHighlightColor = Color(1.0, 0.85, 0.45, 1.0)
+	-- 소환수 머리 위 체력바(UI 픽셀 · 월드 여유 높이). 모델 기본값이 없어 인스펙터에서 숨긴다(LWA-4012).
+	@HideFromInspector property number SummonHpBarWidth = 96
+	@HideFromInspector property number SummonHpBarHeight = 14
+	@HideFromInspector property number SummonHpBarOffsetY = 0.25
+	-- 충전 무기 탭만 쓸 때 "꾹 누르면 충전" 팁 반복 간격(탭 횟수).
+	@HideFromInspector property integer ChargeHintEveryTaps = 20
 
 	-- 상호작용 가이드: 물 타일 조준(엔티티 없는 대상) 라벨
 	property string WaterAimInteractLabel = "낚시하기"
@@ -737,6 +743,9 @@ script PlayerController extends Component
 
 		-- 조준 대상 상호작용 가이드 (라벨 + 하이라이트)
 		self:UpdateInteractGuide()
+
+		-- 내 소환수 머리 위 체력바
+		self:UpdateSummonHpBars()
 	end
 
 	@ExecSpace("Server")
@@ -1698,7 +1707,24 @@ script PlayerController extends Component
 			self._T.PulseReadyAt = now + self:SkillNumber(row, "LockoutSeconds", 3)
 		end
 		self:ServerRequestChargeRelease(self.LastDirectionX, self.LastDirectionY)
+		self._T.ChargeUsedThisSession = true
 		log("[WEAPON] charge release weapon=" .. weaponType .. " stage=" .. tostring(stage))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void MaybeShowChargeHint()
+		-- 충전 무기를 들고 탭만 쓰는 동안 "꾹 누르면 충전 공격"을 알려 준다: 첫 탭에 한 번, 이후 ChargeHintEveryTaps 번마다.
+		-- 이번 접속에서 충전을 한 번이라도 쓰면 다시 띄우지 않는다. 문구는 1단계 충전 행의 Kind(Projectile/HealPulse)로 고른다.
+		if self._T.ChargeUsedThisSession == true then return end
+		local count = (self._T.ChargeHintTapCount or 0) + 1
+		self._T.ChargeHintTapCount = count
+		if count ~= 1 and count % math.max(1, self.ChargeHintEveryTaps) ~= 0 then return end
+		local row = self:GetWeaponAttackRow(self:GetEquippedWeaponType(), "Charge", 1)
+		if row == nil then return end
+		local what = "충전 공격"
+		local kind = self:SkillText(row, "Kind")
+		if kind == "HealPulse" then what = "생명 펄스(주변 아군·소환수 회복)" elseif kind == "Projectile" then what = "충전 마법탄" end
+		self:ShowMineFeedback("[팁] 공격 키(Ctrl · 공격 버튼)를 꾹 눌렀다 떼면 " .. what .. "!")
 	end
 
 	@ExecSpace("ClientOnly")
@@ -1733,6 +1759,7 @@ script PlayerController extends Component
 			elseif deferredTap then
 				-- 충전으로 이어지지 않은 누름 = 탭. 뗀 지금 휘두른다(정령탄·근접 상자는 TryMine → RequestMine 이 정한다).
 				self:TryMine()
+				self:MaybeShowChargeHint()
 			end
 			return
 		end
@@ -1812,6 +1839,8 @@ script PlayerController extends Component
 			return
 		end
 		self._T.LastChargeFireAt = now
+		-- 퀘스트/업적: 충전 평타 사용(전직 첫 퀘스트의 "충전 공격 1회").
+		_ActionSignals:EmitToPlayer(self.Entity, _ActionEnum.ChargeAttack, weaponType, 1)
 		log("[WEAPON] charge fire weapon=" .. weaponType .. " stage=" .. tostring(stage) .. " held=" .. string.format("%.2f", held))
 	end
 
@@ -4304,6 +4333,113 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("ServerOnly")
+	method integer BuffAllSummonsNear(Entity map, Vector3 center, number radius, number pct, number seconds)
+		-- 생명 펄스: 맵의 모든 플레이어 소환수 중 반경 안의 것에 공격 강화를 건다. 강화된 소환수 수를 돌려준다.
+		if not isvalid(map) or pct <= 0 or seconds <= 0 then return 0 end
+		local count = 0
+		for _, comp in ipairs(map:GetChildComponentsByTypeName("script.Summon", false)) do
+			local e = comp.Entity
+			if isvalid(e) and Vector2.Distance(e.TransformComponent.WorldPosition:ToVector2(), center:ToVector2()) <= radius then
+				---@type Summon
+				local s = comp
+				s:ApplyAttackBuff(pct, seconds)
+				count = count + 1
+			end
+		end
+		return count
+	end
+
+	@ExecSpace("Client")
+	method void ClientSummonHp(Entity summon, number hp, number maxHp, number buffSeconds, boolean alive)
+		-- 주인 클라: 소환수 머리 위 체력바 데이터 갱신. 막대 생성·위치는 UpdateSummonHpBars 가 매 프레임 처리한다.
+		-- ⚠ RPC 본문 — 사용자 타입 주석 금지 (규칙 53).
+		if self._T.SummonBars == nil then self._T.SummonBars = {} end
+		local bars = self._T.SummonBars
+		local key = isvalid(summon) and summon.Id or nil
+		if key == nil then return end
+		local rec = bars[key]
+		if not alive then
+			if rec ~= nil then self:DestroySummonBar(rec) end
+			bars[key] = nil
+			return
+		end
+		if rec == nil then
+			rec = { entity = summon }
+			bars[key] = rec
+		end
+		rec.entity = summon
+		rec.hp = hp
+		rec.maxHp = math.max(1, maxHp)
+		rec.buffUntil = _UtilLogic.ElapsedSeconds + math.max(0, buffSeconds)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void DestroySummonBar(any rec)
+		-- 막대 UI 엔티티 정리.
+		if rec ~= nil and isvalid(rec.bar) then rec.bar:Destroy() end
+		if rec ~= nil then rec.bar = nil end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateSummonHpBars()
+		-- 내 소환수 머리 위 체력바: HUD 아래 uisprite(바탕) + Fill(채움) 을 소환수 피격 박스 위쪽으로 매 프레임 옮긴다.
+		-- 색 = 체력 비율(초록 > 60% · 노랑 · 빨강 ≤ 30%). 생명 펄스 강화 중에는 바탕 테두리를 금색으로 바꾼다.
+		local bars = self._T.SummonBars
+		if bars == nil then return end
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		local now = _UtilLogic.ElapsedSeconds
+		local barW = self.SummonHpBarWidth
+		local barH = self.SummonHpBarHeight
+		for key, rec in pairs(bars) do
+			local e = rec.entity
+			if not isvalid(e) then
+				self:DestroySummonBar(rec)
+				bars[key] = nil
+			elseif isvalid(hud) then
+				if not isvalid(rec.bar) then
+					local bg = _SpawnService:SpawnByModelId("uisprite", "SummonHpBar", Vector3.zero, hud)
+					if isvalid(bg) then
+						local t = bg.UITransformComponent
+						t.AlignmentOption = AlignmentType.Center
+						t.Pivot = Vector2(0.5, 0.5)
+						t.RectSize = Vector2(barW, barH)
+						bg.SpriteGUIRendererComponent.RaycastTarget = false
+						local fill = _SpawnService:SpawnByModelId("uisprite", "Fill", Vector3.zero, bg)
+						if isvalid(fill) then
+							local ft = fill.UITransformComponent
+							ft.AlignmentOption = AlignmentType.Left
+							ft.Pivot = Vector2(0, 0.5)
+							ft.anchoredPosition = Vector2(2, 0)
+							fill.SpriteGUIRendererComponent.RaycastTarget = false
+							rec.fill = fill
+						end
+						rec.bar = bg
+					end
+				end
+				if isvalid(rec.bar) then
+					local ratio = math.max(0, math.min(1, (rec.hp or 0) / math.max(1, rec.maxHp or 1)))
+					local buffed = now < (rec.buffUntil or 0)
+					rec.bar.SpriteGUIRendererComponent.Color = buffed and Color(0.95, 0.76, 0.25, 0.95) or Color(0.08, 0.08, 0.1, 0.85)
+					if isvalid(rec.fill) then
+						local c = Color(0.35, 0.85, 0.35, 1)
+						if ratio <= 0.3 then c = Color(0.92, 0.27, 0.22, 1) elseif ratio <= 0.6 then c = Color(0.95, 0.80, 0.25, 1) end
+						rec.fill.SpriteGUIRendererComponent.Color = c
+						rec.fill.UITransformComponent.RectSize = Vector2(math.max(0, (barW - 4) * ratio), barH - 4)
+					end
+					-- 피격 박스 위쪽(오프셋·크기 × Scale) + 여유. 박스가 없으면 Scale 기준 추정.
+					local p = e.TransformComponent.WorldPosition
+					local s = e.TransformComponent.Scale
+					local top = p.y + 0.9 * math.abs(s.y)
+					local hit = e.HitComponent
+					if isvalid(hit) then top = p.y + (hit.ColliderOffset.y + hit.BoxSize.y * 0.5) * math.abs(s.y) end
+					local screen = _UILogic:WorldToScreenPosition(Vector2(p.x, top + self.SummonHpBarOffsetY))
+					rec.bar.UITransformComponent.anchoredPosition = _UILogic:ScreenToUIPosition(screen)
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ServerOnly")
 	method void HealAllSummonsNear(Entity map, Vector3 center, number radius, integer amount)
 		-- 맵의 모든 플레이어 소환수 중 반경 안의 것을 회복한다.
 		if not isvalid(map) or amount <= 0 then return end
@@ -5383,12 +5519,18 @@ script PlayerController extends Component
 		end
 		-- 소환수도 회복한다(§3.4 생명 펄스: 자신·다른 플레이어·소환수).
 		self:HealAllSummonsNear(map, center, radius, amount)
+		-- 소환수 강화(WeaponAttackDataSet.SummonBuffPct/Seconds — 충전 단계별). 소환사가 슬롯 없이 회복·강화를 함께 준다.
+		local buffPct = self:SkillNumber(row, "SummonBuffPct", 0)
+		local buffSec = self:SkillNumber(row, "SummonBuffSeconds", 0)
+		local buffed = self:BuffAllSummonsNear(map, center, radius, buffPct, buffSec)
 		self:PlayWeaponAttackPresentation(row, self.LastDirectionX, self.LastDirectionY, true)
 		local playerComp = self.Entity.PlayerComponent
 		if playerComp ~= nil then
-			self:ClientShowMineFeedback("[생명 펄스] 회복 " .. tostring(amount), playerComp.UserId)
+			local msg = "[생명 펄스] 회복 " .. tostring(amount)
+			if buffed > 0 then msg = msg .. " · 소환수 공격 +" .. tostring(math.floor(buffPct * 100 + 0.5)) .. "% " .. tostring(math.floor(buffSec)) .. "초" end
+			self:ClientShowMineFeedback(msg, playerComp.UserId)
 		end
-		log("[WEAPON] heal pulse amount=" .. tostring(amount) .. " radius=" .. tostring(radius) .. " healed=" .. tostring(healed))
+		log("[WEAPON] heal pulse amount=" .. tostring(amount) .. " radius=" .. tostring(radius) .. " healed=" .. tostring(healed) .. " summonBuffed=" .. tostring(buffed))
 	end
 	@ExecSpace("Multicast")
 	method void MulticastPlayEffect(string effectRUID, Vector3 pos)
