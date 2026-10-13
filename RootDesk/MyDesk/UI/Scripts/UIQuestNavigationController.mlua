@@ -231,6 +231,57 @@ script UIQuestNavigationController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method boolean HasActiveResearchQuest(Entity player)
+		if not isvalid(player) or player.PlayerQuest == nil or _QuestDataSetLogic == nil then return false end
+		local pq = player.PlayerQuest
+		local prog = pq.ProgressingIdTable
+		if prog == nil then return false end
+		for id, _ in pairs(prog) do
+			local userData = pq.UserDataTable[id]
+			if userData ~= nil and userData.State == _QuestStateEnum.InProgress then
+				local data = _QuestDataSetLogic:GetData(id)
+				if data ~= nil and not userData:IsCompletable(data) then
+					if id == 218 then return true end
+					if data.ConditionDatas ~= nil then
+						for _, cond in ipairs(data.ConditionDatas) do
+							local actionCond = cond.ConditionData
+							if actionCond ~= nil then
+								local enumList = actionCond:GetActionEnumList()
+								if enumList ~= nil then
+									for _, ae in ipairs(enumList) do
+										if ae == _ActionEnum.Research then
+											return true
+										end
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		return false
+	end
+
+	@ExecSpace("ClientOnly")
+	method Entity FindResearchLabEntity(Entity curMap)
+		if not isvalid(curMap) then return nil end
+		local lab = curMap:GetChildByName("ResearchLab", true)
+		if isvalid(lab) then return lab end
+		local direct = _EntityService:GetEntityByPath("/maps/town/ResearchLab")
+		if isvalid(direct) then return direct end
+		local dialogs = curMap:GetChildComponentsByTypeName("script.VillagerDialog", true)
+		if dialogs ~= nil then
+			for _, d in ipairs(dialogs) do
+				if isvalid(d) and d.NpcId == "researcher" and isvalid(d.Entity) then
+					return d.Entity
+				end
+			end
+		end
+		return nil
+	end
+
+	@ExecSpace("ClientOnly")
 	method void ScanTargetNpc()
 		local player = _UserService.LocalPlayer
 		if not isvalid(player) then
@@ -247,7 +298,10 @@ script UIQuestNavigationController extends Component
 		end
 
 		local dialogs = curMap:GetChildComponentsByTypeName("script.VillagerDialog", true)
-		if dialogs == nil or #dialogs == 0 then
+		local hasDialogs = dialogs ~= nil and #dialogs > 0
+		local hasResearchQuest = self:HasActiveResearchQuest(player)
+
+		if not hasDialogs and not hasResearchQuest then
 			self.hasTarget = false
 			self.targetNpc = nil
 			return
@@ -257,38 +311,60 @@ script UIQuestNavigationController extends Component
 		local bestDist = 999999
 		local bestRank = 0
 		local bestKind = ""
-		local bestDialog = nil
+		local bestTargetEnt = nil
+		local bestTargetName = ""
 		local bestPos = Vector2(0, 0)
 
-		for _, dialog in ipairs(dialogs) do
-			if isvalid(dialog) and isvalid(dialog.Entity) and isvalid(dialog.Entity.TransformComponent) then
-				-- 보고 가능(done, 순위 2) > 수락 가능(!, 순위 1). 같은 순위끼리는 가까운 주민.
-				local kind = dialog:GetQuestPingKind(player)
-				local rank = 0
-				if kind == "done" then rank = 2 elseif kind == "!" then rank = 1 end
-				if rank > 0 then
-					local np = dialog.Entity.TransformComponent.WorldPosition
-					local d = Vector2.Distance(Vector2(playerPos.x, playerPos.y), Vector2(np.x, np.y))
-					if rank > bestRank or (rank == bestRank and d < bestDist) then
-						bestRank = rank
-						bestKind = kind
-						bestDist = d
-						bestDialog = dialog
-						bestPos = Vector2(np.x, np.y)
+		-- 1. 주민 탐색 (보고 가능 done: 순위 3, 수락 가능 !: 순위 1)
+		if hasDialogs then
+			for _, dialog in ipairs(dialogs) do
+				if isvalid(dialog) and isvalid(dialog.Entity) and isvalid(dialog.Entity.TransformComponent) then
+					local kind = dialog:GetQuestPingKind(player)
+					local rank = 0
+					if kind == "done" then rank = 3 elseif kind == "!" then rank = 1 end
+					if rank > 0 then
+						local np = dialog.Entity.TransformComponent.WorldPosition
+						local d = Vector2.Distance(Vector2(playerPos.x, playerPos.y), Vector2(np.x, np.y))
+						if rank > bestRank or (rank == bestRank and d < bestDist) then
+							bestRank = rank
+							bestKind = kind
+							bestDist = d
+							bestTargetEnt = dialog.Entity
+							bestTargetName = dialog:GetSpeakerName()
+							bestPos = Vector2(np.x, np.y)
+						end
 					end
 				end
 			end
 		end
 
-		if bestDialog ~= nil then
-			self.targetNpc = bestDialog.Entity
-			self.targetNpcName = bestDialog:GetSpeakerName()
+		-- 2. 연구소 퀘스트 진행 중이면 연구소 안내 (순위 2: 일반 !보다 높고 보고 가능보다는 낮음)
+		if hasResearchQuest then
+			local lab = self:FindResearchLabEntity(curMap)
+			if isvalid(lab) and isvalid(lab.TransformComponent) then
+				local lp = lab.TransformComponent.WorldPosition
+				local d = Vector2.Distance(Vector2(playerPos.x, playerPos.y), Vector2(lp.x, lp.y))
+				local labRank = 2
+				if labRank > bestRank or (labRank == bestRank and d < bestDist) then
+					bestRank = labRank
+					bestKind = "!"
+					bestDist = d
+					bestTargetEnt = lab
+					bestTargetName = "연구소"
+					bestPos = Vector2(lp.x, lp.y)
+				end
+			end
+		end
+
+		if bestTargetEnt ~= nil then
+			self.targetNpc = bestTargetEnt
+			self.targetNpcName = bestTargetName
 			self.targetNpcPos = bestPos
 			self.hasTarget = true
 			if bestKind ~= self.targetKind then
 				self.targetKind = bestKind
 				self:ApplyKindColor(bestKind)
-				log("[QNAV] target npc=" .. tostring(bestDialog.NpcId) .. " kind=" .. bestKind)
+				log("[QNAV] target=" .. tostring(bestTargetName) .. " kind=" .. bestKind)
 			end
 		else
 			self.hasTarget = false
@@ -338,8 +414,12 @@ script UIQuestNavigationController extends Component
 		local tPos = self.targetNpcPos
 		local dist = Vector2.Distance(Vector2(pPos.x, pPos.y), tPos)
 
-		-- 3. 상호작용 가능 거리(2.5m) 이내 도달 시 자동 숨김
-		if dist <= 2.5 then
+		-- 3. 상호작용 가능 거리 이내 도달 시 자동 숨김 (연구소 대형 구조물은 3.5m, 일반 주민은 2.5m)
+		local hideDist = 2.5
+		if self.targetNpcName == "연구소" then
+			hideDist = 3.5
+		end
+		if dist <= hideDist then
 			self:SetNavVisible(false)
 			return
 		end

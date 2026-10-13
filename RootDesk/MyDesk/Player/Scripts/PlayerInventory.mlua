@@ -378,6 +378,7 @@ script PlayerInventory extends Component
 
 		local unlockId = row:GetItem("UnlockRecipeId") or ""
 		local displayName = row:GetItem("DisplayName") or unlockId
+		local completedResearchId = self.ActiveResearchId
 		self.ActiveResearchId = ""
 		self.ResearchStartTime = "0"
 		if unlockId ~= "" then
@@ -388,6 +389,9 @@ script PlayerInventory extends Component
 		end
 		local userId = self.Entity.PlayerComponent and self.Entity.PlayerComponent.UserId or 0
 		self:ClientOnResearchComplete(displayName, userId)
+		if _ActionSignals ~= nil then
+			_ActionSignals:EmitToPlayer(self.Entity, _ActionEnum.Research, completedResearchId, 1)
+		end
 		log("[RESEARCH] completed " .. tostring(displayName) .. " unlock=" .. tostring(unlockId))
 		return true
 	end
@@ -396,7 +400,11 @@ script PlayerInventory extends Component
 	method void ClientOnResearchComplete(string researchDisplayName)
 		local pc = self.Entity:GetComponent("script.PlayerController")
 		if isvalid(pc) then
-			pc:ShowMineFeedback("연구 완료: " .. tostring(researchDisplayName))
+			if string.find(tostring(researchDisplayName), "구리 도구") ~= nil then
+				pc:ShowMineFeedback("연구 완료: 구리 도구! 남은 구리 광석 6개를 받았습니다. 대장장이 로체에게 돌아가세요.")
+			else
+				pc:ShowMineFeedback("연구 완료: " .. tostring(researchDisplayName))
+			end
 		end
 	end
 
@@ -711,6 +719,9 @@ script PlayerInventory extends Component
 				_PersistenceManager:MarkPlayerDirty(userId)
 				local scrollName = scrollRow:GetItem("DisplayName") or researchId
 				self:ClientOnResearchComplete(tostring(scrollName) .. " (두루마리 제출)", playerComp.UserId)
+				if _ActionSignals ~= nil then
+					_ActionSignals:EmitToPlayer(self.Entity, _ActionEnum.Research, researchId, 1)
+				end
 				log("[RESEARCH] scroll submit " .. scrollItem .. " -> " .. researchId .. " by " .. tostring(userId))
 				return
 			end

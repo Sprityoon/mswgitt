@@ -1,5 +1,50 @@
 # 작업 목록 (Tasks)
 
+## [퀘스트] 초반 광석·제작 체인 개선: '첫 연구' 퀘스트 신설 및 구리 제련·곡괭이 연계 (2026-10-13) — 코드·데이터 완료 · 정적 검증 결함 0 · refresh 검증 보류(MCP 미연결) · 런타임 검증 보류
+
+- **배경 및 목적**: 구리 광석 10개 채광(퀘스트 213) 후 구리 곡괭이 제작(퀘스트 215)으로 이어지는 구간에서, 구리 곡괭이 제작법(`research_copper_tools`)이 미해금 상태여서 흐름이 끊기던 문제를 해결.
+- **수정된 퀘스트 흐름**:
+  1. `213 구리 한 줌`: 흙 벌판에서 구리 광석 10개를 캐 대장장이 로체에게 보여줌 (광석 10개 유지). 완료 시 연구소의 도구 제작법 연구를 안내.
+  2. `218 첫 연구` (신규, Main, AutoAccept): 마을 연구소에서 구리 도구 제작법 연구(`research_copper_tools`)를 수행. (연구 시작 시 구리 광석 10개 소모)
+     - 연구 완료 시 별도 NPC 보고 없이 즉시 자동 완료(`TurnInNpcId` 공란).
+     - 완료 보상: 연구소에 남는 구리 광석이라며 `Copper Ore:6` 지급, 경험치 200.
+  3. `214 화로의 첫 쇳물` (Main, LinkedPrevId=218):
+     - 대장장이의 주괴 제련 요구 수량을 기존 2개에서 **3개**로 확대 (보상받은 구리 광석 6개로 3개 제련 가능, 1주괴당 2광석).
+     - 안내 문구 보강: "화로를 제작해 구리 주괴 3개를 제련해주세요. 나무를 연료로 사용할 수 있습니다."
+     - 대화문(`StoryDialogDataSet.csv`)에서도 구리 주괴 3개 및 화로/나무 연료 안내 반영.
+  4. `215 구리 손맛` (Main, LinkedPrevId=214):
+     - 구리 주괴 3개로 구리 곡괭이 제작 (이미 '첫 연구'에서 레시피가 해금되었으므로 바로 제작 가능).
+- **시스템 구현 상세**:
+  - `ActionEnum.mlua` / `ActionConditionEnum.mlua`: `Research = 13` 액션 및 컨디션 열거형 추가.
+  - `ActionConditionData_Research.mlua` 신규 추가: `ResearchDataSet.ResearchId` 기준으로 연구 완료 판정 (CountMode=`State` 지원).
+  - `ActionConditionData.mlua`: `SnapshotResearchMet` 메서드 추가 (이미 해금된 `UnlockRecipeId` 검사로 기완료 상태 자동 인정).
+  - `QuestConditionData.mlua`: CountMode 기본값 처리 시 `Research`도 `State`로 인정.
+  - `PlayerInventory.mlua`:
+    - `TryCompleteActiveResearch` 및 두루마리 제출 시 `_ActionSignals:EmitToPlayer(self.Entity, _ActionEnum.Research, researchId, 1)` 발행.
+    - `ClientOnResearchComplete`: 구리 도구 연구 완료 시 "연구 완료: 구리 도구! 남은 구리 광석 6개를 받았습니다. 대장장이 로체에게 돌아가세요." 화면 피드백 출력.
+  - `UIQuestNavigationController.mlua`:
+    - `HasActiveResearchQuest` 및 `FindResearchLabEntity` 구현.
+    - 연구 퀘스트(218) 진행 중 `town.map`의 연구소(`ResearchLab`)를 우선순위 2(`bestRank = 2`, `!`)로 자동 타겟팅 (발밑 궤도 화살표 + 화면 테두리 뱃지).
+    - 3.5m 접근 시 자동 숨김 처리, 연구 완료 시 차기 퀘스트(214) 대상인 대장장이 로체로 네비게이션 자동 전환.
+  - `UIResearchController.mlua`:
+    - 구리 도구 연구 완료 시 상태 문구를 "연구 완료! 대장장이 로체에게 돌아가세요."로 전환 및 버튼 재클릭 피드백 제공.
+  - `QuestConditionDataSet.csv`: 218번 조건(`Research, research_copper_tools, 1, State`) 추가, 214번 조건(구리 주괴 제련 2 -> 3) 수정.
+  - `QuestDataSet.csv`: 218번 퀘스트 행 추가, 214번 연계 ID(218) 및 설명 갱신.
+  - `StoryDialogDataSet.csv`: 213 완료 대사(연구소 안내), 214 수락/진행/완료 대사(주괴 3개 및 화로/나무 연료 안내), 215 수락/진행 대사(이미 배운 제작법으로 제작 안내) 갱신.
+- **검증**:
+  - `node scripts/check_dataset_columns.cjs`: 실재 확인 362건, 불일치 0건.
+  - `node scripts/check_skill_quest_pipeline.cjs`: 스킬 53 · 퀘스트 86 · 조건 111 · 아이템 127 결함 없음 통과.
+  - `refresh 검증 보류` (현재 세션 MCP 미연결 상태).
+  - **런타임 검증 보류(제작자 수행)**:
+    1) 퀘스트 213 완료 후 '첫 연구'(218) 자동 수락 확인.
+    2) 퀘스트 218 진행 중 HUD 네비게이션(발밑 화살표 + '!' 뱃지)이 마을 연구소(`ResearchLab`)를 가리키는지 확인.
+    3) 연구소에서 '구리 도구' 연구 시작 및 완료 시:
+       - 퀘스트 218 자동 완료 + 구리 광석 6개 보상 지급 확인.
+       - "연구 완료: 구리 도구! 남은 구리 광석 6개를 받았습니다. 대장장이 로체에게 돌아가세요." 화면 피드백 및 연구소 UI 안내 문구 확인.
+       - 네비게이션이 대장장이 로체 방향으로 자동 전환되는지 확인.
+    4) 대장장이에게 퀘스트 214 수락(구리 주괴 3개 제련 및 화로/나무 연료 대사 노출) 확인.
+    5) 화로에서 구리 주괴 3개 제련 후 214 보고 및 215(구리 곡괭이 제작) 연계 확인.
+
 ## [목장·펫] 이름 변경권 + 개 호루라기 열 밀림 회귀 수정 (2026-10-10) — 코드·데이터 완료 · refresh ok · build Error 0 · 런타임 검증 보류
 
 - **이름 변경권** (`Rename Ticket` / 이름 변경권, consumable, 아이콘 = 원작 "펫이름 작명쿠폰" `2e4916cc…`, 토리 상점 150코인 — 임시값): `item_dataset.UseRename` 새 열(`creature`)로 분기한다(이름 분기 금지). 사용하면 `CreatureRoster.OnUseRenameTicket`이 **바라보는(조준 셀) 내 동물**을 찾는다 — 우리 안 가축 · 따라오는 펫 · 영지에 둔 펫. 이름짓기 팝업을 "이름 바꾸기"로 열고 지금 이름을 미리 넣어 둔다. 확정(`ApplyRename`) 때 중복(자기 자신 제외)·글자 수·"지금 이름과 같음"을 검사하고 변경권 1개를 소모한 뒤, 명부 이름 → 맵·영지의 Animal/Pet `CreatureName` → 그 개체를 가리키는 칸(이름 붙은 호루라기·가방 속 가축)의 label 순서로 갱신한다. 취소하면 소모되지 않는다. 가방 속 가축은 우리에 넣은 뒤 바꾼다(안내 문구).

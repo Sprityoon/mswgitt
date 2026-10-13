@@ -1,0 +1,36 @@
+@Struct
+script ActionConditionData_Research extends ActionConditionData
+
+	-- CondArg = ResearchDataSet.ResearchId (빈 값 = 아무 연구 완료). ActionEvent.Args = { researchId, 1 }
+	property string Target = ""
+
+	method any Clone()
+		return ActionConditionData_Research()
+	end
+
+	method boolean LoadArg(string str)
+		self.Target = str or ""
+		return true
+	end
+
+	method table GetActionEnumList()
+		return { _ActionEnum.Research }
+	end
+
+	method boolean Check(Entity userEntity, ActionEvent evt, integer userValue, integer condValue)
+		if _Util:IsNilorEmptyString(self.Target) then
+			return true
+		end
+		return evt.Args[1] == self.Target
+	end
+
+	method integer GetNextUserValue(Entity userEntity, ActionEvent evt, integer userValue, integer condValue)
+		return userValue + (evt.Args[2] or 1)
+	end
+
+	method integer GetUpdatedValue(Entity userEntity, integer userValue, integer condValue)
+		-- 이미 완료된 연구는 Research 이벤트가 다시 안 나오므로 스냅샷으로 완료 상태를 반영한다.
+		return self:SnapshotResearchMet(userEntity, self.Target, condValue)
+	end
+
+end

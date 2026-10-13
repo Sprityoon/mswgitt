@@ -175,4 +175,37 @@ script ActionConditionData
 		return 0
 	end
 
+	method integer SnapshotResearchMet(Entity userEntity, string researchId, integer condValue)
+		-- 연구 완료 여부 스냅샷. 해당 연구의 UnlockRecipeId가 해금되어 있으면 condValue, 아니면 0.
+		if not isvalid(userEntity) then
+			return 0
+		end
+		local invComp = userEntity:GetComponent("script.PlayerInventory")
+		if not isvalid(invComp) then
+			return 0
+		end
+		---@type PlayerInventory
+		local inv = invComp
+		if _Util:IsNilorEmptyString(researchId) then
+			return 0
+		end
+
+		local unlockId = researchId
+		local ds = _DataService:GetTable("ResearchDataSet")
+		if ds ~= nil then
+			local row = ds:FindRow("ResearchId", researchId)
+			if row ~= nil then
+				local rUnlock = row:GetItem("UnlockRecipeId")
+				if not _Util:IsNilorEmptyString(rUnlock) then
+					unlockId = rUnlock
+				end
+			end
+		end
+
+		if inv:HasRecipeUnlock(unlockId) or inv:HasRecipeUnlock(researchId) then
+			return condValue
+		end
+		return 0
+	end
+
 end

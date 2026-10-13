@@ -51,7 +51,7 @@ script QuestConditionData
 				local enumList = actionCondData:GetActionEnumList()
 				if enumList ~= nil then
 					for i = 1, #enumList do
-						if enumList[i] == _ActionEnum.LearnSkill then
+						if enumList[i] == _ActionEnum.LearnSkill or enumList[i] == _ActionEnum.Research then
 							self.CountMode = "State"
 							break
 						end
