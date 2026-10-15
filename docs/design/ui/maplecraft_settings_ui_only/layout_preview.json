@@ -1,0 +1,812 @@
+{
+ "ruids": {
+  "mc_bookmark_back": "1968e00664134cacb2dd621a44a7de97",
+  "mc_btn_gray_m": "fa9f909e48b6498e9e1822c474855635",
+  "mc_btn_olive_m": "5e05696ddbfb42efb70c2ad18733c116",
+  "mc_header_plaque": "da4a14428136457f983b4de2a581837b",
+  "mc_row_card": "bcb5db1d5eab42aaa509c5af4950f319",
+  "mc_set_btn_gray": "4a1102c53644489e9926eb38f78d2832",
+  "mc_set_btn_olive": "7848fe4dd9414243b038e3e374c34ac0",
+  "mc_set_keycap_sq": "ddb8383d0ad347ce957d53fa64d16b92",
+  "mc_set_keycap_wide": "d8fa5c1afca943048d3da8eb7fdef5f7",
+  "mc_set_slider_fill": "b341766f561840188ca4cb3c10f88e5f",
+  "mc_set_slider_knob": "8d3ab6ea4d3f4c9fbdae364c2d45d86f",
+  "mc_set_slider_track": "b16a9caaf06d4e43984ed2af1726cc5a",
+  "mc_set_sound_mute": "79fb11a58328476abd95180f21d623ee",
+  "mc_set_sound_on": "1a2e9935c63047c88335d3015c917fd6",
+  "mc_set_switch_off": "2952536b1b084885a248c473a315cc43",
+  "mc_set_switch_on": "5f176659935f4a3baafe83bb67e876fa"
+ },
+ "items": [
+  {
+   "screen": "settings",
+   "path": "Window/Book",
+   "abs": [
+    0,
+    -20
+   ],
+   "size": [
+    1126,
+    1126
+   ],
+   "image": "book",
+   "text": null
+  },
+  {
+   "screen": "settings",
+   "path": "Window/Header",
+   "abs": [
+    0,
+    392
+   ],
+   "size": [
+    440,
+    112
+   ],
+   "image": "mc_header_plaque",
+   "text": "환경설정",
+   "fontSize": 30,
+   "color": "#FFF3D6"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/BtnBack",
+   "abs": [
+    -472,
+    220
+   ],
+   "size": [
+    96,
+    250
+   ],
+   "image": "mc_bookmark_back",
+   "text": "뒤\n로",
+   "fontSize": 26,
+   "color": "#2B1608"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/SoundTitle",
+   "abs": [
+    -228,
+    250
+   ],
+   "size": [
+    300,
+    44
+   ],
+   "image": null,
+   "text": "사운드 설정",
+   "fontSize": 28,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/BgmRow",
+   "abs": [
+    -228,
+    182
+   ],
+   "size": [
+    330,
+    66
+   ],
+   "image": "mc_row_card",
+   "text": null
+  },
+  {
+   "screen": "settings",
+   "path": "Window/BgmRow/Mute",
+   "abs": [
+    -365,
+    182
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_set_sound_on",
+   "text": null
+  },
+  {
+   "screen": "settings",
+   "path": "Window/BgmRow/Label",
+   "abs": [
+    -310,
+    182
+   ],
+   "size": [
+    64,
+    32
+   ],
+   "image": null,
+   "text": "배경음",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/BgmRow/Slider",
+   "abs": [
+    -211,
+    182
+   ],
+   "size": [
+    124,
+    22
+   ],
+   "image": "slider",
+   "text": null,
+   "value": 1
+  },
+  {
+   "screen": "settings",
+   "path": "Window/BgmRow/Pct",
+   "abs": [
+    -106,
+    182
+   ],
+   "size": [
+    72,
+    36
+   ],
+   "image": null,
+   "text": "100%",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "right"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/SfxRow",
+   "abs": [
+    -228,
+    86
+   ],
+   "size": [
+    330,
+    66
+   ],
+   "image": "mc_row_card",
+   "text": null
+  },
+  {
+   "screen": "settings",
+   "path": "Window/SfxRow/Mute",
+   "abs": [
+    -365,
+    86
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_set_sound_on",
+   "text": null
+  },
+  {
+   "screen": "settings",
+   "path": "Window/SfxRow/Label",
+   "abs": [
+    -310,
+    86
+   ],
+   "size": [
+    64,
+    32
+   ],
+   "image": null,
+   "text": "효과음",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/SfxRow/Slider",
+   "abs": [
+    -211,
+    86
+   ],
+   "size": [
+    124,
+    22
+   ],
+   "image": "slider",
+   "text": null,
+   "value": 1
+  },
+  {
+   "screen": "settings",
+   "path": "Window/SfxRow/Pct",
+   "abs": [
+    -106,
+    86
+   ],
+   "size": [
+    72,
+    36
+   ],
+   "image": null,
+   "text": "100%",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "right"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/ScreenTitle",
+   "abs": [
+    -228,
+    22
+   ],
+   "size": [
+    300,
+    44
+   ],
+   "image": null,
+   "text": "화면 설정",
+   "fontSize": 28,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/ShakeRow",
+   "abs": [
+    -228,
+    -46
+   ],
+   "size": [
+    330,
+    64
+   ],
+   "image": "mc_row_card",
+   "text": "화면 흔들림",
+   "fontSize": 20,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 22
+  },
+  {
+   "screen": "settings",
+   "path": "Window/ShakeRow/Switch",
+   "abs": [
+    -118,
+    -46
+   ],
+   "size": [
+    84,
+    45
+   ],
+   "image": "mc_set_switch_on",
+   "text": null
+  },
+  {
+   "screen": "settings",
+   "path": "Window/ShakeRow/Switch/State",
+   "abs": [
+    -133,
+    -46
+   ],
+   "size": [
+    40,
+    45
+   ],
+   "image": null,
+   "text": "ON",
+   "fontSize": 16,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/GuideRow",
+   "abs": [
+    -228,
+    -142
+   ],
+   "size": [
+    330,
+    64
+   ],
+   "image": "mc_row_card",
+   "text": "퀘스트 길 안내",
+   "fontSize": 20,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 22
+  },
+  {
+   "screen": "settings",
+   "path": "Window/GuideRow/Switch",
+   "abs": [
+    -118,
+    -142
+   ],
+   "size": [
+    84,
+    45
+   ],
+   "image": "mc_set_switch_on",
+   "text": null
+  },
+  {
+   "screen": "settings",
+   "path": "Window/GuideRow/Switch/State",
+   "abs": [
+    -133,
+    -142
+   ],
+   "size": [
+    40,
+    45
+   ],
+   "image": null,
+   "text": "ON",
+   "fontSize": 16,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyTitle",
+   "abs": [
+    256,
+    250
+   ],
+   "size": [
+    300,
+    44
+   ],
+   "image": null,
+   "text": "조작키 설정",
+   "fontSize": 28,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row1",
+   "abs": [
+    256,
+    190
+   ],
+   "size": [
+    330,
+    46
+   ],
+   "image": "mc_row_card",
+   "text": "이동",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 16
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row1/Key1",
+   "abs": [
+    367,
+    191
+   ],
+   "size": [
+    84,
+    34
+   ],
+   "image": "mc_set_keycap_wide",
+   "text": "방향키",
+   "fontSize": 16,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row2",
+   "abs": [
+    256,
+    138
+   ],
+   "size": [
+    330,
+    46
+   ],
+   "image": "mc_row_card",
+   "text": "점프",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 16
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row2/Key1",
+   "abs": [
+    367,
+    139
+   ],
+   "size": [
+    84,
+    34
+   ],
+   "image": "mc_set_keycap_wide",
+   "text": "Alt",
+   "fontSize": 16,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row3",
+   "abs": [
+    256,
+    86
+   ],
+   "size": [
+    330,
+    46
+   ],
+   "image": "mc_row_card",
+   "text": "공격 / 채집",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 16
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row3/Key1",
+   "abs": [
+    367,
+    87
+   ],
+   "size": [
+    84,
+    34
+   ],
+   "image": "mc_set_keycap_wide",
+   "text": "Ctrl",
+   "fontSize": 16,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row4",
+   "abs": [
+    256,
+    34
+   ],
+   "size": [
+    330,
+    46
+   ],
+   "image": "mc_row_card",
+   "text": "상호작용",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 16
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row4/Key1",
+   "abs": [
+    392,
+    35
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "F",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row5",
+   "abs": [
+    256,
+    -18
+   ],
+   "size": [
+    330,
+    46
+   ],
+   "image": "mc_row_card",
+   "text": "스킬 슬롯",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 16
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row5/Key4",
+   "abs": [
+    392,
+    -17
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "R",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row5/Key3",
+   "abs": [
+    353,
+    -17
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "E",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row5/Key2",
+   "abs": [
+    314,
+    -17
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "W",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row5/Key1",
+   "abs": [
+    275,
+    -17
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "Q",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row6",
+   "abs": [
+    256,
+    -70
+   ],
+   "size": [
+    330,
+    46
+   ],
+   "image": "mc_row_card",
+   "text": "퀵슬롯",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 16
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row6/Key1",
+   "abs": [
+    367,
+    -69
+   ],
+   "size": [
+    84,
+    34
+   ],
+   "image": "mc_set_keycap_wide",
+   "text": "1 ~ 0",
+   "fontSize": 16,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row7",
+   "abs": [
+    256,
+    -122
+   ],
+   "size": [
+    330,
+    46
+   ],
+   "image": "mc_row_card",
+   "text": "가방 / 제작 / 정보",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 16
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row7/Key3",
+   "abs": [
+    392,
+    -121
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "H",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row7/Key2",
+   "abs": [
+    353,
+    -121
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "C",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row7/Key1",
+   "abs": [
+    314,
+    -121
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "I",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row8",
+   "abs": [
+    256,
+    -174
+   ],
+   "size": [
+    330,
+    46
+   ],
+   "image": "mc_row_card",
+   "text": "스킬 / 도감 / 보스",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 16
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row8/Key3",
+   "abs": [
+    392,
+    -173
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "B",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row8/Key2",
+   "abs": [
+    353,
+    -173
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "J",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row8/Key1",
+   "abs": [
+    314,
+    -173
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "K",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Hint",
+   "abs": [
+    256,
+    -215
+   ],
+   "size": [
+    330,
+    32
+   ],
+   "image": null,
+   "text": "현재 기본 조작키 · 키 변경 준비 중",
+   "fontSize": 16,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/Status",
+   "abs": [
+    -228,
+    -245
+   ],
+   "size": [
+    330,
+    58
+   ],
+   "image": "mc_row_card",
+   "text": "설정을 저장했습니다.",
+   "fontSize": 16,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/BtnReset",
+   "abs": [
+    170,
+    -262
+   ],
+   "size": [
+    156,
+    52
+   ],
+   "image": "mc_set_btn_gray",
+   "text": "초기화",
+   "fontSize": 20,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "settings",
+   "path": "Window/BtnSave",
+   "abs": [
+    342,
+    -262
+   ],
+   "size": [
+    156,
+    52
+   ],
+   "image": "mc_set_btn_olive",
+   "text": "설정 저장",
+   "fontSize": 20,
+   "color": "#FFFDF4"
+  }
+ ]
+}

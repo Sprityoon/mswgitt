@@ -842,7 +842,8 @@ script BossPatternController extends Component
 			s = s * self.SnowNovaFxScale
 		end
 		_ParticleService:PlayBasicParticle(pt, self.Entity, pos, 0.0, Vector3(s, s, s), false, options)
-		if shake > 0 then
+		-- 환경설정 [화면 흔들림] 끔이면 흔들지 않는다(Multicast 라 각 클라가 자기 설정을 본다).
+		if shake > 0 and (_GameSettingsLogic == nil or _GameSettingsLogic.ScreenShake) then
 			local cam = _CameraService:GetCurrentCameraComponent()
 			if isvalid(cam) then cam:ShakeCamera(shake, 0.25) end
 		end

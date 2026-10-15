@@ -920,7 +920,12 @@ script UISkillTreeController extends Component
 				if okD and v ~= nil and tostring(v) ~= "" then disp = tostring(v) end
 			end
 		end
-		return "장착: " .. disp
+		local line = "장착: " .. disp
+		local okB, bypassLabel = pcall(function() return row:GetItem("EquipBypassLabel") end)
+		if okB and bypassLabel ~= nil and tostring(bypassLabel) ~= "" then
+			line = line .. "\n또는 " .. tostring(bypassLabel) .. " 장비 효과"
+		end
+		return line
 	end
 
 	@ExecSpace("ClientOnly")

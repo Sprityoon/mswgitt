@@ -82,6 +82,7 @@
 | [68](#68-tileset을-디스크에서-되돌려도-maker-저장이-편집기-메모리-버전으로-다시-덮어쓴다) | tileset 디스크 원복 후 Maker 저장 = 이전 버전 재기록 | 원복했던 RUID가 `git diff`에 다시 나타남 |
 | [69](#69-글자-칸-높이가-한-줄에-빠듯하면-ellipsistruncate-모드에서-글자가-통째로-사라진다) | 빠듯한 높이 + Ellipsis/Truncate = 글자 소멸 | 이름·레벨 등 한 줄 라벨이 갑자기 안 보임 (에러 0) |
 | [70](#70-모델-spriteruid-를-바꿔도-스크립트가-데이터셋-ruid-로-덮어쓰면-화면은-그대로다) | 모델 RUID 교체 시 데이터셋 RUID 덮어쓰기 확인 | 닭을 들였는데 슬라임이 나옴 (에러 0) |
+| [71](#71-textguirenderercomponent의-bestfit이-켜져-있으면-fontsize를-바꿔도-엔티티-크기에-맞춰-자동-확대축소된다--고정-크기-시-bestfitfalse-필수) | `BestFit=true`면 `FontSize` 무시되고 RectSize 따라 자동 확대 | 버튼 판을 키웠더니 글자까지 비대해짐 (에러 0) |
 
 ---
 
@@ -863,3 +864,10 @@ CSV 파일의 설명(`Description` 등) 텍스트에 문장 부호 쉼표(`,`)�
 
 - **실측 (2026-10-09)**: T49(2026-07-14)에서 가축·펫 placeholder(슬라임)를 교체할 때 `Animal_*`·`Pet_Dog` **모델**의 SpriteRUID만 바꿨다. `Animal`/`Pet.ApplyDatasetVisual`은 스폰 직후 `AnimalDataSet`/`PetDataSet.SpriteRUID`로 다시 덮어쓰기 때문에, 닭·양·강아지가 석 달 동안 슬라임으로 보였다. 오류 로그는 없다.
 - ✅ 모델 RUID를 바꾸기 전에 `Grep "GetItem(\"SpriteRUID\")"` 등으로 같은 엔티티에 데이터셋 RUID를 칠하는 스크립트가 있는지 확인하고, 있으면 데이터셋도 같이 바꾼다. 교체 뒤에는 옛 RUID를 저장소 전체에서 Grep해 남은 곳이 없는지 본다.
+
+### 71. TextGUIRendererComponent의 BestFit이 켜져 있으면 FontSize를 바꿔도 엔티티 크기에 맞춰 자동 확대/축소된다 — 고정 크기 시 BestFit=false 필수
+
+- **실측 (2026-10-15)**: 메인메뉴 타이틀 버튼 판을 300×78에서 380×100으로 확대했을 때, `FontSize=26`을 지정했음에도 버튼 글자가 함께 비대해지는 현상이 실제 Play 캡처에서 발견되었다. 원인은 엔티티에 `BestFit=true`, `MinSize=22`, `MaxSize=80`이 남아 있어 부모 RectSize 확대에 따라 글자가 최대 80까지 자동 확대되고 있었던 것.
+- ✅ 고정 폰트 크기나 정밀한 타이포그래피를 적용할 때는 반드시 `BestFit=false`로 끈다. 빌더 스크립트 작성 시에도 기본 템플릿의 `BestFit` 여부를 명시적으로 제어해야 한다.
+- ✅ Bazzi 등 비트맵/특정 폰트는 실제 표시 크기가 일반 폰트보다 작게 느껴질 수 있으므로(예: Bazzi 26은 실체감상 지나치게 작음), BestFit을 끈 뒤 실제 캡처나 런타임에서 글자 크기를 실측 보정한다(타이틀 버튼은 Bazzi 고정 64로 보정).
+

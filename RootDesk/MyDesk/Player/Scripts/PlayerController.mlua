@@ -3269,6 +3269,18 @@ script PlayerController extends Component
 	end
 
 	@ExecSpace("Client")
+	method void ClientCompleteSlotEntry(string mapName)
+		-- 데이터·퀘스트 로드 완료 및 실제 목적지를 전달한다. 기존 RPC 인자 수는 바꾸지 않는다.
+		self:ClientCloseMainMenu()
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		if isvalid(hud) then
+			local ctrl = hud:GetComponent("script.UIHUDController")
+			if isvalid(ctrl) then ctrl:CompleteSlotEntryTransition(mapName) end
+		end
+		self:ClientHideSpawnFade()
+	end
+
+	@ExecSpace("Client")
 	method void ClientCloseMainMenu()
 		local ent = _EntityService:GetEntityByPath("/ui/MainMenuGroup/Controller")
 		if not isvalid(ent) then return end
@@ -4078,9 +4090,20 @@ script PlayerController extends Component
 		-- 스킬바가 0.04초마다 쿨다운(→ CooldownPct)을 물으므로 슬롯 합산은 0.5초 캐시.
 		local now = _UtilLogic.ElapsedSeconds
 		local cache = self._T.GearPerkCache
-		if cache == nil or now - cache.at > 0.5 then
-			cache = { at = now, values = {} }
-			local pi = self.Entity:GetComponent("script.PlayerInventory")
+		local pi = self.Entity:GetComponent("script.PlayerInventory")
+		local changed = cache ~= nil and cache.job ~= self.JobId
+		if isvalid(pi) and cache ~= nil then
+			changed = changed or cache.held ~= pi.EquippedTool or cache.gear ~= pi.GearJson
+				or cache.enhance ~= pi.EnhanceJson or cache.inventory ~= pi.InventoryDataJson
+		end
+		if cache == nil or changed or now - cache.at > 0.5 then
+			cache = { at = now, values = {}, job = self.JobId }
+			if isvalid(pi) then
+				cache.held = pi.EquippedTool
+				cache.gear = pi.GearJson
+				cache.enhance = pi.EnhanceJson
+				cache.inventory = pi.InventoryDataJson
+			end
 			local ds = _DataService:GetTable("item_dataset")
 			if isvalid(pi) and ds ~= nil then
 				---@type PlayerInventory
@@ -4665,8 +4688,15 @@ script PlayerController extends Component
 		local p = inv
 		local equipped = p:GetBaseItemName(p.EquippedTool or "")
 		if equipped == requireItem then return true end
+		-- 장착 또는 상의 마법 부여로 얻은 능력만 우회한다. 주머니를 가방에 보유한 것만으로는 안 된다.
+		local bypass = self:SkillText(row, "EquipBypassStat")
+		if bypass ~= "" and self:GetGearPerk(bypass) > 0 then
+			log("[VRF][POUCH] equipped effect=" .. bypass .. " permits held=" .. tostring(p.EquippedTool))
+			return true
+		end
 		local disp = p:GetItemDisplayName(requireItem)
 		local msg = disp .. "을(를) 들고 있어야 합니다."
+		if bypass ~= "" then msg = msg .. " (" .. self:SkillText(row, "EquipBypassLabel") .. " 장비 효과로 생략 가능)" end
 		local playerComp = self.Entity.PlayerComponent
 		if playerComp ~= nil then
 			self:ClientShowMineFeedback(msg, playerComp.UserId)
@@ -4952,7 +4982,7 @@ script PlayerController extends Component
 
 	method integer GetStatWeaponAttack(string statKey)
 		-- 계열 공격력에 더해지는 무기 수치: 지능은 MagicAttack, 삼위일체는 장갑 방어력 전환, 나머지는 Attack.
-		-- 주무기 미등록이면 보유 최고 무기(자동)를 쓴다 — PlayerInventory.GetGearStat 규약.
+		-- 현재 손 무기의 실효 수치만 더한다. TRI는 들고 있는 무기 대신 장갑을 쓴다.
 		if statKey == "INT" then return self:GetGearStat("MagicAttack") end
 		if statKey == "TRI" then return self:GetGloveFistAttack() end
 		return self:GetGearStat("Attack")
@@ -5142,7 +5172,7 @@ script PlayerController extends Component
 
 	method string GetEquippedWeaponType()
 		-- 주무기의 평타 방식(item_dataset.WeaponType: Melee 기본 / Wand / Nature). 서버·클라 공용.
-		-- 직업 제한을 거친 실효 주무기(자동 주무기 포함) 기준이다.
+		-- 현재 손에 든 실효 무기 기준이다. TRI 직업은 무기 종류도 무시한다.
 		local inv = self.Entity:GetComponent("script.PlayerInventory")
 		if not isvalid(inv) then return "Melee" end
 		---@type PlayerInventory
@@ -5230,11 +5260,15 @@ script PlayerController extends Component
 		local throwBonus = 0
 		if self:SkillText(row, "DamageModel") == "Throw" then throwBonus = self:GetPassiveBonus("ThrowDamagePct") end
 		local dmg = math.floor(core * mul * (1 + throwBonus))
+		local count = math.max(1, math.floor(self:SkillNumber(row, "ProjectileCount", 1)))
 		local pct = math.floor(mul * 100 + 0.5)
 		local line = "피해: " .. self:GetStatLabel(stat) .. " 계열 공격력 기준 " .. tostring(pct) .. "%"
 		line = line .. "\n현재 1타 약 " .. tostring(dmg) .. " (위력 " .. tostring(core) .. " × " .. tostring(pct) .. "%"
 		if level < 1 then line = line .. ", Lv1 기준" end
 		line = line .. ")"
+		if self:SkillText(row, "Type") == "Projectile" and count > 1 then
+			line = line .. "\n파편당 위력 · 최대 " .. tostring(count) .. "발 적중 (근접 전탄 약 " .. tostring(dmg * count) .. ")"
+		end
 		-- 보조 능력치(SubStat): 주 능력치 × 상한까지 주 능력치처럼 반영 — 현재 인정분/상한을 보여 준다.
 		local sub = self:SkillText(row, "SubStat")
 		if sub ~= "" and sub ~= stat then
@@ -5260,7 +5294,7 @@ script PlayerController extends Component
 	method integer ComputeSkillDamage(string skillId, number damageMul)
 		-- 스킬 피해 = (계열 공격력 + 무기 + 장비 스킬 공격력 + SkillPower) × 배율.
 		-- 계열은 SkillDataSet.ScaleStat(힘·솜씨·지능·교감). 손에 든 도구/장비 구분(구 WeaponSource)은 폐지 —
-		-- 무기는 장비 주무기(미등록이면 보유 최고 무기)가 계열 공격력에 더해지는 것으로 일원화했다.
+		-- 무기는 현재 손 무기만 반영한다. 주머니 효과는 직접 들기 제약만 풀고 공격력을 별도로 주지 않는다.
 		local row = nil
 		local ds = _DataService:GetTable("SkillDataSet")
 		if ds ~= nil and skillId ~= nil and skillId ~= "" then
@@ -5377,7 +5411,8 @@ script PlayerController extends Component
 		local modelId = _EntryService:GetModelIdByName("Projectile_Fireball")
 		if not isvalid(map) or modelId == nil or modelId == "" then return false end
 		local pos = self.Entity.TransformComponent.WorldPosition
-		local proj = _SpawnService:SpawnByModelId(modelId, "Projectile_" .. spec.name, Vector3(pos.x + spec.dx * 1.2, pos.y + spec.dy * 1.2, pos.z), map)
+		local spawnDistance = spec.spawnDistance or 1.2
+		local proj = _SpawnService:SpawnByModelId(modelId, "Projectile_" .. spec.name, Vector3(pos.x + spec.dx * spawnDistance, pos.y + spec.dy * spawnDistance, pos.z), map)
 		if not isvalid(proj) then return false end
 		local sprite = proj.SpriteRendererComponent
 		if isvalid(sprite) then
@@ -5416,6 +5451,7 @@ script PlayerController extends Component
 
 	@ExecSpace("ServerOnly")
 	method void ExecuteProjectileSkill(string skillId, number damageMul, integer dirX, integer dirY, string hitEffectRUID, number hitEffectScale)
+		-- 개별 파편의 실제 비행 충돌을 유지한다. 근접 탄환은 데이터의 생성 거리로 사각지대를 줄인다.
 		local map = self.Entity.CurrentMap
 		local modelId = _EntryService:GetModelIdByName("Projectile_Fireball")
 		if not isvalid(map) or modelId == nil or modelId == "" then return end
@@ -5427,6 +5463,7 @@ script PlayerController extends Component
 		-- 발마다 같은 값(방향만 다르다). ProjectileScale 공란이면 ProjectileSize 를 그림 배율로도 쓴다.
 		local spec = {
 			name = skillId,
+			spawnDistance = self:SkillNumber(row, "ProjectileSpawnDistance", 1.2),
 			skillId = skillId,
 			damage = damage,
 			dx = 0,
@@ -5451,7 +5488,8 @@ script PlayerController extends Component
 			spec.dy = dirX * math.sin(angle) + dirY * math.cos(angle)
 			self:SpawnPlayerProjectile(spec)
 		end
-		log("[SKILL] projectile skill=" .. skillId .. " count=" .. count)
+		log("[VRF][SKILL] projectile skill=" .. skillId .. " count=" .. count .. " dmgPerShot=" .. tostring(damage)
+			.. " spawn=" .. tostring(spec.spawnDistance))
 	end
 
 	@ExecSpace("ServerOnly")
@@ -5486,6 +5524,7 @@ script PlayerController extends Component
 		if bonusStat ~= "" then damage = math.floor(damage * (1 + math.max(0, self:GetPassiveBonus(bonusStat)))) end
 		local spec = {
 			name = "Basic",
+			spawnDistance = self:SkillNumber(row, "ProjectileSpawnDistance", 1.2),
 			skillId = "",
 			damage = damage,
 			dx = dirX,

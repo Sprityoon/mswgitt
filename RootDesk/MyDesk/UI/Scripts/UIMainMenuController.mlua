@@ -92,6 +92,7 @@ script UIMainMenuController extends Component
 	property string pendingAction = ""
 	property string menuMode = "title"
 	property boolean isOpen = false
+	property boolean selectionPending = false
 	property boolean useAccountLook = true
 
 	property integer hairIdx = 1
@@ -106,6 +107,10 @@ script UIMainMenuController extends Component
 	property string uiHoverSfx = "159bf70a74634bfc8e91a29e527a4be5"
 	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
 	property number uiSfxVolume = 0.8
+	-- 시작 화면 개편(2026-10-15): 외형 모드 라디오 탭 이미지. scripts/build_mainmenu_revamp_20261015.cjs 가
+	-- 등록된 RUID 를 써 넣는다. "" 이면 이미지는 그대로 두고 색으로만 구분한다.
+	property string tabActiveRuid = "06de459b0aad4a718765aacbd75ecc4f"
+	property string tabInactiveRuid = "609b9e86a4ca41cd9a7c3a0bcaf1a298"
 	-- 현재 keyart_1_1(1024×1024)과 같은 초기 비율. 로드 전후 cover 크기가 튀지 않게 한다.
 	property number backgroundAspectRatio = 1.0
 
@@ -123,7 +128,8 @@ script UIMainMenuController extends Component
 		if isvalid(self.namePrompt) then self.namePrompt.Enable = false end
 
 		self:BindTransparentTitleBtn(self.btnNew, function() self:OnTitleNew() end)
-		self:BindTransparentTitleBtn(self.btnContinue, function() self:OnTitleContinue() end)
+		-- btnContinue = [환경설정](2026-10-15). 엔티티 이름은 바인딩 유지를 위해 그대로 둔다.
+		self:BindTransparentTitleBtn(self.btnContinue, function() self:OnTitleSettings() end)
 		self:BindTransparentTitleBtn(self.btnQuit, function() self:OnTitleQuit() end)
 		self:BindMusicButton()
 		self:RefreshMusicButton()
@@ -148,6 +154,25 @@ script UIMainMenuController extends Component
 			end)
 			self:BindBtn(self["slot" .. i .. "BtnDelete"], function()
 				self:OnDelete(slotIndex)
+			end)
+			-- 빈 슬롯의 [+ 새 캐릭터 생성] (슬롯 카드의 자식 BtnCreate)
+			local slotEnt = self["slot" .. i]
+			if isvalid(slotEnt) then
+				local createEnt = slotEnt:GetChildByName("BtnCreate", false)
+				if isvalid(createEnt) and isvalid(createEnt.ButtonComponent) then
+					self:BindBtn(createEnt.ButtonComponent, function()
+						self:OnCreateSlot(slotIndex)
+					end)
+				end
+			end
+		end
+
+		-- 삭제 확인: 입력이 닉네임과 정확히 같을 때만 [삭제]를 누를 수 있다.
+		if isvalid(self.nameInput) and isvalid(self.nameInput.Entity) then
+			self._T.deleteInputHandler = self.nameInput.Entity:ConnectEvent(TextInputValueChangeEvent, function(ev)
+				local t = ""
+				if ev ~= nil and ev.text ~= nil then t = ev.text end
+				self:RefreshDeleteOk(t)
 			end)
 		end
 
@@ -230,8 +255,12 @@ script UIMainMenuController extends Component
 		local ent = self.btnMusic.Entity
 		self._T.musicClickEvent = ent:ConnectEvent(ButtonClickEvent, function()
 			self:PlayUiClick()
-			if _BGMManager == nil then return end
-			_BGMManager:SetMusicEnabled(not _BGMManager.MusicEnabled)
+			-- 환경설정 [배경음] 음소거와 같은 값이다 — 바꾸면 바로 계정에 저장한다.
+			if _GameSettingsLogic ~= nil then
+				_GameSettingsLogic:SetBgmMutedAndSave(not _GameSettingsLogic.BgmMuted)
+			elseif _BGMManager ~= nil then
+				_BGMManager:SetMusicEnabled(not _BGMManager.MusicEnabled)
+			end
 			self:RefreshMusicButton()
 		end)
 		self._T.musicHoverEvent = ent:ConnectEvent(ButtonStateChangeEvent, function(ev)
@@ -257,19 +286,27 @@ script UIMainMenuController extends Component
 		end
 		self._T.musicClickEvent = nil
 		self._T.musicHoverEvent = nil
+		if self._T.deleteInputHandler ~= nil and isvalid(self.nameInput) and isvalid(self.nameInput.Entity) then
+			self.nameInput.Entity:DisconnectEvent(TextInputValueChangeEvent, self._T.deleteInputHandler)
+		end
+		self._T.deleteInputHandler = nil
 	end
 
 	@ExecSpace("ClientOnly")
 	method void PlayUiClick()
-		if self.uiClickSfx ~= nil and self.uiClickSfx ~= "" then
-			_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume)
+		local scale = 1
+		if _BGMManager ~= nil then scale = _BGMManager.SfxVolumeScale end
+		if scale > 0 and self.uiClickSfx ~= nil and self.uiClickSfx ~= "" then
+			_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume * scale)
 		end
 	end
 
 	@ExecSpace("ClientOnly")
 	method void PlayUiHover()
-		if self.uiHoverSfx ~= nil and self.uiHoverSfx ~= "" then
-			_SoundService:PlaySound(self.uiHoverSfx, self.uiSfxVolume)
+		local scale = 1
+		if _BGMManager ~= nil then scale = _BGMManager.SfxVolumeScale end
+		if scale > 0 and self.uiHoverSfx ~= nil and self.uiHoverSfx ~= "" then
+			_SoundService:PlaySound(self.uiHoverSfx, self.uiSfxVolume * scale)
 		end
 	end
 
@@ -292,7 +329,8 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void BindTransparentTitleBtn(ButtonComponent btn, any fn)
-		-- 배경이 투명한 타이틀 메뉴 버튼용: 마우스 호버 시 텍스트 골드 틴트 + 스케일 1.05배 강조 피드백
+		-- 타이틀 메뉴 버튼(나무판 이미지): 흰 글자 + 갈색 외곽선(목업). 호버 시 연한 금색 + 스케일 1.05배.
+		-- 2026-10-15 개편: 5단 간판 이미지 위 투명 버튼 → 버튼마다 판자 이미지. 배경은 원본 색 그대로 둔다.
 		if isvalid(btn) == false or isvalid(btn.Entity) == false then
 			return
 		end
@@ -301,15 +339,12 @@ script UIMainMenuController extends Component
 		local text = ent.TextGUIRendererComponent
 		local tr = ent.UITransformComponent
 
-		local normalFontColor = Color(1.0, 0.96, 0.88, 1.0)
-		local hoverFontColor = Color(1.0, 0.86, 0.32, 1.0)
-		local pressFontColor = Color(0.92, 0.72, 0.20, 1.0)
-
-		-- 배경은 항상 100% 투명 유지
-		local transparentBgColor = Color(0.55, 0.40, 0.26, 0.0)
+		local normalFontColor = Color(1.0, 1.0, 1.0, 1.0)
+		local hoverFontColor = Color(1.0, 0.88, 0.54, 1.0)
+		local pressFontColor = Color(0.91, 0.75, 0.38, 1.0)
 
 		if isvalid(text) then text.FontColor = normalFontColor end
-		if isvalid(sprite) then sprite.Color = transparentBgColor end
+		if isvalid(sprite) then sprite.Color = Color(1, 1, 1, 1) end
 
 		ent:ConnectEvent(ButtonClickEvent, function()
 			self:PlayUiClick()
@@ -476,6 +511,8 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void Close()
+		-- 서버가 슬롯 준비를 끝냈을 때 메뉴를 닫는다. 로딩 커버는 HUD가 도착 확인 후 걷는다.
+		self.selectionPending = false
 		self.isOpen = false
 		self:CloseNamePrompt()
 		self:SetRootEnable(false)
@@ -535,29 +572,25 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnTitleNew()
-		if not self.isOpen then return end
-		self.pendingAction = "new"
-		if isvalid(self.slotSubtitle) then self.slotSubtitle.Text = "빈 슬롯을 선택하세요" end
-		self:ShowPanel("slot")
-	end
-
-	@ExecSpace("ClientOnly")
-	method void OnTitleContinue()
+		-- [시작하기]: 캐릭터 선택 화면(2026-10-15 새로하기·이어하기 통합). 빈 슬롯에서 바로 생성한다.
 		if not self.isOpen then
 			self:SetTitleHint("데이터를 불러오는 중입니다. 잠시만 기다려주세요...")
 			return
 		end
-		local any = false
-		for i = 1, 5 do
-			if self:IsOccupied(i) then any = true break end
-		end
-		if not any then
-			self:SetTitleHint("저장된 캐릭터가 없습니다. 새로하기를 선택하세요.")
+		self.pendingAction = "continue"
+		if isvalid(self.slotSubtitle) then self.slotSubtitle.Text = "캐릭터 선택" end
+		self:ShowPanel("slot")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnTitleSettings()
+		-- [환경설정]: 타이틀 메뉴를 숨기고 환경설정 창(SettingsGroup)을 연다. 닫으면 UISettingsLogic 이 ShowPanel("title") 로 되돌린다.
+		if _UISettingsLogic == nil then
+			log_warning("[MAINMENU] UISettingsLogic missing")
 			return
 		end
-		self.pendingAction = "continue"
-		if isvalid(self.slotSubtitle) then self.slotSubtitle.Text = "이어할 캐릭터를 선택하세요" end
-		self:ShowPanel("slot")
+		if isvalid(self.titlePanel) then self.titlePanel.Enable = false end
+		_UISettingsLogic:Open(true)
 	end
 
 	@ExecSpace("ClientOnly")
@@ -598,7 +631,7 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void RefreshSlots()
-		local isNew = (self.pendingAction == "new")
+		-- 채워진 슬롯 = 아바타·닉네임·Lv·직업 + [이어하기][삭제] / 빈 슬롯 = "슬롯 N" + [+ 새 캐릭터 생성].
 		for i = 1, 5 do
 			local occupied = self:IsOccupied(i)
 			local meta = self:GetSlotMeta(i)
@@ -607,35 +640,45 @@ script UIMainMenuController extends Component
 			local btnS = self["slot" .. i .. "BtnSelect"]
 			local btnD = self["slot" .. i .. "BtnDelete"]
 			local avatarEnt = self["slot" .. i .. "Avatar"]
+			local slotEnt = self["slot" .. i]
 
 			if isvalid(title) then
-				title.Text = occupied and tostring(meta.name) or ("슬롯 " .. tostring(i))
+				title.Text = occupied and tostring(meta.name) or ""
+				if isvalid(title.Entity) then title.Entity.Enable = occupied end
 			end
 			if isvalid(info) then
 				if occupied then
-					-- 슬롯 카드가 가로 1행이라 한 줄로 표기 (2줄이면 행 높이를 넘친다).
 					local lv = tonumber(meta.level or meta.Level) or 1
 					local jobId = tostring(meta.jobId or meta.JobId or "")
 					local jobName = self:GetJobDisplayName(jobId)
 					info.Text = "Lv." .. tostring(lv) .. "  ·  " .. jobName
 				else
-					info.Text = "비어 있음"
+					info.Text = ""
 				end
+				if isvalid(info.Entity) then info.Entity.Enable = occupied end
 			end
 
-			local selectable = (isNew and not occupied) or ((not isNew) and occupied)
-			self:SetBtn(btnS, selectable)
+			self:SetBtn(btnS, occupied)
 			if isvalid(btnS) then
 				local label = btnS.Entity and btnS.Entity.TextGUIRendererComponent
-				if isvalid(label) then
-					if isNew then
-						label.Text = "선택"
-					else
-						label.Text = "이어하기"
+				if isvalid(label) then label.Text = "이어하기" end
+			end
+			self:SetBtn(btnD, occupied)
+
+			if isvalid(slotEnt) then
+				local emptyLabel = slotEnt:GetChildByName("EmptyLabel", false)
+				if isvalid(emptyLabel) then
+					emptyLabel.Enable = not occupied
+					if isvalid(emptyLabel.TextGUIRendererComponent) then
+						emptyLabel.TextGUIRendererComponent.Text = "슬롯 " .. tostring(i)
 					end
 				end
+				local createEnt = slotEnt:GetChildByName("BtnCreate", false)
+				if isvalid(createEnt) then
+					createEnt.Enable = not occupied
+					if isvalid(createEnt.ButtonComponent) then createEnt.ButtonComponent.Enable = not occupied end
+				end
 			end
-			self:SetBtn(btnD, (not isNew) and occupied)
 
 			if occupied then
 				if isvalid(avatarEnt) then avatarEnt.Enable = true end
@@ -659,17 +702,20 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnSlotSelect(integer slot)
+		-- [이어하기]: 채워진 슬롯으로 게임에 들어간다.
 		if not self.isOpen then return end
-		if self.pendingAction == "continue" then
-			if not self:IsOccupied(slot) then return end
-			self:RequestSelect(slot, false, "", "")
-			return
-		end
-		if self.pendingAction == "new" then
-			if self:IsOccupied(slot) then return end
-			self.pendingSlot = slot
-			self:ShowPanel("customize")
-		end
+		if not self:IsOccupied(slot) then return end
+		self:RequestSelect(slot, false, "", "")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnCreateSlot(integer slot)
+		-- [+ 새 캐릭터 생성]: 빈 슬롯을 골라 캐릭터 만들기 화면으로 간다.
+		if not self.isOpen then return end
+		if self:IsOccupied(slot) then return end
+		self.pendingAction = "new"
+		self.pendingSlot = slot
+		self:ShowPanel("customize")
 	end
 
 	@ExecSpace("ClientOnly")
@@ -705,35 +751,42 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void SetLookMode(boolean useAccount)
+		-- 외형 모드 라디오 탭: 선택=밝은 리프 그린 탭 + 흰 굵은 글자(외곽선 #235212), 비선택=회갈색 탭 + 회백색 글자.
 		self.useAccountLook = useAccount
 		self:SetPartsInteractable(not useAccount)
-		-- 선택 강조: 활성=포레스트 올리브(초록), 비활성=따뜻한 원목 브라운
-		if isvalid(self.btnLookAccount) then
-			local spr = self.btnLookAccount.Entity and self.btnLookAccount.Entity.SpriteGUIRendererComponent
-			if isvalid(spr) then
-				if useAccount then
-					spr.Color = Color(0.45, 0.72, 0.35, 1.0)
-				else
-					spr.Color = Color(0.55, 0.42, 0.32, 0.85)
-				end
-			end
-			local txt = self.btnLookAccount.Entity and self.btnLookAccount.Entity.TextGUIRendererComponent
-			if isvalid(txt) then txt.FontColor = Color(1.0, 1.0, 0.96, 1.0) end
-		end
-		if isvalid(self.btnLookCustom) then
-			local spr = self.btnLookCustom.Entity and self.btnLookCustom.Entity.SpriteGUIRendererComponent
-			if isvalid(spr) then
-				if useAccount then
-					spr.Color = Color(0.55, 0.42, 0.32, 0.85)
-				else
-					spr.Color = Color(0.45, 0.72, 0.35, 1.0)
-				end
-			end
-			local txt = self.btnLookCustom.Entity and self.btnLookCustom.Entity.TextGUIRendererComponent
-			if isvalid(txt) then txt.FontColor = Color(1.0, 1.0, 0.96, 1.0) end
-		end
+		self:StyleLookTab(self.btnLookAccount, useAccount)
+		self:StyleLookTab(self.btnLookCustom, not useAccount)
 		self:RefreshCustomizePreview()
 		log("[MAINMENU] lookMode account=" .. tostring(useAccount))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void StyleLookTab(ButtonComponent btn, boolean active)
+		-- 탭 하나의 선택/비선택 모습. 이미지 RUID 가 비어 있으면(미등록) 색으로만 구분한다.
+		if not isvalid(btn) or not isvalid(btn.Entity) then return end
+		local spr = btn.Entity.SpriteGUIRendererComponent
+		if isvalid(spr) then
+			local ruid = active and self.tabActiveRuid or self.tabInactiveRuid
+			if ruid ~= nil and ruid ~= "" then
+				spr.ImageRUID = DataRef(ruid)
+				spr.Color = Color(1, 1, 1, 1)
+			elseif active then
+				spr.Color = Color(0.35, 0.72, 0.20, 1.0)
+			else
+				spr.Color = Color(0.54, 0.50, 0.44, 1.0)
+			end
+		end
+		local txt = btn.Entity.TextGUIRendererComponent
+		if isvalid(txt) then
+			if active then
+				txt.FontColor = Color(1.0, 1.0, 1.0, 1.0)
+				txt.OutlineWidth = 0.3
+				txt.OutlineColor = Color(0.137, 0.322, 0.071, 1.0)
+			else
+				txt.FontColor = Color(0.847, 0.816, 0.773, 1.0)
+				txt.OutlineWidth = 0
+			end
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -748,12 +801,13 @@ script UIMainMenuController extends Component
 		for _, btn in ipairs(btns) do
 			if isvalid(btn) then
 				btn.Enable = on
+				-- 화살표는 이미지(밝은 우드 + 크림 화살표)라 원본 색 그대로, 계정 외형 모드에서는 반투명 0.35.
 				local spr = btn.Entity and btn.Entity.SpriteGUIRendererComponent
 				if isvalid(spr) then
 					if on then
-						spr.Color = Color(0.55, 0.4, 0.26, 1)
+						spr.Color = Color(1, 1, 1, 1)
 					else
-						spr.Color = Color(0.55, 0.4, 0.26, 0.35)
+						spr.Color = Color(1, 1, 1, 0.35)
 					end
 				end
 			end
@@ -929,7 +983,35 @@ script UIMainMenuController extends Component
 		if isvalid(self.namePrompt) then self.namePrompt.Enable = true end
 		if isvalid(self.nameInput) then self.nameInput.Text = "" end
 		if isvalid(self.nameError) then
-			self.nameError.Text = "삭제하려면 닉네임 '" .. tostring(meta and meta.name or "") .. "' 을 입력"
+			self.nameError.Text = "삭제하려면 아래에 '" .. tostring(meta and meta.name or "") .. "'을(를) 입력하세요"
+		end
+		self:RefreshDeleteOk("")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshDeleteOk(string typed)
+		-- 입력이 삭제 대상 닉네임과 정확히 같을 때만 [삭제] 활성. 앞뒤 공백은 무시한다(OnNameOk 와 같은 기준).
+		if self.pendingAction ~= "delete" then return end
+		local meta = self:GetSlotMeta(self.pendingSlot)
+		local expect = meta and tostring(meta.name) or ""
+		local raw = string.match(tostring(typed or ""), "^%s*(.-)%s*$") or ""
+		self:SetDeleteOkEnabled(expect ~= "" and raw == expect)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetDeleteOkEnabled(boolean on)
+		-- 비활성 = 클릭 차단 + 반투명(0.45). 엔티티는 끄지 않는다(버튼 자리가 비어 보이지 않게).
+		if not isvalid(self.btnNameOk) then return end
+		self.btnNameOk.Enable = on
+		local ent = self.btnNameOk.Entity
+		if not isvalid(ent) then return end
+		local alpha = 0.45
+		if on then alpha = 1 end
+		if isvalid(ent.SpriteGUIRendererComponent) then
+			ent.SpriteGUIRendererComponent.Color = Color(1, 1, 1, alpha)
+		end
+		if isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.FontColor = Color(1.0, 0.99, 0.96, alpha)
 		end
 	end
 
@@ -964,11 +1046,24 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void RequestSelect(integer slot, boolean isNew, string nickname, string costumeJson)
+		-- 커버가 완전히 덮인 뒤 요청한다. 같은 슬롯을 연속 선택해 중복 로드하지 않는다.
+		if self.selectionPending then return end
 		local lp = _UserService.LocalPlayer
 		if not isvalid(lp) then return end
 		local pc = lp:GetComponent("script.PlayerController")
 		if not isvalid(pc) then return end
-		pc:ServerSelectSaveSlot(slot, isNew, nickname or "", costumeJson or "")
+		self.selectionPending = true
+		local request = function()
+			if isvalid(pc) then pc:ServerSelectSaveSlot(slot, isNew, nickname or "", costumeJson or "") end
+		end
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		local ctrl = nil
+		if isvalid(hud) then ctrl = hud:GetComponent("script.UIHUDController") end
+		if isvalid(ctrl) then
+			ctrl:BeginSlotEntryTransition(request)
+		else
+			request()
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -1005,6 +1100,15 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void ShowNameError(string msg)
+		-- 슬롯 검증 실패는 로딩을 취소하고 기존 입력 화면에 오류를 표시한다.
+		if self.selectionPending then
+			self.selectionPending = false
+			local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+			if isvalid(hud) then
+				local ctrl = hud:GetComponent("script.UIHUDController")
+				if isvalid(ctrl) then ctrl:CancelWarpTransition() end
+			end
+		end
 		local m = msg or "사용할 수 없는 닉네임입니다"
 		if self.menuMode == "customize" then
 			self:SetCustomError(m)

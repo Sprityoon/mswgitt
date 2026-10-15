@@ -13,6 +13,10 @@ script BGMManager extends Logic
 	property string CurrentAmbienceRUID = ""
 	property number AmbienceVolume = 0.35
 	property boolean Started = false
+	-- 환경설정 볼륨 배율(0~1, 음소거면 0). GameSettingsLogic.Apply 가 ApplySettingVolumes 로 넣는다.
+	-- 배경음 = 맵 BGM, 효과음 = 인게임 효과음 + 날씨 앰비언스 + 메인메뉴 클릭음.
+	property number BgmVolumeScale = 1.0
+	property number SfxVolumeScale = 1.0
 
 	method void OnBeginPlay()
 		-- 클라 전용 기동. 서버는 무동작.
@@ -61,9 +65,21 @@ script BGMManager extends Logic
 		-- 현재 곡의 재생 위치를 유지하며 음악 볼륨만 전환한다.
 		self.MusicEnabled = enabled
 		if _SoundService ~= nil then
-			_SoundService:SetBGMVolume(enabled and self.CurrentBgmVolume or 0)
+			_SoundService:SetBGMVolume(enabled and self.CurrentBgmVolume * self.BgmVolumeScale or 0)
 		end
 		log("[BGM] music enabled=" .. tostring(enabled))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplySettingVolumes(number bgmScale, number sfxScale)
+		-- 환경설정 볼륨 적용. BGM 은 즉시(SetBGMVolume), 앰비언스 루프는 볼륨 변경 API 가 없어 다음 폴링 때 다시 튼다.
+		self.BgmVolumeScale = math.max(0, math.min(1, bgmScale))
+		self.SfxVolumeScale = math.max(0, math.min(1, sfxScale))
+		if self.SfxVolumeScale <= 0 then self:StopInGameSounds() end
+		self.MusicEnabled = self.BgmVolumeScale > 0
+		if _SoundService ~= nil then
+			_SoundService:SetBGMVolume(self.CurrentBgmVolume * self.BgmVolumeScale)
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -83,9 +99,10 @@ script BGMManager extends Logic
 	method boolean PlayInGameSound(string ruid, number volume)
 		-- 인게임 효과음은 각 클라이언트의 메뉴 상태를 확인한 뒤 재생하며, 재진입 정지용 RUID를 기록한다.
 		if self.MainMenuActive or ruid == nil or ruid == "" or _SoundService == nil then return false end
+		if self.SfxVolumeScale <= 0 then return false end
 		if self._T.inGameSoundRUIDs == nil then self._T.inGameSoundRUIDs = {} end
 		self._T.inGameSoundRUIDs[ruid] = true
-		_SoundService:PlaySound(ruid, volume)
+		_SoundService:PlaySound(ruid, volume * self.SfxVolumeScale)
 		return true
 	end
 
@@ -188,7 +205,7 @@ script BGMManager extends Logic
 
 		-- SoundService에 페이드 전환 API 없음 → 즉시 Stop+Play (FadeSec은 데이터 예약, 런타임 미사용).
 		_SoundService:StopBGM(true)
-		_SoundService:PlayBGM(bgmRuid, self.MusicEnabled and volume or 0)
+		_SoundService:PlayBGM(bgmRuid, self.MusicEnabled and volume * self.BgmVolumeScale or 0)
 		log("[T55][BGM] play kind=" .. kind
 			.. " map=" .. mapName
 			.. " ruid=" .. bgmRuid
@@ -244,14 +261,18 @@ script BGMManager extends Logic
 			return
 		end
 
-		if (not force) and ambRuid == self.CurrentAmbienceRUID then return end
+		-- 효과음 배율이 바뀌었으면 같은 곡이라도 다시 튼다(루프 볼륨 변경 API 없음). 0.5초 폴링이 자연스러운 디바운스가 된다.
+		local scaleChanged = self._T.ambScale ~= nil and math.abs(self._T.ambScale - self.SfxVolumeScale) > 0.001
+		if (not force) and ambRuid == self.CurrentAmbienceRUID and not scaleChanged then return end
 
-		if self.CurrentAmbienceRUID ~= "" and self.CurrentAmbienceRUID ~= ambRuid then
+		if self.CurrentAmbienceRUID ~= "" and (self.CurrentAmbienceRUID ~= ambRuid or scaleChanged) then
 			self:StopAmbience()
 		end
 
 		if _SoundService == nil then return end
-		_SoundService:PlayLoopSound(ambRuid, self.AmbienceVolume)
+		self._T.ambScale = self.SfxVolumeScale
+		if self.SfxVolumeScale <= 0 then return end
+		_SoundService:PlayLoopSound(ambRuid, self.AmbienceVolume * self.SfxVolumeScale)
 		self.CurrentAmbienceRUID = ambRuid
 		log("[T55][AMB] weather=" .. weatherId
 			.. " ambience on ruid=" .. ambRuid

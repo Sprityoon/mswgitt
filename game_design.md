@@ -440,7 +440,7 @@ graph TD
 | **T3** | **Copper Ore** (흙 벌판 사냥터 Big Stone — 1~3개 70% / 2~4개 85%, 2026-09-29 상향) | 곡괭이 | 화로 제련 → Copper Bar (2 Copper Ore→1, 5초) → 구리 곡괭이/도끼 | 제련 ✅ / 구리 장비 ⏳ |
 | **T4** | **Iron Ore** | 구리 곡괭이(Tech Lock 예정) | 화로 제련 → Iron Bar (2 Iron Ore→1, 8초) → 철 곡괭이/도끼·철제 장비 | Iron 노드·장비 ⏳ |
 
-- **도구 효율 값**(`item_dataset`): Hand Axe(axe, ToolPower 0, Attack 0, **MaxStack 99 기믹 무기**) / Stone Pickaxe(pickaxe, ToolPower 2, Attack 0) / Stone Axe(axe, ToolPower 2, Attack 8). 채집 데미지 = `1 + ToolPower`. 전투 평타 = CharAtk + Attack. 주먹도끼 던지기 = `SkillDataSet.hand_axe_throw` (Throw, 장착 필수).
+- **도구 효율 값**(`item_dataset`): Hand Axe(axe, ToolPower 0, Attack 0, **MaxStack 99 기믹 무기**) / Stone Pickaxe(pickaxe, ToolPower 2, Attack 0) / Stone Axe(axe, ToolPower 2, Attack 8). 채집 데미지 = `1 + ToolPower`. 전투 평타 = CharAtk + 현재 손 무기 Attack(맨주먹 직업은 장갑 환산). 주먹도끼 던지기 = `SkillDataSet.hand_axe_throw` (Throw, 기본 장착 필수; 주머니 장비/상의 부여 효과로 직접 들기만 생략 가능 — 2026-10-15).
 - **연료**(`FurnaceFuelDataSet`): 현재 Wood(10초/개).
 - ⚠️ 기존 표의 **흙(Dirt) 채광·흙벽/돌담/횃불/제작대**는 미구현이며, 지반·풀밭 타일은 채집 불가 배경이다(§3.2).
 - ⚠️ **광석 공급원 전환 (2026-06)**: 개인 영지를 green_island로 전면화하면 **Copper/Iron Ore·Big Stone은 영지에서 더 이상 스폰되지 않는다**(이들은 earth_field/rocky/desert/snowfield 전용 자원이었고, 해당 바이옴은 사냥터로 이관됨). 따라서 **T3/T4 금속 테크는 사냥터(또는 마을 상점/연구소) 출시 이후 본격 가동**되는 것을 정식 진행 곡선으로 본다. 그전까지 영지 테크는 T1(Wood)·T2(Stone) 중심이다. (영지에서도 소량 금속을 원하면 green_island `BiomeResourceDataSet`에 낮은 확률로 광맥을 추가하는 것은 가능하나, 기본 방향은 사냥터 보상으로 둔다.)
@@ -737,6 +737,8 @@ graph TD
 - ⏳ **16-C 직업/전직 (예약 — 티켓 미발행)**: `JobId` 컬럼 예약(공란=초보자 공용) / 직업 선택·전직 퀘스트(quest-achievement 패키지 재사용)·직업별 트리 탭·상위 스킬군. **선행 구조 설계 확정(⚖️ 2026-07-14 보스 지시, 2026-09-09 4대 하이브리드 직업 & 주먹도끼 분기 확정): [skill-tree-plan.md §7·§8](./docs/design/skill-tree-plan.md)** — 주민 4인 연동 하이브리드 직업군(트래퍼/배틀스미스/알케미스트/와일드키퍼) 및 주먹도끼 분기(기간틱 락/쇄석 흩뿌리기, MP 소모 통일), 트래퍼 알뜰한 손놀림(기본공격 투척 포함 100% 무한투척), 배틀스미스 갑주파쇄타(타당 5%, 최대 30% 방깎) 스펙 정립 완료.
 - ⏳ **16-G 직업 주/부 트리 & 능력치 빌드 재설계** (⚖️ 2026-10-01 제작자 확정 — **1~4단계 전부 코드 완료(2026-10-02, 신규 19종·직업당 9노드) · 런타임 검증 보류**. 설계: [docs/design/job-branch-redesign.md](./docs/design/job-branch-redesign.md) §10~§14, 진행·Play 체크리스트: [docs/tasks.md](./docs/tasks.md)): 능력치 링(힘·솜씨·지능·교감이 각각 두 직업의 트리 하나씩) · 교감 = 영향력(소환수·약화·제압) · 솜씨 = 치명타 · 평타 = 장착 무기(물리 = 힘, 마법봉 탭 힘·충전 지능, 자연 무기 탭 정령탄·홀드 생명 펄스) · 무기 직업 제한 · 직업당 3×3(1열 주·3열 부·2열 공용과 마스터리) · 신규 19종 · 1~3단계 먼저, 도발·소환·아군 버프는 후속.
 - [x] **16-D 트리 위상 시각화 & 연계 강화** (T58 — **Play PASS 2026-07-15**, 피드백: 연결선 흐릿 → T60 선명화. ⚖️ 2026-07-15 보스 지시, 레퍼런스 = 핀터레스트 D&D식 계보 트리. 설계: [skill-tree-plan.md §8](./docs/design/skill-tree-plan.md)): 계보·게이트는 S2부터 존재 — 간극만 해소: ① `ParentRequiredLevel` 컬럼 신설(부모 Lv N 도달 시 자식 해금 — "연계 강화") ② 노드 사이 연결선 렌더(상태별 색: dim/해금 가능 금색/보유 실선 — `ParentSkillId` 파생, 하드코딩 금지) ③ 상세 패널 선행 조건 표시. **단순성 가드라인 §8.3**(단일 부모·같은 열 인접 행만·3행×3열 상한 — ⚖️ "복잡한 구조 거부"). 위상 재편·스킬 추가 없음(세이브 호환). 착수 게이트: T54 Play 확인 후(`PopupGroup.ui` 공유).
+
+- ⏳ **16-G 후속 — 투척·손 무기 보정 (2026-10-15, 코드·정적 검사·refresh/build 완료, 제작자 Play 대기)**: 보유 최고 무기 자동 선택 폐지 → 현재 손 무기로 피해·평타·고유 효과 통일(TRI 직업 무기 제외). 주먹도끼 루트 화력 완화·쇄석 근접 산탄 강화·단검 지속 투척 보정. `주먹도끼 주머니`는 보조 장비 또는 상의의 제한된 부여 슬롯에 결합하는 선택 아이템이며, 기본 직접 들기 위험을 없애려면 장비/파츠 기회비용을 낸다. [설계·검증](./docs/reports/trapper-throw-balance-20261015.md).
 
 ### Phase 17: 모바일 UX 정비 (⚖️ 2026-07-15 보스 지시 — 배치 H, handoff §3 T52→T53→T54)
 > HUD 버튼들은 모바일 배려 목적(⚖️ 보스 프레이밍). 축 = **QWER 스킬바의 모바일화**(터치 시전 + 우하단 재배치 + 스킬명 숨김·호버 툴팁) + HUD 터치 타겟 88px 정비 + 팝업 전수 정비(닫기 버튼 통일·가독). 지휘자 정적 실사 좌표는 handoff §3 상단 2026-07-15 메모.

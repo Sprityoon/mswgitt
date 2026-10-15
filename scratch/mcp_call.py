@@ -21,7 +21,18 @@ def main():
     for x in r["result"].get("content", []):
         if x.get("type") == "text": out.append(x.get("text", ""))
         else: out.append(json.dumps(x, ensure_ascii=False)[:500])
-    print("\n".join(out))
+    if len(sys.argv) > 4 and sys.argv[4] in ("summary", "counts"):
+        data = json.loads("\n".join(out))
+        logs = data.get("logs", [])
+        counts = {}
+        for row in logs:
+            kind = row.get("logType", "?")
+            counts[kind] = counts.get(kind, 0) + 1
+        print(json.dumps({"status": data.get("status"), "count": data.get("count"), "counts": counts,
+            "latest": max((x.get("dateTime", "") for x in logs), default=""),
+            "issues": [] if sys.argv[4] == "counts" else [x for x in logs if x.get("logType") in ("Error", "Warning")]}, ensure_ascii=False))
+    else:
+        print("\n".join(out))
     if r["result"].get("isError"): sys.exit(2)
 
 if __name__ == "__main__":

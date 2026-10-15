@@ -1060,7 +1060,9 @@ script MonsterAI extends Component
 		local serial = _ParticleService:PlayBasicParticle(
 			BasicParticleType.DustExplosion, self.Entity, pos, 0.0, Vector3(s, s, s), false, nil)
 		log("[BOSS][SLAM] impact fx serial=" .. tostring(serial))
-		if self.ImpactShakeIntensity > 0 and self.ImpactShakeDuration > 0 then
+		-- 환경설정 [화면 흔들림] 끔이면 흔들지 않는다(Multicast 라 각 클라가 자기 설정을 본다).
+		local shakeOn = _GameSettingsLogic == nil or _GameSettingsLogic.ScreenShake
+		if shakeOn and self.ImpactShakeIntensity > 0 and self.ImpactShakeDuration > 0 then
 			local cam = _CameraService:GetCurrentCameraComponent()
 			if isvalid(cam) then
 				cam:ShakeCamera(self.ImpactShakeIntensity, self.ImpactShakeDuration)

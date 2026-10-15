@@ -581,7 +581,7 @@ script TestModeConfig extends Logic
 
 	@ExecSpace("ServerOnly")
 	method void GiveJobWeaponsFor(Entity userEntity)
-		-- 무기 칸 아이템 중 EquipJobs 에 현재 직업이 든 것을 1개씩 지급한다(주무기 미등록이면 보유 최고 무기가 자동 사용됨).
+		-- 무기 칸 아이템 중 EquipJobs 에 현재 직업이 든 것을 1개씩 지급한다. 지급 후 사용할 무기를 퀵슬롯에서 직접 선택한다.
 		-- 장갑이 무기 노릇을 하는 직업(스킬 ScaleStat=TRI, 맨주먹 파이터)은 장갑 칸 아이템 전부 + 레벨이 되는 최고 방어력 장갑을 장착한다.
 		local pcComp = userEntity:GetComponent("script.PlayerController")
 		local invComp = userEntity:GetComponent("script.PlayerInventory")

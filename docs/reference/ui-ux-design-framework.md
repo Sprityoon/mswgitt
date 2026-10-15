@@ -2,7 +2,7 @@
 
 > **개요**: 본 문서는 게임 UI/UX의 정립된 이론(Fagerholt & Lorentzon 4분면 모델, Celia Hodent의 The Gamer's Brain, 정보 역피라미드 구조, Contextual/Dynamic HUD, Xbox Accessibility Guidelines)을 우리 메이플스토리 월드 탑다운 샌드박스/생활 RPG 개발에 직접 투영한 표준 개발 규약이다.
 >
-> 📌 스킬 상세 레퍼런스: [`.agents/skills/msw-ui-system/references/game-ui-ux-theory.md`](../../.agents/skills/msw-ui-system/references/game-ui-ux-theory.md)
+> 📌 이론 상세 레퍼런스: [`docs/reference/game-ui-ux-theory.md`](./game-ui-ux-theory.md) (프로젝트 자체 작성 — 벤더 스킬 폴더에 두면 `mswai update`가 삭제하므로 docs로 이전, 2026-10-14)
 > 📌 상시 디자인 정책: [`docs/design-policy.md`](../design-policy.md)
 
 ---

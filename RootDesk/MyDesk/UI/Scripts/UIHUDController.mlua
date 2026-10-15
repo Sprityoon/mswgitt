@@ -39,6 +39,9 @@ script UIHUDController extends Component
 	property string pendingWarpDestMap = ""
 	-- 서버가 이동을 거절했을 때(보스 입장 조건 미달 등) 타임아웃까지 기다리지 않고 바로 걷기 위한 플래그.
 	property boolean warpCancelPending = false
+	property boolean slotEntryPending = false
+	property boolean slotEntryReady = false
+	property string slotEntryDestMap = ""
 
 	property any updateTimer = nil
 
@@ -114,9 +117,10 @@ script UIHUDController extends Component
 	-- 화면 후처리라 해상도·화면비(모바일 포함)와 무관하게 가장자리까지 덮는다. 구 NightOverlay(UGC 이미지)는 Play에서 렌더되지 않아 폐기.
 	property string VignetteMaterialName = "NightVignette"
 	-- 한밤중 비네트 세기(0~1)와 가장자리 번짐(클수록 중앙까지 부드럽게 퍼짐)
-	-- 실측(2026-09-17 Play): 0.45 는 맑은 밤에 거의 보이지 않았고, 안개 낀 밤(합계 0.80)은 또렷했다 → 0.75.
-	property number NightVignetteIntensity = 0.75
-	property number VignetteSmoothness = 0.4
+	-- 2026-10-15: 밤의 분위기를 남기면서 지형·오브젝트가 읽히도록 농도와 번짐을 완화한다.
+	property number NightVignetteIntensity = 0.52
+	property number VignetteSmoothness = 0.65
+	property number WeatherHazeFadeSeconds = 1.5
 	-- 날씨 OverlayColor 알파(비 0.06 · 안개 0.07)에 곱해 비네트 세기로 환산.
 	-- 2026-09-18: 밤+비가 겹쳐 과하게 어두워져 0 으로 — 날씨는 비네트 대신 날씨 파티클(WeatherDataSet.ParticleType)이 전담.
 	property number WeatherVignetteScale = 0
@@ -1053,10 +1057,29 @@ script UIHUDController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method void BeginSlotEntryTransition(any onCovered)
+		-- 선택→인게임도 기존 지도 로딩을 사용하되 맵 변경만으로 로드 완료로 판단하지 않는다.
+		self.slotEntryPending = true
+		self.slotEntryReady = false
+		self.slotEntryDestMap = ""
+		self:BeginWarpTransition(onCovered)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void CompleteSlotEntryTransition(string mapName)
+		-- 서버의 최종 완료 신호. 클라이언트도 같은 맵에 도착해야 공개할 수 있다(동일 맵 테스트 포함).
+		self.slotEntryReady = true
+		self.slotEntryDestMap = mapName
+		if not self.warpTimer then self.slotEntryPending = false end
+		log("[VRF][ENTRY] server ready map=" .. mapName)
+	end
+
+	@ExecSpace("ClientOnly")
 	method void BeginWarpTransition(any onCovered)
 		-- 포탈 이동 전환: ① 커버를 WarpFadeInSeconds 에 걸쳐 덮고 WarpCoverHoldTicks 틱 더 그린 뒤 onCovered()(워프 요청)
 		-- ② 로컬 플레이어 맵이 바뀌면 ③ 프레임이 안정될 때까지 유지 ④ WarpFadeOutSeconds 에 걸쳐 걷고 서버에 해제 통지.
 		local cover = self.warpCover
+		local slotEntry = self.slotEntryPending
 		local cg = nil
 		if isvalid(cover) then cg = cover.CanvasGroupComponent end
 		if not isvalid(cover) or not isvalid(cg) then
@@ -1090,6 +1113,7 @@ script UIHUDController extends Component
 
 		local startName = "◆ 출발지"
 		if fromInfo.name ~= "" then startName = fromInfo.icon .. " " .. fromInfo.name end
+		if slotEntry then startName = "◆ 캐릭터 선택" end
 
 		local endName = "목적지 ★"
 		if toInfo ~= nil and toInfo.name ~= "" then
@@ -1107,6 +1131,7 @@ script UIHUDController extends Component
 		end
 
 		local mapContainer = cover:GetChildByName("MapContainer", true)
+		if slotEntry then endName = "모험 시작 ★" end
 		if isvalid(mapContainer) then
 			local startPoint = mapContainer:GetChildByName("StartPoint", true)
 			if isvalid(startPoint) and isvalid(startPoint.TextGUIRendererComponent) then
@@ -1118,7 +1143,7 @@ script UIHUDController extends Component
 			end
 			local st = mapContainer:GetChildByName("StatusText", true)
 			if isvalid(st) and isvalid(st.TextGUIRendererComponent) then
-				st.TextGUIRendererComponent.Text = "지도를 확인하며 이동 중..."
+				st.TextGUIRendererComponent.Text = slotEntry and "캐릭터와 모험 공간을 준비하는 중..." or "지도를 확인하며 이동 중..."
 			end
 		end
 
@@ -1227,7 +1252,14 @@ script UIHUDController extends Component
 				local p = _UserService.LocalPlayer
 				local cur = ""
 				if isvalid(p) and isvalid(p.CurrentMap) then cur = p.CurrentMap.Name end
-				if cur ~= "" and cur ~= fromMap then
+				local ready = cur ~= "" and cur ~= fromMap
+				if slotEntry then ready = self.slotEntryReady and cur ~= "" and cur == self.slotEntryDestMap end
+				if self.warpCancelPending then
+					log("[WARPFX] cancelled by server — reveal")
+					self.warpCancelPending = false
+					phase = "out"
+					outStart = now
+				elseif ready then
 					phase = "settle"
 					arrivedAt = now
 					arrivedTick = ticks
@@ -1238,15 +1270,15 @@ script UIHUDController extends Component
 						statusTextComp.Text = "목적지에 도착했습니다! 주변을 살피는 중..."
 					end
 					log("[WARPFX] arrived map=" .. cur .. " after " .. string.format("%.2f", now - requestedAt) .. "s")
-				elseif self.warpCancelPending then
-					log("[WARPFX] cancelled by server — reveal")
-					self.warpCancelPending = false
-					phase = "out"
-					outStart = now
 				elseif now - requestedAt >= self.WarpTimeoutSeconds then
-					log_warning("[WARPFX] timeout — no map change within " .. tostring(self.WarpTimeoutSeconds) .. "s")
-					phase = "out"
-					outStart = now
+					if slotEntry then
+						-- 저장소 로드가 느려도 준비 전 인게임을 노출하거나 중복 선택을 허용하지 않는다.
+						if isvalid(statusTextComp) then statusTextComp.Text = "모험 공간을 불러오고 있습니다. 잠시만 기다려 주세요..." end
+					else
+						log_warning("[WARPFX] timeout — no map change within " .. tostring(self.WarpTimeoutSeconds) .. "s")
+						phase = "out"
+						outStart = now
+					end
 				end
 			elseif phase == "settle" then
 				if dt <= self.WarpStableFrameSeconds then
@@ -1271,6 +1303,11 @@ script UIHUDController extends Component
 				cg.GroupAlpha = a
 				if a <= 0 then
 					cover.Enable = false
+					if slotEntry then
+						self.slotEntryPending = false
+						self.slotEntryReady = false
+						log("[VRF][ENTRY] cover hidden")
+					end
 					if self.warpTimer then
 						_TimerService:ClearTimer(self.warpTimer)
 						self.warpTimer = nil
@@ -1432,6 +1469,8 @@ script UIHUDController extends Component
 		end
 		if night < 0 then night = 0 end
 		if night > 1 then night = 1 end
+		-- 일몰·일출 양 끝의 농도 변화도 완만하게 이어 준다.
+		night = night * night * (3 - 2 * night)
 		-- 입장 직후 서버 시간 동기화(SyncTimeClient) 전에는 클라 시간이 0 이라 night≈0.5 로 잠깐 어두워졌다(2026-09-18 실측).
 		-- 동기화 전에는 밤 비네트를 적용하지 않는다.
 		if (_PersistenceManager.ClientAccumulatedTime or 0) <= 0 then night = 0 end
@@ -1640,13 +1679,11 @@ script UIHUDController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void ApplyWeatherHaze(Entity player, string hazeColor)
-		-- 화면 전체를 균일하게 뿌옇게 덮는 막. HazeColor 알파가 0 이면 끈다.
+		-- 색은 목표만 변경하고 OnUpdate에서 서서히 반영한다. 맑아질 때도 즉시 끄지 않는다.
 		local color = self:ParseOverlayColorPipe(hazeColor)
+		self._T.WeatherHazeTarget = color
 		local haze = self._T.WeatherHaze
-		if color.a <= 0.001 then
-			if isvalid(haze) then haze.Enable = false end
-			return
-		end
+		if color.a <= 0.001 and not isvalid(haze) then return end
 		if not isvalid(haze) or self._T.WeatherHazeOwner ~= player then
 			if isvalid(haze) then haze:Destroy() end
 			haze = _SpawnService:SpawnByModelId("mapobject", "WeatherHaze", player.TransformComponent.WorldPosition, player)
@@ -1659,14 +1696,32 @@ script UIHUDController extends Component
 			haze.TransformComponent.Position = Vector3(0, 0, 0)
 			haze.TransformComponent.Scale = Vector3(self.WeatherHazeSize.x, self.WeatherHazeSize.y, 1)
 			local sr = haze.SpriteRendererComponent
+			sr.Color = Color(color.r, color.g, color.b, 0)
 			sr.SpriteRUID = self.WeatherHazeRUID
 			sr.IgnoreMapLayerCheck = true
 			sr.SortingLayer = _RenderLayers.EntityLayer
 			sr.OrderInLayer = self.WeatherParticleOrder - 1
 		end
-		haze.SpriteRendererComponent.Color = color
 		haze.Enable = true
-		log(string.format("[WEATHER-FX] haze color=(%.2f,%.2f,%.2f,%.2f)", color.r, color.g, color.b, color.a))
+		log(string.format("[VRF][WEATHER-FX] haze target=(%.2f,%.2f,%.2f,%.2f)", color.r, color.g, color.b, color.a))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 기존 안개 막만 프레임 보간한다. 추가 타이머·이미터를 만들지 않는다.
+		local haze = self._T.WeatherHaze
+		local target = self._T.WeatherHazeTarget
+		if not isvalid(haze) or target == nil or not isvalid(haze.SpriteRendererComponent) then return end
+		local sr = haze.SpriteRendererComponent
+		local current = sr.Color
+		if math.abs(current.a - target.a) < 0.0001 then
+			sr.Color = target
+			haze.Enable = target.a > 0.001
+			return
+		end
+		local blend = 1 - math.exp(-delta * 3 / math.max(0.01, self.WeatherHazeFadeSeconds))
+		sr.Color = Color(target.r, target.g, target.b, current.a + (target.a - current.a) * blend)
+		haze.Enable = true
 	end
 
 	@ExecSpace("ClientOnly")

@@ -373,7 +373,7 @@ script UICharacterController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void RefreshGear(any inv)
-		-- 장비 칸 아이콘·라벨. 비었으면 칸 이름, 차 있으면 아이템 표시명(자동 주무기는 "(자동)").
+		-- 무기 칸은 현재 손 무기를 표시하고, 방어구·보조 칸은 등록 장비를 표시한다.
 		local weaponLine = "없음"
 		for _, slot in ipairs(self:GearSlots()) do
 			local ent = _EntityService:GetEntityByPath(self.GearSlotPathPrefix .. slot)
@@ -389,7 +389,6 @@ script UICharacterController extends Component
 				if key ~= "" then
 					local baseName = inv:GetBaseItemName(key)
 					local disp = inv:GetItemDisplayName(baseName)
-					local auto = slot == "weapon" and inv:IsWeaponAutoSelected()
 					if isvalid(icon) and isvalid(icon.SpriteGUIRendererComponent) then
 						icon.SpriteGUIRendererComponent.ImageRUID = self:GetItemIcon(baseName)
 						icon.SpriteGUIRendererComponent.Color = Color(1, 1, 1, 1)
@@ -401,7 +400,7 @@ script UICharacterController extends Component
 					end
 					if slot == "weapon" then
 						weaponLine = disp
-						if auto then weaponLine = weaponLine .. "  (자동)" end
+						weaponLine = weaponLine .. "  (손)"
 					end
 				else
 					if isvalid(icon) then icon.Enable = false end
@@ -417,9 +416,13 @@ script UICharacterController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnGearSlotClicked(string slot)
-		-- 칸 클릭 = 등록 해제 (자동 주무기는 등록된 게 아니라 해제할 것이 없다).
+		-- 무기 칸 클릭은 선택 퀵슬롯에서 손 무기를 뺀다. 방어구는 기존 등록 해제.
 		local inv = self:GetInventory()
 		if inv == nil then return end
+		if slot == "weapon" then
+			if inv:GetGearKey("weapon") ~= "" then inv:ServerRegisterQuickSlot(inv.SelectedQuickSlotIndex, "") end
+			return
+		end
 		local registered = inv:GetGearSlots()[slot]
 		if registered == nil or registered == "" then return end
 		inv:ServerRequestUnequipGear(slot)

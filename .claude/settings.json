@@ -173,8 +173,8 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-log/skill-log.cjs\"",
-            "timeout": 5,
-            "async": true
+            "async": true,
+            "timeout": 5
           }
         ]
       },
@@ -184,8 +184,8 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/mcp-log/mcp-log.cjs\"",
-            "timeout": 5,
-            "async": true
+            "async": true,
+            "timeout": 5
           }
         ]
       }
@@ -253,11 +253,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/core-version-check/core-version-check.cjs\"",
-            "timeout": 5
-          },
-          {
-            "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-router-reminder/skill-router-reminder.cjs\"",
             "timeout": 5
           }
@@ -282,8 +277,8 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-log/skill-log.cjs\"",
-            "timeout": 5,
-            "async": true
+            "async": true,
+            "timeout": 5
           }
         ]
       }

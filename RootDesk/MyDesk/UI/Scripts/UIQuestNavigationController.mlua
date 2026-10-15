@@ -388,6 +388,11 @@ script UIQuestNavigationController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void UpdateNavigation()
+		-- 0. 환경설정 [퀘스트 길 안내] 끔이면 화살표·뱃지를 숨긴다.
+		if _GameSettingsLogic ~= nil and _GameSettingsLogic.QuestGuide == false then
+			self:SetNavVisible(false)
+			return
+		end
 		-- 1. HUD 활성화 여부 확인
 		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
 		if isvalid(hud) then

@@ -759,12 +759,9 @@ script UIInventoryController extends Component
 						if isvalid(player) then
 							local inv = player:GetComponent("script.PlayerInventory")
 							if isvalid(inv) then
-								-- 장비 장착: 방어구는 항상, 무기는 캐릭터 창이 열려 있을 때만
-								-- (창이 닫혀 있으면 무기 더블클릭은 기존대로 퀵슬롯 등록 = 손에 들기).
+								-- 방어구·보조 장비는 등록, 무기는 창 상태와 무관하게 선택 퀵슬롯에서 손에 든다.
 								local gearSlot = inv:GetItemEquipSlot(data.name)
-								local charPopup = _EntityService:GetEntityByPath("/ui/PopupGroup/CharacterPopup")
-								local charOpen = isvalid(charPopup) and charPopup.Enable
-								if gearSlot ~= "" and (gearSlot ~= "weapon" or charOpen) then
+								if gearSlot ~= "" and gearSlot ~= "weapon" then
 									inv:ServerRequestEquipGear(data.key)
 									self:FlashSlotEntity(slotEntity, Color(1.0, 0.82, 0.38, 1.0))
 								else
@@ -878,13 +875,13 @@ script UIInventoryController extends Component
 
 	@ExecSpace("ClientOnly")
 	method boolean IsGearEquippedKey(string itemKey)
-		-- 이 아이템 키가 장비 슬롯에 "등록"돼 있는가 (자동 주무기는 표시하지 않는다).
+		-- 현재 실효 장비인지 표시한다. 구 GearJson.weapon 등록은 무시한다.
 		local player = _UserService.LocalPlayer
 		if not isvalid(player) then return false end
 		local inv = player:GetComponent("script.PlayerInventory")
 		if not isvalid(inv) then return false end
-		for _, key in pairs(inv:GetGearSlots()) do
-			if key == itemKey then return true end
+		for _, slot in ipairs(inv:GetGearSlotOrder()) do
+			if inv:GetGearKey(slot) == itemKey then return true end
 		end
 		return false
 	end

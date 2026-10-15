@@ -765,8 +765,7 @@ script PersistenceManager extends Logic
 		end
 
 		if isvalid(pc) then
-			pc:ClientCloseMainMenu()
-			pc:ClientHideSpawnFade()
+			pc:ClientCompleteSlotEntry(player.CurrentMap.Name)
 		end
 		log("[SLOT] selected user=" .. userId
 			.. " slot=" .. tostring(slot)

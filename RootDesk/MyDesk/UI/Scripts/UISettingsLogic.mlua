@@ -1,0 +1,347 @@
+@Logic
+script UISettingsLogic extends Logic
+	-- 환경설정 창 (ui/SettingsGroup.ui, 2026-10-15). 값·저장은 GameSettingsLogic 이 맡고 여기는 화면만.
+	-- 슬라이더·스위치는 바꾸는 즉시 적용(미리 듣기), [설정 저장]으로 계정에 저장, 저장 없이 [뒤로]면 마지막 저장값으로 되돌린다.
+	-- 조작키는 지금 읽기 전용 안내(키 변경은 후속). 모바일은 "준비중" 안내로 바꿔 보인다.
+
+	-- [바인딩] scripts/build_settings_ui_20261015.cjs 가 UUID·RUID 를 주입한다.
+	property Entity window = "d73d0b17-81f1-4886-adb9-2c7aa3e37a21"
+	property Entity dimmer = "40d04eee-34ee-44e0-a74e-f0c96606d722"
+	property SliderComponent sliderBgm = "bb2a729c-f8f7-410d-9370-02a8819babcc"
+	property SliderComponent sliderSfx = "c8ba7559-78f8-4881-8472-941f3221bca8"
+	property TextGUIRendererComponent bgmPct = "2ae052fb-80f4-423f-9677-856b220e0322"
+	property TextGUIRendererComponent sfxPct = "f3a5d1f7-c99d-4384-b673-a76228652857"
+	property ButtonComponent btnBgmMute = "644e8487-b8a8-4db9-8117-1ccc85cb38d4"
+	property ButtonComponent btnSfxMute = "8da27f35-b92d-4ae4-9cd5-424f843099c5"
+	property ButtonComponent btnShake = "e1dc7d3f-41f6-417b-b9c7-6c6a1689c475"
+	property ButtonComponent btnGuide = "d323ed9d-2c99-40c3-a4b3-909c936c72e9"
+	property ButtonComponent btnReset = "24849f2e-09a9-4cc1-bab7-add2d37f010f"
+	property ButtonComponent btnSave = "f6e3a3c4-32dc-43fd-a279-78862631478a"
+	property ButtonComponent btnBack = "ad433b42-0c11-40bd-bf16-dcff5a2b0186"
+	property Entity keyRows = "613397b3-400d-4dd5-b5ba-14f0bca67b0a"
+	property Entity mobileNotice = "ff6a8a8b-cb28-4627-bd1a-99e79d1ccc31"
+	property TextGUIRendererComponent status = "dc35b7ee-8149-432b-bcc1-90572b18e6fb"
+	property string soundOnRuid = "1a2e9935c63047c88335d3015c917fd6"
+	property string soundMuteRuid = "79fb11a58328476abd95180f21d623ee"
+	property string switchOnRuid = "5f176659935f4a3baafe83bb67e876fa"
+	property string switchOffRuid = "2952536b1b084885a248c473a315cc43"
+
+	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
+	property number uiSfxVolume = 0.8
+	property number dimAlphaInGame = 0.45
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 창은 .ui 에서 Enable=false 로 저장돼 있다(규칙 30). 버튼·슬라이더 연결.
+		if isvalid(self.window) then self.window.Enable = false end
+		if isvalid(self.dimmer) then self.dimmer.Enable = false end
+		self._T.handlers = {}
+		self:BindClick(self.btnBgmMute, function() self:ToggleMute("bgm") end)
+		self:BindClick(self.btnSfxMute, function() self:ToggleMute("sfx") end)
+		self:BindClick(self.btnShake, function() self:ToggleSwitch("shake") end)
+		self:BindClick(self.btnGuide, function() self:ToggleSwitch("guide") end)
+		self:BindClick(self.btnReset, function() self:OnReset() end)
+		self:BindClick(self.btnSave, function() self:OnSave() end)
+		self:BindClick(self.btnBack, function() self:Close() end)
+		self:BindSlider(self.sliderBgm, "bgm")
+		self:BindSlider(self.sliderSfx, "sfx")
+		log("[SETTINGS-UI] ready window=" .. tostring(isvalid(self.window)) .. " slider=" .. tostring(isvalid(self.sliderBgm)))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 연결한 핸들러 해제.
+		if self._T.handlers == nil then return end
+		for _, h in ipairs(self._T.handlers) do
+			if isvalid(h.entity) then h.entity:DisconnectEvent(h.event, h.handle) end
+		end
+		self._T.handlers = nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BindClick(ButtonComponent btn, any fn)
+		-- 버튼 클릭 + 클릭음.
+		if not isvalid(btn) or not isvalid(btn.Entity) then return end
+		local ent = btn.Entity
+		local h = ent:ConnectEvent(ButtonClickEvent, function()
+			self:PlayClick()
+			fn()
+		end)
+		table.insert(self._T.handlers, { entity = ent, event = ButtonClickEvent, handle = h })
+	end
+
+	@ExecSpace("ClientOnly")
+	method void BindSlider(SliderComponent slider, string kind)
+		-- 슬라이더 값 변경. 코드가 값을 넣는 동안(syncing)은 무시한다.
+		if not isvalid(slider) or not isvalid(slider.Entity) then return end
+		local ent = slider.Entity
+		local h = ent:ConnectEvent(SliderValueChangedEvent, function(ev)
+			if self._T.syncing == true then return end
+			local v = 0
+			if ev ~= nil and ev.Value ~= nil then v = ev.Value end
+			self:OnVolume(kind, v)
+		end)
+		table.insert(self._T.handlers, { entity = ent, event = SliderValueChangedEvent, handle = h })
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlayClick()
+		-- 클릭음(효과음 배율 적용).
+		local scale = 1
+		if _BGMManager ~= nil then scale = _BGMManager.SfxVolumeScale end
+		if scale <= 0 or self.uiClickSfx == "" then return end
+		_SoundService:PlaySound(self.uiClickSfx, self.uiSfxVolume * scale)
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsOpen()
+		-- 창이 열려 있는가.
+		return isvalid(self.window) and self.window.Enable == true
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Open(boolean fromMainMenu)
+		-- 창 열기. 타이틀에서 열면 배경 딤 없이(키아트 그대로), 인게임에서 열면 반투명 딤.
+		if not isvalid(self.window) then
+			log_warning("[SETTINGS-UI] window binding missing")
+			return
+		end
+		self._T.fromMainMenu = fromMainMenu
+		if isvalid(self.dimmer) then
+			self.dimmer.Enable = true
+			local spr = self.dimmer.SpriteGUIRendererComponent
+			if isvalid(spr) then
+				local a = self.dimAlphaInGame
+				if fromMainMenu then a = 0 end
+				spr.Color = Color(0, 0, 0, a)
+			end
+		end
+		self.window.Enable = true
+		local mobile = _ApplicationService:IsMobilePlatform()
+		if isvalid(self.keyRows) then self.keyRows.Enable = not mobile end
+		if isvalid(self.mobileNotice) then self.mobileNotice.Enable = mobile end
+		self:ShowStatus("", false)
+		if _GameSettingsLogic ~= nil and not _GameSettingsLogic.Loaded then
+			_GameSettingsLogic.LoadFailed = false
+			_GameSettingsLogic:ServerLoad()
+		end
+		self:RefreshAll()
+		log("[SETTINGS-UI] open fromMainMenu=" .. tostring(fromMainMenu) .. " mobile=" .. tostring(mobile))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		-- 닫기. 저장하지 않은 변경은 마지막 저장값으로 되돌린다. 타이틀에서 열었으면 타이틀 메뉴를 다시 보인다.
+		if _GameSettingsLogic ~= nil and _GameSettingsLogic.SavePending then
+			self:ShowStatus("설정을 저장 중입니다. 잠시만 기다려 주세요.", false)
+			return
+		end
+		if _GameSettingsLogic ~= nil and _GameSettingsLogic:IsDirty() then
+			_GameSettingsLogic:RevertToSaved()
+			_GameSettingsLogic:NotifyMainMenuMusic()
+			log("[SETTINGS-UI] closed without save — reverted")
+		end
+		if isvalid(self.window) then self.window.Enable = false end
+		if isvalid(self.dimmer) then self.dimmer.Enable = false end
+		if self._T.fromMainMenu == true then
+			local ent = _EntityService:GetEntityByPath("/ui/MainMenuGroup/Controller")
+			if isvalid(ent) then
+				local c = ent:GetComponent("script.UIMainMenuController")
+				if isvalid(c) then c:ShowPanel("title") end
+			end
+		end
+		self._T.fromMainMenu = false
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnSettingsChanged()
+		-- GameSettingsLogic 이 값을 새로 받았을 때(접속 직후 불러오기).
+		if self:IsOpen() then
+			self:ShowStatus("", false)
+			self:RefreshAll()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean CanEdit()
+		return _GameSettingsLogic ~= nil and _GameSettingsLogic.Loaded and not _GameSettingsLogic.SavePending
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnVolume(string kind, number v)
+		-- 슬라이더로 볼륨 변경 → 즉시 적용. 음소거 중에 움직이면 음소거를 푼다.
+		local gs = _GameSettingsLogic
+		if not self:CanEdit() then return end
+		v = math.floor(math.max(0, math.min(1, v)) * 100 + 0.5) / 100
+		if kind == "bgm" then
+			gs.BgmVolume = v
+			if gs.BgmMuted and v > 0 then gs.BgmMuted = false end
+		else
+			gs.SfxVolume = v
+			if gs.SfxMuted and v > 0 then gs.SfxMuted = false end
+		end
+		gs:Apply()
+		self:RefreshSoundRow(kind)
+		self:ShowStatus("[설정 저장]을 눌러 변경을 확정하세요.", false)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ToggleMute(string kind)
+		-- 스피커 버튼: 음소거 ↔ 직전 볼륨(슬라이더 값은 그대로 둔다).
+		local gs = _GameSettingsLogic
+		if not self:CanEdit() then return end
+		if kind == "bgm" then gs.BgmMuted = not gs.BgmMuted else gs.SfxMuted = not gs.SfxMuted end
+		gs:Apply()
+		self:RefreshSoundRow(kind)
+		gs:NotifyMainMenuMusic()
+		self:ShowStatus("[설정 저장]을 눌러 변경을 확정하세요.", false)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ToggleSwitch(string kind)
+		-- ON/OFF 스위치. 흔들림·길 안내는 각 스크립트가 값을 직접 읽으므로 바로 반영된다.
+		local gs = _GameSettingsLogic
+		if not self:CanEdit() then return end
+		if kind == "shake" then gs.ScreenShake = not gs.ScreenShake else gs.QuestGuide = not gs.QuestGuide end
+		self:RefreshSwitches()
+		self:ShowStatus("[설정 저장]을 눌러 변경을 확정하세요.", false)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnReset()
+		-- 기본값으로(저장 전까지는 미리 보기).
+		if not self:CanEdit() then return end
+		_GameSettingsLogic:ResetDefaults()
+		self:RefreshAll()
+		_GameSettingsLogic:NotifyMainMenuMusic()
+		self:ShowStatus("기본값으로 되돌렸습니다.\n[설정 저장]을 눌러 확정하세요.", false)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnSave()
+		-- 바뀐 것이 있으면 저장 요청(결과는 GameSettingsLogic.ClientSaveResult → ShowStatus).
+		if not self:CanEdit() then return end
+		if _GameSettingsLogic:RequestSave() then
+			self:RefreshAll()
+			self:ShowStatus("저장 중…", false)
+		else
+			self:ShowStatus("바뀐 설정이 없습니다.", false)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowStatus(string msg, boolean isError)
+		-- 왼쪽 페이지 아래 상태 카드. 문구가 없으면 장식 위를 가리지 않는다.
+		if not isvalid(self.status) then return end
+		self.status.Text = msg or ""
+		if isvalid(self.status.Entity) then self.status.Entity.Enable = msg ~= nil and msg ~= "" end
+		if isError then
+			self.status.FontColor = Color(0.72, 0.20, 0.15, 1)
+		else
+			self.status.FontColor = Color(0.23, 0.14, 0.08, 1)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshAll()
+		-- 현재 설정값을 창 전체에 반영.
+		self:RefreshSoundRow("bgm")
+		self:RefreshSoundRow("sfx")
+		self:RefreshSwitches()
+		local editable = self:CanEdit()
+		for _, component in ipairs({ self.sliderBgm, self.sliderSfx, self.btnBgmMute, self.btnSfxMute,
+			self.btnShake, self.btnGuide, self.btnReset, self.btnSave }) do
+			if isvalid(component) then component.Enable = editable end
+		end
+		if _GameSettingsLogic ~= nil and not _GameSettingsLogic.Loaded then
+			if _GameSettingsLogic.LoadFailed then
+				self:ShowStatus("설정을 불러오지 못했습니다.\n잠시 후 창을 다시 열어 주세요.", true)
+			else
+				self:ShowStatus("설정을 불러오는 중입니다…", false)
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshSoundRow(string kind)
+		-- 슬라이더 위치·퍼센트·스피커 아이콘. 음소거면 0% + 슬라이더를 흐리게.
+		local gs = _GameSettingsLogic
+		if gs == nil then return end
+		local slider = self.sliderBgm
+		local pct = self.bgmPct
+		local btn = self.btnBgmMute
+		local v = gs.BgmVolume
+		local muted = gs.BgmMuted
+		if kind == "sfx" then
+			slider = self.sliderSfx
+			pct = self.sfxPct
+			btn = self.btnSfxMute
+			v = gs.SfxVolume
+			muted = gs.SfxMuted
+		end
+		if isvalid(slider) then
+			if math.abs(slider.Value - v) > 0.001 then
+				self._T.syncing = true
+				slider.Value = v
+				self._T.syncing = false
+			end
+			local a = 1
+			if muted then a = 0.4 end
+			-- 미등록 대체 이미지의 색도 보존한다(백색 덮어쓰기는 흰 사각형을 만든다).
+			local fill = slider.FillRectColor
+			local handle = slider.HandleColor
+			slider.FillRectColor = Color(fill.r, fill.g, fill.b, a)
+			slider.HandleColor = Color(handle.r, handle.g, handle.b, a)
+		end
+		if isvalid(pct) then
+			local shown = math.floor(v * 100 + 0.5)
+			if muted then shown = 0 end
+			pct.Text = tostring(shown) .. "%"
+		end
+		self:SetImage(btn, muted and self.soundMuteRuid or self.soundOnRuid)
+		if self.soundOnRuid == "" or self.soundMuteRuid == "" then self:SetFallback(btn, not muted, false) end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshSwitches()
+		-- ON/OFF 스위치 이미지.
+		local gs = _GameSettingsLogic
+		if gs == nil then return end
+		self:SetImage(self.btnShake, gs.ScreenShake and self.switchOnRuid or self.switchOffRuid)
+		self:SetImage(self.btnGuide, gs.QuestGuide and self.switchOnRuid or self.switchOffRuid)
+		self:SetFallback(self.btnShake, gs.ScreenShake, true)
+		self:SetFallback(self.btnGuide, gs.QuestGuide, true)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetFallback(ButtonComponent btn, boolean on, boolean isSwitch)
+		-- 전용 에셋 등록 전에도 ON/OFF를 색과 글자로 구별할 수 있게 한다.
+		if not isvalid(btn) or not isvalid(btn.Entity) then return end
+		local visual = btn.Entity:GetChildByName("Visual")
+		if not isvalid(visual) then visual = btn.Entity end
+		local text = visual.TextGUIRendererComponent
+		if isvalid(text) then text.Text = on and "ON" or "OFF" end
+		if isSwitch and isvalid(text) then
+			text.Padding = on and RectOffset(3, 32, 0, 0) or RectOffset(32, 3, 0, 0)
+		end
+		local missing = not isSwitch or self.switchOnRuid == "" or self.switchOffRuid == ""
+		local spr = visual.SpriteGUIRendererComponent
+		if missing and isvalid(spr) then
+			spr.Color = on and Color(0.62, 0.70, 0.32, 1) or Color(0.64, 0.59, 0.51, 1)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetImage(ButtonComponent btn, string ruid)
+		-- 버튼 배경 이미지 교체. RUID 가 비어 있으면(미등록) 그대로 둔다.
+		if not isvalid(btn) or not isvalid(btn.Entity) then return end
+		if ruid == nil or ruid == "" then return end
+		local visual = btn.Entity:GetChildByName("Visual")
+		if not isvalid(visual) then visual = btn.Entity end
+		local spr = visual.SpriteGUIRendererComponent
+		if isvalid(spr) then
+			spr.ImageRUID = DataRef(ruid)
+			spr.Color = Color(1, 1, 1, 1)
+		end
+	end
+end

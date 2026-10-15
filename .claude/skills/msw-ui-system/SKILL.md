@@ -1,6 +1,6 @@
 ---
 name: msw-ui-system
-description: "MSW `.ui` single entry point — design + component API + builder + runtime. Anchor/pivot/RectTransform, UIGroup/CanvasGroup hierarchy, layout recipes (HUD/popup/toast/menu/inventory/scroll-list), full API tables for ButtonComponent/TextGUIRendererComponent/SpriteGUIRendererComponent/ScrollLayoutGroup/GridView/TextInput/Slider/Mask/AvatarGUIRenderer + UI enums (AlignmentType/TextOverflowMode/ImageType/FillAmount), `.mlua` runtime patterns (popup open-close, toast, HP bar, GridView, drag, tab, cooldown, world nametag), UI-client-only caveats (nil on server, no RPC), `.ui`↔`.mlua` UUID auto-binding (write+injectBindings), resolution/safe-area/touch. UIBuilder (msw_ui_builder.cjs): all node types (empty/panel/text/sprite/button/slider/scrollLayout/textInput/group/mask/gridView/avatar/skeleton etc.), component add/replace/patch/remove, 13 anchor presets+stretch, auto-inject .mlua UUID bindings after write."
+description: "MSW `.ui` single entry point — design + component API + builder + runtime. Anchor/pivot/RectTransform, UIGroup/CanvasGroup hierarchy, layout recipes (HUD/popup/toast/menu/inventory/scroll-list/ranking/leaderboard/quest list/friend list/mailbox), full API tables for ButtonComponent/TextGUIRendererComponent/SpriteGUIRendererComponent/ScrollLayoutGroup/GridView/TextInput/Slider/Mask/AvatarGUIRenderer + UI enums (AlignmentType/TextOverflowMode/ImageType/FillAmount), `.mlua` runtime patterns (popup open-close, toast, HP bar, GridView, drag, tab, cooldown, world nametag), UI-client-only caveats (nil on server, no RPC), `.ui`↔`.mlua` UUID auto-binding (write+injectBindings), resolution/safe-area/touch. UIBuilder (msw_ui_builder.cjs): all node types (empty/panel/text/sprite/button/slider/scrollLayout/textInput/group/mask/gridView/avatar/skeleton etc.), component add/replace/patch/remove, 13 anchor presets+stretch, auto-inject .mlua UUID bindings after write."
 ---
 
 # msw-ui-system
@@ -27,14 +27,13 @@ Branch to sub-references based on request keywords.
 | "UIGroup", "above popup", "z-order", "displayOrder", "CanvasGroup", "opacity propagation", "Enable vs Visible" | [`references/ui-hierarchy.md`](references/ui-hierarchy.md); for runtime sibling reorder also read [`references/runtime-patterns.md`](references/runtime-patterns.md) §7 |
 | "which component", "Sprite vs Text vs Button", "9-slice", "scroll list", "GridView vs ScrollLayoutGroup" | [`references/component-api.md`](references/component-api.md) §"Component Selection Guide" |
 | "sprite pivot", "9-slice border", "slice boundary", "set sliced asset metadata", "resource storage properties" | Set asset-side metadata via `msw-mcp` `asset_update_resource_storage_info` directly; for the `.ui` side see [`references/component-api.md`](references/component-api.md) §"SpriteGUIRenderer — ImageType Selection" |
-| "make a HUD", "popup placement", "toast", "menu", "inventory grid", "scroll list" | [`references/layout-recipes.md`](references/layout-recipes.md) |
+| "make a HUD", "popup placement", "toast", "menu", "inventory grid", "scroll list", "ranking", "leaderboard", "quest list", "friend list", "mailbox" | [`references/layout-recipes.md`](references/layout-recipes.md) |
 | "connect .mlua after building with .ui builder", "property default UUID", "binding without drag" | [`../msw-general/references/builder-protocol-ui.md`](../msw-general/references/builder-protocol-ui.md) §3.6 Binding Injection (unified entry point — load with the [`builder-protocol.md`](../msw-general/references/builder-protocol.md) core) |
 | Runtime UI component field read/write, component property name/type (`ButtonComponent.Colors`, `TextGUIRendererComponent.Overflow`, `SpriteGUIRendererComponent.FillAmount`…) | [`references/component-api.md`](references/component-api.md) **required before every `.mlua` access to UI component fields** |
 | Enum values (`AlignmentType`, `TextOverflowMode`, `ImageType`, `UIBasicParticleType`…) | [`references/component-api.md`](references/component-api.md) §Enums |
 | Runtime mlua patterns (popup open/close, toast fade, HP bar, GridView, drag, tab, cooldown), Runtime UI Caveats (client-only, server-side nil, etc.) | [`references/runtime-patterns.md`](references/runtime-patterns.md) |
 | **`.ui` builder invocation methods** (UIBuilder API, anchor presets, write auto-lint, component add/patch/remove) | [`../msw-general/references/builder-protocol-ui.md`](../msw-general/references/builder-protocol-ui.md) §3 UIBuilder (unified entry point — load with the [`builder-protocol.md`](../msw-general/references/builder-protocol.md) core; `.map` MapBuilder / `.model` ModelBuilder live in sibling per-builder files) |
 | "sound", "sfx", "click sound", "hover sound", "button audio", "PlaySound" | [`references/ui-sound.md`](references/ui-sound.md) |
-| "UI theory", "UX framework", "Diegetic", "Non-Diegetic", "Spatial", "Meta", "Cognitive Load", "Celia Hodent", "Contextual HUD", "XAG", "Accessibility", "Information Hierarchy" | [`references/game-ui-ux-theory.md`](references/game-ui-ux-theory.md) |
 
 ---
 
@@ -69,7 +68,7 @@ Branch to sub-references based on request keywords.
 3. Match a recipe first; build from scratch only as a last resort
 4. For edge placement use the formula: `pos = ±(margin + size/2)`
 5. Separate popups and toasts into their **own `.ui` root UIGroup**, standalone show/hide; use `empty()` / `panel()` for inner containers, never nested `group()`
-6. Verify text `Alignment` default is `UpperLeft(0)` — 95% of "I centered it but it sticks to the left" issues
+6. "I centered it but it sticks to the left" → the text carries an explicit `UpperLeft(0)` alignment value — set `MiddleCenter(4)`. Alignment defaults are centered in both text component generations
 7. Button touch target ≥ 88×88 (mobile support)
 8. **After creating any interactive button** — proactively suggest wiring click/hover SFX via [`references/ui-sound.md`](references/ui-sound.md) (default UI SFX RUIDs available). Skip only if the user explicitly opts out or the button is purely decorative.
 9. **Build the tree nested, not flat.** Controls of one unit (window + title/close, row + chip/value, slot + icon/count) must share a parent via `"Parent/Child"` paths so they move / fade / toggle / bind as a block. Create each parent before its children; missing parents fail lint (`L025` ERROR).
@@ -85,7 +84,6 @@ Branch to sub-references based on request keywords.
 - [`references/layout-recipes.md`](references/layout-recipes.md) — Layout template collection
 - [`references/runtime-patterns.md`](references/runtime-patterns.md) — `.mlua` runtime patterns (popup/toast/HP/grid/drag…) + Runtime UI Caveats
 - [`references/ui-sound.md`](references/ui-sound.md) — UI sound integration (`_SoundService:PlaySound`, click/hover hook, default UI SFX RUIDs)
-- [`references/game-ui-ux-theory.md`](references/game-ui-ux-theory.md) — **Game UI/UX Core Theory & Framework** (Fagerholt & Lorentzon 4분면 모델, Celia Hodent 인지신경과학 게임 UX, 인지부하 제어, 정보 역피라미드, Contextual HUD, XAG 접근성 표준, 10대 자체 점검 체크리스트)
 - [`../msw-general/references/builder-protocol-ui.md`](../msw-general/references/builder-protocol-ui.md) §3 — **`.ui` CJS builder call protocol (unified entry point — load with the [`builder-protocol.md`](../msw-general/references/builder-protocol.md) core)** — `.map` MapBuilder / `.model` ModelBuilder live in sibling per-builder files. panel / text / sprite / button / slider / scroll / script / group / mask / grid / avatar / touchReceive / skeleton / areaParticle / basicParticle, component CRUD, anchor presets, write auto-lint, and `.mlua` property UUID auto-binding all live in §3 + §3.6.
 - [`references/templates/templates.md`](references/templates/templates.md) — Pre-built style bundle index (`style-N-*` `.ui`, [`ruid-map.md`](references/templates/style-1-black/ruid-map.md), `Popupbutton.mlua`)
 

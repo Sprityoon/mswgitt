@@ -1,0 +1,1203 @@
+{
+ "ruids": {
+  "mc_arrow_left": "ba811501c4504a81bf1346c5cf92c49c",
+  "mc_arrow_right": "ad3d04ada57a428e9fffe11e8a69e05b",
+  "mc_bookmark_back": "1968e00664134cacb2dd621a44a7de97",
+  "mc_btn_gray_m": "fa9f909e48b6498e9e1822c474855635",
+  "mc_btn_olive_l": "d10d872abcaa4d24906fcb0c6701290c",
+  "mc_btn_olive_m": "5e05696ddbfb42efb70c2ad18733c116",
+  "mc_btn_red_m": "7acc5945a7a84e22a4bd75837d86a2e0",
+  "mc_btn_red_s": "8427a0226b8546899d38fffc01b326b7",
+  "mc_header_plaque": "da4a14428136457f983b4de2a581837b",
+  "mc_input_recessed": "4be0575adffa4ee89a4c6d37df15ba36",
+  "mc_modal_parchment": "70ef2b7139f94d129bd6873fd2cdecc1",
+  "mc_preview_pedestal": "3d9b7a132e874d259a6a8a3f5998886c",
+  "mc_row_card": "bcb5db1d5eab42aaa509c5af4950f319",
+  "mc_slot_card": "867476f2415e4a5ab6cd62c9c1f47da9",
+  "mc_tab_active": "06de459b0aad4a718765aacbd75ecc4f",
+  "mc_tab_inactive": "609b9e86a4ca41cd9a7c3a0bcaf1a298",
+  "mc_title_btn_plank": "e6e3951fe1c54a09a1111dd29170d284",
+  "mc_title_btn_primary": "781d459ec14a4165a2326064cc89209d"
+ },
+ "items": [
+  {
+   "screen": "title",
+   "path": "TitlePanel/BtnNew",
+   "abs": [
+    0,
+    -72
+   ],
+   "size": [
+    380,
+    106.4
+   ],
+   "image": "mc_title_btn_primary",
+   "text": "시작하기",
+   "padLeft": 64,
+   "fontSize": 42,
+   "color": "#FFFFFF",
+   "outlineColor": "#4A2B10",
+   "outlinePixels": 2
+  },
+  {
+   "screen": "title",
+   "path": "TitlePanel/BtnContinue",
+   "abs": [
+    0,
+    -200
+   ],
+   "size": [
+    380,
+    100
+   ],
+   "image": "mc_title_btn_plank",
+   "text": "환경설정",
+   "padLeft": 0,
+   "fontSize": 42,
+   "color": "#FFFFFF",
+   "outlineColor": "#4A2B10",
+   "outlinePixels": 2
+  },
+  {
+   "screen": "title",
+   "path": "TitlePanel/BtnQuit",
+   "abs": [
+    0,
+    -328
+   ],
+   "size": [
+    380,
+    100
+   ],
+   "image": "mc_title_btn_plank",
+   "text": "종료하기",
+   "padLeft": 0,
+   "fontSize": 42,
+   "color": "#FFFFFF",
+   "outlineColor": "#4A2B10",
+   "outlinePixels": 2
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Notebook",
+   "abs": [
+    0,
+    -20
+   ],
+   "size": [
+    1126,
+    1126
+   ],
+   "image": "book",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/SubtitlePlate",
+   "abs": [
+    0,
+    392
+   ],
+   "size": [
+    440,
+    112
+   ],
+   "image": "mc_header_plaque",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Subtitle",
+   "abs": [
+    0,
+    396
+   ],
+   "size": [
+    360,
+    50
+   ],
+   "image": null,
+   "text": "캐릭터 선택",
+   "color": "#FFF3D6",
+   "fontSize": 30
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/BtnBack",
+   "abs": [
+    -472,
+    220
+   ],
+   "size": [
+    96,
+    250
+   ],
+   "image": "mc_bookmark_back",
+   "text": "뒤\n로",
+   "fontSize": 26,
+   "color": "#2B1608"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot1",
+   "abs": [
+    -228,
+    205
+   ],
+   "size": [
+    330,
+    140
+   ],
+   "image": "mc_slot_card",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot1/Avatar",
+   "abs": [
+    -336,
+    211
+   ],
+   "size": [
+    96,
+    108
+   ],
+   "image": "avatar",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot1/Title",
+   "abs": [
+    -180,
+    239
+   ],
+   "size": [
+    200,
+    34
+   ],
+   "image": null,
+   "text": "닉네임",
+   "align": "left",
+   "fontSize": 24,
+   "color": "#2A1608"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot1/Info",
+   "abs": [
+    -180,
+    209
+   ],
+   "size": [
+    200,
+    26
+   ],
+   "image": null,
+   "text": "Lv.25 · 트래퍼",
+   "align": "left",
+   "fontSize": 18,
+   "color": "#5C3D24"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot1/BtnSelect",
+   "abs": [
+    -208,
+    165
+   ],
+   "size": [
+    130,
+    44
+   ],
+   "image": "mc_btn_olive_m",
+   "text": "이어하기",
+   "fontSize": 20,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot1/BtnDelete",
+   "abs": [
+    -102,
+    165
+   ],
+   "size": [
+    70,
+    44
+   ],
+   "image": "mc_btn_red_s",
+   "text": "삭제",
+   "fontSize": 20,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot2",
+   "abs": [
+    -228,
+    49
+   ],
+   "size": [
+    330,
+    140
+   ],
+   "image": "mc_slot_card",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot2/Avatar",
+   "abs": [
+    -336,
+    55
+   ],
+   "size": [
+    96,
+    108
+   ],
+   "image": "avatar",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot2/Title",
+   "abs": [
+    -180,
+    83
+   ],
+   "size": [
+    200,
+    34
+   ],
+   "image": null,
+   "text": "닉네임",
+   "align": "left",
+   "fontSize": 24,
+   "color": "#2A1608"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot2/Info",
+   "abs": [
+    -180,
+    53
+   ],
+   "size": [
+    200,
+    26
+   ],
+   "image": null,
+   "text": "Lv.25 · 트래퍼",
+   "align": "left",
+   "fontSize": 18,
+   "color": "#5C3D24"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot2/BtnSelect",
+   "abs": [
+    -208,
+    9
+   ],
+   "size": [
+    130,
+    44
+   ],
+   "image": "mc_btn_olive_m",
+   "text": "이어하기",
+   "fontSize": 20,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot2/BtnDelete",
+   "abs": [
+    -102,
+    9
+   ],
+   "size": [
+    70,
+    44
+   ],
+   "image": "mc_btn_red_s",
+   "text": "삭제",
+   "fontSize": 20,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot3",
+   "abs": [
+    -228,
+    -107
+   ],
+   "size": [
+    330,
+    140
+   ],
+   "image": "mc_slot_card",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot3/Avatar",
+   "abs": [
+    -336,
+    -101
+   ],
+   "size": [
+    96,
+    108
+   ],
+   "image": "avatar",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot3/Title",
+   "abs": [
+    -180,
+    -73
+   ],
+   "size": [
+    200,
+    34
+   ],
+   "image": null,
+   "text": "닉네임",
+   "align": "left",
+   "fontSize": 24,
+   "color": "#2A1608"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot3/Info",
+   "abs": [
+    -180,
+    -103
+   ],
+   "size": [
+    200,
+    26
+   ],
+   "image": null,
+   "text": "Lv.25 · 트래퍼",
+   "align": "left",
+   "fontSize": 18,
+   "color": "#5C3D24"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot3/BtnSelect",
+   "abs": [
+    -208,
+    -147
+   ],
+   "size": [
+    130,
+    44
+   ],
+   "image": "mc_btn_olive_m",
+   "text": "이어하기",
+   "fontSize": 20,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot3/BtnDelete",
+   "abs": [
+    -102,
+    -147
+   ],
+   "size": [
+    70,
+    44
+   ],
+   "image": "mc_btn_red_s",
+   "text": "삭제",
+   "fontSize": 20,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot4",
+   "abs": [
+    256,
+    205
+   ],
+   "size": [
+    330,
+    140
+   ],
+   "image": "mc_slot_card",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot4/Avatar",
+   "abs": [
+    148,
+    211
+   ],
+   "size": [
+    96,
+    108
+   ],
+   "image": "avatar",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot4/Title",
+   "abs": [
+    304,
+    239
+   ],
+   "size": [
+    200,
+    34
+   ],
+   "image": null,
+   "text": null,
+   "align": "left",
+   "fontSize": 24,
+   "color": "#2A1608"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot4/Info",
+   "abs": [
+    304,
+    209
+   ],
+   "size": [
+    200,
+    26
+   ],
+   "image": null,
+   "text": null,
+   "align": "left",
+   "fontSize": 18,
+   "color": "#5C3D24"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot4/EmptyLabel",
+   "abs": [
+    256,
+    243
+   ],
+   "size": [
+    280,
+    30
+   ],
+   "image": null,
+   "text": "슬롯 4",
+   "fontSize": 20,
+   "color": "#6B4A2E"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot4/BtnCreate",
+   "abs": [
+    256,
+    191
+   ],
+   "size": [
+    220,
+    56
+   ],
+   "image": "mc_btn_olive_l",
+   "text": "+ 새 캐릭터 생성",
+   "fontSize": 22,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot5",
+   "abs": [
+    256,
+    49
+   ],
+   "size": [
+    330,
+    140
+   ],
+   "image": "mc_slot_card",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot5/Avatar",
+   "abs": [
+    148,
+    55
+   ],
+   "size": [
+    96,
+    108
+   ],
+   "image": "avatar",
+   "text": null
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot5/Title",
+   "abs": [
+    304,
+    83
+   ],
+   "size": [
+    200,
+    34
+   ],
+   "image": null,
+   "text": null,
+   "align": "left",
+   "fontSize": 24,
+   "color": "#2A1608"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot5/Info",
+   "abs": [
+    304,
+    53
+   ],
+   "size": [
+    200,
+    26
+   ],
+   "image": null,
+   "text": null,
+   "align": "left",
+   "fontSize": 18,
+   "color": "#5C3D24"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot5/EmptyLabel",
+   "abs": [
+    256,
+    87
+   ],
+   "size": [
+    280,
+    30
+   ],
+   "image": null,
+   "text": "슬롯 5",
+   "fontSize": 20,
+   "color": "#6B4A2E"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot5/BtnCreate",
+   "abs": [
+    256,
+    35
+   ],
+   "size": [
+    220,
+    56
+   ],
+   "image": "mc_btn_olive_l",
+   "text": "+ 새 캐릭터 생성",
+   "fontSize": 22,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot6",
+   "abs": [
+    256,
+    -107
+   ],
+   "size": [
+    330,
+    140
+   ],
+   "image": "mc_slot_card",
+   "text": null,
+   "alpha": 0.55
+  },
+  {
+   "screen": "select",
+   "path": "SlotPanel/Slot6/Label",
+   "abs": [
+    256,
+    -107
+   ],
+   "size": [
+    280,
+    70
+   ],
+   "image": null,
+   "text": "슬롯 6\n추후 확장 예정",
+   "fontSize": 20,
+   "color": "#7A6650"
+  },
+  {
+   "screen": "delete",
+   "path": "NamePrompt",
+   "abs": [
+    0,
+    0
+   ],
+   "size": [
+    1920,
+    1080
+   ],
+   "image": "dim",
+   "text": null
+  },
+  {
+   "screen": "delete",
+   "path": "NamePrompt/Modal",
+   "abs": [
+    0,
+    0
+   ],
+   "size": [
+    540,
+    360
+   ],
+   "image": "mc_modal_parchment",
+   "text": null
+  },
+  {
+   "screen": "delete",
+   "path": "NamePrompt/Title",
+   "abs": [
+    0,
+    118
+   ],
+   "size": [
+    400,
+    44
+   ],
+   "image": null,
+   "text": "삭제 확인",
+   "fontSize": 32,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "delete",
+   "path": "NamePrompt/Error",
+   "abs": [
+    0,
+    66
+   ],
+   "size": [
+    470,
+    34
+   ],
+   "image": null,
+   "text": "삭제하려면 아래에 'eeee'을(를) 입력하세요",
+   "fontSize": 20,
+   "color": "#B83227"
+  },
+  {
+   "screen": "delete",
+   "path": "NamePrompt/Input",
+   "abs": [
+    0,
+    8
+   ],
+   "size": [
+    360,
+    52
+   ],
+   "image": "mc_input_recessed",
+   "text": "닉네임 입력",
+   "fontSize": 22,
+   "color": "#9A8A74",
+   "align": "left",
+   "padLeft": 60
+  },
+  {
+   "screen": "delete",
+   "path": "NamePrompt/BtnOk",
+   "abs": [
+    -92,
+    -96
+   ],
+   "size": [
+    160,
+    52
+   ],
+   "image": "mc_btn_red_m",
+   "text": "삭제",
+   "fontSize": 24,
+   "color": "#FFFDF4",
+   "alpha": 0.45
+  },
+  {
+   "screen": "delete",
+   "path": "NamePrompt/BtnCancel",
+   "abs": [
+    92,
+    -96
+   ],
+   "size": [
+    160,
+    52
+   ],
+   "image": "mc_btn_gray_m",
+   "text": "취소",
+   "fontSize": 24,
+   "color": "#FFFDF4"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/Notebook",
+   "abs": [
+    0,
+    -20
+   ],
+   "size": [
+    1126,
+    1126
+   ],
+   "image": "book",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/TitlePlate",
+   "abs": [
+    0,
+    392
+   ],
+   "size": [
+    440,
+    112
+   ],
+   "image": "mc_header_plaque",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/Title",
+   "abs": [
+    0,
+    396
+   ],
+   "size": [
+    360,
+    50
+   ],
+   "image": null,
+   "text": "캐릭터 만들기",
+   "fontSize": 30,
+   "color": "#FFF3D6"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnBack",
+   "abs": [
+    -472,
+    220
+   ],
+   "size": [
+    96,
+    250
+   ],
+   "image": "mc_bookmark_back",
+   "text": "뒤\n로",
+   "fontSize": 26,
+   "color": "#2B1608"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/Notebook/Pedestal",
+   "abs": [
+    -228,
+    -30
+   ],
+   "size": [
+    230,
+    139
+   ],
+   "image": "mc_preview_pedestal",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/Preview",
+   "abs": [
+    -228,
+    110
+   ],
+   "size": [
+    240,
+    300
+   ],
+   "image": "avatar",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnLookAccount",
+   "abs": [
+    -228,
+    -138
+   ],
+   "size": [
+    190,
+    56
+   ],
+   "image": "mc_tab_active",
+   "text": "내 캐릭터 유지",
+   "fontSize": 22,
+   "color": "#FFFFFF"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnLookCustom",
+   "abs": [
+    -228,
+    -204
+   ],
+   "size": [
+    190,
+    56
+   ],
+   "image": "mc_tab_inactive",
+   "text": "외형 꾸미기",
+   "fontSize": 22,
+   "color": "#D8D0C5"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/HairNamePlate",
+   "abs": [
+    256,
+    230
+   ],
+   "size": [
+    330,
+    56
+   ],
+   "image": "mc_row_card",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/HairLabel",
+   "abs": [
+    124,
+    230
+   ],
+   "size": [
+    64,
+    40
+   ],
+   "image": null,
+   "text": "헤어",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnHairPrev",
+   "abs": [
+    182,
+    230
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_arrow_left",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/HairName",
+   "abs": [
+    291,
+    230
+   ],
+   "size": [
+    170,
+    40
+   ],
+   "image": null,
+   "text": "(계정 외형)",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnHairNext",
+   "abs": [
+    400,
+    230
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_arrow_right",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/FaceNamePlate",
+   "abs": [
+    256,
+    166
+   ],
+   "size": [
+    330,
+    56
+   ],
+   "image": "mc_row_card",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/FaceLabel",
+   "abs": [
+    124,
+    166
+   ],
+   "size": [
+    64,
+    40
+   ],
+   "image": null,
+   "text": "얼굴",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnFacePrev",
+   "abs": [
+    182,
+    166
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_arrow_left",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/FaceName",
+   "abs": [
+    291,
+    166
+   ],
+   "size": [
+    170,
+    40
+   ],
+   "image": null,
+   "text": "-",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnFaceNext",
+   "abs": [
+    400,
+    166
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_arrow_right",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BodyNamePlate",
+   "abs": [
+    256,
+    102
+   ],
+   "size": [
+    330,
+    56
+   ],
+   "image": "mc_row_card",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BodyLabel",
+   "abs": [
+    124,
+    102
+   ],
+   "size": [
+    64,
+    40
+   ],
+   "image": null,
+   "text": "피부",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnBodyPrev",
+   "abs": [
+    182,
+    102
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_arrow_left",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BodyName",
+   "abs": [
+    291,
+    102
+   ],
+   "size": [
+    170,
+    40
+   ],
+   "image": null,
+   "text": "-",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnBodyNext",
+   "abs": [
+    400,
+    102
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_arrow_right",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/CoatNamePlate",
+   "abs": [
+    256,
+    38
+   ],
+   "size": [
+    330,
+    56
+   ],
+   "image": "mc_row_card",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/CoatLabel",
+   "abs": [
+    124,
+    38
+   ],
+   "size": [
+    64,
+    40
+   ],
+   "image": null,
+   "text": "상의",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnCoatPrev",
+   "abs": [
+    182,
+    38
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_arrow_left",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/CoatName",
+   "abs": [
+    291,
+    38
+   ],
+   "size": [
+    170,
+    40
+   ],
+   "image": null,
+   "text": "-",
+   "fontSize": 20,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnCoatNext",
+   "abs": [
+    400,
+    38
+   ],
+   "size": [
+    40,
+    40
+   ],
+   "image": "mc_arrow_right",
+   "text": null
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/NameInput",
+   "abs": [
+    256,
+    -32
+   ],
+   "size": [
+    340,
+    52
+   ],
+   "image": "mc_input_recessed",
+   "text": "닉네임 (2~15글자)",
+   "fontSize": 22,
+   "color": "#9A8A74",
+   "align": "left",
+   "padLeft": 60
+  },
+  {
+   "screen": "create",
+   "path": "CustomizePanel/Frame/BtnStart",
+   "abs": [
+    256,
+    -140
+   ],
+   "size": [
+    220,
+    56
+   ],
+   "image": "mc_btn_olive_l",
+   "text": "모험 시작",
+   "fontSize": 24,
+   "color": "#FFFDF4"
+  }
+ ]
+}
