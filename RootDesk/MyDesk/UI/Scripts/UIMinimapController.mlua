@@ -335,6 +335,9 @@ script UIMinimapController extends Component
 			if isvalid(c) then
 				c:SetPlayHudVisible(false)
 			end
+			-- 채팅 패널은 SetPlayHudVisible 대상이 아니다(부팅 때 꺼 두면 채팅 초기화가 안 돈다) — 전경 모드 동안만 따로 숨긴다.
+			local chat = hud:GetChildByName("ChatPanel", false)
+			if isvalid(chat) then chat.Enable = false end
 		end
 
 		if isvalid(self.fullViewVignette) then
@@ -381,6 +384,8 @@ script UIMinimapController extends Component
 			if isvalid(c) then
 				c:SetPlayHudVisible(true)
 			end
+			local chat = hud:GetChildByName("ChatPanel", false)
+			if isvalid(chat) then chat.Enable = true end
 		end
 
 		self.isDraggingMap = false

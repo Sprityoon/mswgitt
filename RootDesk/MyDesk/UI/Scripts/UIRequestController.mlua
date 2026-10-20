@@ -84,7 +84,7 @@ script UIRequestController extends Component
 		local day = self:GetServerDayIndex()
 		if isvalid(self.dayText) then
 			local tc = self.dayText.TextComponent
-			if isvalid(tc) then tc.Text = "오늘의 의뢰  ·  " .. tostring(day) .. "일차" end
+			if isvalid(tc) then tc.Text = "오늘의 의뢰" end
 		end
 		if isvalid(self.hintText) then
 			local tc = self.hintText.TextComponent
@@ -154,7 +154,7 @@ script UIRequestController extends Component
 							if owned >= reqCnt then
 								progEnt.TextComponent.FontColor = Color(0.94, 0.66, 0.19, 1)
 							else
-								progEnt.TextComponent.FontColor = Color(0.79, 0.75, 0.70, 1)
+								progEnt.TextComponent.FontColor = Color(0.94, 0.27, 0.27, 1)
 							end
 						end
 					end
@@ -180,6 +180,8 @@ script UIRequestController extends Component
 							elseif owned >= reqCnt then btc.Text = "납품"
 							else btc.Text = "부족" end
 						end
+						-- 납품 불가(재료 부족·완료)는 회색 비활성, 납품 가능만 활성색(템플릿 원본)으로 구분한다.
+						if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(btn, (not done) and owned >= reqCnt) end
 						local rid = reqId
 						local h = btn:ConnectEvent(ButtonClickEvent, function()
 							self:OnDeliverClick(rid)

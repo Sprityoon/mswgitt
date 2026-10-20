@@ -6,22 +6,38 @@ script UIWarpController extends Component
 	-- (C-1 design). Both the destinations (PortalDestinationDataSet) and the section headers
 	-- (PortalGroupDataSet: GroupId/DisplayName/SortOrder) are data-driven — adding a destination
 	-- or a whole group is a CSV row edit only, no code changes. Locked waypoint destinations are
-	-- shown grayed out with a "[잠김]" prefix and give feedback when clicked.
+	-- shown grayed out and give feedback when clicked.
+	-- 2026-10-16: "<지역명> N구역" 꼴로 이어지는 목적지는 지역 한 줄(왼쪽 지역명 + 오른쪽 구역 버튼 가로 배치)로 묶어
+	-- 창 높이를 줄인다(13줄 세로 나열이 퀵슬롯을 덮던 문제). 그 꼴이 아닌 목적지(마을 등)는 예전처럼 한 줄 버튼.
 
 	property Entity btnClose = "23f03517-14f6-4f18-9265-ce78e9df7f71"
 
-	-- UI pool sizes (must match the Header1..N / Slot1..N entities under /ui/PopupGroup/WarpPopup/Bg).
+	-- UI pool sizes (must match the Header1..N / RegionLabel1..N / Slot1..N entities under /ui/PopupGroup/WarpPopup/Bg).
 	-- 마을 1 + 사냥터 4컨셉 × 3구역 = 13 (2026-09-23).
 	property integer SlotCount = 13
 	property integer HeaderCount = 3
+	property integer RegionCount = 6
+	-- 지역 한 줄에 붙일 수 있는 구역 버튼 수
+	property integer RegionButtonMax = 3
 
 	-- Layout metrics (UI pixels; rows are stacked top-down at runtime via anchoredPosition).
+	property number PopupWidth = 440
+	property number SidePadding = 20
 	property number TopPadding = 80
-	property number BottomPadding = 32
+	property number BottomPadding = 72 -- ui8 창 아래 나무띠(53px) 위로 마지막 줄이 오도록
 	property number HeaderRowHeight = 32
-	property number SlotRowHeight = 40
+	property number SlotRowHeight = 44
 	property number RowSpacing = 8
-	property number TitleOffsetY = 40
+	property number TitleOffsetY = 29 -- ui8 머리띠(0~58) 가운데
+	-- 한 줄 버튼 폭 / 지역 한 줄의 라벨 폭 · 구역 버튼 폭 · 버튼 간격
+	property number SingleSlotWidth = 280
+	property number RegionLabelWidth = 130
+	-- 지역 줄 왼쪽 바이옴 아이콘(PortalDestinationDataSet.IconRUID, 비면 아이콘 없이). 엔티티 풀 RegionIcon1..RegionCount.
+	property number RegionIconSize = 38
+	property number RegionButtonWidth = 76
+	property number RegionButtonGap = 8
+
+	property string BgPath = "/ui/PopupGroup/WarpPopup/Bg"
 
 	-- Runtime state (client-only).
 	property table destinations = {}   -- slotIndex -> { destId, mapName, x, y, isUnlocked, displayName }
@@ -35,7 +51,7 @@ script UIWarpController extends Component
 			self.btnClose:ConnectEvent(ButtonClickEvent, function() self:Close() end)
 		end
 		for i = 1, self.SlotCount do
-			local slot = _EntityService:GetEntityByPath("/ui/PopupGroup/WarpPopup/Bg/Slot" .. i)
+			local slot = _EntityService:GetEntityByPath(self.BgPath .. "/Slot" .. i)
 			if isvalid(slot) then
 				local idx = i
 				local h = slot:ConnectEvent(ButtonClickEvent, function() self:OnSlotClick(idx) end)
@@ -65,6 +81,41 @@ script UIWarpController extends Component
 	method void Close()
 		-- Hide the popup.
 		self.Entity.Enable = false
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetEntityText(Entity ent, string text)
+		-- 글자 엔티티 공통 세터(TextGUIRenderer / 레거시 Text 둘 다).
+		if not isvalid(ent) then return end
+		if isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.Text = text
+		elseif isvalid(ent.TextComponent) then
+			ent.TextComponent.Text = text
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PlaceSlot(integer slotIndex, any d, string text, number x, number y, number w)
+		-- 목적지 버튼 하나를 (x, y)에 w 폭으로 놓고 글자·잠김 색을 채운다.
+		local slot = _EntityService:GetEntityByPath(self.BgPath .. "/Slot" .. slotIndex)
+		if not isvalid(slot) then return end
+		self.destinations[slotIndex] = d
+		self:SetEntityText(slot, text)
+		if isvalid(slot.SpriteGUIRendererComponent) then
+			if d.isUnlocked then
+				slot.SpriteGUIRendererComponent.Color = Color.white
+			else
+				slot.SpriteGUIRendererComponent.Color = Color(0.5, 0.5, 0.5, 1.0)
+			end
+		end
+		-- 잠긴 목적지는 버튼 오른쪽 위 자물쇠 배지로도 표시한다(지역 줄의 좁은 구역 버튼에는 "[잠김]" 글자가 안 들어간다).
+		local lock = slot:GetChildByName("Lock")
+		if isvalid(lock) then lock.Enable = not d.isUnlocked end
+		if isvalid(slot.UITransformComponent) then
+			slot.UITransformComponent.RectSize = Vector2(w, self.SlotRowHeight)
+			slot.UITransformComponent.anchoredPosition = Vector2(x, y)
+		end
+		slot.Enable = true
 	end
 
 	@ExecSpace("ClientOnly")
@@ -134,15 +185,18 @@ script UIWarpController extends Component
 				x = tonumber(destDs:GetCell(i, "ArriveX")) or 0,
 				y = tonumber(destDs:GetCell(i, "ArriveY")) or 0,
 				isUnlocked = isUnlocked,
-				displayName = destDs:GetCell(i, "DisplayName")
+				displayName = destDs:GetCell(i, "DisplayName"),
+				iconRuid = self:SafeCell(destDs, i, "IconRUID")
 			})
 		end
 
-		-- 3) Flatten to display rows (header row per non-empty group, then its slots),
+		-- 3) Flatten to display rows (header row per non-empty group, then its destinations),
 		--    truncating to the UI pool sizes with a warning.
+		--    kind = "header" | "slot"(한 줄 버튼) | "region"(지역명 + 구역 버튼들)
 		local displayRows = {}
 		local headersNeeded = 0
 		local slotsNeeded = 0
+		local regionsNeeded = 0
 		for _, g in ipairs(groupOrder) do
 			local list = buckets[g.id]
 			if list ~= nil and #list > 0 then
@@ -151,12 +205,32 @@ script UIWarpController extends Component
 				else
 					headersNeeded += 1
 					table.insert(displayRows, { kind = "header", text = g.displayName })
+					local lastRegion = nil
 					for _, d in ipairs(list) do
 						if slotsNeeded >= self.SlotCount then
 							log_warning("UIWarpController: slot pool exhausted; destination '" .. tostring(d.displayName) .. "' skipped. Add Slot entities and raise SlotCount.")
 						else
 							slotsNeeded += 1
-							table.insert(displayRows, { kind = "slot", dest = d })
+							-- "흙 벌판 1구역" → 지역 "흙 벌판" + 구역 "1구역"
+							local dispName = tostring(d.displayName or "")
+							local region = string.match(dispName, "^(.-)%s+%d+구역$")
+							local tail = string.match(dispName, "(%d+구역)$")
+							local asRegion = false
+							if region ~= nil and region ~= "" then
+								if lastRegion ~= nil and lastRegion.text == region and #lastRegion.dests < self.RegionButtonMax then
+									table.insert(lastRegion.dests, { dest = d, label = tail })
+									asRegion = true
+								elseif regionsNeeded < self.RegionCount then
+									regionsNeeded += 1
+									lastRegion = { kind = "region", text = region, dests = { { dest = d, label = tail } } }
+									table.insert(displayRows, lastRegion)
+									asRegion = true
+								end
+							end
+							if not asRegion then
+								lastRegion = nil
+								table.insert(displayRows, { kind = "slot", dest = d })
+							end
 						end
 					end
 				end
@@ -176,80 +250,118 @@ script UIWarpController extends Component
 			contentH -= self.RowSpacing
 		end
 		local totalH = self.TopPadding + contentH + self.BottomPadding
+		local width = self.PopupWidth
 
-		local bg = _EntityService:GetEntityByPath("/ui/PopupGroup/WarpPopup/Bg")
+		local bg = _EntityService:GetEntityByPath(self.BgPath)
 		if isvalid(bg) and isvalid(bg.UITransformComponent) then
-			local bgSize = bg.UITransformComponent.RectSize
-			bg.UITransformComponent.RectSize = Vector2(bgSize.x, totalH)
+			bg.UITransformComponent.RectSize = Vector2(width, totalH)
 		end
-		local title = _EntityService:GetEntityByPath("/ui/PopupGroup/WarpPopup/Bg/Title")
+		local title = _EntityService:GetEntityByPath(self.BgPath .. "/Title")
 		if isvalid(title) and isvalid(title.UITransformComponent) then
 			title.UITransformComponent.anchoredPosition = Vector2(0, totalH / 2 - self.TitleOffsetY)
 		end
 		if isvalid(self.btnClose) and isvalid(self.btnClose.UITransformComponent) then
-			local closeX = self.btnClose.UITransformComponent.anchoredPosition.x
-			self.btnClose.UITransformComponent.anchoredPosition = Vector2(closeX, totalH / 2 - self.TitleOffsetY)
+			local closeW = self.btnClose.UITransformComponent.RectSize.x
+			self.btnClose.UITransformComponent.anchoredPosition = Vector2(width / 2 - 12 - closeW / 2, totalH / 2 - self.TitleOffsetY)
 		end
 
-		-- 5) Position and fill the pooled header/slot entities top-down.
+		-- 5) Position and fill the pooled header/region/slot entities top-down.
 		local headerUsed = 0
+		local regionUsed = 0
 		local slotUsed = 0
+		local left = -width / 2 + self.SidePadding
 		local yCursor = self.TopPadding
 		for _, row in ipairs(displayRows) do
 			if row.kind == "header" then
 				headerUsed += 1
-				local headerEntity = _EntityService:GetEntityByPath("/ui/PopupGroup/WarpPopup/Bg/Header" .. headerUsed)
+				local headerEntity = _EntityService:GetEntityByPath(self.BgPath .. "/Header" .. headerUsed)
 				if isvalid(headerEntity) then
-					if isvalid(headerEntity.TextComponent) then
-						headerEntity.TextComponent.Text = "─  " .. (row.text or "") .. "  ─"
-					end
+					self:SetEntityText(headerEntity, "─  " .. (row.text or "") .. "  ─")
 					if isvalid(headerEntity.UITransformComponent) then
 						headerEntity.UITransformComponent.anchoredPosition = Vector2(0, totalH / 2 - yCursor - self.HeaderRowHeight / 2)
 					end
 					headerEntity.Enable = true
 				end
 				yCursor += self.HeaderRowHeight + self.RowSpacing
+			elseif row.kind == "region" then
+				regionUsed += 1
+				local y = totalH / 2 - yCursor - self.SlotRowHeight / 2
+				local labelEntity = _EntityService:GetEntityByPath(self.BgPath .. "/RegionLabel" .. regionUsed)
+				-- 바이옴 아이콘: 지역 첫 목적지의 IconRUID. 있으면 라벨 왼쪽에 두고 글자 칸을 그만큼 줄인다.
+				local iconRuid = ""
+				if row.dests[1] ~= nil and row.dests[1].dest.iconRuid ~= nil then iconRuid = row.dests[1].dest.iconRuid end
+				local iconEntity = _EntityService:GetEntityByPath(self.BgPath .. "/RegionIcon" .. regionUsed)
+				local iconW = 0
+				if isvalid(iconEntity) then
+					if iconRuid ~= "" then
+						iconW = self.RegionIconSize + 4
+						iconEntity.SpriteGUIRendererComponent.ImageRUID = iconRuid
+						iconEntity.UITransformComponent.RectSize = Vector2(self.RegionIconSize, self.RegionIconSize)
+						iconEntity.UITransformComponent.anchoredPosition = Vector2(left + self.RegionIconSize / 2, y)
+						iconEntity.Enable = true
+					else
+						iconEntity.Enable = false
+					end
+				end
+				if isvalid(labelEntity) then
+					self:SetEntityText(labelEntity, row.text or "")
+					if isvalid(labelEntity.UITransformComponent) then
+						labelEntity.UITransformComponent.RectSize = Vector2(self.RegionLabelWidth - iconW, self.SlotRowHeight)
+						labelEntity.UITransformComponent.anchoredPosition = Vector2(left + iconW + (self.RegionLabelWidth - iconW) / 2, y)
+					end
+					labelEntity.Enable = true
+				end
+				-- 구역 버튼: 라벨 오른쪽에서부터 가로로.
+				local firstCx = left + self.RegionLabelWidth + self.RegionButtonGap + self.RegionButtonWidth / 2
+				for i, item in ipairs(row.dests) do
+					slotUsed += 1
+					local cx = firstCx + (i - 1) * (self.RegionButtonWidth + self.RegionButtonGap)
+					self:PlaceSlot(slotUsed, item.dest, item.label, cx, y, self.RegionButtonWidth)
+				end
+				yCursor += self.SlotRowHeight + self.RowSpacing
 			else
 				slotUsed += 1
-				local slot = _EntityService:GetEntityByPath("/ui/PopupGroup/WarpPopup/Bg/Slot" .. slotUsed)
-				if isvalid(slot) then
-					local d = row.dest
-					self.destinations[slotUsed] = d
-					if isvalid(slot.TextComponent) then
-						if d.isUnlocked then
-							slot.TextComponent.Text = d.displayName
-							if isvalid(slot.SpriteGUIRendererComponent) then
-								slot.SpriteGUIRendererComponent.Color = Color.white
-							end
-						else
-							slot.TextComponent.Text = "[잠김] " .. d.displayName
-							if isvalid(slot.SpriteGUIRendererComponent) then
-								slot.SpriteGUIRendererComponent.Color = Color(0.5, 0.5, 0.5, 1.0)
-							end
-						end
-					end
-					if isvalid(slot.UITransformComponent) then
-						slot.UITransformComponent.anchoredPosition = Vector2(0, totalH / 2 - yCursor - self.SlotRowHeight / 2)
-					end
-					slot.Enable = true
-				end
+				local d = row.dest
+				local text = d.displayName
+				if not d.isUnlocked then text = "[잠김] " .. tostring(d.displayName) end
+				local y = totalH / 2 - yCursor - self.SlotRowHeight / 2
+				self:PlaceSlot(slotUsed, d, text, 0, y, self.SingleSlotWidth)
 				yCursor += self.SlotRowHeight + self.RowSpacing
 			end
 		end
 
+		log("[VRF][WARP-UI] rows=" .. tostring(#displayRows) .. " regions=" .. tostring(regionUsed) .. " slots=" .. tostring(slotUsed) .. " height=" .. tostring(totalH))
+
 		-- 6) Hide unused pool entities.
 		for i = headerUsed + 1, self.HeaderCount do
-			local headerEntity = _EntityService:GetEntityByPath("/ui/PopupGroup/WarpPopup/Bg/Header" .. i)
+			local headerEntity = _EntityService:GetEntityByPath(self.BgPath .. "/Header" .. i)
 			if isvalid(headerEntity) then
 				headerEntity.Enable = false
 			end
 		end
+		for i = regionUsed + 1, self.RegionCount do
+			local labelEntity = _EntityService:GetEntityByPath(self.BgPath .. "/RegionLabel" .. i)
+			if isvalid(labelEntity) then
+				labelEntity.Enable = false
+			end
+			local iconEntity = _EntityService:GetEntityByPath(self.BgPath .. "/RegionIcon" .. i)
+			if isvalid(iconEntity) then
+				iconEntity.Enable = false
+			end
+		end
 		for i = slotUsed + 1, self.SlotCount do
-			local slot = _EntityService:GetEntityByPath("/ui/PopupGroup/WarpPopup/Bg/Slot" .. i)
+			local slot = _EntityService:GetEntityByPath(self.BgPath .. "/Slot" .. i)
 			if isvalid(slot) then
 				slot.Enable = false
 			end
 		end
+	end
+
+	method string SafeCell(any ds, integer row, string col)
+		-- 선택 열 읽기(열이 없거나 비면 "").
+		local ok, v = pcall(function() return ds:GetCell(row, col) end)
+		if ok and v ~= nil then return tostring(v) end
+		return ""
 	end
 
 	@ExecSpace("ClientOnly")

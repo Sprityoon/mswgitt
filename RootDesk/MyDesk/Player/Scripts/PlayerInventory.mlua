@@ -1915,12 +1915,12 @@ script PlayerInventory extends Component
 		local equipSlot = self:GetItemEquipSlot(baseName)
 		local target = tostring(partRow:GetItem("TargetSlot") or "")
 		if target ~= "any" and target ~= equipSlot then
-			self:NotifyAnvil("이 파츠는 " .. self:GetGearSlotLabel(target) .. "에만 새길 수 있습니다.")
+			self:NotifyAnvil("이 파츠는 " .. self:GetGearSlotLabel(target) .. "에만 부여할 수 있습니다.")
 			return
 		end
 		local slots = self:GetEnchantSlotCount(itemKey)
 		if slots <= 0 then
-			self:NotifyAnvil("주문을 새길 수 없는 장비입니다.")
+			self:NotifyAnvil("주문을 부여할 수 없는 장비입니다.")
 			return
 		end
 		if slotIndex < 1 or slotIndex > slots then return end

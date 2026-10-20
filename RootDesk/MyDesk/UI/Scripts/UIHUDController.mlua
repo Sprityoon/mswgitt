@@ -768,16 +768,10 @@ script UIHUDController extends Component
 		if isvalid(self.btnDownedRevive) then
 			local bt = self.btnDownedRevive.TextGUIRendererComponent
 			local label = "즉시 부활권 사용 (" .. tostring(count) .. ")"
+			if count <= 0 then label = "부활권 없음 (상점 구매)" end
 			if isvalid(bt) and bt.Text ~= label then bt.Text = label end
-			-- 없을 때도 누를 수는 있다(서버가 "상점에서 살 수 있어요" 안내) — 색만 흐리게.
-			local bs = self.btnDownedRevive.SpriteGUIRendererComponent
-			if isvalid(bs) then
-				if count > 0 then
-					bs.Color = Color(0.55, 0.40, 0.12, 0.95)
-				else
-					bs.Color = Color(0.30, 0.27, 0.22, 0.85)
-				end
-			end
+			-- 부활권이 없으면 회색 비활성(클릭 차단). 구매 안내는 라벨이 대신 한다.
+			if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(self.btnDownedRevive, count > 0) end
 		end
 	end
 
@@ -1170,7 +1164,22 @@ script UIHUDController extends Component
 					"동물 우리에 가축을 기르고 매일 먹이를 주면 유용한 축산 생산물을 얻을 수 있습니다.",
 					"Tab 키를 누르면 미니맵 전경 조망 모드로 전환되어 맵 전체를 한눈에 볼 수 있습니다."
 				}
-				tipContent.TextGUIRendererComponent.Text = tips[math.random(1, #tips)]
+				-- 한 줄(약 32자)을 넘는 팁은 가운데에 가장 가까운 띄어쓰기에서 직접 줄을 나눈다 — 자동 줄바꿈은
+				-- 글자 단위라 "확/보하세요"처럼 단어 중간이 끊긴다. 바이트 기준이어도 띄어쓰기(1바이트)에서만 자르니 안전.
+				local tip = tips[math.random(1, #tips)]
+				if #tip > 96 then
+					local mid = math.floor(#tip / 2)
+					local best = nil
+					local from = 1
+					while true do
+						local s, _ = string.find(tip, " ", from, true)
+						if s == nil then break end
+						if best == nil or math.abs(s - mid) < math.abs(best - mid) then best = s end
+						from = s + 1
+					end
+					if best ~= nil then tip = string.sub(tip, 1, best - 1) .. "\n" .. string.sub(tip, best + 1) end
+				end
+				tipContent.TextGUIRendererComponent.Text = tip
 			end
 		end
 

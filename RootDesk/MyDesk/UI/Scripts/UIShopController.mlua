@@ -239,8 +239,12 @@ script UIShopController extends Component
 		self.currentPage = 1
 		self.currentCategory = ""
 
-		-- Highlight the active tab (Buy = green, Sell = grey/blue)
-		if isvalid(self.btnTabBuy) and isvalid(self.btnTabBuy.SpriteGUIRendererComponent) then
+		-- Highlight the active tab (Buy = green, Sell = grey/blue). ui8 스킨이면 탭 그림으로.
+		if _UI8Skin ~= nil and isvalid(self.btnTabBuy) and _UI8Skin:Pick(self.btnTabBuy, tabName == "buy", "tab_on", "tab_off") then
+			_UI8Skin:Pick(self.btnTabSell, tabName == "sell", "tab_on", "tab_off")
+			self:SetTabLabelColor(self.btnTabBuy, tabName == "buy")
+			self:SetTabLabelColor(self.btnTabSell, tabName == "sell")
+		elseif isvalid(self.btnTabBuy) and isvalid(self.btnTabBuy.SpriteGUIRendererComponent) then
 			if tabName == "buy" then
 				self.btnTabBuy.SpriteGUIRendererComponent.Color = Color(0.18, 0.40, 0.20, 1.0) -- Active Green
 			else
@@ -248,7 +252,7 @@ script UIShopController extends Component
 			end
 		end
 
-		if isvalid(self.btnTabSell) and isvalid(self.btnTabSell.SpriteGUIRendererComponent) then
+		if not (_UI8Skin ~= nil and _UI8Skin:HasSkin(self.btnTabSell)) and isvalid(self.btnTabSell) and isvalid(self.btnTabSell.SpriteGUIRendererComponent) then
 			if tabName == "sell" then
 				self.btnTabSell.SpriteGUIRendererComponent.Color = Color(0.18, 0.40, 0.20, 1.0) -- Active Green
 			else
@@ -257,6 +261,30 @@ script UIShopController extends Component
 		end
 
 		self:RefreshShop()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetAnyText(Entity e, string text)
+		-- 신형/구형 글자 컴포넌트 어느 쪽이든 글자를 쓴다.
+		if not isvalid(e) then return end
+		if isvalid(e.TextGUIRendererComponent) then
+			e.TextGUIRendererComponent.Text = text
+		elseif isvalid(e.TextComponent) then
+			e.TextComponent.Text = text
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetTabLabelColor(Entity tab, boolean on)
+		-- ui8 탭: 켜짐(앰버) = 진한 갈색 글자, 꺼짐(나무) = 크림 글자.
+		if not isvalid(tab) then return end
+		local c = Color(1, 0.94, 0.8, 1)
+		if on then c = Color(0.27, 0.13, 0.04, 1) end
+		if isvalid(tab.TextGUIRendererComponent) then
+			tab.TextGUIRendererComponent.FontColor = c
+		elseif isvalid(tab.TextComponent) then
+			tab.TextComponent.FontColor = c
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -338,7 +366,9 @@ script UIShopController extends Component
 				local t = chip.TextGUIRendererComponent
 				if isvalid(t) then t.Text = label end
 				local s = chip.SpriteGUIRendererComponent
-				if isvalid(s) then
+				if _UI8Skin ~= nil and _UI8Skin:Pick(chip, key == self.currentCategory, "tab_on", "tab_off") then
+					self:SetTabLabelColor(chip, key == self.currentCategory)
+				elseif isvalid(s) then
 					if key == self.currentCategory then
 						s.Color = Color(0.18, 0.40, 0.20, 1.0)
 					else
@@ -388,11 +418,14 @@ script UIShopController extends Component
 					if isvalid(icon) and isvalid(icon.SpriteGUIRendererComponent) then
 						icon.SpriteGUIRendererComponent.ImageRUID = e.ruid
 					end
-					if isvalid(nameTxt) and isvalid(nameTxt.TextComponent) then
-						nameTxt.TextComponent.Text = e.disp
-					end
-					if isvalid(priceTxt) and isvalid(priceTxt.TextComponent) then
-						priceTxt.TextComponent.Text = tostring(e.price) .. " 코인"
+					-- ui8 이후 카드 글자는 신형 TextGUIRenderer(구형 TextComponent 도 계속 지원)
+					self:SetAnyText(nameTxt, e.disp)
+					self:SetAnyText(priceTxt, tostring(e.price) .. " 코인")
+					-- 카드 세 번째 줄: 지금 내가 가진 수량(사고팔기 전에 얼마나 있는지 바로 보이게).
+					local ownEnt = slot:GetChildByName("OwnText")
+					if isvalid(ownEnt) then
+						local ownTxt = ownEnt.TextGUIRendererComponent
+						if isvalid(ownTxt) then ownTxt.Text = "보유: " .. tostring(inv:GetItemCount(e.name)) .. "개" end
 					end
 					slot.Enable = true
 				end
@@ -405,8 +438,15 @@ script UIShopController extends Component
 			local t = self.pageText.TextGUIRendererComponent
 			if isvalid(t) then t.Text = tostring(self.currentPage) .. " / " .. tostring(self.pageCount) end
 		end
-		if isvalid(self.btnPrevPage) then self.btnPrevPage.Enable = multi and self.currentPage > 1 end
-		if isvalid(self.btnNextPage) then self.btnNextPage.Enable = multi and self.currentPage < self.pageCount end
+		-- [< 이전]  1 / 2  [다음 >] 좌우 대칭: 페이지가 여럿이면 두 버튼을 항상 보이고, 갈 수 없는 쪽만 회색 비활성으로 둔다.
+		if isvalid(self.btnPrevPage) then
+			self.btnPrevPage.Enable = multi
+			if multi and _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(self.btnPrevPage, self.currentPage > 1) end
+		end
+		if isvalid(self.btnNextPage) then
+			self.btnNextPage.Enable = multi
+			if multi and _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(self.btnNextPage, self.currentPage < self.pageCount) end
+		end
 	end
 
 	@ExecSpace("ClientOnly")

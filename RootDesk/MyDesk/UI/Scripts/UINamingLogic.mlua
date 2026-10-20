@@ -18,6 +18,8 @@ script UINamingLogic extends Logic
 
 	@HideFromInspector property string PendingItemKey = ""
 	@HideFromInspector property string DefaultMessage = ""
+	-- 입력창 바로 아래 오류 줄(Modal/Window/ErrorText). 안내 줄은 오류가 나도 덮어쓰지 않는다.
+	@HideFromInspector property any errorEntity = nil
 	property any okHandler = nil
 	property any cancelHandler = nil
 	property any submitHandler = nil
@@ -25,7 +27,10 @@ script UINamingLogic extends Logic
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
 		-- 팝업은 .ui 에서 Enable=false 로 저장돼 있다(규칙 30). 버튼·Enter 연결.
-		if isvalid(self.modal) then self.modal.Enable = false end
+		if isvalid(self.modal) then
+			self.modal.Enable = false
+			self.errorEntity = self.modal:GetChildByName("ErrorText", true)
+		end
 		if isvalid(self.btnOk) then
 			self.okHandler = self.btnOk.Entity:ConnectEvent(ButtonClickEvent, function() self:Submit() end)
 		end
@@ -67,11 +72,9 @@ script UINamingLogic extends Logic
 			if isvalid(self.titleText) then self.titleText.Text = "이름 짓기" end
 			self.DefaultMessage = who .. "에게 이름을 지어 주세요 (" .. tostring(self.NameMaxChars) .. "자까지)"
 		end
-		if errorText ~= nil and errorText ~= "" then
-			self:ShowMessage(errorText, true)
-		else
-			self:ShowMessage(self.DefaultMessage, false)
-		end
+		-- 안내 줄은 항상 기본 문구, 서버가 거절한 사유는 입력창 아래 빨간 줄로 따로 보인다.
+		self:ShowMessage(self.DefaultMessage, false)
+		self:ShowError(errorText or "")
 		if isvalid(self.nameInput) then
 			self.nameInput.CharacterLimit = self.NameMaxChars
 			self.nameInput.Text = suggested or ""
@@ -94,6 +97,23 @@ script UINamingLogic extends Logic
 	end
 
 	@ExecSpace("ClientOnly")
+	method void ShowError(string text)
+		-- 입력창 아래 빨간 오류 줄. 빈 문자열이면 숨긴다. (줄이 없는 구 .ui 면 안내 줄을 빨갛게 바꾸는 예전 동작으로 대신한다.)
+		local e = self.errorEntity
+		if not isvalid(e) then
+			if text ~= nil and text ~= "" then self:ShowMessage(text, true) end
+			return
+		end
+		if text == nil or text == "" then
+			e.Enable = false
+			return
+		end
+		local tc = e.TextGUIRendererComponent
+		if isvalid(tc) then tc.Text = text end
+		e.Enable = true
+	end
+
+	@ExecSpace("ClientOnly")
 	method void Close()
 		-- 닫기(취소). 서버 쪽 대기 요청은 시간이 지나면 저절로 무효가 된다.
 		if isvalid(self.modal) then self.modal.Enable = false end
@@ -109,7 +129,7 @@ script UINamingLogic extends Logic
 		if isvalid(self.nameInput) then raw = self.nameInput.Text or "" end
 		local name = string.match(raw, "^%s*(.-)%s*$") or ""
 		if name == "" then
-			self:ShowMessage("이름을 입력해 주세요.", true)
+			self:ShowError("이름을 입력해 주세요.")
 			return
 		end
 		local n = 0
@@ -118,7 +138,7 @@ script UINamingLogic extends Logic
 			if b < 0x80 or b >= 0xC0 then n = n + 1 end
 		end
 		if n > self.NameMaxChars then
-			self:ShowMessage("이름은 " .. tostring(self.NameMaxChars) .. "자까지 지을 수 있어요.", true)
+			self:ShowError("이름은 " .. tostring(self.NameMaxChars) .. "자까지 지을 수 있어요.")
 			return
 		end
 		local lp = _UserService.LocalPlayer

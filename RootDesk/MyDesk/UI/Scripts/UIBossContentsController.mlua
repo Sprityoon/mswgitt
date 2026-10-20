@@ -217,6 +217,20 @@ script UIBossContentsController extends Component
 	method void SetBoxTint(Entity target, Color tint)
 		if not isvalid(target) then return end
 		local spr = target.SpriteGUIRendererComponent
+		-- ui8 스킨: 밝은 색(선택)=앰버, 아주 어두운 색(잠김)=비활성/흐린 줄, 그 외=기본 줄
+		if _UI8Skin ~= nil and _UI8Skin:HasSkin(target) then
+			local lum = tint.r * 0.3 + tint.g * 0.59 + tint.b * 0.11
+			local isBtn = (target == self.btnEnter)
+			if lum > 0.5 then
+				_UI8Skin:SetVariant(target, isBtn and "btn_amber" or "row_sel")
+			elseif lum < 0.16 then
+				_UI8Skin:SetVariant(target, isBtn and "btn_disabled" or "row")
+				if not isBtn and isvalid(spr) then spr.Color = Color(0.6, 0.6, 0.6, 1) end
+			else
+				_UI8Skin:SetVariant(target, isBtn and "btn_oak" or "row")
+			end
+			return
+		end
 		if isvalid(spr) then spr.Color = tint end
 	end
 
@@ -291,8 +305,10 @@ script UIBossContentsController extends Component
 			self:SetBoxText(self:FindChild("HintBox"), "", idleText)
 			self:SetBoxTint(self.btnEnter, lockedBg)
 			self:SetBoxText(self.btnEnter, "대기실로 이동", lockedText)
+			self:RefreshRewards("")
 			return
 		end
+		self:RefreshRewards(boss.bossId)
 
 		self:SetBoxText(self:FindChild("NameBox"), boss.name, creamText)
 		self:SetBoxText(self:FindChild("InfoLevel"),
@@ -326,6 +342,41 @@ script UIBossContentsController extends Component
 				Color(0.94, 0.72, 0.60, 1.0))
 			self:SetBoxTint(self.btnEnter, lockedBg)
 			self:SetBoxText(self.btnEnter, "대기실로 이동", lockedText)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshRewards(string bossId)
+		-- "주요 보상" 칸(RewardRow/BossRewardSlot1..3 — 퀘스트 창 RewardSlot 과 이름이 겹치지 않게).
+		-- 아이콘은 item_dataset(id = ItemId).IconRUID. 행이 모자라면 남은 칸은 비운다.
+		-- ItemDropDataSet 은 서버 전용(클라에서 읽으면 LEA-3022) → 클라가 읽는 BossContentsDataSet.RewardItemIds("a|b|c")를 쓴다.
+		-- 값은 드롭 표에서 확률 높은 순 3개로 채워 둔다(드롭 표를 바꾸면 이 열도 같이 갱신 — 2026-10-18).
+		local picks = {}
+		local ds = _DataService:GetTable("BossContentsDataSet")
+		if bossId ~= "" and ds ~= nil then
+			for i = 1, ds:GetRowCount() do
+				if ds:GetCell(i, "BossId") == bossId then
+					local list = self:Cell(ds, i, "RewardItemIds", "")
+					for id in string.gmatch(list, "[^|]+") do table.insert(picks, { id = id }) end
+					break
+				end
+			end
+		end
+		local items = _DataService:GetTable("item_dataset")
+		for k = 1, 3 do
+			local slot = self:FindChild("BossRewardSlot" .. tostring(k))
+			if isvalid(slot) then
+				local icon = slot:GetChildByName("Icon")
+				local ruid = ""
+				if picks[k] ~= nil and items ~= nil then
+					local row = items:FindRow("id", picks[k].id)
+					if row ~= nil then ruid = row:GetItem("IconRUID") or "" end
+				end
+				if isvalid(icon) and isvalid(icon.SpriteGUIRendererComponent) then
+					icon.Enable = ruid ~= ""
+					if ruid ~= "" then icon.SpriteGUIRendererComponent.ImageRUID = ruid end
+				end
+			end
 		end
 	end
 

@@ -1,0 +1,73 @@
+@Logic
+script UIButtonStyle extends Logic
+	-- 액션 버튼 활성/비활성 표시 공용 헬퍼 (클라 전용).
+	-- 조건 미달(재료 부족·초대 불가·부활권 없음 등) 버튼은 회색 + 클릭 차단, 조건이 되면 원래 색으로 되돌린다.
+	-- 사용: _UIButtonStyle:SetActive(버튼 엔티티, 가능 여부)
+	-- 원래 색은 엔티티를 처음 만졌을 때의 값(= .ui 에 저장된 색)을 캐시했다가 복원한다. 따라서 이 헬퍼 말고 다른 코드가
+	-- 같은 버튼의 색을 바꾸는 곳에는 쓰지 않는다. 클론한 행 버튼은 클론마다 처음 만졌을 때가 원본(템플릿)색이다.
+
+	-- 비활성 채움색 #3F3F46, 글자색 #9CA3AF
+	property Color DisabledFill = Color(0.247, 0.247, 0.275, 1)
+	property Color DisabledText = Color(0.612, 0.639, 0.686, 1)
+	-- 엔티티 Id → { fill, text }
+	property table originals = {}
+
+	@ExecSpace("ClientOnly")
+	method void SetActive(Entity btn, boolean active)
+		-- active=true: 원래 색 + 클릭 가능 / false: 회색 + 클릭 불가.
+		if not isvalid(btn) then return end
+		local id = btn.Id
+		local spr = btn.SpriteGUIRendererComponent
+		local txt = btn.TextGUIRendererComponent
+		local legacy = btn.TextComponent
+		local orig = self.originals[id]
+		if orig == nil then
+			orig = {}
+			if isvalid(spr) then
+				local c = spr.Color
+				orig.fill = Color(c.r, c.g, c.b, c.a)
+			end
+			if isvalid(txt) then
+				local c = txt.FontColor
+				orig.text = Color(c.r, c.g, c.b, c.a)
+			elseif isvalid(legacy) then
+				local c = legacy.FontColor
+				orig.text = Color(c.r, c.g, c.b, c.a)
+			end
+			self.originals[id] = orig
+		end
+		-- 매 프레임 부르는 화면(연구소 등)에서 같은 상태를 다시 칠하지 않는다.
+		if orig.active == active then return end
+		orig.active = active
+
+		-- ui8 조각 스킨 버튼: 본체 스프라이트는 투명이므로 조각 이미지를 비활성 나무로 바꾼다.
+		local skinned = _UI8Skin ~= nil and _UI8Skin:HasSkin(btn)
+		if skinned then
+			if orig.variant == nil then orig.variant = _UI8Skin:GetVariant(btn) end
+			if active then
+				if orig.variant ~= "" then _UI8Skin:SetVariant(btn, orig.variant) end
+			else
+				_UI8Skin:SetVariant(btn, "btn_disabled")
+			end
+			_UI8Skin:SetLocked(btn, not active)
+		elseif isvalid(spr) then
+			if active then
+				if orig.fill ~= nil then spr.Color = orig.fill end
+			else
+				spr.Color = self.DisabledFill
+			end
+		end
+		local textColor = self.DisabledText
+		-- ui8 비활성 나무 그림은 회색이라 회색 글자가 묻힌다 → 밝은 회백색
+		if skinned then textColor = Color(0.88, 0.85, 0.80, 1) end
+		if active and orig.text ~= nil then textColor = orig.text end
+		if isvalid(txt) then
+			txt.FontColor = textColor
+		elseif isvalid(legacy) then
+			legacy.FontColor = textColor
+		end
+		local bc = btn.ButtonComponent
+		if isvalid(bc) then bc.Enable = active end
+	end
+
+end

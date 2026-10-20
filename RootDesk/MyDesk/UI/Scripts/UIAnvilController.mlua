@@ -1,7 +1,8 @@
 @Component
 script UIAnvilController extends Component
 
-	-- 대장간 모루 창 (AnvilGroup/AnvilPopup): 왼쪽 = 장착 장비 6칸 + 손에 든 도구, 오른쪽 = 강화 / 주문 부여.
+	-- 대장간 모루 창 (AnvilGroup/AnvilPopup): 왼쪽 = 가방 격자(강화·주문 가능한 장비만, 장착 여부 무관),
+	-- 오른쪽 = 강화 칸 + 강화 / 주문 부여. 격자 칸을 누르면 강화 칸에 올라가고, 강화 칸을 누르면 내린다(마크식).
 	-- 데이터·판정은 전부 서버(PlayerInventory.ServerRequestEnhance / ServerRequestEnchant). 이 창은 표시와 요청만 한다.
 	-- 자식은 이름으로 찾는다(Bg/…) — 재생성으로 UUID 가 바뀌어도 안 깨지게.
 
@@ -11,7 +12,16 @@ script UIAnvilController extends Component
 	property Color RowSelectedColor = Color(0.55, 0.4, 0.12, 1)
 	property Color RowDisabledColor = Color(0.14, 0.12, 0.1, 1)
 
-	property integer selectedRow = 1
+	property string selectedKey = ""
+	property table bagItems = {}
+	property string bagSig = ""
+	property table cellHandlers = {}
+	property any partHoverHandler = nil
+	property any partHideTimer = nil
+	-- 주문 파츠 칸에 올리거나(PC) 누르면(모바일) 뜨는 "얻는 법" 툴팁. 칸이 좁아 본문에 다 쓰면 말줄임으로 잘렸다.
+	property string PartHelpTitle = "주문 파츠 얻는 법"
+	property string PartHelpBody = "· 연구소에서 연구해 파츠 제작법을 배운 뒤\n  제작대에서 만듭니다.\n· 희귀 파츠는 보스를 처치하면 얻을 수 있습니다."
+	property number PartHelpTapSeconds = 6
 	property integer selectedEnch = 1
 	property integer partIndex = 1
 	property number refreshAccum = 0
@@ -22,20 +32,31 @@ script UIAnvilController extends Component
 		-- 버튼 연결 + 초기 숨김.
 		self.Entity.Enable = false
 		self.handlers = {}
-		for i = 1, 7 do
-			local idx = i
-			self:Bind("Slot_" .. i, function() self:SelectRow(idx) end)
+		self:Bind("TargetSlot", function() self:SelectKey("") end)
+		-- 가방 격자: GridView 는 숨긴 칸(BagCell)을 복제해 쓴다 — 복제 원본은 실행 중에 넣어야 칸이 생긴다.
+		local gridEnt = self:Child("BagGrid")
+		if isvalid(gridEnt) and isvalid(gridEnt.GridViewComponent) then
+			local tpl = gridEnt:GetChildByName("BagCell")
+			if isvalid(tpl) then gridEnt.GridViewComponent.ItemEntity = tpl end
+			gridEnt.GridViewComponent.OnRefresh = function(index, entity) self:RefreshCell(index, entity) end
+		else
+			log_warning("[ANVIL-UI] missing BagGrid")
 		end
 		for i = 1, 3 do
 			local idx = i
 			self:Bind("Ench_" .. i, function() self:SelectEnch(idx) end)
 		end
 		self:Bind("PartPrev", function() self:ShiftPart(-1) end)
+		self:Bind("PartName", function() self:ShowPartHelp(true) end)
+		local partEnt = self:Child("PartName")
+		if isvalid(partEnt) then
+			self.partHoverHandler = partEnt:ConnectEvent(ButtonStateChangeEvent, function(ev) self:OnPartHover(ev) end)
+		end
 		self:Bind("PartNext", function() self:ShiftPart(1) end)
 		self:Bind("BtnEnhance", function() self:RequestEnhance() end)
 		self:Bind("BtnEnchant", function() self:RequestEnchant() end)
 		self:Bind("BtnClose", function() self:Close() end)
-		log("[ANVIL-UI] ready handlers=" .. tostring(#self.handlers))
+		log("[VRF][ANVIL-UI] ready handlers=" .. tostring(#self.handlers))
 	end
 
 	@ExecSpace("ClientOnly")
@@ -45,6 +66,53 @@ script UIAnvilController extends Component
 			if isvalid(h.entity) then h.entity:DisconnectEvent(ButtonClickEvent, h.cb) end
 		end
 		self.handlers = {}
+		for ent, h in pairs(self.cellHandlers) do
+			if isvalid(ent) then ent:DisconnectEvent(ButtonClickEvent, h) end
+		end
+		self.cellHandlers = {}
+		local partEnt = self:Child("PartName")
+		if isvalid(partEnt) and self.partHoverHandler ~= nil then partEnt:DisconnectEvent(ButtonStateChangeEvent, self.partHoverHandler) end
+		self.partHoverHandler = nil
+		self:HidePartHelp()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnPartHover(any ev)
+		-- 마우스를 올리면 얻는 법 툴팁, 벗어나면 닫는다.
+		if ev == nil then return end
+		if ev.state == ButtonState.Hover then
+			self:ShowPartHelp(false)
+		elseif ev.state == ButtonState.Normal and self.partHideTimer == nil then
+			self:HidePartHelp()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowPartHelp(boolean byTap)
+		-- 공용 툴팁으로 "주문 파츠 얻는 법". 누른 경우(모바일)는 PartHelpTapSeconds 뒤 저절로 닫는다.
+		if _UITooltipLogic == nil then return end
+		if not self.Entity.Enable then return end
+		_UITooltipLogic:ShowAtCursor("anvilpart", self.PartHelpTitle, self.PartHelpBody, "", Color(1.0, 0.9, 0.7, 1))
+		if self.partHideTimer ~= nil then
+			_TimerService:ClearTimer(self.partHideTimer)
+			self.partHideTimer = nil
+		end
+		if byTap then
+			self.partHideTimer = _TimerService:SetTimerOnce(function()
+				self.partHideTimer = nil
+				self:HidePartHelp()
+			end, self.PartHelpTapSeconds)
+		end
+		log("[VRF][ANVIL-UI] part help tap=" .. tostring(byTap))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void HidePartHelp()
+		if self.partHideTimer ~= nil then
+			_TimerService:ClearTimer(self.partHideTimer)
+			self.partHideTimer = nil
+		end
+		if _UITooltipLogic ~= nil then _UITooltipLogic:Hide("anvilpart") end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -78,20 +146,33 @@ script UIAnvilController extends Component
 	@ExecSpace("ClientOnly")
 	method void SetColor(string name, Color c)
 		local e = self:Child(name)
-		if isvalid(e) and isvalid(e.SpriteGUIRendererComponent) then e.SpriteGUIRendererComponent.Color = c end
+		if not isvalid(e) then return end
+		-- ui8 줄 그림: 선택색 = 앰버 줄(글자 진하게), 그 외 = 나무 줄
+		if _UI8Skin ~= nil and _UI8Skin:HasSkin(e) then
+			local sel = (c.r == self.RowSelectedColor.r and c.g == self.RowSelectedColor.g and c.b == self.RowSelectedColor.b)
+			_UI8Skin:SetVariant(e, sel and "row_sel" or "row")
+			local t = e.TextGUIRendererComponent
+			if isvalid(t) then
+				if sel then t.FontColor = Color(0.27, 0.13, 0.04, 1) else t.FontColor = Color(0.93, 0.88, 0.78, 1) end
+			end
+			return
+		end
+		if isvalid(e.SpriteGUIRendererComponent) then e.SpriteGUIRendererComponent.Color = c end
 	end
 
 	@ExecSpace("ClientOnly")
 	method void Open()
 		self.Entity.Enable = true
 		self.refreshAccum = 0
+		self.bagSig = "" -- 열 때마다 격자를 새로 그린다
 		self:Refresh()
-		log("[ANVIL-UI] open")
+		log("[VRF][ANVIL-UI] open target=" .. self.selectedKey)
 	end
 
 	@ExecSpace("ClientOnly")
 	method void Close()
 		self.Entity.Enable = false
+		self:HidePartHelp()
 		log("[ANVIL-UI] close")
 	end
 
@@ -115,22 +196,103 @@ script UIAnvilController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
-	method table GetRows(any inv)
-		-- 행 = 장비 6칸(캐릭터 창 순서) + 손에 든 도구. { slot, label, key }
-		local rows = {}
+	method table GetBagItems(any inv)
+		-- 가방에서 강화 또는 주문 부여가 되는 물건만 { key, name, count, mark }. 장착 중(장)·손에 든 것(E)이 먼저, 나머지는 이름순.
+		local equipped = {}
+		local order = 0
 		for _, slot in ipairs(inv:GetGearSlotOrder()) do
-			table.insert(rows, { slot = slot, label = inv:GetGearSlotLabel(slot), key = inv:GetGearKey(slot) })
+			local k = inv:GetGearKey(slot)
+			if k ~= "" and equipped[k] == nil then
+				order = order + 1
+				equipped[k] = { mark = "장", order = order }
+			end
 		end
-		table.insert(rows, { slot = "tool", label = "손에 든 도구", key = inv.EquippedTool or "" })
-		return rows
+		local held = inv.EquippedTool or ""
+		if held ~= "" and equipped[held] == nil then equipped[held] = { mark = "E", order = order + 1 } end
+		local list = {}
+		local items = inv:SafeDecodeJson(inv.InventoryDataJson, {})
+		for key, v in pairs(items) do
+			local count = 0
+			if type(v) == "table" then count = v.count or 1 else count = tonumber(v) or 0 end
+			if count > 0 then
+				local name = inv:GetBaseItemName(key)
+				if inv:GetItemText(name, "EnhanceGroup") ~= "" or inv:GetEnchantSlotCount(key) > 0 then
+					local eq = equipped[key]
+					local mark = ""
+					local ord = 999
+					if eq ~= nil then
+						mark = eq.mark
+						ord = eq.order
+					end
+					table.insert(list, { key = key, name = name, count = count, mark = mark, order = ord, disp = inv:GetItemDisplayName(name) })
+				end
+			end
+		end
+		table.sort(list, function(a, b)
+			if a.order ~= b.order then return a.order < b.order end
+			if a.disp ~= b.disp then return a.disp < b.disp end
+			return a.key < b.key
+		end)
+		return list
 	end
 
 	@ExecSpace("ClientOnly")
-	method void SelectRow(integer idx)
-		self.selectedRow = idx
+	method void SelectKey(string key)
+		-- 강화 칸에 올리기("" = 내리기).
+		self.selectedKey = key
 		self.selectedEnch = 1
 		self.partIndex = 1
+		self.bagSig = "" -- 선택 표시가 바뀌므로 격자를 다시 그린다
 		self:Refresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshCell(integer index, Entity cell)
+		-- GridView 칸 하나 그리기 (index 0부터). 강화 칸에 올라간 물건은 칸을 앰버로, 아이콘을 흐리게.
+		local data = self.bagItems[index + 1]
+		if data == nil or not isvalid(cell) then return end
+		local inv = self:GetInventory()
+		if inv == nil then return end
+		local on = data.key == self.selectedKey
+		if isvalid(cell.SpriteGUIRendererComponent) then
+			if on then cell.SpriteGUIRendererComponent.Color = Color(1, 0.78, 0.35, 1) else cell.SpriteGUIRendererComponent.Color = Color(1, 1, 1, 1) end
+		end
+		local icon = cell:GetChildByName("Icon")
+		if isvalid(icon) and isvalid(icon.SpriteGUIRendererComponent) then
+			local ruid = inv:GetItemText(data.name, "IconRUID")
+			icon.Enable = ruid ~= ""
+			if ruid ~= "" then icon.SpriteGUIRendererComponent.ImageRUID = ruid end
+			if on then icon.SpriteGUIRendererComponent.Color = Color(1, 1, 1, 0.35) else icon.SpriteGUIRendererComponent.Color = Color(1, 1, 1, 1) end
+		end
+		local lvEnt = cell:GetChildByName("Lv")
+		if isvalid(lvEnt) and isvalid(lvEnt.TextGUIRendererComponent) then
+			local lv = inv:GetEnhanceData(data.key).lv
+			local t = ""
+			if lv > 0 then t = "+" .. tostring(lv) end
+			if data.count > 1 then
+				if t ~= "" then t = t .. " " end
+				t = t .. "x" .. tostring(data.count)
+			end
+			lvEnt.TextGUIRendererComponent.Text = t
+		end
+		local badge = cell:GetChildByName("Badge")
+		if isvalid(badge) then
+			badge.Enable = data.mark ~= ""
+			if data.mark ~= "" then
+				if isvalid(badge.TextGUIRendererComponent) then badge.TextGUIRendererComponent.Text = data.mark end
+				if isvalid(badge.SpriteGUIRendererComponent) then
+					if data.mark == "E" then badge.SpriteGUIRendererComponent.Color = Color(0.06, 0.62, 0.45, 1) else badge.SpriteGUIRendererComponent.Color = Color(0.80, 0.55, 0.10, 1) end
+				end
+			end
+		end
+		local old = self.cellHandlers[cell]
+		if old ~= nil then cell:DisconnectEvent(ButtonClickEvent, old) end
+		local key = data.key
+		self.cellHandlers[cell] = cell:ConnectEvent(ButtonClickEvent, function()
+			if self.ClickSoundRUID ~= "" then _BGMManager:PlayInGameSound(self.ClickSoundRUID, 1.0) end
+			-- 이미 올라간 칸을 다시 누르면 내린다
+			if key == self.selectedKey then self:SelectKey("") else self:SelectKey(key) end
+		end)
 	end
 
 	@ExecSpace("ClientOnly")
@@ -147,7 +309,7 @@ script UIAnvilController extends Component
 
 	@ExecSpace("ClientOnly")
 	method table GetUsableParts(any inv, string equipSlot)
-		-- 이 장비 칸에 새길 수 있는 보유 파츠 { row, id }.
+		-- 이 장비 칸에 부여할 수 있는 보유 파츠 { row, id }.
 		local list = {}
 		local ds = _DataService:GetTable("EnchantPartDataSet")
 		if ds == nil then return list end
@@ -188,33 +350,41 @@ script UIAnvilController extends Component
 		-- 창 전체 다시 그리기.
 		local inv = self:GetInventory()
 		if inv == nil then return end
-		local rows = self:GetRows(inv)
-		if self.selectedRow < 1 or self.selectedRow > #rows then self.selectedRow = 1 end
+		local list = self:GetBagItems(inv)
+		self.bagItems = list
 
-		-- 왼쪽: 칸 목록
-		for i = 1, 7 do
-			local r = rows[i]
-			if r ~= nil then
-				local body = "비어 있음"
-				if r.key ~= "" then
-					local base = inv:GetBaseItemName(r.key)
-					body = inv:GetItemDisplayName(base)
-					local lv = inv:GetEnhanceData(r.key).lv
-					if lv > 0 then body = body .. " +" .. tostring(lv) end
-				end
-				self:SetText("Slot_" .. i, r.label .. "\n" .. body)
-				self:SetColor("Slot_" .. i, i == self.selectedRow and self.RowSelectedColor or self.RowColor)
-			end
+		-- 강화 칸에 올린 물건이 가방에서 사라졌으면(버림·판매) 내린다
+		local key = self.selectedKey
+		if key ~= "" and not inv:OwnsItemKey(key) then
+			key = ""
+			self.selectedKey = ""
 		end
 
-		local row = rows[self.selectedRow]
-		local key = row.key
+		-- 왼쪽: 가방 격자 (내용이 바뀐 때만 다시 그린다 — 0.25초 주기 갱신이라)
+		local sigParts = { key }
+		for _, it in ipairs(list) do
+			table.insert(sigParts, it.key .. ":" .. tostring(it.count) .. ":" .. it.mark .. ":" .. tostring(inv:GetEnhanceData(it.key).lv))
+		end
+		local sig = table.concat(sigParts, "|")
+		if sig ~= self.bagSig then
+			self.bagSig = sig
+			local gridEnt = self:Child("BagGrid")
+			if isvalid(gridEnt) and isvalid(gridEnt.GridViewComponent) then
+				gridEnt.GridViewComponent.TotalCount = #list
+				gridEnt.GridViewComponent:Refresh(false, true)
+			end
+			local empty = self:Child("BagEmpty")
+			if isvalid(empty) then empty.Enable = #list == 0 end
+			log("[VRF][ANVIL-UI] bag n=" .. tostring(#list) .. " target=" .. key)
+		end
+
 		local icon = self:Child("ItemIcon")
 		if key == "" then
 			if isvalid(icon) then icon.Enable = false end
-			self:SetText("ItemName", row.label .. " — 비어 있음")
+			self:SetText("ItemName", "강화 칸이 비어 있습니다")
 			self:SetText("ItemStat", "")
-			self:SetText("EnhanceInfo", "캐릭터 창에서 장비를 장착하거나 도구를 손에 들면\n여기서 강화하고 주문을 새길 수 있습니다.")
+			self:SetText("EnhanceInfo", "왼쪽 가방에서 장비를 누르면 강화 칸에 올라갑니다.\n강화 칸(또는 같은 칸)을 다시 누르면 내립니다.")
+			if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(self:Child("BtnEnhance"), false) end
 			self:RefreshEnchant(inv, "", "", 0)
 			return
 		end
@@ -227,9 +397,10 @@ script UIAnvilController extends Component
 		self:SetText("ItemName", inv:GetItemDisplayName(baseName))
 		self:SetText("ItemStat", self:StatLine(inv, key, baseName))
 
-		-- 강화
+		-- 강화 (비용이 모자라면 부족한 항목을 빨갛게 하고 버튼을 회색 비활성으로 둔다)
 		local lv = inv:GetEnhanceData(key).lv
 		local info = ""
+		local canEnhance = false
 		if inv:GetItemText(baseName, "EnhanceGroup") == "" then
 			info = "이 물건은 강화할 수 없습니다."
 		else
@@ -242,18 +413,26 @@ script UIAnvilController extends Component
 				local costItem = tostring(nextRow:GetItem("CostItem") or "")
 				local costCount = math.floor(tonumber(nextRow:GetItem("CostItemCount")) or 0)
 				info = string.format("다음 +%d · 성공 확률 %d%%  (실패해도 장비는 안전)", lv + 1, math.floor(rate + 0.5))
-				local cost = "비용: 코인 " .. tostring(coin) .. " (보유 " .. tostring(inv.Coin) .. ")"
+				local coinOk = inv.Coin >= coin
+				local coinStr = "코인 " .. tostring(coin) .. " (보유 " .. tostring(inv.Coin) .. ")"
+				if not coinOk then coinStr = "<color=#EF4444>" .. coinStr .. "</color>" end
+				local cost = "비용: " .. coinStr
+				local itemOk = true
 				if costItem ~= "" and costCount > 0 then
-					cost = cost .. " · " .. inv:GetItemDisplayName(costItem) .. " " .. tostring(costCount) .. " (보유 " .. tostring(inv:GetItemCount(costItem)) .. ")"
+					local owned = inv:GetItemCount(costItem)
+					itemOk = owned >= costCount
+					local itemStr = inv:GetItemDisplayName(costItem) .. " " .. tostring(costCount) .. " (보유 " .. tostring(owned) .. ")"
+					if not itemOk then itemStr = "<color=#EF4444>" .. itemStr .. "</color>" end
+					cost = cost .. " · " .. itemStr
 				end
 				info = info .. "\n" .. cost
+				canEnhance = coinOk and itemOk
 			end
 		end
 		self:SetText("EnhanceInfo", info)
+		if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(self:Child("BtnEnhance"), canEnhance) end
 
-		local equipSlot = row.slot
-		if equipSlot == "tool" then equipSlot = inv:GetItemEquipSlot(baseName) end
-		self:RefreshEnchant(inv, key, equipSlot, inv:GetEnchantSlotCount(key))
+		self:RefreshEnchant(inv, key, inv:GetItemEquipSlot(baseName), inv:GetEnchantSlotCount(key))
 	end
 
 	@ExecSpace("ClientOnly")
@@ -285,17 +464,21 @@ script UIAnvilController extends Component
 
 		local researchLv = inv:GetResearchLevel()
 		local odds = self:OddsText(researchLv)
+		local btnEnchant = self:Child("BtnEnchant")
 		if key == "" or slots <= 0 then
-			if key ~= "" then self:SetText("EnchantTitle", "이 물건에는 주문을 새길 수 없습니다") else self:SetText("EnchantTitle", "주문 부여") end
+			if key ~= "" then self:SetText("EnchantTitle", "이 장비에는 주문을 부여할 수 없습니다") else self:SetText("EnchantTitle", "주문 부여") end
 			self:SetText("PartName", "")
 			self:SetText("OddsText", odds)
+			if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(btnEnchant, false) end
 			return
 		end
-		self:SetText("EnchantTitle", "주문 부여 — 새길 슬롯을 고르세요 (덮어쓰기)")
+		self:SetText("EnchantTitle", "부여할 슬롯을 선택하시오")
 		local parts = self:GetUsableParts(inv, equipSlot)
 		if #parts == 0 then
-			self:SetText("PartName", "새길 수 있는 파츠가 없습니다\n연구소 연구 → 제작대에서 제작 · 희귀 파츠는 보스")
+			-- 얻는 법은 칸에 다 안 들어가 말줄임으로 잘렸다 → 칸에 올리거나 누르면 툴팁(ShowPartHelp)으로 보여 준다.
+			self:SetText("PartName", "주문 파츠가 없습니다.\n(눌러서 얻는 법 보기)")
 			self:SetText("OddsText", odds)
+			if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(btnEnchant, false) end
 			return
 		end
 		if self.partIndex < 1 then self.partIndex = #parts end
@@ -306,8 +489,10 @@ script UIAnvilController extends Component
 		local hi = inv:FormatEnchantValue(p.row, tonumber(p.row:GetItem("ValS_Max")) or 0)
 		self:SetText("PartName", string.format("%s (보유 %d)  %d/%d\n%s %s ~ %s", inv:GetItemDisplayName(p.id), inv:GetItemCount(p.id), self.partIndex, #parts, label, lo, hi))
 		local minLv = math.floor(tonumber(p.row:GetItem("MinResearchLv")) or 1)
-		if researchLv < minLv then odds = "이 파츠는 연구 Lv." .. tostring(minLv) .. " 이상 필요 (현재 Lv." .. tostring(researchLv) .. ")" end
+		local canEnchant = researchLv >= minLv
+		if not canEnchant then odds = "이 파츠는 연구 Lv." .. tostring(minLv) .. " 이상 필요 (현재 Lv." .. tostring(researchLv) .. ")" end
 		self:SetText("OddsText", odds)
+		if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(btnEnchant, canEnchant) end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -336,29 +521,24 @@ script UIAnvilController extends Component
 	method void RequestEnhance()
 		local inv = self:GetInventory()
 		if inv == nil then return end
-		local rows = self:GetRows(inv)
-		local row = rows[self.selectedRow]
-		if row == nil or row.key == "" then return end
-		inv:ServerRequestEnhance(row.key)
-		log("[ANVIL-UI] request enhance " .. row.key)
+		local key = self.selectedKey
+		if key == "" or not inv:OwnsItemKey(key) then return end
+		inv:ServerRequestEnhance(key)
+		log("[VRF][ANVIL-UI] request enhance " .. key)
 	end
 
 	@ExecSpace("ClientOnly")
 	method void RequestEnchant()
 		local inv = self:GetInventory()
 		if inv == nil then return end
-		local rows = self:GetRows(inv)
-		local row = rows[self.selectedRow]
-		if row == nil or row.key == "" then return end
-		local baseName = inv:GetBaseItemName(row.key)
-		local equipSlot = row.slot
-		if equipSlot == "tool" then equipSlot = inv:GetItemEquipSlot(baseName) end
-		local parts = self:GetUsableParts(inv, equipSlot)
+		local key = self.selectedKey
+		if key == "" or not inv:OwnsItemKey(key) then return end
+		local parts = self:GetUsableParts(inv, inv:GetItemEquipSlot(inv:GetBaseItemName(key)))
 		if #parts == 0 then return end
 		local idx = self.partIndex
 		if idx < 1 or idx > #parts then idx = 1 end
-		inv:ServerRequestEnchant(row.key, parts[idx].id, self.selectedEnch)
-		log("[ANVIL-UI] request enchant " .. row.key .. " part=" .. parts[idx].id .. " slot=" .. tostring(self.selectedEnch))
+		inv:ServerRequestEnchant(key, parts[idx].id, self.selectedEnch)
+		log("[ANVIL-UI] request enchant " .. key .. " part=" .. parts[idx].id .. " slot=" .. tostring(self.selectedEnch))
 	end
 
 end

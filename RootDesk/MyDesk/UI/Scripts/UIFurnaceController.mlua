@@ -76,16 +76,12 @@ script UIFurnaceController extends Component
 			if isvalid(titleEnt) and isvalid(titleEnt.TextComponent) then
 				titleEnt.TextComponent.Text = titleText
 			end
-			if isvalid(bg.UITransformComponent) then
-				bg.UITransformComponent.anchoredPosition = Vector2(330, 0)
-			end
+			-- 가방 창과 20px 간격으로 붙여 가운데에 나란히 놓고 윗변을 맞춘다(사이로 캐릭터가 비치지 않게).
+			self:LayoutBesideInventory(bg)
 		end
-		
+
 		local invPopup = _EntityService:GetEntityByPath("/ui/PopupGroup/InventoryPopup")
 		if isvalid(invPopup) then
-			if isvalid(invPopup.UITransformComponent) then
-				invPopup.UITransformComponent.anchoredPosition = Vector2(-310, 0)
-			end
 			local invController = invPopup:GetComponent("script.UIInventoryController")
 			if isvalid(invController) then
 				invController:Open()
@@ -96,6 +92,28 @@ script UIFurnaceController extends Component
 					invController.tooltipPanel.Enable = false
 				end
 			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LayoutBesideInventory(Entity bg)
+		-- 가방 창 + 이 창을 20px 간격으로 붙여 화면 가운데에 나란히 두고, 두 창의 윗변을 맞춘다.
+		if not isvalid(bg) or not isvalid(bg.UITransformComponent) then return end
+		local stationSize = bg.UITransformComponent.RectSize
+		local invPopup = _EntityService:GetEntityByPath("/ui/PopupGroup/InventoryPopup")
+		local invTf = nil
+		local bagW = 800
+		local bagH = 700
+		if isvalid(invPopup) and isvalid(invPopup.UITransformComponent) then
+			invTf = invPopup.UITransformComponent
+			bagW = invTf.RectSize.x
+			bagH = invTf.RectSize.y
+		end
+		local gap = 20
+		local left = -(bagW + gap + stationSize.x) / 2
+		bg.UITransformComponent.anchoredPosition = Vector2(left + bagW + gap + stationSize.x / 2, (bagH - stationSize.y) / 2)
+		if invTf ~= nil then
+			invTf.anchoredPosition = Vector2(left + bagW / 2, 0)
 		end
 	end
 
@@ -183,6 +201,11 @@ script UIFurnaceController extends Component
 		
 		local fuelIcon = self.fuelSlot:GetChildByName("Icon")
 		local fuelCountText = self.fuelSlot:GetChildByName("Count")
+		-- 빈 연료 칸에만 흐린 불꽃(공식 스프라이트)을 보여 "여기에 연료"임을 알린다.
+		local fuelMark = self.fuelSlot:GetChildByName("Watermark")
+		if isvalid(fuelMark) then
+			fuelMark.Enable = not (furnace.FuelItemName ~= "" and furnace.FuelItemCount > 0)
+		end
 		if isvalid(fuelIcon) and isvalid(fuelCountText) then
 			if furnace.FuelItemName ~= "" and furnace.FuelItemCount > 0 then
 				fuelIcon.Enable = true
@@ -236,6 +259,11 @@ script UIFurnaceController extends Component
 				ratio = math.min(1.0, furnace.ProgressTime / duration)
 			end
 			progressBarEnt.SliderComponent.Value = ratio
+			-- ui8: 나무 화살표 채움(가로 Filled)
+			local arrowFill = progressBarEnt:GetChildByName("ArrowFill")
+			if isvalid(arrowFill) and isvalid(arrowFill.SpriteGUIRendererComponent) then
+				arrowFill.SpriteGUIRendererComponent.FillAmount = ratio
+			end
 		end
 		
 		local fuelTextEnt = self.fuelText

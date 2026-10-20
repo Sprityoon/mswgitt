@@ -726,14 +726,19 @@ script UISkillTreeController extends Component
 			local activeText = Color(0.12, 0.18, 0.12, 1.0)
 			local disabledText = Color(0.72, 0.72, 0.75, 1.0)
 			local spr = levelBtn.SpriteGUIRendererComponent
+			local ui8 = _UI8Skin ~= nil and _UI8Skin:Pick(levelBtn, st.can, "btn_green", "btn_disabled")
 			if isvalid(spr) then
-				if st.can then spr.Color = activeBg else spr.Color = disabledBg end
+				if not ui8 then
+					if st.can then spr.Color = activeBg else spr.Color = disabledBg end
+				end
 				spr.RaycastTarget = true
 			end
 			local txt = levelBtn.TextComponent
 			if isvalid(txt) then
 				txt.Text = st.label
-				if st.can then txt.FontColor = activeText else txt.FontColor = disabledText end
+				if ui8 then
+					if st.can then txt.FontColor = Color(1, 0.94, 0.8, 1) else txt.FontColor = disabledText end
+				elseif st.can then txt.FontColor = activeText else txt.FontColor = disabledText end
 			end
 			levelBtn.Enable = true
 		end
@@ -749,12 +754,16 @@ script UISkillTreeController extends Component
 			if isvalid(be) then
 				local on = (sid ~= "" and slots[i] == sid)
 				local spr = be.SpriteGUIRendererComponent
-				if isvalid(spr) then
+				-- ui8 칸 그림: 장착된 슬롯 = 금테 칸, 글자는 밝게 유지
+				local ui8 = _UI8Skin ~= nil and _UI8Skin:Pick(be, on, "slot_sel", "slot")
+				if isvalid(spr) and not ui8 then
 					if on then spr.Color = selBg else spr.Color = idleBg end
 				end
 				local txt = be.TextComponent
 				if isvalid(txt) then
-					if on then txt.FontColor = selText else txt.FontColor = idleText end
+					if ui8 then
+						if on then txt.FontColor = Color(1, 0.86, 0.45, 1) else txt.FontColor = idleText end
+					elseif on then txt.FontColor = selText else txt.FontColor = idleText end
 				end
 			end
 		end
@@ -1454,7 +1463,9 @@ script UISkillTreeController extends Component
 				else
 					tab.Enable = true
 					self:SetTextSafe(tab, self:CategoryLabel(cat), true)
-					if isvalid(tab.SpriteGUIRendererComponent) then
+					if self:PaintTab(tab, cat == self.selectedCat) then
+						-- ui8 탭 그림
+					elseif isvalid(tab.SpriteGUIRendererComponent) then
 						if cat == self.selectedCat then
 							tab.SpriteGUIRendererComponent.Color = Color(0.65, 0.43, 0.15, 1)
 						else
@@ -1495,11 +1506,27 @@ script UISkillTreeController extends Component
 		for _, tab in ipairs({ common, job }) do
 			if isvalid(tab) and isvalid(tab.SpriteGUIRendererComponent) then
 				local selected = (tab == common and self.selectedJobId == "") or (tab == job and self.selectedJobId ~= "")
-				tab.SpriteGUIRendererComponent.Color = selected and Color(0.65, 0.43, 0.15, 1) or Color(0.24, 0.18, 0.13, 1)
+				if not self:PaintTab(tab, selected) then
+					tab.SpriteGUIRendererComponent.Color = selected and Color(0.65, 0.43, 0.15, 1) or Color(0.24, 0.18, 0.13, 1)
+				end
 			end
 		end
 		local hint = pc.JobId == "" and "마을 멘토의 기초 과제 → 전직 시험" or "실전 수련을 보고하면 다음 기술이 열립니다."
 		self:SetTextSafe(self.Entity:GetChildByName("JobHint", true), hint, true)
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean PaintTab(Entity tab, boolean selected)
+		-- ui8 탭이면 그림(앰버/나무)과 글자색을 바꾸고 true. 아니면 false(호출부가 기존 색칠).
+		if _UI8Skin == nil or not _UI8Skin:Pick(tab, selected, "tab_on", "tab_off") then return false end
+		local c = Color(1, 0.94, 0.8, 1)
+		if selected then c = Color(0.27, 0.13, 0.04, 1) end
+		if isvalid(tab.TextComponent) then
+			tab.TextComponent.FontColor = c
+		elseif isvalid(tab.TextGUIRendererComponent) then
+			tab.TextGUIRendererComponent.FontColor = c
+		end
+		return true
 	end
 
 end

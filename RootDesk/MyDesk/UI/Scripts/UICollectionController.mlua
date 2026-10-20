@@ -278,10 +278,14 @@ script UICollectionController extends Component
 		if catVal == "all" or catVal == "All" then return "전체" end
 		if catVal == "tool" then return "도구" end
 		if catVal == "furniture" then return "가구" end
+		if catVal == "equipment" then return "장비" end
 		if catVal == "resource" then return "자원" end
 		if catVal == "consumable" then return "소모품" end
 		if catVal == "misc" then return "기타" end
 		if catVal == "build" then return "건축" end
+		if catVal == "part" then return "강화 파츠" end
+		if catVal == "blueprint" then return "설계도" end
+		if catVal == "piece" then return "건축 부품" end
 		return catVal
 	end
 
@@ -308,7 +312,8 @@ script UICollectionController extends Component
 			if isvalid(chip) then
 				local selected = (i == self.selectedCategoryIndex)
 				local spr = chip.SpriteGUIRendererComponent
-				if isvalid(spr) then
+				-- ui8 스킨이면 탭 그림을 바꾸고, 아니면 기존 색칠
+				if isvalid(spr) and not (_UI8Skin ~= nil and _UI8Skin:Pick(chip, selected, "tab_on", "tab_off")) then
 					if selected then spr.Color = selectedBg else spr.Color = idleBg end
 				end
 				local textComp = chip.TextComponent
@@ -343,7 +348,8 @@ script UICollectionController extends Component
 	method void StyleTabEntity(Entity tabEnt, boolean selected, Color selBg, Color idleBg, Color selText, Color idleText)
 		if not isvalid(tabEnt) then return end
 		local spr = tabEnt.SpriteGUIRendererComponent
-		if isvalid(spr) then
+		-- ui8 스킨이면 탭 그림을 바꾸고, 아니면 기존 색칠
+		if isvalid(spr) and not (_UI8Skin ~= nil and _UI8Skin:Pick(tabEnt, selected, "tab_on", "tab_off")) then
 			if selected then spr.Color = selBg else spr.Color = idleBg end
 		end
 		local txt = tabEnt.TextComponent

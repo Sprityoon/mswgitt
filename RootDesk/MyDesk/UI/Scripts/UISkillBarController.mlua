@@ -336,7 +336,14 @@ script UISkillBarController extends Component
 					end
 				end
 
-				if isvalid(slot.SpriteGUIRendererComponent) then
+				if _UI8Skin ~= nil and _UI8Skin:HasSkin(slot) then
+					-- ui8 나무 칸: 그림 그대로, 잠김만 흐리게
+					if locked then
+						slot.SpriteGUIRendererComponent.Color = Color(0.6, 0.6, 0.6, 1)
+					else
+						slot.SpriteGUIRendererComponent.Color = Color(1, 1, 1, 1)
+					end
+				elseif isvalid(slot.SpriteGUIRendererComponent) then
 					if empty then
 						slot.SpriteGUIRendererComponent.Color = emptyBg
 					elseif locked then

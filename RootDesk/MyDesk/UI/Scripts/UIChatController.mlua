@@ -235,6 +235,11 @@ script UIChatController extends Component
 					t = label:GetComponent("TextGUIRendererComponent")
 				end
 			end
+			-- ui8 탭 그림: 켜짐=앰버(진한 글자) / 꺼짐=나무(크림 글자)
+			if _UI8Skin ~= nil and _UI8Skin:Pick(tabEnt, isActive, "tab_on", "tab_off") then
+				if isvalid(t) then t.FontColor = isActive and Color(0.27, 0.13, 0.04, 1) or Color(1, 0.94, 0.8, 1) end
+				return
+			end
 			if isvalid(t) then
 				t.FontColor = isActive and activeColor or inactiveColor
 			end

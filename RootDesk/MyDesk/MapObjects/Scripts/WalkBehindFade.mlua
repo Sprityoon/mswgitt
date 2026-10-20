@@ -90,20 +90,15 @@ script WalkBehindFade extends Component
 				and playerPos.y < (boxMaxY + north)
 		end
 
+		-- 2026-10-18 성능: 가림 상태가 바뀔 때만 알파를 바꾼다(매 프레임 SetAlpha 제거). 들고날 때마다 찍던 로그도 뺐다.
+		if isCovered == (self._WasCovered == true) then return end
+		self._WasCovered = isCovered
 		local sprite = self.Entity.SpriteRendererComponent
 		if not isvalid(sprite) then return end
 		if isCovered then
 			sprite:SetAlpha(self.CoveredAlpha)
-			if not self._WasCovered then
-				self._WasCovered = true
-				log(string.format("[T83][WALKBEHIND] cover=true entity=%s", tostring(self.Entity.Name)))
-			end
 		else
 			sprite:SetAlpha(1.0)
-			if self._WasCovered then
-				self._WasCovered = false
-				log(string.format("[T83][WALKBEHIND] cover=false entity=%s", tostring(self.Entity.Name)))
-			end
 		end
 	end
 

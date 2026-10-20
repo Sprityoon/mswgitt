@@ -78,6 +78,7 @@ script UIQuestLogController extends Component
 		self._T.slot2 = self.Entity:GetChildByName("RewardSlot2", true)
 		self._T.slot3 = self.Entity:GetChildByName("RewardSlot3", true)
 		self._T.slot4 = self.Entity:GetChildByName("RewardSlot4", true)
+		self._T.rewardLabel = self.Entity:GetChildByName("RewardLabel", true)
 	end
 
 	@ExecSpace("ClientOnly")
@@ -275,7 +276,8 @@ script UIQuestLogController extends Component
 	method void StyleTabEntity(Entity tabEnt, boolean selected, Color selBg, Color idleBg, Color selText, Color idleText)
 		if not isvalid(tabEnt) then return end
 		local spr = tabEnt.SpriteGUIRendererComponent
-		if isvalid(spr) then
+		-- ui8 스킨이면 탭 그림을 바꾸고, 아니면 기존 색칠
+		if isvalid(spr) and not (_UI8Skin ~= nil and _UI8Skin:Pick(tabEnt, selected, "tab_on", "tab_off")) then
 			if selected then spr.Color = selBg else spr.Color = idleBg end
 		end
 		self:SetLabelColor(tabEnt, selected and selText or idleText)
@@ -306,6 +308,9 @@ script UIQuestLogController extends Component
 	@ExecSpace("ClientOnly")
 	method void RebuildList()
 		self:ClearRows()
+		-- 빈 목록이면 ShowEmptyDetail 이 왼쪽 목록 칸과 "보상" 제목을 숨긴다 — 다시 채울 때는 먼저 켠다.
+		if isvalid(self._T.listScroll) then self._T.listScroll.Enable = true end
+		if isvalid(self._T.rewardLabel) then self._T.rewardLabel.Enable = true end
 		local pq = self:GetLocalQuest()
 		if pq == nil or pq.UserDataTable == nil then
 			self:ShowEmptyDetail()
@@ -378,14 +383,12 @@ script UIQuestLogController extends Component
 		if _QuestCategoryEnum ~= nil then
 			pcall(function() cat = _QuestCategoryEnum:ToUIStr(data.CategoryEnum) or "" end)
 		end
+		-- 카테고리 문자열이 없는 퀘스트(데이터의 Main)는 메인 퀘스트다 — [서브] 칩과 줄을 맞춰 [메인] 칩을 단다.
+		if cat == nil or cat == "" then cat = "메인" end
 		local chipEnt = row:GetChildByName("Chip")
 		if isvalid(chipEnt) then
-			if cat ~= nil and cat ~= "" then
-				chipEnt.Enable = true
-				self:SetLabel(chipEnt, cat)
-			else
-				chipEnt.Enable = false
-			end
+			chipEnt.Enable = true
+			self:SetLabel(chipEnt, cat)
 		end
 		local nameEnt = row:GetChildByName("Name")
 		self:SetLabel(nameEnt, data.Name or "")
@@ -556,13 +559,24 @@ script UIQuestLogController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void ShowEmptyDetail()
-		local empty = "이 목록에 퀘스트가 없습니다."
-		if self.currentTab == "progress" then empty = "진행 중인 퀘스트가 없습니다."
-		elseif self.currentTab == "ready" then empty = "완료할 수 있는 퀘스트가 없습니다."
-		elseif self.currentTab == "done" then empty = "완료한 퀘스트가 없습니다."
+		-- 제목 칸 폭(388)·글자 26 에서 한 줄에 14자 안쪽이어야 말줄임으로 잘리지 않는다.
+		local empty = "이 목록에 퀘스트가 없어요."
+		local sub = "퀘스트를 받으면 여기에 나타나요."
+		if self.currentTab == "progress" then
+			empty = "진행 중인 퀘스트가 없어요."
+			sub = "마을 사람들에게 말을 걸어\n퀘스트를 받아 보세요."
+		elseif self.currentTab == "ready" then
+			empty = "완료 가능한 퀘스트가 없어요."
+			sub = "목표를 달성하면\n이 탭에서 확인할 수 있어요."
+		elseif self.currentTab == "done" then
+			empty = "완료한 퀘스트가 없어요."
+			sub = "완료한 퀘스트가 여기에 쌓여요."
 		end
+		-- 빈 상태에서는 왼쪽 빈 목록 칸과 "보상" 제목을 숨기고 안내만 남긴다.
+		if isvalid(self._T.listScroll) then self._T.listScroll.Enable = false end
+		if isvalid(self._T.rewardLabel) then self._T.rewardLabel.Enable = false end
 		self:SetLabel(self._T.detailName, empty)
-		self:SetLabel(self._T.detailDesc, "왼쪽에서 퀘스트를 선택하세요.")
+		self:SetLabel(self._T.detailDesc, sub)
 		self:SetLabel(self._T.detailGoal, "")
 		self:SetLabel(self._T.detailHint, "")
 		self:LayoutDetailScroll()
@@ -586,7 +600,8 @@ script UIQuestLogController extends Component
 			if isvalid(row) then
 				local selected = (self.rowIds[i] == self.selectedId)
 				local spr = row.SpriteGUIRendererComponent
-				if isvalid(spr) then
+				-- ui8 스킨이면 줄 그림(선택=앰버)을 바꾸고, 아니면 기존 색칠
+				if isvalid(spr) and not (_UI8Skin ~= nil and _UI8Skin:Pick(row, selected, "row_sel", "row")) then
 					if selected then spr.Color = selBg else spr.Color = idleBg end
 				end
 				self:SetLabelColor(row:GetChildByName("Name"), selected and selText or idleName)
@@ -657,7 +672,8 @@ script UIQuestLogController extends Component
 		local isTracked = (tracked == self.selectedId)
 		self:SetLabel(btn, isTracked and "추적 해제" or "추적")
 		local spr = btn.SpriteGUIRendererComponent
-		if isvalid(spr) then
+		-- ui8 스킨: 추적 중=앰버, 아니면 초록
+		if isvalid(spr) and not (_UI8Skin ~= nil and _UI8Skin:Pick(btn, isTracked, "btn_amber", "btn_green")) then
 			if isTracked then
 				spr.Color = Color(0.55, 0.42, 0.14, 0.95)
 			else

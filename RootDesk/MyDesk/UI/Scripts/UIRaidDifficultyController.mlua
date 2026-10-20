@@ -240,6 +240,20 @@ script UIRaidDifficultyController extends Component
 	method void SetBoxTint(Entity target, Color tint)
 		if not isvalid(target) then return end
 		local spr = target.SpriteGUIRendererComponent
+		-- ui8 스킨: 밝은 색(선택)=앰버, 아주 어두운 색(잠김)=비활성/흐린 줄, 그 외=기본 줄
+		if _UI8Skin ~= nil and _UI8Skin:HasSkin(target) then
+			local lum = tint.r * 0.3 + tint.g * 0.59 + tint.b * 0.11
+			local isBtn = (target == self.btnEnter)
+			if lum > 0.5 then
+				_UI8Skin:SetVariant(target, isBtn and "btn_amber" or "row_sel")
+			elseif lum < 0.16 then
+				_UI8Skin:SetVariant(target, isBtn and "btn_disabled" or "row")
+				if not isBtn and isvalid(spr) then spr.Color = Color(0.6, 0.6, 0.6, 1) end
+			else
+				_UI8Skin:SetVariant(target, isBtn and "btn_oak" or "row")
+			end
+			return
+		end
 		if isvalid(spr) then spr.Color = tint end
 	end
 

@@ -11,6 +11,15 @@ script MonsterSpawner extends Logic
 	@HideFromInspector property number NightHpMult = 1.5
 	@HideFromInspector property number NightAtkMult = 1.5
 	@HideFromInspector property boolean TuningLoaded = false
+	-- 2026-10-18 성능: 빈 사냥터에는 스폰하지 않고, 비어 있는 채로 이 시간이 지나면 스포너가 만든 몬스터를 정리한다.
+	-- 이전에는 Play 시작 때 사냥터 12곳 전부에 맵당 10(밤 20)마리가 상주했다(휴면은 AI 만 멈출 뿐 엔티티·물리는 유지).
+	property number EmptyDespawnSeconds = 30.0
+	property number OccupancyCheckInterval = 1.0 -- 사람 있는 맵 판정 주기(초)
+	-- 맵 이름 → 스포너가 만든 몬스터 엔티티 목록 (수 세기·정리용 — 맵 전체 재귀 탐색을 대신한다)
+	@HideFromInspector property table spawnedByMap = {}
+	-- 맵 이름 → 비기 시작한 시각 / 마지막 보충 시각 (ServerElapsedSeconds)
+	@HideFromInspector property table emptySince = {}
+	@HideFromInspector property table lastFill = {}
 
 	@ExecSpace("ServerOnly")
 	method void OnBeginPlay()
@@ -52,9 +61,10 @@ script MonsterSpawner extends Logic
 
 		self:LoadSpawnTuning()
 
+		-- 사람 있는 맵 판정은 OccupancyCheckInterval 마다, 보충은 맵별 SpawnInterval 마다(TickMonsterSpawn 안에서).
 		self.SpawnTimerId = _TimerService:SetTimerRepeat(function()
 			self:TickMonsterSpawn()
-		end, self.SpawnInterval)
+		end, self.OccupancyCheckInterval)
 		log("MonsterSpawner: System initialized successfully.")
 	end
 
@@ -80,12 +90,65 @@ script MonsterSpawner extends Logic
 			self.IsNight = (time >= 300)
 		end
 
+		local now = _UtilLogic.ServerElapsedSeconds
 		for _, mapName in ipairs(mapNames) do
 			local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
-			if isvalid(map) then
-				self:SpawnMonstersForMap(map)
+			if isvalid(map) and isvalid(map.MapComponent) then
+				local users = _UserService:GetUsersByMapComponent(map.MapComponent)
+				local occupied = users ~= nil and #users > 0
+				if occupied then
+					self.emptySince[mapName] = nil
+					-- 막 들어왔으면(마지막 보충 기록 없음) 바로, 그 뒤로는 SpawnInterval 마다 보충
+					local last = self.lastFill[mapName]
+					if last == nil or now - last >= self.SpawnInterval then
+						self.lastFill[mapName] = now
+						self:SpawnMonstersForMap(map)
+					end
+				else
+					local since = self.emptySince[mapName]
+					if since == nil then
+						self.emptySince[mapName] = now
+					elseif now - since >= self.EmptyDespawnSeconds then
+						self:DespawnMap(mapName)
+						self.emptySince[mapName] = now
+					end
+					-- 다시 들어오면 즉시 채우도록 보충 기록을 지운다
+					self.lastFill[mapName] = nil
+				end
 			end
 		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method integer CountTracked(string mapName)
+		-- 이 맵에 스포너가 만든 살아 있는 몬스터 수. 사라진·죽은 항목은 목록에서 뺀다.
+		local list = self.spawnedByMap[mapName]
+		if list == nil then return 0 end
+		local alive = {}
+		for _, e in ipairs(list) do
+			if isvalid(e) then
+				local m = e:GetComponent("script.Monster")
+				if isvalid(m) and not m.IsDead then table.insert(alive, e) end
+			end
+		end
+		self.spawnedByMap[mapName] = alive
+		return #alive
+	end
+
+	@ExecSpace("ServerOnly")
+	method void DespawnMap(string mapName)
+		-- 빈 채로 EmptyDespawnSeconds 지난 맵: 스포너가 만든 몬스터만 정리한다(보스·소환물 등 다른 출처는 건드리지 않음).
+		local list = self.spawnedByMap[mapName]
+		if list == nil or #list == 0 then return end
+		local n = 0
+		for _, e in ipairs(list) do
+			if isvalid(e) then
+				e:Destroy()
+				n = n + 1
+			end
+		end
+		self.spawnedByMap[mapName] = {}
+		if n > 0 then log("[SPAWN] despawn " .. mapName .. " x" .. tostring(n) .. " (empty " .. tostring(self.EmptyDespawnSeconds) .. "s)") end
 	end
 
 	@ExecSpace("ServerOnly")
@@ -104,17 +167,8 @@ script MonsterSpawner extends Logic
 			return
 		end
 
-		local monsters = map:GetChildComponentsByTypeName("script.Monster", true)
-		
-		-- Count active (not dead) monsters
-		local activeCount = 0
-		if monsters then
-			for _, m in ipairs(monsters) do
-				if isvalid(m) and not m.IsDead then
-					activeCount = activeCount + 1
-				end
-			end
-		end
+		-- Count active (not dead) monsters — 스포너가 만든 목록만 센다(맵 전체 재귀 탐색은 자원 청크까지 훑어 비쌌다).
+		local activeCount = self:CountTracked(mapName)
 
 		if not self.TuningLoaded then
 			self:LoadSpawnTuning()
@@ -128,7 +182,8 @@ script MonsterSpawner extends Logic
 
 		local toSpawn = math.floor(effectiveCap - activeCount)
 		if toSpawn < 1 then return end
-		log("MonsterSpawner: Map " .. mapName .. " needs " .. toSpawn .. " monster(s). Active: " .. activeCount .. " (IsNight: " .. tostring(self.IsNight) .. ")")
+		if self.spawnedByMap[mapName] == nil then self.spawnedByMap[mapName] = {} end
+		local spawnedNow = 0
 
 		local spawnDs = _DataService:GetTable("MonsterSpawnDataSet")
 		if spawnDs == nil then return end
@@ -314,7 +369,8 @@ script MonsterSpawner extends Logic
 										if isvalid(mComp) then mComp.BaseTint = tint end
 									end
 
-									log("[SPAWN] Spawned variant monster " .. chosenOpt.modelId .. " at cell (" .. rx .. ", " .. ry .. ") in map " .. mapName .. " (HpMul=" .. chosenOpt.hpMul .. ", AtkMul=" .. chosenOpt.atkMul .. ")")
+									table.insert(self.spawnedByMap[mapName], spawnedMonster)
+									spawnedNow = spawnedNow + 1
 									spawnedOk = true
 									break
 								end
@@ -328,6 +384,10 @@ script MonsterSpawner extends Logic
 				-- Optimization: if failed to find a spot after 30 checks, break the spawn loop for this tick
 				break
 			end
+		end
+		-- 마리마다 찍던 로그 대신 보충 1회당 요약 1줄
+		if spawnedNow > 0 then
+			log("[SPAWN] " .. mapName .. " +" .. tostring(spawnedNow) .. " (active " .. tostring(activeCount + spawnedNow) .. "/" .. tostring(effectiveCap) .. ", night " .. tostring(self.IsNight) .. ")")
 		end
 	end
 

@@ -23,6 +23,10 @@ script UIDialogController extends Component
 	property integer questId = 0
 	property string mode = "talk"
 	property boolean isOpen = false
+	-- 초상화 대상 NPC(열기 직전에 호출부가 넣고, 열 때 비운다) / 초상화가 있을 때 이름표·본문을 미는 폭
+	property Entity portraitSource = nil
+	property Entity lastPortraitSource = nil
+	property number PortraitShift = 230 -- 액자 폭(210) + 여백 20
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
@@ -98,10 +102,40 @@ script UIDialogController extends Component
 		if isvalid(self.dimmer) then self.dimmer.Enable = true end
 		if isvalid(self.window) then self.window.Enable = true end
 		if isvalid(self.nameText) then self.nameText.Text = self.speakerName end
+		self:ApplyPortrait()
 		self:RefreshPage()
 		log("[DIALOG] open mode=" .. self.mode
 			.. " pages=" .. tostring(#self.pages)
 			.. " quest=" .. tostring(self.questId))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyPortrait()
+		-- NPC 초상화: 호출부(VillagerDialog)가 portraitSource 에 NPC 엔티티를 넣으면 그 외형(CostumeManager)을
+		-- 대화창 왼쪽 액자 속 UI 아바타에 그대로 옮긴다. 없으면 액자를 숨기고 이름표·본문을 원래 자리로.
+		local portrait = isvalid(self.window) and self.window:GetChildByName("Portrait") or nil
+		local art = isvalid(portrait) and portrait:GetChildByName("Art") or nil
+		local src = self.portraitSource
+		self.portraitSource = nil
+		self.lastPortraitSource = src
+		-- 마을 NPC 는 스프라이트(애니메이션 클립)로 그려진다 → 그 SpriteRUID 를 액자 속 UI 스프라이트에 그대로(클립이면 재생)
+		local ruid = ""
+		if isvalid(src) and isvalid(src.SpriteRendererComponent) then ruid = src.SpriteRendererComponent.SpriteRUID or "" end
+		local show = isvalid(art) and isvalid(art.SpriteGUIRendererComponent) and ruid ~= ""
+		if show then
+			art.SpriteGUIRendererComponent.ImageRUID = ruid
+		end
+		if isvalid(portrait) then portrait.Enable = show end
+		-- 액자가 있으면 이름표·본문을 오른쪽으로(액자 폭만큼), 없으면 원래 자리
+		local shift = 0
+		if show then shift = self.PortraitShift end
+		local plate = self.window:GetChildByName("NamePlate")
+		if isvalid(plate) then plate.UITransformComponent.anchoredPosition = Vector2(24 + shift, plate.UITransformComponent.anchoredPosition.y) end
+		if isvalid(self.bodyText) then
+			local tr = self.bodyText.Entity.UITransformComponent
+			tr.anchoredPosition = Vector2(40 + shift, tr.anchoredPosition.y)
+			tr.RectSize = Vector2(1200 - shift, tr.RectSize.y)
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -203,6 +237,8 @@ script UIDialogController extends Component
 		table.sort(list, function(a, b) return a.seq < b.seq end)
 		local pages = {}
 		for _, e in ipairs(list) do table.insert(pages, e.text) end
+		-- 수락/거절 답변은 방금 대화한 NPC 초상화를 그대로 쓴다
+		self.portraitSource = self.lastPortraitSource
 		self:OpenTalk(speaker, pages)
 		log("[DIALOG] phase reply quest=" .. tostring(questId) .. " phase=" .. phase .. " pages=" .. tostring(#pages))
 	end

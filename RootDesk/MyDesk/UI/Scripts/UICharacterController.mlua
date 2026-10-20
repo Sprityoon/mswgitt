@@ -49,6 +49,8 @@ script UICharacterController extends Component
 	property string GearSlotPathPrefix = "/ui/PopupGroup/CharacterPopup/Gear/Slot_"
 	-- 창이 열려 있는 동안 수치를 다시 그리는 주기(초)
 	property number LiveRefreshInterval = 0.5
+	-- 게이지 채움 바의 가득 찼을 때 폭(.ui Stat/<Hp|Mp|Sta|Xp>/Bar/Fill 의 RectSize.x 와 같아야 한다)
+	property number GaugeFillWidth = 284
 
 	property number CurrentScale = 1.0
 	property number TargetScale = 1.0
@@ -56,6 +58,8 @@ script UICharacterController extends Component
 	property any closeHandler = nil
 	property any liveTimer = nil
 	property table slotHandlers = {}
+	-- 장비 칸별 장착 아이템 이름(툴팁용). 빈 칸 = ""
+	property table gearNames = {}
 	property number LastToggleTime = 0
 
 	@ExecSpace("ClientOnly")
@@ -82,7 +86,11 @@ script UICharacterController extends Component
 			if isvalid(ent) then
 				local s = slot
 				local h = ent:ConnectEvent(ButtonClickEvent, function() self:OnGearSlotClicked(s) end)
-				self.slotHandlers[slot] = { entity = ent, eventHandler = h }
+				-- 마우스를 올리면 장착한 아이템 이름을 공용 툴팁으로 보여 준다.
+				local hh = ent:ConnectEvent(ButtonStateChangeEvent, function(ev)
+					self:OnGearSlotHover(s, ev)
+				end)
+				self.slotHandlers[slot] = { entity = ent, eventHandler = h, hoverHandler = hh }
 			end
 		end
 
@@ -112,9 +120,26 @@ script UICharacterController extends Component
 		for _, rec in pairs(self.slotHandlers) do
 			if rec ~= nil and isvalid(rec.entity) then
 				rec.entity:DisconnectEvent(ButtonClickEvent, rec.eventHandler)
+				if rec.hoverHandler ~= nil then
+					rec.entity:DisconnectEvent(ButtonStateChangeEvent, rec.hoverHandler)
+				end
 			end
 		end
+		if _UITooltipLogic ~= nil then _UITooltipLogic:Hide("gearslot") end
 		self:StopLiveRefresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnGearSlotHover(string slot, any ev)
+		-- 장비 칸 위에 마우스가 오면 장착 아이템 이름 툴팁, 벗어나면 닫는다. 빈 칸은 띄우지 않는다.
+		if _UITooltipLogic == nil or ev == nil then return end
+		if ev.state == ButtonState.Hover then
+			local name = self.gearNames[slot] or ""
+			if name == "" then return end
+			_UITooltipLogic:ShowAtCursor("gearslot", name, "칸을 누르면 장비를 해제합니다.", "", Color(1.0, 0.9, 0.7, 1))
+		elseif ev.state == ButtonState.Normal or ev.state == ButtonState.Released then
+			_UITooltipLogic:Hide("gearslot")
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -255,7 +280,17 @@ script UICharacterController extends Component
 		local okJ, jName = pcall(function() return controller:GetJobName(controller.JobId or "") end)
 		if okJ and jName ~= nil and jName ~= "" then jobTitle = jName end
 		self:SetText(self.jobText, jobTitle)
-		self:SetText(self.nameText, controller.PlayerName or player.Name)
+		-- 이름: HUD 프로필과 같은 출처(PlayerComponent.Nickname). PlayerController 에는 PlayerName 프로퍼티가 없어(nil)
+		-- 예전에는 엔티티 이름 = 숫자 UserId 가 그대로 노출됐다 — 어떤 경우에도 UserId 는 보여 주지 않는다.
+		local displayName = ""
+		if isvalid(playerComp) then
+			displayName = playerComp.Nickname or ""
+			if displayName == "" and _PersistenceManager ~= nil then
+				displayName = _PersistenceManager:GetCharacterName(playerComp.UserId) or ""
+			end
+		end
+		if displayName == "" then displayName = "모험가" end
+		self:SetText(self.nameText, displayName)
 		self:SetText(self.spText, "보유 SP  " .. tostring(controller.SP or 0))
 
 		-- 핵심 능력치 (서버 피해식과 같은 출처: 계열 공격력 = 레벨·능력치·버프 + 장비 무기)
@@ -283,7 +318,11 @@ script UICharacterController extends Component
 		local xp = controller.XP or 0
 		local maxXP = math.max(1, controller.MaxXP or 100)
 		local pct = math.floor((xp / maxXP) * 1000) / 10
-		self:SetGauge(self.xpFill, self.xpVal, xp, maxXP, " (" .. tostring(pct) .. "%)")
+		self:SetGauge(self.xpFill, self.xpVal, xp, maxXP, "")
+		-- EXP 는 수치가 길어 게이지 폭을 넘기므로 "1.1% (15,127 / 1,576,337)" 로 퍼센트를 앞에 두고 천 단위 쉼표를 넣는다.
+		if isvalid(self.xpVal) then
+			self.xpVal.Text = tostring(pct) .. "% (" .. self:FormatThousands(xp) .. " / " .. self:FormatThousands(maxXP) .. ")"
+		end
 
 		-- 세부 능력치
 		local reduction = 0
@@ -394,8 +433,10 @@ script UICharacterController extends Component
 						icon.SpriteGUIRendererComponent.Color = Color(1, 1, 1, 1)
 						icon.Enable = true
 					end
+					-- 칸 글자는 고정 부위명만(긴 아이템 이름이 칸 밖으로 넘치던 문제). 아이템 이름은 마우스를 올리면 툴팁으로 본다.
+					self.gearNames[slot] = disp
 					if isvalid(text) then
-						text.Text = disp
+						text.Text = label
 						text.FontColor = Color(1.0, 0.9, 0.7, 1)
 					end
 					if slot == "weapon" then
@@ -404,6 +445,7 @@ script UICharacterController extends Component
 					end
 				else
 					if isvalid(icon) then icon.Enable = false end
+					self.gearNames[slot] = ""
 					if isvalid(text) then
 						text.Text = label
 						text.FontColor = Color(0.72, 0.64, 0.52, 1)
@@ -452,7 +494,13 @@ script UICharacterController extends Component
 		local m = maxVal
 		if m == nil or m <= 0 then m = 1 end
 		if isvalid(fill) then
-			fill.FillAmount = math.max(0, math.min(1, cur / m))
+			-- HUD 프로필 바와 같은 방식: 9-slice 바의 폭을 비율만큼 줄인다(Filled 로 늘린 원형 이미지가 찌그러지던 문제).
+			local ratio = math.max(0, math.min(1, cur / m))
+			local tf = fill.Entity.UITransformComponent
+			if isvalid(tf) then
+				tf.RectSize = Vector2(math.max(1, self.GaugeFillWidth * ratio), tf.RectSize.y)
+			end
+			fill.Entity.Enable = ratio > 0.001
 		end
 		if isvalid(valText) then
 			valText.Text = tostring(math.floor(cur)) .. " / " .. tostring(math.floor(m)) .. suffix

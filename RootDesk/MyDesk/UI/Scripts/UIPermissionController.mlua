@@ -42,6 +42,13 @@ script UIPermissionController extends Component
 	@ExecSpace("ClientOnly")
 	method void Open()
 		self.Entity.Enable = true
+		-- 내 영지 밖에서는 서버가 목록을 보내지 않는다 → 이전 목록을 비우고 이유를 가운데에 안내한다.
+		if not self:IsInOwnEstate() then
+			self:ClearRows()
+			self:SetEmptyHint("영지 주인만 권한을 조정할 수 있어요.\n내 영지 안에서 열어 주세요.")
+			return
+		end
+		self:SetEmptyHint("")
 		local localPlayer = _UserService.LocalPlayer
 		if isvalid(localPlayer) then
 			local pc = localPlayer:GetComponent("script.PlayerController")
@@ -50,6 +57,44 @@ script UIPermissionController extends Component
 				pc:ServerRequestOpenPermissionSettings()
 			end
 		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsInOwnEstate()
+		-- 로컬 플레이어가 자기 영지(Home_<본인 UserId>)에 있는지.
+		local localPlayer = _UserService.LocalPlayer
+		if not isvalid(localPlayer) or not isvalid(localPlayer.PlayerComponent) then return false end
+		local map = localPlayer.CurrentMap
+		if not isvalid(map) then return false end
+		return map.Name == "Home_" .. localPlayer.PlayerComponent.UserId
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ClearRows()
+		-- 손님 줄 4개를 모두 숨기고 목록을 비운다.
+		self.guestList = {}
+		for i = 1, 4 do
+			local row = self["row" .. i]
+			if isvalid(row) then row.Enable = false end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetEmptyHint(string text)
+		-- 목록이 빌 때 본문 가운데에 띄우는 안내. 빈 문자열이면 숨긴다. (Bg/EmptyHint — 글자는 스프라이트와 같은 엔티티)
+		local e = self._T.emptyE
+		if not isvalid(e) then
+			e = self.Entity:GetChildByName("EmptyHint", true)
+			self._T.emptyE = e
+		end
+		if not isvalid(e) then return end
+		if text == nil or text == "" then
+			e.Enable = false
+			return
+		end
+		local tc = e.TextGUIRendererComponent
+		if isvalid(tc) then tc.Text = text end
+		e.Enable = true
 	end
 
 	@ExecSpace("ClientOnly")
@@ -83,12 +128,19 @@ script UIPermissionController extends Component
 			end
 		end
 		
+		-- 손님이 한 명도 없으면 빈 본문 대신 안내를 띄운다.
+		if decoded[1] == nil then
+			self:SetEmptyHint("지금 영지에 다른 모험가가 없어요.\n손님이 들어오면 여기에 나타납니다.")
+		else
+			self:SetEmptyHint("")
+		end
+
 		for i = 1, 4 do
 			local guest = decoded[i]
 			local row = self["row" .. i]
 			local nameText = self["row" .. i .. "_name"]
 			local btn = self["row" .. i .. "_btn"]
-			
+
 			if isvalid(row) then
 				if guest then
 					row.Enable = true
@@ -98,7 +150,10 @@ script UIPermissionController extends Component
 						nameText.TextComponent.Text = guest.Name
 					end
 					
-					if isvalid(btn) then
+					if isvalid(btn) and _UI8Skin ~= nil and _UI8Skin:Pick(btn, guest.HasPermission, "toggle_on", "toggle_off") then
+						-- ui8: ON/OFF 스위치 그림이 권한 여부를 보여 주므로 버튼 글자는 비운다(누르면 전환)
+						if isvalid(btn.TextComponent) then btn.TextComponent.Text = "" end
+					elseif isvalid(btn) then
 						if guest.HasPermission then
 							if isvalid(btn.TextComponent) then btn.TextComponent.Text = "권한 회수" end
 							if isvalid(btn.SpriteGUIRendererComponent) then

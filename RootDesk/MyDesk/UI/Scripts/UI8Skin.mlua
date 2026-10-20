@@ -1,0 +1,277 @@
+@Logic
+script UI8Skin extends Logic
+	-- ui8 스킨 런타임 헬퍼 (클라 전용). 스킨은 두 가지다.
+	--  ① 조각: "Skin" 자식(조각 스프라이트 묶음). 본체 스프라이트가 투명이라 ButtonComponent ColorTint 호버가
+	--     보이지 않으므로 여기서 호버·누름 색을 조각에 직접 칠한다.
+	--  ② 통째: 자기 글자가 있는 버튼·탭·줄은 본체 스프라이트가 ui8 통째 그림이다(호버는 ColorTint 그대로).
+	-- 선택/비활성 같은 상태 전환은 둘 다 SetVariant / Pick 으로 그림을 바꾼다(호출부는 Skin 이 없으면 기존 색칠로 폴백).
+	-- 조각 조립은 scripts/ui8_kit.cjs, RUID 표는 scripts/ui8_apply_20261017.cjs 가 아래 표시 사이에 생성한다.
+
+	property Color HoverTint = Color(1, 0.93, 0.76, 1)
+	property Color PressTint = Color(0.82, 0.78, 0.72, 1)
+	-- 변형 이름 → { 조각 이름 → RUID }
+	property table variants = {}
+	-- "c" 조각 RUID → 변형 이름 (조각 스킨의 현재 변형 역조회)
+	property table byCenter = {}
+	-- 통째 그림 RUID → 변형 이름 (통째 스킨의 현재 변형 역조회)
+	property table byFull = {}
+	-- 엔티티 Id → { entity, eh(버튼 상태 이벤트 핸들러) }
+	property table bound = {}
+	-- 엔티티 Id → true : 호버 칠하기 잠금(비활성 버튼)
+	property table locked = {}
+	property integer scanTimer = 0
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 변형 표를 만들고, 열린 UI 를 주기적으로 훑어 Skin 버튼에 호버 색을 연결한다.
+		self.variants = self:BuildVariants()
+		for name, v in pairs(self.variants) do
+			if v.c ~= nil then self.byCenter[v.c] = name end
+			if v.full ~= nil then self.byFull[v.full] = name end
+		end
+		self:Scan()
+		self.scanTimer = _TimerService:SetTimerRepeat(function() self:Scan() end, 1)
+		log("[VRF][UI8] skin logic ready variants=" .. tostring(self:CountVariants()))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 타이머와 버튼 이벤트를 정리한다.
+		if self.scanTimer ~= 0 then _TimerService:ClearTimer(self.scanTimer) end
+		for _, rec in pairs(self.bound) do
+			if isvalid(rec.entity) and rec.eh ~= nil then rec.entity:DisconnectEvent(ButtonStateChangeEvent, rec.eh) end
+		end
+		self.bound = {}
+	end
+
+	method integer CountVariants()
+		-- 변형 개수(로그용).
+		local n = 0
+		for _ in pairs(self.variants) do n = n + 1 end
+		return n
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Scan()
+		-- 켜져 있는 UI 를 훑어 아직 연결하지 않은 Skin 버튼을 연결하고, 사라진 엔티티는 지운다.
+		for id, rec in pairs(self.bound) do
+			if not isvalid(rec.entity) then self.bound[id] = nil end
+		end
+		local roots = { "/ui/PopupGroup", "/ui/HUDGroup", "/ui/DialogGroup", "/ui/NamingGroup", "/ui/AnvilGroup", "/ui/SettingsGroup" }
+		for _, p in ipairs(roots) do
+			local e = _EntityService:GetEntityByPath(p)
+			if isvalid(e) then self:Walk(e) end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Walk(Entity e)
+		-- 꺼진 가지는 건너뛴다(열릴 때 다음 훑기에서 연결).
+		if not e.Enable then return end
+		if e.Name == "Skin" then return end
+		if self.bound[e.Id] == nil and isvalid(e.ButtonComponent) then
+			local skin = e:GetChildByName("Skin")
+			if isvalid(skin) then self:Bind(e) end
+		end
+		for _, c in ipairs(e.Children:ToTable()) do
+			self:Walk(c)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Bind(Entity e)
+		-- 버튼 상태 변화(호버·누름)를 조각 색으로 옮긴다.
+		local target = e
+		local h = e:ConnectEvent(ButtonStateChangeEvent, function(ev)
+			self:OnButtonState(target, ev.state)
+		end)
+		self.bound[e.Id] = { entity = e, eh = h }
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnButtonState(Entity e, any state)
+		-- 호버=따뜻한 골드, 누름=어둡게, 나머지=원래색.
+		if not isvalid(e) or self.locked[e.Id] then return end
+		local tint = Color(1, 1, 1, 1)
+		if state == ButtonState.Hover then
+			tint = self.HoverTint
+		elseif state == ButtonState.Pressed then
+			tint = self.PressTint
+		end
+		self:Tint(e, tint)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Tint(Entity e, Color tint)
+		-- Skin 조각 전부에 같은 색을 곱한다.
+		local skin = e:GetChildByName("Skin")
+		if not isvalid(skin) then return end
+		for _, p in ipairs(skin.Children:ToTable()) do
+			local s = p.SpriteGUIRendererComponent
+			if isvalid(s) then s.Color = Color(tint.r, tint.g, tint.b, s.Color.a) end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean HasSkin(Entity e)
+		-- ui8 스킨(조각 Skin 자식 또는 통째 그림)인지.
+		if not isvalid(e) then return false end
+		if isvalid(e:GetChildByName("Skin")) then return true end
+		local s = e.SpriteGUIRendererComponent
+		if not isvalid(s) then return false end
+		return self.byFull[s.ImageRUID.DataId] ~= nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method string GetVariant(Entity e)
+		-- 현재 변형 이름(조각은 가운데 조각, 통째는 본체 RUID 역조회). 모르면 "".
+		local skin = e:GetChildByName("Skin")
+		if not isvalid(skin) then
+			local s = e.SpriteGUIRendererComponent
+			if not isvalid(s) then return "" end
+			local fn = self.byFull[s.ImageRUID.DataId]
+			if fn == nil then return "" end
+			return fn
+		end
+		local c = skin:GetChildByName("c")
+		if not isvalid(c) then return "" end
+		local name = self.byCenter[c.SpriteGUIRendererComponent.ImageRUID.DataId]
+		if name == nil then return "" end
+		return name
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean SetVariant(Entity e, string name)
+		-- 조각 이미지를 변형 name 으로 바꾼다. 조각 구성이 다른 변형(9↔3)은 없는 조각을 건너뛴다.
+		if not isvalid(e) then return false end
+		local v = self.variants[name]
+		if v == nil then
+			log_warning("[UI8] unknown variant " .. name)
+			return false
+		end
+		local skin = e:GetChildByName("Skin")
+		if not isvalid(skin) then
+			-- 통째 스킨: 본체 그림을 바꾸고 색은 원래대로.
+			local s = e.SpriteGUIRendererComponent
+			if not isvalid(s) or v.full == nil then return false end
+			s.ImageRUID = v.full
+			s.Color = Color(1, 1, 1, s.Color.a)
+			return true
+		end
+		for k, r in pairs(v) do
+			local p = skin:GetChildByName(k)
+			if isvalid(p) then p.SpriteGUIRendererComponent.ImageRUID = r end
+		end
+		return true
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean Pick(Entity e, boolean on, string onVariant, string offVariant)
+		-- 선택/해제 같은 두 상태 전환. Skin 이 없으면 false — 호출부가 기존 색 칠하기로 처리한다.
+		if not self:HasSkin(e) then return false end
+		if on then
+			self:SetVariant(e, onVariant)
+		else
+			self:SetVariant(e, offVariant)
+		end
+		return true
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetLocked(Entity e, boolean on)
+		-- 비활성 버튼은 호버 색을 칠하지 않고 원래색으로 둔다.
+		if not isvalid(e) then return end
+		if on then
+			self.locked[e.Id] = true
+			self:Tint(e, Color(1, 1, 1, 1))
+		else
+			self.locked[e.Id] = nil
+		end
+	end
+
+	method table BuildVariants()
+		-- 생성 영역(손으로 고치지 말 것 — scripts/ui8_apply_20261017.cjs 가 다시 쓴다).
+		local t = {}
+		-- [UI8-VARIANTS-BEGIN]
+		t["popup_frame"] = { full = "a9803eda3ef94f27afa4288f6384b974", tl = "fc86ce9c1f8647a3a20ddea40fc6ad43", t = "16a36296620b456e82cf5dc9d404adb6", tr = "6e1ac317cb084c908a58fc27e1ad19c4", l = "5c6e925ece724be482abb19f51b775dc", c = "232350c1a4a645f6a670319b699ed044", r = "f79d70ad9fca43cdbd5ee48cbf1d01f9", bl = "49d68773812846368bdb76ae9760a816", b = "a604a4fcbf76445eab1bb0686a980134", br = "4e6f76c9f0d34495a9a99dc29512a260" }
+		t["subpanel"] = { full = "c0a5ff7d776e42b0a44ebe720422864e", tl = "9216f914c3254195a07ae1a235d34350", t = "56f441778a2f49438dff56435def2032", tr = "b67381a5c55c4379b358c5527def1fa8", l = "0931ab466c004d24bec1cc8a07b1da67", c = "2536d882177f4f4a916d97d31985122b", r = "06aba675a72245c093b0de316066d539", bl = "10c284039a6b489da44ecbbef0197bd8", b = "51f9f6c393894c49b6826404a107a7e6", br = "a0941287b3a94fff9a5bc717acac0994" }
+		t["dialog_frame"] = { full = "6c14a296c624476f901975526e731bfc", tl = "0d15aa6b5ae74c38953e5840c91ff440", t = "8fc86fd6fe864981906228bb29ba26ba", tr = "312c6d7139b94ae880c109f676a7858e", l = "d7cf60a82ad648e99c311866071c0766", c = "30f2f4633e8f4aa29a5ce5807523b63f", r = "bcee9cd5f5394993b77b27bdee59b18d", bl = "aea45a016f114e2d9a4f8123ebdfc569", b = "632df6814c7f496ab40913766db7c34f", br = "18fa4cbce86b4cb4862b9f57a49ac3af" }
+		t["darkwood_filigree"] = { full = "66eb734bb7e14bd799c4ca822d62ef1b", tl = "bdb8c319edfc4563b681a9e34c289594", t = "d5a65abeace34f3a90edd9929846eb3e", tr = "e750aa0fb3e8446383eaa49bcb88b615", l = "c6664b8b19e34123a7642ad966e2797e", c = "1451707c05454c3898e1a0573314b2ca", r = "9beffab73ead4d76a45980098121e823", bl = "d6a0b823332d47c7b8d00836090a77a1", b = "264a92e44385407581ed75e63e95da34", br = "a8b64b9d6f8c4abda0f3ba2605bc0cd7" }
+		t["fish_board"] = { full = "fb5eb5c3436449668aef3ddb7cd38842", tl = "22e0251a4ff54a579bf661a07e42fbf1", t = "dc84f1988f0c4c8abd0d7b61cdbbf939", tr = "d219f3c71841474abc365132a465196f", l = "797171a0da1d459dba7c9a7dc0cdadaf", c = "7f97f9240a3f4a979a4d5bbd6d76d648", r = "1dc21941e53b43f19b3dd2f6a886adb1", bl = "7887285fa389492bb15074c6c0fa77a0", b = "a1876c67b0d1432d9d328a91e7f5c39e", br = "f025777f9d0343f09361cf4fbc69032e" }
+		t["status_card"] = { full = "82b714a1f6f04812b5d2075234184bfe", tl = "105e24187ee14d7b960a08436e47c358", t = "2c604d95a00f41bb98dceeda0b939ec8", tr = "527e52a031e84326a5664b064134cd49", l = "5d3b40cee14b4617b3ae40d47568f3bd", c = "b12bc680eb21494db3f36a4a853c62b5", r = "264b7c48626b4c16b1c50961a6cdc275", bl = "f39b1d5f48c24a729157625cac96fc3a", b = "541f0e7bb7b849999086e3e7f6eb5249", br = "75fd3d645ced44e5bbb6c2827334ada9" }
+		t["row"] = { full = "5818835f9df4481c8b418880ade7e6aa", l = "3db306e689ee4e648785bffcec23c1d8", c = "f922b9bca2c84b6ba711c94f8801d9ea", r = "3f76fbad1759446ebdf796a321c8721d" }
+		t["row_sel"] = { full = "40f6f68a8da54646ad7e156b82bf4ba9", l = "cd6b0130ad7a48fd865a16d617e115cc", c = "4632ba13752c4253b61a99cb87bc0596", r = "4761cc1ebe8143c2a49c768bb4725996" }
+		t["row_wide"] = { full = "d5512dc4e6ed485db8d8e98366f9e705", l = "30d5aea9dfb344db8a2501e213470249", c = "764aeb7d8218472098f8aa5e9c271519", r = "309c64ebedcc47c8a57da6ec6ef1fdd1" }
+		t["row_wide_sel"] = { full = "0b0ce06e9178436aa1fa41e5fc5b08ed", l = "e892648f303d491282eaf195f7a35bb6", c = "b8ee7c8625f84f96bdb4771f70973044", r = "bfc7c7a8dd1b44c1a8be648d983ad5a7" }
+		t["btn_amber"] = { full = "40e03d848166411d8a0e3f6ea5f6e91d", l = "8fe4c20f0fc84a1bbb5dbefe687a693f", c = "3c9cde78b97f4bf6a7469e93dc570385", r = "08f7cfbffdc94e6f9a4f8c288ef7e0d6" }
+		t["btn_oak"] = { full = "e1b82a929fc943389bcdff08224b6341", l = "ba08e2625e7f4be2895ed05fecc4a395", c = "2881a01145f14642b788d658f9991555", r = "6dbeccbdc0624bbf91b12f11ed46e251" }
+		t["btn_green"] = { full = "a24e09ed5e7b49d1895e6b7935f71d12", l = "6d44bad896d64642af3a77b6c293bbea", c = "3ebb904226b14e2599cc840b4c4be65f", r = "f6ba4c81062847c9b0b8d858e945b243" }
+		t["btn_olive"] = { full = "83faa6e88ae543f68d6704cf10d914b5", l = "595f83cbe4e748028aa3842b5d2a3ad7", c = "9887a75c438342118e0326d4d9428fc9", r = "7c900045f964417dbe2594a93449c263" }
+		t["btn_red"] = { full = "1d91c5e9203d49b7a54553b9d330df8e", l = "e06426add73142c09e9b408bea44e2b4", c = "b6e2642d8a9d443f8cb7fa392b88e91b", r = "ffe1924ec21246ff87bcd9be6843caf9" }
+		t["btn_disabled"] = { full = "b88d493e65aa428cbe0d070677678eec", l = "c36fd81f34b44f8595be30851772dfc6", c = "61f85ac9a33f400abd3bab96d185dbd3", r = "6bf371d79259430e8e3886130d086893" }
+		t["fish_track"] = { full = "1e797a5b875f402e9b9392f3313d4281", l = "6df1022536164305b47b3a35f4a7e135", c = "4363478fdbd248ff9eda2b803f544336", r = "5e15f2c3bd6e42b79910aa1787581f0f" }
+		t["fish_fill_amber"] = { full = "9750b0dec9d34626a2a734fd7f1e0a20", l = "c013618354674aaa8443ed9363db5ac2", c = "5d3eed2451ad40a0807d5a5feefe5cc0", r = "275e322272d84650a5ae08f9e9cd36f1" }
+		t["fish_fill_red"] = { full = "67d91b731f924f64b86b52121f6dcc50", l = "540b7a473dac4498b7dc7217949698fe", c = "9049437917b247239dcd6927308898c9", r = "393ea071b47f40c090bd9ef63ac51814" }
+		t["fish_fill_cream"] = { full = "d5704a9f0f3446c09247a10ae95c996a", l = "cda655b93bc047bd947890901637a87c", c = "bdd86ee55b404e089324c9b5c61f0079", r = "9045c06d233943afbe6d1bcd7e776431" }
+		t["badge_left"] = { full = "7bcff1d3bc8c4c29a89484cefcd86cb5", l = "9d201689d7764415bb8baa9cb6242fc7", c = "f9d48d1bfd434025acc6db846fc5c996", r = "649ddc053924498bb49f36c3773a3963" }
+		t["badge_right"] = { full = "dde5dedbdb0f4fb5aca9d47e9442443d", l = "efd1216fdb714ef383124e0a113e2bc5", c = "7d70779b25ac443a9efeda568cbf1c09", r = "1095e0f5e72048389c67b6b377fae9d1" }
+		t["tip_plaque"] = { full = "d4b1d03a1ac3403b983a941d19a3469f", l = "26a899232eaa4b0690f193352a8282a7", c = "6f67c486ebcf4caea17ce555cdce6f3f", r = "f6db9ac25abc4fbb80cef065bd6d2e36" }
+		t["skill_node"] = { full = "cf4ffaa34ba94a13bed40aa51905821a", l = "b85efb884b154913887913c557b82d04", c = "7a2f558c27ae48a281df78325354f0a0", r = "8d4952092ed84f5dad4ef59b92d94c06" }
+		t["gauge_track"] = { full = "53fecd5199224e37a16dd0285e601703", l = "2413db0865f648d690a2b7b7310b415f", c = "78732c0bcc4f48a18b0362787f000d0c", r = "3a5a9c29095940368113a169a6adf2eb" }
+		t["gauge_hp"] = { full = "5693529d588f48edb586985965bc0b1d", l = "c16b0f64c68841508dfb1ba8e7318e8c", c = "725c046b1eb14760802b79cf691164f4", r = "7722d63815444397a1da7a1123016bf6" }
+		t["gauge_mp"] = { full = "3a8fdf8e006f42a0908ccc390d993822", l = "fc72e2cffb6b4b77bf76bfb99677ab13", c = "33045fbdc6db4ce09a0bccb1bab00773", r = "9f93b68e661d491987d753a6b4042fa1" }
+		t["gauge_st"] = { full = "f75732f1af5d470d92cd9b59c46fd487", l = "d6ef18cd39ea4a8f8f2a9120902aa593", c = "def80318822d495bad1e4fdb0533b48e", r = "00121a1000d845449fea7f56ee7d51ee" }
+		t["gauge_exp"] = { full = "31c50f3e84274f02be52d8d7d7151fae", l = "fb5759ba9b8143c5bcb80a23a279b317", c = "d9b73c806b7b48d582a495109fd26161", r = "3c109bb094ef4acd8cce8f54e105731a" }
+		t["tab_on"] = { full = "cd6aa8589818438b9a2010c69a08ade5", l = "718dbe9fb0c545d3ba5c420857720777", c = "794d0929a2854cfc999a386a08b95495", r = "0f14b59055374d4d863c80321f65f0eb" }
+		t["tab_off"] = { full = "9dcbfffd575e4a8683a9057fdde5d951", l = "a7ae88cc9de943a1bed1d1e900216234", c = "a1d25ae3452a43e7b016ccab393732a6", r = "4c73fe65a33241ffbfc992629ac6176f" }
+		t["input"] = { full = "6260492a67be40b6b20da24aec2b4ff6", l = "4deed0d311ac469d85a4d27f0dafa19f", c = "c5b746b8d69043639d11e27979d4b1e6", r = "8907251456574d30b51ffe0f7015bfaa" }
+		t["pill_badge"] = { full = "3600c78e475b4f8aa77b44c91092a2c6", l = "0a7d6d3f3be14ee6a661d2f2f9e857af", c = "223f5c00fe004dc09dcad2d6f8e6b627", r = "760e33bea1774b34893f7beb889d4cdc" }
+		t["toast_leaf"] = { full = "2c774186d9854decaa7bd5820501955f", l = "a0fb45ffd5b04c159142c2e7db8e410e", c = "fe41f6a1ff964a65b54e69457fbbce2a", r = "243b00ece7144ffd9bbbba15438f31f5" }
+		t["dialog_nameplate"] = { full = "749b26b1ee0c4e369fc1771bf1c88acc", l = "ca1f96a1846f4d7997aa8679c5c69074", c = "75b14feac27d4966a1b7256e0780274a", r = "eb562d3598d0414682a472e1cfbf0d3b" }
+		t["scroll_banner"] = { full = "636d7e2fdd7c4fbba998f17d65ab515c", l = "ad46b077025243a9a702289208e92b3f", c = "820b69a0bc604f0bb649ac54476886e1", r = "40fb2a3f4bf24f3eb472bce927334b18" }
+		t["btn_close"] = { full = "ae6b4ee3fc4748698bd5cce50bec1196" }
+		t["btn_minus"] = { full = "fc8f77bd3e8248bea522756f1ac9c088" }
+		t["btn_plus"] = { full = "60003f3131bb441baa0b7dc322aae693" }
+		t["furnace_arrow_empty"] = { full = "2b4b5f371ee8404eb1a0c6373895d413" }
+		t["furnace_arrow_fill"] = { full = "eccafc52a66a48fb957a6e5423d3612d" }
+		t["hud_attack"] = { full = "15ce35a86242466eb65d6c80ca835624" }
+		t["hud_bag"] = { full = "19b9515bc26f4de88013b662021ab5f1" }
+		t["hud_craft"] = { full = "a0e97cb7917e4b4fb1bba9aff0e11867" }
+		t["hud_info"] = { full = "710c4321099c464aa7ac17670df32679" }
+		t["hud_interact"] = { full = "98407baf4dfe49dcb1a47ad2fd59280a" }
+		t["hud_jump"] = { full = "1582c5c960904235b40f76fb26763a2e" }
+		t["icon_anvil_hammer"] = { full = "6f3a437cf9c144079daef4692a311068" }
+		t["icon_barn_chicken_sheep"] = { full = "45d6e062de2242fd846c0a916453d9f2" }
+		t["icon_biome_desert"] = { full = "76d893e89396486d97071b656e969a25" }
+		t["icon_biome_field"] = { full = "1a8448fa7b8146328fa6a9a6f2c58d2f" }
+		t["icon_biome_plateau"] = { full = "dba1cbe302e64b0fb3c547174becd425" }
+		t["icon_biome_snowfield"] = { full = "3165289cf2104f8db8ffddb20d5c58d4" }
+		t["icon_cabin_blueprint_scroll"] = { full = "1055a70048fe4eb882cdb2fde64177c3" }
+		t["icon_check_complete"] = { full = "24dc348222d54760b1f6fe81f4e1b172" }
+		t["icon_coin_gold"] = { full = "8b9cfb3796bb4c99a690a617c39142a2" }
+		t["icon_coin_pouch"] = { full = "6cf6fab307824bcf98274c7d0682acb9" }
+		t["icon_equipped_ribbon"] = { full = "3f38b6a7f8e04bea9fb0b61f3187527a" }
+		t["icon_estate_invite_envelope"] = { full = "d136047d58db4fb58a26f9f8212c00d3" }
+		t["icon_fishing_rod_bobber"] = { full = "ede38d27094946acb0d2370b4ffa99b0" }
+		t["icon_furnace_flame"] = { full = "c8fcc535032648a0b3ac07952d833bc4" }
+		t["icon_lock_permission"] = { full = "954f115a3cd445048cbf4bdd13a96b03" }
+		t["icon_quest_star"] = { full = "424d7b5bfe3542d08fe06416559f6bb4" }
+		t["icon_request_noticeboard"] = { full = "5504527ed45143feb88b3586431eaeb4" }
+		t["icon_research_scroll_magnifier"] = { full = "12670e98a9cf4f799a2dd7f65eee8b9f" }
+		t["icon_revival_phoenix_feather"] = { full = "60011169977b4921a19e9112992c3946" }
+		t["icon_territory_signpost_flag"] = { full = "8707b9d31eb24b62bb2b05c208d4d724" }
+		t["icon_whisper_chat_bubble"] = { full = "8b6424fa90c04d8abc08366632f813ae" }
+		t["portrait_frame"] = { full = "e2edeac9db064b7aba2c552137c9205e" }
+		t["quick_cell"] = { full = "e109ece153144740982ae79d9f552301" }
+		t["quick_cell_sel"] = { full = "8c119d38755c435b87b8ee3e8d8a2080" }
+		t["slot"] = { full = "2f25c3220bf74a60a686e200d1ea07fa" }
+		t["slot_equip"] = { full = "56e29bd154834bf581e5b387b073e0d8" }
+		t["slot_sel"] = { full = "c98c0e584e2c4f7692d368acf2dcb033" }
+		t["subpanel_tall"] = { full = "d9887af9fb3e420d889810002c59fe18" }
+		t["toggle_off"] = { full = "69a97f9b476e4373bcecc64f0295d3be" }
+		t["toggle_on"] = { full = "35ddbbf4f0ca41cebd833163e30f75a0" }
+		-- [UI8-VARIANTS-END]
+		return t
+	end
+
+end

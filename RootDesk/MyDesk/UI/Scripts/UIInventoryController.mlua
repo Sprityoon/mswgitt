@@ -113,6 +113,11 @@ script UIInventoryController extends Component
 
 	property any discardCancelHandler = nil
 
+	-- 수량 최소/최대 버튼 (DiscardPopup/Card/BtnMin·BtnMax — 이름으로 찾는다)
+	property any discardMinHandler = nil
+
+	property any discardMaxHandler = nil
+
 	property string SelectedForFurnace = ""
 
 	property any tabAllHandler = nil
@@ -124,6 +129,9 @@ script UIInventoryController extends Component
 
 
 	property number LastToggleTime = 0
+
+	-- 가방 안 상세 패널 크기(.ui InventoryPopup/Tooltip 과 같아야 한다)
+	property Vector2 DetailPanelSize = Vector2(300, 468)
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
@@ -189,6 +197,21 @@ script UIInventoryController extends Component
 			self.discardCancelHandler = self.btnDiscardCancel.Entity:ConnectEvent(ButtonClickEvent, function()
 				self:CloseDiscard()
 			end)
+		end
+		-- 수량 최소(1)/최대(보유 전부) — 100개 넘게 버릴 때 + 를 수십 번 누르지 않게.
+		if isvalid(self.discardPopup) then
+			self._T.btnDiscardMin = self.discardPopup:GetChildByName("BtnMin", true)
+			self._T.btnDiscardMax = self.discardPopup:GetChildByName("BtnMax", true)
+			if isvalid(self._T.btnDiscardMin) then
+				self.discardMinHandler = self._T.btnDiscardMin:ConnectEvent(ButtonClickEvent, function()
+					self:SetDiscardCount(1)
+				end)
+			end
+			if isvalid(self._T.btnDiscardMax) then
+				self.discardMaxHandler = self._T.btnDiscardMax:ConnectEvent(ButtonClickEvent, function()
+					self:SetDiscardCount(self.discardMax)
+				end)
+			end
 		end
 	end
 
@@ -262,6 +285,12 @@ script UIInventoryController extends Component
 		if isvalid(self.btnDiscardCancel) and self.discardCancelHandler then
 			self.btnDiscardCancel.Entity:DisconnectEvent(ButtonClickEvent, self.discardCancelHandler)
 		end
+		if isvalid(self._T.btnDiscardMin) and self.discardMinHandler then
+			self._T.btnDiscardMin:DisconnectEvent(ButtonClickEvent, self.discardMinHandler)
+		end
+		if isvalid(self._T.btnDiscardMax) and self.discardMaxHandler then
+			self._T.btnDiscardMax:DisconnectEvent(ButtonClickEvent, self.discardMaxHandler)
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -290,6 +319,7 @@ script UIInventoryController extends Component
 		self:ApplyScaleTween(1.0)
 		
 		self:SetTab("All")
+		self:ShowEmptyDetail()
 		self:UpdateDimmer()
 	end
 
@@ -363,9 +393,22 @@ script UIInventoryController extends Component
 			equipColor = Color(0.18, 0.34, 0.15, 1)
 		end
 		
-		if isvalid(self.tabAll) then self.tabAll.Entity.SpriteGUIRendererComponent.Color = allColor end
-		if isvalid(self.tabRes) then self.tabRes.Entity.SpriteGUIRendererComponent.Color = resColor end
-		if isvalid(self.tabEquip) then self.tabEquip.Entity.SpriteGUIRendererComponent.Color = equipColor end
+		-- ui8 스킨이면 탭 그림(앰버/나무)을 바꾸고 글자색을 맞춘다. 아니면 기존 색칠.
+		local tabs = { { self.tabAll, allColor, "All" }, { self.tabRes, resColor, "Resources" }, { self.tabEquip, equipColor, "Equipment" } }
+		for _, rec in ipairs(tabs) do
+			if isvalid(rec[1]) then
+				local ent = rec[1].Entity
+				local on = (tabName == rec[3])
+				if _UI8Skin ~= nil and _UI8Skin:Pick(ent, on, "tab_on", "tab_off") then
+					local txt = ent.TextGUIRendererComponent
+					if isvalid(txt) then
+						if on then txt.FontColor = Color(0.27, 0.13, 0.04, 1) else txt.FontColor = Color(1, 0.94, 0.8, 1) end
+					end
+				else
+					ent.SpriteGUIRendererComponent.Color = rec[2]
+				end
+			end
+		end
 		
 		self:RefreshInventoryData()
 	end
@@ -409,7 +452,8 @@ script UIInventoryController extends Component
 		
 		-- Update Capacity
 		if isvalid(self.capacityText) then
-			self.capacityText.Text = totalCount .. " / 24개"
+			-- 가방에는 칸 수 제한이 없다 — 가짜 최대치("/ 24개") 대신 보유 품목 수만 보여 준다.
+			self.capacityText.Text = "보유 품목 " .. totalCount .. "종"
 		end
 
 		self:UpdateCoinDisplay(inv)
@@ -690,17 +734,39 @@ script UIInventoryController extends Component
 		-- Count (+ equipped marker)
 		local equippedTool = self:GetEquippedToolName()
 		local countTextEntity = slotEntity:GetChildByName("Count")
+		-- 장착 표시는 수량 글자에 섞지 않고 칸 왼쪽 위 작은 배지(EquipBadge)로 분리한다.
+		-- 장 = 캐릭터 창 장비 슬롯에 등록된 아이템(주무기·방어구), E = 손에 든 도구.
+		local marker = ""
+		if self:IsGearEquippedKey(data.key) then
+			marker = "장"
+		elseif data.key == equippedTool then
+			marker = "E"
+		end
+		local badge = slotEntity:GetChildByName("EquipBadge")
+		if isvalid(badge) then
+			badge.Enable = (marker ~= "")
+			if marker ~= "" then
+				if isvalid(badge.TextGUIRendererComponent) then badge.TextGUIRendererComponent.Text = marker end
+				if isvalid(badge.SpriteGUIRendererComponent) then
+					if marker == "E" then
+						badge.SpriteGUIRendererComponent.Color = Color(0.06, 0.62, 0.45, 1)
+					else
+						badge.SpriteGUIRendererComponent.Color = Color(0.80, 0.55, 0.10, 1)
+					end
+				end
+			end
+		end
 		if isvalid(countTextEntity) and isvalid(countTextEntity.TextComponent) then
-			if self:IsGearEquippedKey(data.key) then
-				-- 캐릭터 창 장비 슬롯에 등록된 아이템 (주무기·방어구)
-				countTextEntity.TextComponent.Text = "[장착] x" .. data.count
-				countTextEntity.TextComponent.FontColor = Color(1.0, 0.82, 0.38, 1)
-			elseif data.key == equippedTool then
-				countTextEntity.TextComponent.Text = "[E] x" .. data.count
-				countTextEntity.TextComponent.FontColor = Color(0.4, 1.0, 0.4, 1)
-			else
+			if isvalid(badge) or marker == "" then
 				countTextEntity.TextComponent.Text = "x" .. data.count
 				countTextEntity.TextComponent.FontColor = Color.white
+			elseif marker == "장" then
+				-- 배지가 없는 구 .ui 폴백
+				countTextEntity.TextComponent.Text = "[장착] x" .. data.count
+				countTextEntity.TextComponent.FontColor = Color(1.0, 0.82, 0.38, 1)
+			else
+				countTextEntity.TextComponent.Text = "[E] x" .. data.count
+				countTextEntity.TextComponent.FontColor = Color(0.4, 1.0, 0.4, 1)
 			end
 		end
 		
@@ -898,11 +964,28 @@ script UIInventoryController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void HideItemTooltip()
-		if isvalid(self.tooltipPanel) then
-			self.tooltipPanel.Enable = false
-		end
+		-- 상세 패널은 가방 안 오른쪽에 붙어 있다(2026-10-16) — 닫지 않고 "선택 없음" 상태로 되돌린다.
 		self.inspectedItem = ""
 		self.inspectedCount = 0
+		self:ShowEmptyDetail()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowEmptyDetail()
+		-- 아무것도 고르지 않았을 때의 상세 패널: 안내 문구만, 버리기 버튼은 숨긴다.
+		if not isvalid(self.tooltipPanel) then return end
+		self.tooltipPanel.Enable = true
+		if isvalid(self.tooltipName) then
+			self.tooltipName.Text = "아이템을 선택하세요"
+			self.tooltipName.FontColor = Color(0.79, 0.75, 0.70, 1)
+		end
+		if isvalid(self.tooltipCount) then self.tooltipCount.Text = "" end
+		if isvalid(self.tooltipDesc) then
+			self.tooltipDesc.Text = "칸을 한 번 누르면 여기에 설명이 나와요.\n두 번 누르면 장착하거나 손에 듭니다."
+		end
+		self:LayoutDetailCard()
+		local discardBtn = self.tooltipPanel:GetChildByName("BtnDiscard", false)
+		if isvalid(discardBtn) then discardBtn.Enable = false end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -917,6 +1000,8 @@ script UIInventoryController extends Component
 		self.tooltipPanel.Enable = true
 		self.inspectedItem = itemKey
 		self.inspectedCount = count
+		local discardBtn = self.tooltipPanel:GetChildByName("BtnDiscard", false)
+		if isvalid(discardBtn) then discardBtn.Enable = true end
 		
 		local player = _UserService.LocalPlayer
 		local inv = isvalid(player) and player:GetComponent("script.PlayerInventory")
@@ -958,13 +1043,14 @@ script UIInventoryController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void LayoutDetailCard()
-		-- 상세 카드(Tooltip)를 설명 길이에 맞춰 늘린다: 위에서부터 이름 → 보유 → 설명 → 버리기 버튼.
-		-- 설명 높이는 그 글자 컴포넌트의 GetPreferredHeight 로 잰다(고정 154px 칸에 긴 설명이 넘치던 문제).
-		-- 규칙 10: stretch 자식(Bg)은 부모를 따라 늘어나지 않으므로 RectSize 를 직접 맞춘다. 카드 위쪽 끝은 원래 자리(+180)에 고정.
+		-- 가방 안 오른쪽 상세 패널(2026-10-16, 고정 크기 = 아이템 격자 높이): 위에서부터 이름 → 보유 → 설명, 버리기 버튼은 맨 아래.
+		-- 설명 높이는 그 글자 컴포넌트의 GetPreferredHeight 로 재고 남는 칸 안으로 제한한다.
+		-- 규칙 10: stretch 자식(Bg)은 부모를 따라 늘어나지 않으므로 RectSize 를 직접 맞춘다.
 		if not isvalid(self.tooltipPanel) or not isvalid(self.tooltipDesc) then return end
-		local width = 260
-		local innerW = 228
+		local width = self.DetailPanelSize.x
+		local height = self.DetailPanelSize.y
 		local pad = 14
+		local innerW = width - pad * 2
 		local gap = 8
 		local nameH = 40
 		local countH = 28
@@ -974,10 +1060,8 @@ script UIInventoryController extends Component
 		if descText ~= "" then
 			descH = math.max(40, math.ceil(self.tooltipDesc:GetPreferredHeight(descText, innerW)) + 6)
 		end
-		-- 인벤토리 창(700) 안에 들어오게 상한을 둔다.
-		local maxDescH = 680 - (pad * 2 + nameH + countH + btnH + gap * 3)
+		local maxDescH = height - (pad * 2 + nameH + countH + btnH + gap * 3)
 		if descH > maxDescH then descH = maxDescH end
-		local height = pad * 2 + nameH + countH + descH + btnH + gap * 3
 		local function place(ent, y, w, h)
 			if not isvalid(ent) then return end
 			local t = ent.UITransformComponent
@@ -990,17 +1074,15 @@ script UIInventoryController extends Component
 		local nameY = top - pad - nameH * 0.5
 		local countY = nameY - nameH * 0.5 - gap - countH * 0.5
 		local descY = countY - countH * 0.5 - gap - descH * 0.5
-		local btnY = descY - descH * 0.5 - gap - btnH * 0.5
+		local btnY = -height * 0.5 + pad + btnH * 0.5
 		place(self.tooltipName.Entity, nameY, innerW, nameH)
 		place(self.tooltipCount.Entity, countY, innerW, countH)
 		place(self.tooltipDesc.Entity, descY, innerW, descH)
 		local discardBtn = self.tooltipPanel:GetChildByName("BtnDiscard", false)
-		place(discardBtn, btnY, 200, btnH)
+		place(discardBtn, btnY, math.min(200, innerW), btnH)
 		local cardT = self.tooltipPanel.UITransformComponent
 		if isvalid(cardT) then
 			cardT.RectSize = Vector2(width, height)
-			-- 위쪽 끝을 원래 카드(높이 360)의 위쪽 끝(+180)에 맞춘다 — 길어지면 아래로 자란다.
-			cardT.anchoredPosition = Vector2(cardT.anchoredPosition.x, 180 - height * 0.5)
 		end
 		local bg = self.tooltipPanel:GetChildByName("Bg", false)
 		if isvalid(bg) and isvalid(bg.UITransformComponent) then
@@ -1203,6 +1285,15 @@ script UIInventoryController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method void SetDiscardCount(integer value)
+		-- 버릴 수량을 [1, 보유량] 안에서 바로 지정한다(최소/최대 버튼).
+		self.discardCount = value
+		if self.discardCount < 1 then self.discardCount = 1 end
+		if self.discardCount > self.discardMax then self.discardCount = self.discardMax end
+		self:UpdateDiscardCountText()
+	end
+
+	@ExecSpace("ClientOnly")
 	method void UpdateDiscardCountText()
 		-- Reflects the current discard quantity in the stepper label.
 		if isvalid(self.discardCountText) then
@@ -1239,9 +1330,7 @@ script UIInventoryController extends Component
 		end
 
 		self:CloseDiscard()
-		self.tooltipPanel.Enable = false
-		self.inspectedItem = ""
-		self.inspectedCount = 0
+		self:HideItemTooltip()
 	end
 
 end

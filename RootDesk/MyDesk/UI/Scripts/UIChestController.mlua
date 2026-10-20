@@ -63,16 +63,12 @@ script UIChestController extends Component
 		self.Entity.Enable = true
 		log("[CHEST-UI] Opened Chest UI for: " .. chestEntity.Name)
 		
+		-- 가방 창과 20px 간격으로 붙여 가운데에 나란히 놓고 윗변을 맞춘다(사이로 캐릭터가 비치지 않게).
 		local bg = self.Entity:GetChildByName("Bg")
-		if isvalid(bg) and isvalid(bg.UITransformComponent) then
-			bg.UITransformComponent.anchoredPosition = Vector2(330, 0)
-		end
-		
+		self:LayoutBesideInventory(bg)
+
 		local invPopup = _EntityService:GetEntityByPath("/ui/PopupGroup/InventoryPopup")
 		if isvalid(invPopup) then
-			if isvalid(invPopup.UITransformComponent) then
-				invPopup.UITransformComponent.anchoredPosition = Vector2(-310, 0)
-			end
 			local invController = invPopup:GetComponent("script.UIInventoryController")
 			if isvalid(invController) then
 				invController:Open()
@@ -80,6 +76,28 @@ script UIChestController extends Component
 		end
 		
 		self:Refresh()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LayoutBesideInventory(Entity bg)
+		-- 가방 창 + 이 창을 20px 간격으로 붙여 화면 가운데에 나란히 두고, 두 창의 윗변을 맞춘다.
+		if not isvalid(bg) or not isvalid(bg.UITransformComponent) then return end
+		local stationSize = bg.UITransformComponent.RectSize
+		local invPopup = _EntityService:GetEntityByPath("/ui/PopupGroup/InventoryPopup")
+		local invTf = nil
+		local bagW = 800
+		local bagH = 700
+		if isvalid(invPopup) and isvalid(invPopup.UITransformComponent) then
+			invTf = invPopup.UITransformComponent
+			bagW = invTf.RectSize.x
+			bagH = invTf.RectSize.y
+		end
+		local gap = 20
+		local left = -(bagW + gap + stationSize.x) / 2
+		bg.UITransformComponent.anchoredPosition = Vector2(left + bagW + gap + stationSize.x / 2, (bagH - stationSize.y) / 2)
+		if invTf ~= nil then
+			invTf.anchoredPosition = Vector2(left + bagW / 2, 0)
+		end
 	end
 
 	@ExecSpace("ClientOnly")

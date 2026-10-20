@@ -124,6 +124,7 @@ script VillagerDialog extends Component
 		end
 		if questId > 0 and offerPages ~= nil and #offerPages > 0 then
 			if dialog ~= nil then
+				dialog.portraitSource = self.Entity -- 대화창 초상화 = 이 NPC 외형
 				dialog:OpenQuestOffer(speaker, offerPages, questId)
 				log("[DIALOG] offer npc=" .. tostring(self.NpcId) .. " quest=" .. tostring(questId))
 				return
@@ -156,6 +157,7 @@ script VillagerDialog extends Component
 			return
 		end
 		if dialog ~= nil then
+			dialog.portraitSource = self.Entity -- 대화창 초상화 = 이 NPC 외형
 			dialog:OpenTalk(speaker, talkPages)
 			log("[DIALOG] talk npc=" .. tostring(self.NpcId) .. " pages=" .. tostring(#talkPages))
 		end

@@ -169,6 +169,8 @@ script UIPlayerInteractController extends Component
 
 		self:SetLabel(self._T.nameE, name)
 		self:SetLabel(self._T.hintE, self:BuildHint())
+		-- 영지 밖에서는 초대를 보낼 수 없다 → 버튼을 회색 비활성으로 보여 준다(서버도 다시 검증한다).
+		if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(self._T.inviteE, self:IsInOwnEstate()) end
 		if isvalid(self._T.card) then
 			self._T.card.Enable = true
 		end
@@ -178,10 +180,11 @@ script UIPlayerInteractController extends Component
 	@ExecSpace("ClientOnly")
 	method string BuildHint()
 		-- 초대 가능 조건(내 영지 안)을 미리 알려 헛클릭을 줄인다.
+		-- 힌트 칸 폭(316)에 한 줄이 넘치면 말줄임으로 잘리므로 줄을 직접 나눈다.
 		if self:IsInOwnEstate() then
-			return "초대하면 상대가 수락 후 이동합니다."
+			return "초대하면 상대가 수락 후\n내 영지로 이동합니다."
 		end
-		return "초대는 내 영지 안에서만 보낼 수 있습니다."
+		return "초대는 내 영지 안에서만\n보낼 수 있습니다."
 	end
 
 	@ExecSpace("ClientOnly")

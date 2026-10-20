@@ -329,7 +329,8 @@ script UICraftingController extends Component
 			if isvalid(chip) then
 				local selected = (i == self.selectedTierIndex)
 				local spr = chip.SpriteGUIRendererComponent
-				if isvalid(spr) then
+				-- ui8 스킨이면 탭 그림을 바꾸고, 아니면 기존 색칠
+				if isvalid(spr) and not (_UI8Skin ~= nil and _UI8Skin:Pick(chip, selected, "tab_on", "tab_off")) then
 					if selected then spr.Color = selectedBg else spr.Color = idleBg end
 				end
 				local textComp = chip.TextComponent
@@ -352,7 +353,8 @@ script UICraftingController extends Component
 			if isvalid(chip) then
 				local selected = (i == self.selectedCategoryIndex)
 				local spr = chip.SpriteGUIRendererComponent
-				if isvalid(spr) then
+				-- ui8 스킨이면 탭 그림을 바꾸고, 아니면 기존 색칠
+				if isvalid(spr) and not (_UI8Skin ~= nil and _UI8Skin:Pick(chip, selected, "tab_on", "tab_off")) then
 					if selected then spr.Color = selectedBg else spr.Color = idleBg end
 				end
 				local textComp = chip.TextComponent
@@ -674,13 +676,38 @@ script UICraftingController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method void PaintCraftButton(string variant, Color legacy)
+		-- ui8 스킨이면 버튼 그림(앰버=제작 가능 / 비활성 나무)과 글자색을, 아니면 기존 색을 칠한다.
+		local ent = self.btnCraft.Entity
+		if _UI8Skin ~= nil and _UI8Skin:HasSkin(ent) then
+			_UI8Skin:SetVariant(ent, variant)
+			local c = Color(0.88, 0.85, 0.80, 1)
+			if variant == "btn_amber" then c = Color(0.27, 0.13, 0.04, 1) end
+			if isvalid(ent.TextComponent) then ent.TextComponent.FontColor = c
+			elseif isvalid(ent.TextGUIRendererComponent) then ent.TextGUIRendererComponent.FontColor = c end
+			return
+		end
+		ent.SpriteGUIRendererComponent.Color = legacy
+	end
+
+	@ExecSpace("ClientOnly")
 	method void SelectRecipe(string recipeName)
 		self.selectedRecipe = recipeName
 		
 		-- Highlight active list item
 		for name, item in pairs(self.recipeButtons) do
 			if isvalid(item) then
-				if name == recipeName then
+				local on = (name == recipeName)
+				if _UI8Skin ~= nil and _UI8Skin:Pick(item, on, "row_sel", "row") then
+					-- ui8: 선택 줄은 앰버라 이름 글자를 진하게
+					local nameEnt = item:GetChildByName("Name")
+					if isvalid(nameEnt) then
+						local c = Color(0.94, 0.91, 0.75, 1)
+						if on then c = Color(0.27, 0.13, 0.04, 1) end
+						if isvalid(nameEnt.TextComponent) then nameEnt.TextComponent.FontColor = c
+						elseif isvalid(nameEnt.TextGUIRendererComponent) then nameEnt.TextGUIRendererComponent.FontColor = c end
+					end
+				elseif on then
 					item.SpriteGUIRendererComponent.Color = Color(0.18, 0.34, 0.15, 1) -- Highlight Forest Green
 				else
 					item.SpriteGUIRendererComponent.Color = Color(0.15, 0.18, 0.15, 1) -- Dark surface
@@ -700,7 +727,14 @@ script UICraftingController extends Component
 		if isvalid(self.detailName) then
 			self.detailName.Text = self:GetItemDisplayName(recipe.name) .. self:GetOutputSuffix(recipe.name)
 			local rarity = self:GetItemRarity(recipe.name)
-			self.detailName.FontColor = self:GetRarityColor(rarity)
+			-- ui8: 상세는 양피지 위라 목록(어두운 줄)용 밝은 등급색은 안 읽힌다 → 같은 색상 계열의 진한 잉크로 낮춘다
+			local c = self:GetRarityColor(rarity)
+			if rarity == "Uncommon" or rarity == "Rare" or rarity == "Epic" or rarity == "Legendary" then
+				c = Color(c.r * 0.55, c.g * 0.55, c.b * 0.55, 1)
+			else
+				c = Color(0.27, 0.13, 0.04, 1)
+			end
+			self.detailName.FontColor = c
 		end
 		local unlocked = self:IsRecipeUnlocked(self.selectedRecipe)
 		if isvalid(self.detailDesc) then
@@ -763,9 +797,9 @@ script UICraftingController extends Component
 			if isvalid(self.ingCount1) then
 				self.ingCount1.Text = owned .. " / " .. ing1.required
 				if owned >= ing1.required then
-					self.ingCount1.FontColor = Color.green
+					self.ingCount1.FontColor = Color(0.16, 0.45, 0.10, 1) -- ui8: 양피지 위 진한 초록
 				else
-					self.ingCount1.FontColor = Color.red
+					self.ingCount1.FontColor = Color(0.72, 0.12, 0.08, 1) -- ui8: 양피지 위 진한 빨강
 					canCraft = false
 				end
 			end
@@ -784,9 +818,9 @@ script UICraftingController extends Component
 			if isvalid(self.ingCount2) then
 				self.ingCount2.Text = owned .. " / " .. ing2.required
 				if owned >= ing2.required then
-					self.ingCount2.FontColor = Color.green
+					self.ingCount2.FontColor = Color(0.16, 0.45, 0.10, 1)
 				else
-					self.ingCount2.FontColor = Color.red
+					self.ingCount2.FontColor = Color(0.72, 0.12, 0.08, 1)
 					canCraft = false
 				end
 			end
@@ -795,22 +829,22 @@ script UICraftingController extends Component
 		-- Update craft button state
 		if isvalid(self.btnCraft) then
 			if self.isCrafting then
-				self.btnCraft.Entity.SpriteGUIRendererComponent.Color = Color(0.3, 0.3, 0.3, 1) -- Gray
+				self:PaintCraftButton("btn_disabled", Color(0.3, 0.3, 0.3, 1)) -- Gray
 				self.btnCraft.Enable = false
 				local textComp = self.btnCraft.Entity.TextComponent
 				if isvalid(textComp) then textComp.Text = "제작 중..." end
 			elseif not unlocked then
-				self.btnCraft.Entity.SpriteGUIRendererComponent.Color = Color(0.25, 0.25, 0.25, 1)
+				self:PaintCraftButton("btn_disabled", Color(0.25, 0.25, 0.25, 1))
 				self.btnCraft.Enable = false
 				local textComp = self.btnCraft.Entity.TextComponent
 				if isvalid(textComp) then textComp.Text = "잠김" end
 			elseif canCraft then
-				self.btnCraft.Entity.SpriteGUIRendererComponent.Color = Color(0.18, 0.34, 0.15, 1) -- Forest Green
+				self:PaintCraftButton("btn_amber", Color(0.18, 0.34, 0.15, 1)) -- Forest Green
 				self.btnCraft.Enable = true
 				local textComp = self.btnCraft.Entity.TextComponent
 				if isvalid(textComp) then textComp.Text = "제작 (스페이스)" end
 			else
-				self.btnCraft.Entity.SpriteGUIRendererComponent.Color = Color(0.3, 0.1, 0.1, 1) -- Dark Red
+				self:PaintCraftButton("btn_disabled", Color(0.3, 0.1, 0.1, 1)) -- Dark Red
 				self.btnCraft.Enable = false
 				local textComp = self.btnCraft.Entity.TextComponent
 				if isvalid(textComp) then textComp.Text = "재료 부족" end

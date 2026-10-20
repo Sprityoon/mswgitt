@@ -80,7 +80,16 @@ script ResourceReaction extends Component
 			if isvalid(localPlayer) then
 				local playerPos = localPlayer.TransformComponent.WorldPosition
 				local myPos = self.Entity.TransformComponent.WorldPosition
-				
+				-- 2026-10-18 성능: 가림 판정 범위(가로 ±수 칸, 위로 수 칸)보다 확실히 먼 자원은 콜라이더 조회부터 건너뛴다.
+				local far = math.abs(playerPos.x - myPos.x) > 6.0 or (playerPos.y - myPos.y) > 9.0 or (playerPos.y - myPos.y) < -3.0
+				if far then
+					if self._T.covered == true then
+						self._T.covered = false
+						local sp = self.Entity.SpriteRendererComponent
+						if isvalid(sp) then sp:SetAlpha(1.0) end
+					end
+				else
+
 				local checkWidth = 1.0
 				local checkHeight = 1.5
 				local offset = Vector2(0, 0)
@@ -110,15 +119,20 @@ script ResourceReaction extends Component
 				local distY = playerPos.y - (myPos.y + offset.y * shrink)
 				
 				local isCovered = (distY > 0.0 and distY < checkHeight and distX < checkWidth)
-				
-				local sprite = self.Entity.SpriteRendererComponent
-				if isvalid(sprite) then
-					if isCovered then
-						sprite:SetAlpha(0.4)
-					else
-						sprite:SetAlpha(1.0)
+
+				-- 2026-10-18 성능: 상태가 바뀔 때만 알파를 바꾼다(자원 수백 개가 매 프레임 SetAlpha 하던 것).
+				if self._T.covered ~= isCovered then
+					self._T.covered = isCovered
+					local sprite = self.Entity.SpriteRendererComponent
+					if isvalid(sprite) then
+						if isCovered then
+							sprite:SetAlpha(0.4)
+						else
+							sprite:SetAlpha(1.0)
+						end
 					end
 				end
+				end -- far
 			end
 		end
 		
