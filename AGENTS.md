@@ -267,8 +267,9 @@ MSW has many silent failure modes. Base every technical judgment on project file
 | Editable types: `.mlua`/`.model`/`.ui`/`.map` only; `Global/*.model` editable in place | Use the editing table in P5 (also allows `.csv`/`.userdataset`/docs; restricts `Global/` to `DefaultPlayer.model` and `WorldConfig` values). | Datasets and docs are part of this project's workflow; the rest of `Global/` is engine-owned here. |
 | New `.model` → `RootDesk/MyDesk/Models/` | New `.mlua` → `RootDesk/MyDesk/{Category}/Scripts/`, new `.model` → `RootDesk/MyDesk/{Category}/Models/` | Existing project layout is grouped by category. |
 | Skill files sit in `.claude/skills` / `.agents/skills` | Never put project documents inside vendor skill folders; they are overwritten by `mswai update`. Project references live under `docs/`. | `game-ui-ux-theory.md` was deleted by the 2026-10-14 update and moved to `docs/reference/`. |
+| Foundation (2 skills + 4 references) must be in context on every turn, for every request | Load Foundation **only when the turn touches MSW game files** (`.mlua`/`.model`/`.map`/`.ui`/datasets, Maker MCP). Meta work — docs, git, agent config/hooks/settings, Q&A — loads nothing. Load only the references whose topic the task touches; do not re-read what is in context. | Unconditional full loading spent tens of thousands of tokens before work began. |
 
-Everything else in the managed block (Foundation loading, domain matrix, shell rules, script-scope table, "no runtime claims without MCP evidence") applies as written.
+Everything else in the managed block (domain matrix, shell rules, script-scope table, "no runtime claims without MCP evidence") applies as written.
 
 ## P3. Session start (in addition to the managed Foundation)
 

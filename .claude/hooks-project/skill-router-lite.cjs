@@ -59,17 +59,12 @@ function emitFull() {
 }
 
 const LITE = `<msw-skill-router-reminder mode="lite">
-NEW user message — re-classify it against the MSW skill domain matrix (the FULL
-matrix was injected on this session's first prompt; if compaction dropped it,
-see docs/reference/skill-routing.md or re-derive by loading the skills below).
-Already-loaded skills do NOT exempt you: if this turn touches a NEW domain,
-LOAD the matching skill BEFORE planning.
+Re-classify this message (full matrix: docs/reference/skill-routing.md). If it
+touches a NEW MSW domain, load that skill before planning. Meta work (docs, git,
+hooks/settings, Q&A) loads nothing — AGENTS.md P2. Never re-read what is in context.
 
-Foundation (EVERY turn, unconditionally):
-  skills   → msw-general, msw-ui-system  (via your agent's skill system)
-  refs     → msw-general/references/{platform.md, workspace.md, entity.md, authoring.md}
-             + the matching platform-{maple|rect|sideview}.md once TileMapMode is known
-             (this project: RectTile=1 → platform-rect.md)
+Foundation (only when touching MSW game files, if not already in context):
+  msw-general, msw-ui-system + platform.md/workspace.md/entity.md/authoring.md + platform-rect.md
 
 Domain → additional skill:
   mlua/script/component/event  → msw-scripting (+datastorage.md if save/persist; verify-checklist.md every impl turn)
@@ -80,11 +75,11 @@ Domain → additional skill:
                                  + msw-wiki: local mirrors docs/wiki/mswpackages/ (read INDEX.md before any GitHub fetch)
   official examples/obj pool/collision-detect choice/UI style packs → msw-wiki (docs/wiki/roguelike-world + mswpackages)
   NEW standalone game planning/GDD → msw-planning (in THIS repo "next task/continue" = docs/tasks.md → msw-project, NOT planning)
-  popup/HUD/.ui                → msw-ui-system refs (+builder-protocol.md; ui-aesthetics.md §7 rubric on delivery)
+  popup/HUD/.ui                → msw-ui-system refs (+builder-protocol.md; docs/reference/game-ui-ux-theory.md §7 rubric)
   .map/.model/entity/platform  → msw-general refs (entity.md / model.md / platform*.md / troubleshooting.md)
   this repo's work loop        → msw-project (status → pitfalls check → implement → verify → record)
 
-Project docs: docs/pitfalls.md (17 measured silent-failure traps — CHECK BEFORE IMPLEMENTING)
+Project docs: docs/pitfalls.md (silent-failure traps — check quick index before implementing)
               docs/workflow.md (procedure) | docs/tasks.md (what to do) | docs/tile-scheme.md (terrain grammar)
 
 Hard rules: load skills via the skill system (never Read workspace 'plugins/' paths);

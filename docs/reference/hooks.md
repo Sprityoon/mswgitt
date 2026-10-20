@@ -26,6 +26,13 @@
 | ~~UserPromptSubmit~~ | ~~`hooks/core-version-check/core-version-check.cjs`~~ | **삭제됨** — ai-cli 0.11.1 `mswai update`(2026-10-14)에서 벤더가 제거. 이전엔 CoreVersion ≠ `26.7.0.0`이면 작업 중단 지시 주입. 현재 CoreVersion은 `Environment/config`(26.10.0.0) | 벤더 |
 | UserPromptSubmit | `hooks-project/skill-router-lite.cjs` | 스킬 라우팅 리마인더: **세션 첫 프롬프트 = 벤더 전문(~20KB) 위임 주입, 이후 = 요약(~2KB)** | 프로젝트 (신설 — 매 턴 20KB 주입하던 벤더판 대체. 전문 텍스트의 단일 소스는 여전히 벤더 스크립트) |
 
+### 2026-10-17 변경 — 컨텍스트 절감 정리
+
+- `mswai update`(2026-10-14)가 `${CLAUDE_PROJECT_DIR}` 경로로 **모든 훅을 한 벌 더 등록**해 중복 실행되고 있었음(라우터 리마인더 매 턴 2회 주입, mlua 진단 2회, 편집마다 `maker_refresh_workspace` 자동 호출). 상대경로 한 벌만 남기고 제거. `${CLAUDE_PROJECT_DIR}` 형태는 위 07-16 항목의 셸 미치환 문제가 있어 쓰지 않음. 존재하지 않는 `core-version-check` 배선 제거. mcp-log matcher `""` → `mcp__.*`.
+- **`mswai update` 후에는 settings.json의 hooks가 다시 두 벌이 되었는지 반드시 확인할 것.**
+- `skill-router-lite` LITE 문구 축소(Foundation 무조건 로딩 문구 삭제, 낡은 참조 수정). AGENTS.md P2에 "Foundation은 MSW 게임 파일 작업일 때만" 오버라이드 추가.
+- permissions 일회성 항목 정리, `msw-painter` skillOverrides off(P2에서 image-to-pixel로 대체).
+
 ### 2026-07-23 변경 — 벤더 스킬 v0.6.0 동기화 + 라우터 LITE에 위키·플래닝 라우팅 추가
 
 - **벤더 스킬 동기화**: `MSW-Git/msw-ai-coding-plugins-official` v0.5.3 → **v0.6.0** (22파일 갱신 + `msw-planning` 스킬 신규). 커스텀 유지 파일 2종(`msw-ui-system/SKILL.md`, `references/layout-recipes.md`)은 업스트림 변경분만 선별 병합. `skills-lock.json` computedHash 전량 재계산(알고리즘 재현 검증 완료: 스킬 폴더 전 파일 POSIX 상대경로 정렬 → `경로+raw bytes` SHA-256 — vercel-labs/skills local-lock 규격). 반입 작업은 `MSW_READONLY_GUARD_DISABLE=1` 1회 우회로 수행(사유: 벤더 마이그레이션 — 본 항목이 그 기록).

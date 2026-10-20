@@ -4,51 +4,26 @@
   },
   "permissions": {
     "allow": [
-      "mcp__msw-maker-mcp__maker_execute_script",
-      "mcp__msw-maker-mcp__maker_logs",
-      "mcp__msw-maker-mcp__maker_stop",
       "mcp__msw-maker-mcp__maker_refresh_workspace",
-      "Bash(node -e ' *)",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_snapshot.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_query.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_query2.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_query3.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_build.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_diffcheck.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_coincheck.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_bgcheck.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_build2.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_verify.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/09cd0e1f-f0bb-47a3-a3f3-6ecd147da4e3/scratchpad/dex_idcheck.cjs\")",
-      "WebFetch(domain:api.github.com)",
-      "mcp__msw-mcp__mlua_document_retriever",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/75d73352-226f-4872-9471-9e83683df0b7/scratchpad/dump_hud.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/75d73352-226f-4872-9471-9e83683df0b7/scratchpad/dump_popup.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/75d73352-226f-4872-9471-9e83683df0b7/scratchpad/find_btn.cjs\")",
-      "Bash(git stash *)",
-      "Bash(git commit -m ' *)",
-      "Bash(git pull *)",
-      "Bash(node inspect_hud_t64.cjs)",
-      "Bash(node scratch/inspect_hud_t64.cjs)",
-      "Bash(node -e \"console.log\\(require\\('node:crypto'\\).randomUUID\\(\\)\\)\")",
-      "Bash(node scratch/build_fishing_gauge_t64.cjs)",
-      "Bash(node scratch/audit_fishing_gauge_t64.cjs)",
-      "Bash(node scratch/inspect_town_fishing_t64.cjs)",
-      "Bash(node scratch/move_rankboard_t64.cjs)",
+      "mcp__msw-maker-mcp__maker_logs",
       "mcp__msw-maker-mcp__maker_clear_logs",
-      "mcp__msw-maker-mcp__maker_play",
+      "mcp__msw-mcp__mlua_document_retriever",
+      "mcp__msw-mcp__mlua_api_retriever",
+      "WebFetch(domain:api.github.com)",
+      "Bash(node -e *)",
+      "Bash(node scripts/*)",
+      "Bash(node scratch/*)",
       "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git stash *)",
       "Bash(git ls-remote *)",
       "Bash(git rev-list *)",
       "Bash(npm ls *)",
       "Bash(npm view *)",
       "Bash(mswai --version)",
       "Bash(mswai update *)",
-      "Edit(/.claude/skills/msw-project/**)",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/22b993ff-4aee-4a8e-a1f3-2cbea7d7bda0/scratchpad/dump_mainmenu.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/22b993ff-4aee-4a8e-a1f3-2cbea7d7bda0/scratchpad/dump2.cjs\")",
-      "Bash(node \"C:/Users/mh566/AppData/Local/Temp/claude/d-------/22b993ff-4aee-4a8e-a1f3-2cbea7d7bda0/scratchpad/verify_bindings.cjs\")",
-      "Bash(node scratch/fix_mainmenu_layout.cjs)"
+      "Edit(/.claude/skills/msw-project/**)"
     ]
   },
   "hooks": {
@@ -92,31 +67,6 @@
             "timeout": 5
           }
         ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-read-guard/skill-read-guard.cjs\"",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/structured-file-guard/structured-file-guard.cjs\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Read|Edit|Write|MultiEdit|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/structured-file-guard/structured-file-guard.cjs\"",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "PostToolUse": [
@@ -142,50 +92,13 @@
         ]
       },
       {
-        "matcher": "",
+        "matcher": "mcp__.*",
         "hooks": [
           {
             "type": "command",
             "command": "node \".claude/hooks/mcp-log/mcp-log.cjs\"",
             "timeout": 5,
             "async": true
-          }
-        ]
-      },
-      {
-        "matcher": "apply_patch|Edit|MultiEdit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/mlua-lsp/mlua-diagnose-post-tool-use.cjs\"",
-            "timeout": 120
-          },
-          {
-            "type": "mcp_tool",
-            "server": "msw-maker-mcp",
-            "tool": "maker_refresh_workspace"
-          }
-        ]
-      },
-      {
-        "matcher": "Read|Skill",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-log/skill-log.cjs\"",
-            "async": true,
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/mcp-log/mcp-log.cjs\"",
-            "async": true,
-            "timeout": 5
           }
         ]
       }
@@ -210,26 +123,6 @@
             "timeout": 10
           }
         ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/mlua-lsp/mlua-session-start.cjs\"",
-            "timeout": 120
-          }
-        ]
-      },
-      {
-        "matcher": "startup|resume",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/update-check/update-check.cjs\"",
-            "timeout": 10
-          }
-        ]
       }
     ],
     "UserPromptSubmit": [
@@ -238,23 +131,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \".claude/hooks/core-version-check/core-version-check.cjs\"",
-            "timeout": 5
-          },
-          {
-            "type": "command",
             "command": "node \".claude/hooks-project/skill-router-lite.cjs\"",
             "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-router-reminder/skill-router-reminder.cjs\"",
-            "timeout": 5
           }
         ]
       }
@@ -270,17 +148,6 @@
             "async": true
           }
         ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-log/skill-log.cjs\"",
-            "async": true,
-            "timeout": 5
-          }
-        ]
       }
     ],
     "SessionEnd": [
@@ -290,16 +157,6 @@
           {
             "type": "command",
             "command": "node \".claude/hooks/mlua-lsp/mlua-session-end.cjs\"",
-            "timeout": 20
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/mlua-lsp/mlua-session-end.cjs\"",
             "timeout": 20
           }
         ]
