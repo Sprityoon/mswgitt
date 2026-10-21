@@ -1,7 +1,8 @@
 @Component
 script PlaceableFurniture extends Component
 
-	property string ItemId = ""
+	-- 클라이언트 환경 연출도 배치된 가구의 데이터 키를 읽는다.
+	@Sync property string ItemId = ""
 
 	-- T36 재작업: 플레이어 이동 차단. 포탈 등 통과 필요 시 모델에서 false.
 	property boolean BlocksMovement = true

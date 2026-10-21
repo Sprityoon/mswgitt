@@ -38,7 +38,7 @@ script Monster extends Component
 
 	-- Stable data key (model id slug: slime / boar / horn_mushroom / slime_king).
 	-- Spawner injects after spawn; empty falls back to Entity.Name for hand-placed monsters.
-	property string MonsterId = ""
+	@Sync property string MonsterId = ""
 
 	-- 바이옴 틴트(BiomeDataSet.MonsterTint) 등 스폰 시 정해진 기본 색. 피격 플래시·공격 예고가 끝나면 흰색이 아니라 이 색으로 복귀한다.
 	-- (구형은 무조건 흰색으로 되돌려 "어둡게 스폰된 몬스터가 맞으면 원래 색으로 돌아오는" 현상이 났다.)
@@ -51,6 +51,9 @@ script Monster extends Component
 	-- 드롭 테이블만 다른 SourceId 로 갈아끼운다 (레이드 난이도별 보상). 공란이면 MonsterId 를 쓴다.
 	-- MonsterId 자체를 바꾸지 않는 이유: 퀘스트 Kill 조건·도감 집계 키가 MonsterId 이기 때문이다.
 	property string DropSourceOverride = ""
+
+	-- 원거리 평타 경직 간격(IsKnockbackAllowed ③)의 타수 집계가 처음부터 다시 시작되는 공백(초). 이만큼 안 맞으면 다음 타가 "첫 타".
+	property number StaggerResetSeconds = 3.0
 
 	-- Last entity that damaged this monster (the killer credit, server-side only).
 	@HideFromInspector property any LastAttacker = nil
@@ -69,6 +72,8 @@ script Monster extends Component
 		-- 늦게 들어온 클라는 OnSyncProperty 없이 현재 값만 받으므로 시작할 때 한 번 그린다.
 		if self:IsClient() then
 			self:ApplyStatusVisualClient()
+			self._T.LastClientHp = self.Hp
+			if self.IsBoss and _UICombatHpLogic ~= nil then _UICombatHpLogic:RegisterBoss(self.Entity) end
 		end
 	end
 
@@ -76,6 +81,7 @@ script Monster extends Component
 		-- 머리 위 상태이상 이펙트 정리(클라).
 		if self:IsClient() then
 			self:ClearStatusVisualClient()
+			if _UICombatHpLogic ~= nil then _UICombatHpLogic:Remove(self.Entity) end
 		end
 		if self._T.StatusTimer ~= nil then
 			_TimerService:ClearTimer(self._T.StatusTimer)
@@ -167,9 +173,18 @@ script Monster extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnSyncProperty(string propertyName, any newValue)
-		-- 상태이상 표시가 바뀌면 머리 위 이펙트를 다시 붙인다.
+		-- 상태이상과 HP 표시를 반영한다. 일반 몬스터는 HP가 줄어들면 표시 시간을 갱신한다.
 		if propertyName == "StatusVisual" then
 			self:ApplyStatusVisualClient()
+		elseif propertyName == "Hp" then
+			local hp = tonumber(newValue) or self.Hp
+			local previous = self._T.LastClientHp
+			self._T.LastClientHp = hp
+			if previous ~= nil and hp < previous and hp > 0 and not self.IsBoss and _UICombatHpLogic ~= nil then
+				_UICombatHpLogic:ShowMonster(self.Entity)
+			end
+		elseif propertyName == "IsBoss" and newValue == true and _UICombatHpLogic ~= nil then
+			_UICombatHpLogic:RegisterBoss(self.Entity)
 		end
 	end
 
@@ -514,6 +529,7 @@ script Monster extends Component
 	@ExecSpace("ServerOnly")
 	method void Respawn()
 		-- Restores visibility/HP and returns to IDLE (only used when RespawnOn = true).
+		self._T.StaggerHits = {}
 		self.IsDead = false
 		self._T.SkillStatuses = {}
 		self:RefreshStatusVisual()
@@ -646,7 +662,22 @@ script Monster extends Component
 		---@type PlayerCombat
 		local combat = combatComp
 		local skillId = combat.PendingSkillId
-		if skillId == nil or skillId == "" then return true end
+		if skillId == nil or skillId == "" then
+			-- ③ 원거리 평타 탄(WeaponAttackDataSet.StaggerEvery — 트래퍼 단검 투척·와일드키퍼 정령탄은 5)은 공격자별 1·6·11…번째 타격만 경직.
+			--    근접 평타와 같은 경직을 원거리에서 매번 주면 너무 강하다(2026-10-21). 스킬·충전탄은 기존 정책 그대로.
+			local every = combat.PendingStaggerEvery or 0
+			if every <= 1 then return true end
+			if self._T.StaggerHits == nil then self._T.StaggerHits = {} end
+			local now = _UtilLogic.ElapsedSeconds
+			local rec = self._T.StaggerHits[attacker.Id]
+			if rec == nil or now - rec.at > self.StaggerResetSeconds then
+				rec = { n = 0, at = now }
+				self._T.StaggerHits[attacker.Id] = rec
+			end
+			rec.n = rec.n + 1
+			rec.at = now
+			return (rec.n - 1) % every == 0
+		end
 		local ds = _DataService:GetTable("SkillDataSet")
 		local row = ds ~= nil and ds:FindRow("SkillId", skillId) or nil
 		if row == nil then return true end

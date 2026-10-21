@@ -365,7 +365,7 @@
         }
       },
       {
-        "id": "24de59c9-13b1-4874-bf75-b8250d24fc83",
+        "id": "98504d7f-5f87-4ca9-9f2f-30adfb719dab",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin",
         "componentNames": "MOD.Core.UITransformComponent",
         "jsonString": {
@@ -456,7 +456,7 @@
         }
       },
       {
-        "id": "0aa108d2-45f5-4df3-86ff-31b0ed2d6024",
+        "id": "9c3f99f3-c0cd-45c1-bec2-f2e428df03de",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin/c",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -492,20 +492,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -40.0,
-                "y": -92.0
+                "x": -28.73999,
+                "y": -47.1300049
               },
               "OffsetMin": {
-                "x": 40.0,
-                "y": 84.0
+                "x": 28.73999,
+                "y": 39.1300049
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 680.0,
-                "y": 544.0
+                "x": 702.52,
+                "y": 633.74
               },
               "UIMode": 1,
               "UIScale": {
@@ -525,7 +525,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": -4.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -548,7 +548,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "232350c1a4a645f6a670319b699ed044"
+                "DataId": "41a50d5d2f2d4aefae334423489276e8"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -607,7 +607,7 @@
         }
       },
       {
-        "id": "bff8b052-53f5-4722-a8cd-b8ec66ccb31d",
+        "id": "894a6673-6137-40b8-abd1-67f22b53c4ea",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin/t",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -643,20 +643,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -40.0,
-                "y": 0.0
+                "x": -28.73999,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 40.0,
-                "y": -96.0
+                "x": 28.73999,
+                "y": -104.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 680.0,
-                "y": 96.0
+                "x": 702.52,
+                "y": 112.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -667,7 +667,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -676,7 +676,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": 368.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -699,7 +699,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "16a36296620b456e82cf5dc9d404adb6"
+                "DataId": "3aa6482bb2c847adbd93972341b6ae8a"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -758,7 +758,7 @@
         }
       },
       {
-        "id": "82e52db3-f1f3-43df-8a5c-d969c41f1f9a",
+        "id": "98bef5fd-4c6d-4cfe-a9ce-9232122184f8",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin/b",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -794,20 +794,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -40.0,
-                "y": 88.0
+                "x": -28.73999,
+                "y": 96.0
               },
               "OffsetMin": {
-                "x": 40.0,
-                "y": 0.0
+                "x": 28.73999,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 680.0,
-                "y": 88.0
+                "x": 702.52,
+                "y": 104.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -818,7 +818,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -827,7 +827,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": -368.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -850,7 +850,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "a604a4fcbf76445eab1bb0686a980134"
+                "DataId": "1b02a9180c5545bf8e02c2f1dd512bf3"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -909,7 +909,7 @@
         }
       },
       {
-        "id": "d1ce85e8-489b-4b74-9d68-e809db0cf99e",
+        "id": "6c2f9d9b-7ee7-4aea-8f9d-0b463d483ed5",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin/l",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -945,20 +945,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 44.0,
-                "y": -92.0
+                "x": 52.0,
+                "y": -47.1300049
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 84.0
+                "x": -8.0,
+                "y": 39.1300049
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 44.0,
-                "y": 544.0
+                "x": 60.0,
+                "y": 633.74
               },
               "UIMode": 1,
               "UIScale": {
@@ -968,7 +968,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": -8.0,
                 "y": -4.0
               },
               "Rotation": {
@@ -977,8 +977,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -388.0,
+                "y": -4.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1001,7 +1001,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "5c6e925ece724be482abb19f51b775dc"
+                "DataId": "2aeaf41c268544cbaecf0a9a5b9f5318"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1060,7 +1060,7 @@
         }
       },
       {
-        "id": "7586620a-7b96-41af-9eff-3d22b6abf925",
+        "id": "6667014d-58cd-4e82-84cd-854067452dce",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin/r",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1096,20 +1096,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": -92.0
+                "x": 8.0,
+                "y": -47.1300049
               },
               "OffsetMin": {
-                "x": -44.0,
-                "y": 84.0
+                "x": -52.0,
+                "y": 39.1300049
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 44.0,
-                "y": 544.0
+                "x": 60.0,
+                "y": 633.74
               },
               "UIMode": 1,
               "UIScale": {
@@ -1119,7 +1119,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": 8.0,
                 "y": -4.0
               },
               "Rotation": {
@@ -1128,8 +1128,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 388.0,
+                "y": -4.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1152,7 +1152,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "f79d70ad9fca43cdbd5ee48cbf1d01f9"
+                "DataId": "1e38677aa5db4748bdd12f46aec7330b"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1211,7 +1211,7 @@
         }
       },
       {
-        "id": "b7bc94cf-c8c3-4eac-a941-20939bfe08f6",
+        "id": "c356a898-35c3-4f52-a30f-58417725a652",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin/tl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1247,20 +1247,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 44.0,
-                "y": 0.0
+                "x": 52.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": -96.0
+                "x": -8.0,
+                "y": -104.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 44.0,
-                "y": 96.0
+                "x": 60.0,
+                "y": 112.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1270,8 +1270,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1279,8 +1279,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -388.0,
+                "y": 368.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1303,7 +1303,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "fc86ce9c1f8647a3a20ddea40fc6ad43"
+                "DataId": "b0c98dd657ea42b28d625f8d7944ee44"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1362,7 +1362,7 @@
         }
       },
       {
-        "id": "88a50370-b7e5-4cd1-b842-b441f539413a",
+        "id": "7e1e01ac-e81a-4136-b456-9fa82a260de3",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin/tr",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1398,20 +1398,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": -44.0,
-                "y": -96.0
+                "x": -52.0,
+                "y": -104.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 44.0,
-                "y": 96.0
+                "x": 60.0,
+                "y": 112.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1421,8 +1421,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1430,8 +1430,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 388.0,
+                "y": 368.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1454,7 +1454,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "6e1ac317cb084c908a58fc27e1ad19c4"
+                "DataId": "6435a073e54c485faf33389e9794b972"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1513,7 +1513,7 @@
         }
       },
       {
-        "id": "1253d18d-fd7c-4167-af04-be1748e08a78",
+        "id": "57ed8aba-f861-4571-8d4b-6dd6f65aafb6",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin/bl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1549,20 +1549,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 44.0,
-                "y": 88.0
+                "x": 52.0,
+                "y": 96.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 44.0,
-                "y": 88.0
+                "x": 60.0,
+                "y": 104.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1572,8 +1572,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1581,8 +1581,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -388.0,
+                "y": -368.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1605,7 +1605,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "49d68773812846368bdb76ae9760a816"
+                "DataId": "a8ecc9ccdff24ff192198cba54c1b0eb"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1664,7 +1664,7 @@
         }
       },
       {
-        "id": "9948dfbf-26f6-4861-90d1-8857970c6ae3",
+        "id": "ad7de6eb-8985-4fc4-8072-d1c8caf668fa",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/Skin/br",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1700,20 +1700,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 88.0
+                "x": 8.0,
+                "y": 96.0
               },
               "OffsetMin": {
-                "x": -44.0,
-                "y": 0.0
+                "x": -52.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 44.0,
-                "y": 88.0
+                "x": 60.0,
+                "y": 104.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1723,8 +1723,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1732,8 +1732,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 388.0,
+                "y": -368.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1756,7 +1756,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "4e6f76c9f0d34495a9a99dc29512a260"
+                "DataId": "b935725a41264ebfb5c607feb6b5f138"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -2268,7 +2268,7 @@
         }
       },
       {
-        "id": "ead04234-c280-47a0-85e2-282c42ff2ef7",
+        "id": "eaed9fa2-b93a-492a-a3e8-58356ddc0fa4",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin",
         "componentNames": "MOD.Core.UITransformComponent",
         "jsonString": {
@@ -2359,7 +2359,7 @@
         }
       },
       {
-        "id": "ee739075-88b2-4282-8d55-8715d2d98e64",
+        "id": "d6ed4985-540a-448f-9e0d-3291ce6b4727",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin/c",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -2395,20 +2395,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -24.0,
-                "y": -24.0
+                "x": -19.0500031,
+                "y": -0.119995117
               },
               "OffsetMin": {
-                "x": 24.0,
-                "y": 24.0
+                "x": 19.0500031,
+                "y": 0.119995117
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 192.0,
-                "y": 582.0
+                "x": 201.9,
+                "y": 629.76
               },
               "UIMode": 1,
               "UIScale": {
@@ -2451,7 +2451,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "7f97f9240a3f4a979a4d5bbd6d76d648"
+                "DataId": "bba4569533ef45e8b2b39fbe84a7010b"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -2510,7 +2510,7 @@
         }
       },
       {
-        "id": "38b54f9d-3a75-40e4-8c2f-c534664f8218",
+        "id": "cf143ee6-b3b5-425a-a987-11910e0acd42",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin/t",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -2546,20 +2546,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -24.0,
-                "y": 0.0
+                "x": -19.0500031,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 24.0,
-                "y": -28.0
+                "x": 19.0500031,
+                "y": -36.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 192.0,
-                "y": 28.0
+                "x": 201.9,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -2570,7 +2570,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -2579,7 +2579,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": 323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -2602,7 +2602,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "dc84f1988f0c4c8abd0d7b61cdbbf939"
+                "DataId": "7f888a51ac594d3daa5c7cf226d9d861"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -2661,7 +2661,7 @@
         }
       },
       {
-        "id": "f49c8dfa-bfbd-4678-98b0-0ca8b1643ec1",
+        "id": "05c3e451-2975-4cce-818b-e8e86cd5aaaf",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin/b",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -2697,20 +2697,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -24.0,
-                "y": 28.0
+                "x": -19.0500031,
+                "y": 36.0
               },
               "OffsetMin": {
-                "x": 24.0,
-                "y": 0.0
+                "x": 19.0500031,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 192.0,
-                "y": 28.0
+                "x": 201.9,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -2721,7 +2721,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -2730,7 +2730,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": -323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -2753,7 +2753,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "a1876c67b0d1432d9d328a91e7f5c39e"
+                "DataId": "74d8931fb2214842b143b91747401141"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -2812,7 +2812,7 @@
         }
       },
       {
-        "id": "e5e4a1b4-b9df-4758-918c-e56e91e9f510",
+        "id": "a014f030-8f21-47b4-9757-1b03cd742a02",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin/l",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -2848,20 +2848,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 28.0,
-                "y": -24.0
+                "x": 36.0,
+                "y": -0.119995117
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 24.0
+                "x": -8.0,
+                "y": 0.119995117
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 582.0
+                "x": 44.0,
+                "y": 629.76
               },
               "UIMode": 1,
               "UIScale": {
@@ -2871,7 +2871,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": -8.0,
                 "y": 0.0
               },
               "Rotation": {
@@ -2880,7 +2880,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": -128.0,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -2904,7 +2904,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "797171a0da1d459dba7c9a7dc0cdadaf"
+                "DataId": "dc8dc261d6844e228962f33a55d08e97"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -2963,7 +2963,7 @@
         }
       },
       {
-        "id": "67b9abaa-3a12-4b7d-9022-821b942d3d44",
+        "id": "aaa750bc-e6ba-4b56-94af-35cc1a9909e1",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin/r",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -2999,20 +2999,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": -24.0
+                "x": 8.0,
+                "y": -0.119995117
               },
               "OffsetMin": {
-                "x": -28.0,
-                "y": 24.0
+                "x": -36.0,
+                "y": 0.119995117
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 582.0
+                "x": 44.0,
+                "y": 629.76
               },
               "UIMode": 1,
               "UIScale": {
@@ -3022,7 +3022,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": 8.0,
                 "y": 0.0
               },
               "Rotation": {
@@ -3031,7 +3031,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": 128.0,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -3055,7 +3055,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "1dc21941e53b43f19b3dd2f6a886adb1"
+                "DataId": "0ba332ee427d412a8c96fda7db5c4e71"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -3114,7 +3114,7 @@
         }
       },
       {
-        "id": "0fc28803-d290-4ca3-87e8-463e137e2058",
+        "id": "8733a91e-5c84-42a3-976e-6ec0e82dd8e0",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin/tl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -3150,20 +3150,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 28.0,
-                "y": 0.0
+                "x": 36.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": -28.0
+                "x": -8.0,
+                "y": -36.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 44.0,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -3173,8 +3173,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -3182,8 +3182,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -128.0,
+                "y": 323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -3206,7 +3206,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "22e0251a4ff54a579bf661a07e42fbf1"
+                "DataId": "baa70560b5b849dab41a916b88809d6f"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -3265,7 +3265,7 @@
         }
       },
       {
-        "id": "d9066b2d-5e16-4911-95b2-10dfb6d306d6",
+        "id": "9ee1ef87-bed9-4756-aba9-d1d961952f41",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin/tr",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -3301,20 +3301,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": -28.0,
-                "y": -28.0
+                "x": -36.0,
+                "y": -36.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 44.0,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -3324,8 +3324,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -3333,8 +3333,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 128.0,
+                "y": 323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -3357,7 +3357,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "d219f3c71841474abc365132a465196f"
+                "DataId": "ec8699c78dbf41c6ab90dcc8af0ddf8d"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -3416,7 +3416,7 @@
         }
       },
       {
-        "id": "da31fcb4-c8f2-496c-a54f-58d21cdb6a70",
+        "id": "966ca3f6-4f84-4573-9435-d1dc3d504475",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin/bl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -3452,20 +3452,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 36.0,
+                "y": 36.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 44.0,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -3475,8 +3475,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -3484,8 +3484,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -128.0,
+                "y": -323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -3508,7 +3508,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "7887285fa389492bb15074c6c0fa77a0"
+                "DataId": "c7b177f3e2fb472ca6dade7ee80a33d6"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -3567,7 +3567,7 @@
         }
       },
       {
-        "id": "3528163b-8607-4c2b-8511-3ad44aa8d045",
+        "id": "2f1f6bbc-6d51-497e-88da-929b57212e20",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/LeftPanel/Skin/br",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -3603,20 +3603,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 28.0
+                "x": 8.0,
+                "y": 36.0
               },
               "OffsetMin": {
-                "x": -28.0,
-                "y": 0.0
+                "x": -36.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 44.0,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -3626,8 +3626,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -3635,8 +3635,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 128.0,
+                "y": -323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -3659,7 +3659,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "f025777f9d0343f09361cf4fbc69032e"
+                "DataId": "3c196296120b47b8accae6c9dd9aa29c"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -3869,7 +3869,7 @@
         }
       },
       {
-        "id": "92010201-3ba7-4e66-8f9a-e2619e76ff60",
+        "id": "7dde4dc4-9997-4faa-a29d-92a4c461f556",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin",
         "componentNames": "MOD.Core.UITransformComponent",
         "jsonString": {
@@ -3960,7 +3960,7 @@
         }
       },
       {
-        "id": "78aa2ac2-f9af-41ab-a1cc-7423b4c9b26b",
+        "id": "b5f0af5d-c02a-4c72-ac1f-fb8a9baa01f0",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin/c",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -3996,20 +3996,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -24.0,
-                "y": -24.0
+                "x": -13.1099854,
+                "y": -0.119995117
               },
               "OffsetMin": {
-                "x": 24.0,
-                "y": 24.0
+                "x": 13.1099854,
+                "y": 0.119995117
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 422.0,
-                "y": 582.0
+                "x": 443.780029,
+                "y": 629.76
               },
               "UIMode": 1,
               "UIScale": {
@@ -4052,7 +4052,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "7f97f9240a3f4a979a4d5bbd6d76d648"
+                "DataId": "bba4569533ef45e8b2b39fbe84a7010b"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -4111,7 +4111,7 @@
         }
       },
       {
-        "id": "806f09f4-770b-4364-a4af-28e3b0591526",
+        "id": "add81846-3bda-459e-af33-da1b347a079e",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin/t",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -4147,20 +4147,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -24.0,
-                "y": 0.0
+                "x": -13.1099854,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 24.0,
-                "y": -28.0
+                "x": 13.1099854,
+                "y": -36.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 422.0,
-                "y": 28.0
+                "x": 443.780029,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -4171,7 +4171,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -4180,7 +4180,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": 323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -4203,7 +4203,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "dc84f1988f0c4c8abd0d7b61cdbbf939"
+                "DataId": "7f888a51ac594d3daa5c7cf226d9d861"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -4262,7 +4262,7 @@
         }
       },
       {
-        "id": "f1d07f75-49cf-44f9-98b1-1380b7556a7f",
+        "id": "d84b21b6-f8d5-4dd9-afe2-f4b7872033ba",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin/b",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -4298,20 +4298,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -24.0,
-                "y": 28.0
+                "x": -13.1099854,
+                "y": 36.0
               },
               "OffsetMin": {
-                "x": 24.0,
-                "y": 0.0
+                "x": 13.1099854,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 422.0,
-                "y": 28.0
+                "x": 443.780029,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -4322,7 +4322,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -4331,7 +4331,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": -323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -4354,7 +4354,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "a1876c67b0d1432d9d328a91e7f5c39e"
+                "DataId": "74d8931fb2214842b143b91747401141"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -4413,7 +4413,7 @@
         }
       },
       {
-        "id": "82b07fc7-60a5-41f7-95be-ee1ab08f06bd",
+        "id": "9d13b8ce-d4b2-47ae-9ff5-76ddab7852cc",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin/l",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -4449,20 +4449,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 28.0,
-                "y": -24.0
+                "x": 36.0,
+                "y": -0.119995117
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 24.0
+                "x": -8.0,
+                "y": 0.119995117
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 582.0
+                "x": 44.0,
+                "y": 629.76
               },
               "UIMode": 1,
               "UIScale": {
@@ -4472,7 +4472,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": -8.0,
                 "y": 0.0
               },
               "Rotation": {
@@ -4481,7 +4481,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": -243.0,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -4505,7 +4505,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "797171a0da1d459dba7c9a7dc0cdadaf"
+                "DataId": "dc8dc261d6844e228962f33a55d08e97"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -4564,7 +4564,7 @@
         }
       },
       {
-        "id": "f733a2a4-cd52-4bf1-98da-91df5eb3693e",
+        "id": "0149035b-454c-4f75-82f1-58bae30f423e",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin/r",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -4600,20 +4600,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": -24.0
+                "x": 8.0,
+                "y": -0.119995117
               },
               "OffsetMin": {
-                "x": -28.0,
-                "y": 24.0
+                "x": -36.0,
+                "y": 0.119995117
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 582.0
+                "x": 44.0,
+                "y": 629.76
               },
               "UIMode": 1,
               "UIScale": {
@@ -4623,7 +4623,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": 8.0,
                 "y": 0.0
               },
               "Rotation": {
@@ -4632,7 +4632,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": 243.0,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -4656,7 +4656,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "1dc21941e53b43f19b3dd2f6a886adb1"
+                "DataId": "0ba332ee427d412a8c96fda7db5c4e71"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -4715,7 +4715,7 @@
         }
       },
       {
-        "id": "b0ea8547-7843-49f4-8228-e545289dbf46",
+        "id": "414cb2b4-8918-48ff-a609-ea763d58f13d",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin/tl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -4751,20 +4751,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 28.0,
-                "y": 0.0
+                "x": 36.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": -28.0
+                "x": -8.0,
+                "y": -36.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 44.0,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -4774,8 +4774,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -4783,8 +4783,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -243.0,
+                "y": 323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -4807,7 +4807,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "22e0251a4ff54a579bf661a07e42fbf1"
+                "DataId": "baa70560b5b849dab41a916b88809d6f"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -4866,7 +4866,7 @@
         }
       },
       {
-        "id": "028ae97e-bc7c-444f-bdbe-88bde3798be8",
+        "id": "93357628-cc67-4124-b602-48998d20a20f",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin/tr",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -4902,20 +4902,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": -28.0,
-                "y": -28.0
+                "x": -36.0,
+                "y": -36.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 44.0,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -4925,8 +4925,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -4934,8 +4934,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 243.0,
+                "y": 323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -4958,7 +4958,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "d219f3c71841474abc365132a465196f"
+                "DataId": "ec8699c78dbf41c6ab90dcc8af0ddf8d"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -5017,7 +5017,7 @@
         }
       },
       {
-        "id": "239b3476-0a80-4ceb-aa5f-64b19492b16b",
+        "id": "df3ebd1f-8f23-4659-8b0e-5c72e19d2dce",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin/bl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -5053,20 +5053,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 36.0,
+                "y": 36.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 44.0,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -5076,8 +5076,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -5085,8 +5085,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -243.0,
+                "y": -323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -5109,7 +5109,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "7887285fa389492bb15074c6c0fa77a0"
+                "DataId": "c7b177f3e2fb472ca6dade7ee80a33d6"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -5168,7 +5168,7 @@
         }
       },
       {
-        "id": "602627a5-88d8-49ee-a339-8c9117bf3be1",
+        "id": "b10af047-3bae-44bd-b81f-3222b5f6d4b6",
         "path": "/ui/AnvilGroup/AnvilPopup/Bg/RightPanel/Skin/br",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -5204,20 +5204,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 28.0
+                "x": 8.0,
+                "y": 36.0
               },
               "OffsetMin": {
-                "x": -28.0,
-                "y": 0.0
+                "x": -36.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 44.0,
+                "y": 44.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -5227,8 +5227,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -5236,8 +5236,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 243.0,
+                "y": -323.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -5260,7 +5260,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "f025777f9d0343f09361cf4fbc69032e"
+                "DataId": "3c196296120b47b8accae6c9dd9aa29c"
               },
               "LocalPosition": {
                 "x": 0.0,

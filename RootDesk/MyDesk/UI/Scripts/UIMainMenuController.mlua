@@ -186,7 +186,33 @@ script UIMainMenuController extends Component
 			.. " nameInput=" .. tostring(isvalid(self.nameInput))
 			.. " sfx=on")
 		self:RefreshBackgroundCover()
+		-- 진단: "가끔 시작 화면이 안 뜸 / 모바일 까만 화면" 재발 추적(2026-10-21). 스크립트상 열림인데 안 보이면 렌더 쪽 문제다.
+		self._T.diagTimer = _TimerService:SetTimerOnce(function()
+			self._T.diagTimer = nil
+			if not isvalid(self) or not isvalid(self.Entity) then return end
+			self:LogVisibility("t+3s")
+		end, 3)
 		self:InitializeBackgroundCover()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LogVisibility(string tag)
+		-- 시작 화면 구성 요소의 실제 표시 상태(EnabledInHierarchy)를 한 줄로 남긴다.
+		local function vis(e)
+			if not isvalid(e) then return "nil" end
+			return tostring(e.EnabledInHierarchy)
+		end
+		local root = _EntityService:GetEntityByPath("/ui/MainMenuGroup")
+		local art = nil
+		if isvalid(self.bg) then art = self.bg:GetChildByName("Art") end
+		local artSize = "?"
+		if isvalid(art) and isvalid(art.UITransformComponent) then
+			local rs = art.UITransformComponent.RectSize
+			artSize = string.format("%.0fx%.0f", rs.x, rs.y)
+		end
+		log(string.format("[VRF][MAINMENU] visibility %s open=%s mode=%s root=%s bg=%s art=%s artSize=%s title=%s screen=%dx%d",
+			tag, tostring(self.isOpen), tostring(self.menuMode), vis(root), vis(self.bg), vis(art), artSize, vis(self.titlePanel),
+			_UILogic.ScreenWidth, _UILogic.ScreenHeight))
 	end
 
 	@ExecSpace("ClientOnly")
@@ -202,6 +228,10 @@ script UIMainMenuController extends Component
 		if sprite ~= nil and sprite.IsLoadComplete and sprite.Width > 0 and sprite.Height > 0 then
 			self._T.BackgroundAspect = sprite.Width / sprite.Height
 			self:RefreshBackgroundCover()
+			log("[VRF][MAINMENU] keyart loaded " .. tostring(sprite.Width) .. "x" .. tostring(sprite.Height))
+		else
+			-- 키아트를 못 읽으면 어두운 Bg 만 남아 까만 화면처럼 보인다.
+			log_warning("[VRF][MAINMENU] keyart load failed ruid=" .. tostring(ruid) .. " loaded=" .. tostring(sprite ~= nil and sprite.IsLoadComplete))
 		end
 	end
 
@@ -230,6 +260,9 @@ script UIMainMenuController extends Component
 		local width = math.max(viewport.x, viewport.y * aspect)
 		art.UITransformComponent.RectSize = Vector2(width, width / aspect)
 		art.UITransformComponent.anchoredPosition = Vector2(0, 0)
+		-- 진단: 화면 크기가 바뀔 때만 찍힌다(창 확대·모바일 회전).
+		log(string.format("[VRF][MAINMENU] cover screen=%dx%d viewport=%.0fx%.0f art=%.0fx%.0f aspect=%.3f",
+			_UILogic.ScreenWidth, _UILogic.ScreenHeight, viewport.x, viewport.y, width, width / aspect, aspect))
 	end
 
 	@ExecSpace("ClientOnly")
@@ -278,6 +311,10 @@ script UIMainMenuController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnEndPlay()
+		if self._T.diagTimer ~= nil then
+			_TimerService:ClearTimer(self._T.diagTimer)
+			self._T.diagTimer = nil
+		end
 		-- 이번에 추가한 음악 버튼 연결을 해제한다.
 		if isvalid(self.btnMusic) and isvalid(self.btnMusic.Entity) then
 			local ent = self.btnMusic.Entity

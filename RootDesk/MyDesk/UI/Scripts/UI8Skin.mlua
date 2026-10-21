@@ -20,6 +20,10 @@ script UI8Skin extends Logic
 	-- 엔티티 Id → true : 호버 칠하기 잠금(비활성 버튼)
 	property table locked = {}
 	property integer scanTimer = 0
+	-- 조각 RUID → { w, h, e } (여백 뺀 원래 크기·여백 텍셀, ui8_bleed.json). 판 맞춤(FitSkin)에 쓴다.
+	property table bleed = {}
+	-- Skin 엔티티 Id → { skin, host, w, h } : 판 크기 변화 감시 대상과 마지막으로 맞춘 크기
+	property table fits = {}
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
@@ -29,9 +33,29 @@ script UI8Skin extends Logic
 			if v.c ~= nil then self.byCenter[v.c] = name end
 			if v.full ~= nil then self.byFull[v.full] = name end
 		end
+		self.bleed = self:BuildBleed()
 		self:Scan()
 		self.scanTimer = _TimerService:SetTimerRepeat(function() self:Scan() end, 1)
-		log("[VRF][UI8] skin logic ready variants=" .. tostring(self:CountVariants()))
+		local nFit = 0
+		for _ in pairs(self.fits) do nFit = nFit + 1 end
+		log("[VRF][UI8] skin logic ready variants=" .. tostring(self:CountVariants()) .. " fitSkins=" .. tostring(nFit))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 판 실금 방지: 컨트롤러가 런타임에 판 크기를 바꾸면(포탈 목록·제작대·툴팁 등) 늘어나는 조각의 여백이
+		-- .ui 저장 크기 기준이라 그림이 안쪽으로 밀려 조각 사이에 틈이 생긴다(2026-10-21) → 크기가 바뀐 판만 다시 맞춘다.
+		for id, rec in pairs(self.fits) do
+			local host = rec.host
+			if not isvalid(rec.skin) or not isvalid(host) then
+				self.fits[id] = nil
+			elseif host.EnabledInHierarchy then
+				local rs = host.UITransformComponent.RectSize
+				if rs.x ~= rec.w or rs.y ~= rec.h then
+					self:FitSkin(host)
+				end
+			end
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -57,10 +81,134 @@ script UI8Skin extends Logic
 		for id, rec in pairs(self.bound) do
 			if not isvalid(rec.entity) then self.bound[id] = nil end
 		end
-		local roots = { "/ui/PopupGroup", "/ui/HUDGroup", "/ui/DialogGroup", "/ui/NamingGroup", "/ui/AnvilGroup", "/ui/SettingsGroup" }
+		local roots = { "/ui/PopupGroup", "/ui/HUDGroup", "/ui/DialogGroup", "/ui/NamingGroup", "/ui/AnvilGroup", "/ui/SettingsGroup", "/ui/TooltipGroup" }
 		for _, p in ipairs(roots) do
 			local e = _EntityService:GetEntityByPath(p)
-			if isvalid(e) then self:Walk(e) end
+			if isvalid(e) then
+				self:WalkFits(e)
+				self:Walk(e)
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void WalkFits(Entity e)
+		-- 판 맞춤 감시 대상 등록. 꺼진 가지도 훑는다(창을 여는 순간 크기가 바뀌므로 미리 알고 있어야 한다).
+		if e.Name == "Skin" then
+			if self.fits[e.Id] == nil and isvalid(e.Parent) and isvalid(e.Parent.UITransformComponent) then
+				-- w/h = -1 : 다음 OnUpdate 에서 한 번 맞춘다(같은 크기면 저장값 그대로 나온다).
+				self.fits[e.Id] = { skin = e, host = e.Parent, w = -1, h = -1 }
+			end
+			return
+		end
+		for _, c in ipairs(e.Children:ToTable()) do
+			self:WalkFits(c)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method any PieceInfo(Entity p)
+		-- 조각 RUID 의 { w, h, e }. 여백 조각(ui8b_)이 아니면 nil.
+		if not isvalid(p) or not isvalid(p.SpriteGUIRendererComponent) then return nil end
+		return self.bleed[p.SpriteGUIRendererComponent.ImageRUID.DataId]
+	end
+
+	@ExecSpace("ClientOnly")
+	method number ArtSize(Entity p, boolean xAxis)
+		-- 고정 크기 조각(모서리·3조각 양 끝)의 그림 크기 = 표시 크기 / (1 + 2e/원래 크기).
+		local info = self:PieceInfo(p)
+		local rs = p.UITransformComponent.RectSize
+		if xAxis then
+			if info == nil then return rs.x end
+			return rs.x / (1 + 2 * info.e / info.w)
+		end
+		if info == nil then return rs.y end
+		return rs.y / (1 + 2 * info.e / info.h)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void FitSkin(Entity host)
+		-- host 아래 Skin 의 늘어나는 조각(c·t·b·l·r)을 host 현재 크기에 맞춰 다시 놓는다.
+		-- 그림 경계는 ui8_kit.skin9/skin3 과 같은 규칙: 모서리(양 끝) 그림 크기 L/R/T/B 에서 겹침 o 만큼 안쪽.
+		-- 여백 폭 = e × (그 축 그림 길이) / 원래 크기. 규칙 10(stretch 를 믿지 않음)에 따라 Offset·RectSize·위치 모두 명시.
+		if not isvalid(host) or not isvalid(host.UITransformComponent) then return end
+		local skin = host:GetChildByName("Skin")
+		if not isvalid(skin) or not isvalid(skin.UITransformComponent) then return end
+		local hs = host.UITransformComponent.RectSize
+		local rec = self.fits[skin.Id]
+		if rec == nil then
+			rec = { skin = skin, host = host }
+			self.fits[skin.Id] = rec
+		end
+		rec.w = hs.x
+		rec.h = hs.y
+
+		-- Skin 컨테이너: 가로는 host 폭, 세로는 host 높이(3조각 가운데 정렬 판이면 저장된 높이 그대로).
+		local st = skin.UITransformComponent
+		local sw = hs.x
+		local sh = hs.y
+		if (st.AnchorsMax.y - st.AnchorsMin.y) < 0.5 then sh = st.OffsetMax.y - st.OffsetMin.y end
+		st.RectSize = Vector2(sw, sh)
+
+		local tl = skin:GetChildByName("tl")
+		local nine = isvalid(tl)
+		local L = 0
+		local R = 0
+		local T = 0
+		local B = 0
+		local o = 4
+		if nine then
+			L = self:ArtSize(tl, true)
+			T = self:ArtSize(tl, false)
+			R = self:ArtSize(skin:GetChildByName("tr"), true)
+			B = self:ArtSize(skin:GetChildByName("bl"), false)
+		else
+			local l = skin:GetChildByName("l")
+			local r = skin:GetChildByName("r")
+			if not isvalid(l) or not isvalid(r) then return end
+			L = self:ArtSize(l, true)
+			R = self:ArtSize(r, true)
+			o = math.min(2, math.floor(math.min(L, R) / 2 + 0.001))
+		end
+		-- 그림 경계(판 가장자리 기준 Offset): 가로 [L-o, -(R-o)], 세로는 9조각 [B-o, -(T-o)] / 3조각 [0, 0]
+		local loX = L - o
+		local hiX = -(R - o)
+		local loY = 0
+		local hiY = 0
+		if nine then
+			loY = B - o
+			hiY = -(T - o)
+		end
+		for _, name in ipairs({ "c", "t", "b", "l", "r" }) do
+			local p = skin:GetChildByName(name)
+			local info = self:PieceInfo(p)
+			if info ~= nil and isvalid(p.UITransformComponent) then
+				local t = p.UITransformComponent
+				local sx = (t.AnchorsMax.x - t.AnchorsMin.x) > 0.5
+				local sy = (t.AnchorsMax.y - t.AnchorsMin.y) > 0.5
+				local mn = t.OffsetMin
+				local mx = t.OffsetMax
+				local minX, maxX, minY, maxY = mn.x, mx.x, mn.y, mx.y
+				if sx then
+					local m = info.e * (sw - loX + hiX) / info.w
+					minX = loX - m
+					maxX = hiX + m
+				end
+				if sy then
+					local m = info.e * (sh - loY + hiY) / info.h
+					minY = loY - m
+					maxY = hiY + m
+				end
+				local w = maxX - minX
+				local h = maxY - minY
+				if sx then w = w + sw end
+				if sy then h = h + sh end
+				local pv = t.Pivot
+				t.OffsetMin = Vector2(minX, minY)
+				t.OffsetMax = Vector2(maxX, maxY)
+				t.RectSize = Vector2(w, h)
+				t.anchoredPosition = Vector2(minX * (1 - pv.x) + maxX * pv.x, minY * (1 - pv.y) + maxY * pv.y)
+			end
 		end
 	end
 
@@ -162,6 +310,8 @@ script UI8Skin extends Logic
 			local p = skin:GetChildByName(k)
 			if isvalid(p) then p.SpriteGUIRendererComponent.ImageRUID = r end
 		end
+		-- 변형마다 조각 원래 크기가 달라 여백 폭도 다르다 → 바꾼 그림 기준으로 다시 맞춘다.
+		self:FitSkin(e)
 		return true
 	end
 
@@ -193,42 +343,42 @@ script UI8Skin extends Logic
 		-- 생성 영역(손으로 고치지 말 것 — scripts/ui8_apply_20261017.cjs 가 다시 쓴다).
 		local t = {}
 		-- [UI8-VARIANTS-BEGIN]
-		t["popup_frame"] = { full = "a9803eda3ef94f27afa4288f6384b974", tl = "fc86ce9c1f8647a3a20ddea40fc6ad43", t = "16a36296620b456e82cf5dc9d404adb6", tr = "6e1ac317cb084c908a58fc27e1ad19c4", l = "5c6e925ece724be482abb19f51b775dc", c = "232350c1a4a645f6a670319b699ed044", r = "f79d70ad9fca43cdbd5ee48cbf1d01f9", bl = "49d68773812846368bdb76ae9760a816", b = "a604a4fcbf76445eab1bb0686a980134", br = "4e6f76c9f0d34495a9a99dc29512a260" }
-		t["subpanel"] = { full = "c0a5ff7d776e42b0a44ebe720422864e", tl = "9216f914c3254195a07ae1a235d34350", t = "56f441778a2f49438dff56435def2032", tr = "b67381a5c55c4379b358c5527def1fa8", l = "0931ab466c004d24bec1cc8a07b1da67", c = "2536d882177f4f4a916d97d31985122b", r = "06aba675a72245c093b0de316066d539", bl = "10c284039a6b489da44ecbbef0197bd8", b = "51f9f6c393894c49b6826404a107a7e6", br = "a0941287b3a94fff9a5bc717acac0994" }
-		t["dialog_frame"] = { full = "6c14a296c624476f901975526e731bfc", tl = "0d15aa6b5ae74c38953e5840c91ff440", t = "8fc86fd6fe864981906228bb29ba26ba", tr = "312c6d7139b94ae880c109f676a7858e", l = "d7cf60a82ad648e99c311866071c0766", c = "30f2f4633e8f4aa29a5ce5807523b63f", r = "bcee9cd5f5394993b77b27bdee59b18d", bl = "aea45a016f114e2d9a4f8123ebdfc569", b = "632df6814c7f496ab40913766db7c34f", br = "18fa4cbce86b4cb4862b9f57a49ac3af" }
-		t["darkwood_filigree"] = { full = "66eb734bb7e14bd799c4ca822d62ef1b", tl = "bdb8c319edfc4563b681a9e34c289594", t = "d5a65abeace34f3a90edd9929846eb3e", tr = "e750aa0fb3e8446383eaa49bcb88b615", l = "c6664b8b19e34123a7642ad966e2797e", c = "1451707c05454c3898e1a0573314b2ca", r = "9beffab73ead4d76a45980098121e823", bl = "d6a0b823332d47c7b8d00836090a77a1", b = "264a92e44385407581ed75e63e95da34", br = "a8b64b9d6f8c4abda0f3ba2605bc0cd7" }
-		t["fish_board"] = { full = "fb5eb5c3436449668aef3ddb7cd38842", tl = "22e0251a4ff54a579bf661a07e42fbf1", t = "dc84f1988f0c4c8abd0d7b61cdbbf939", tr = "d219f3c71841474abc365132a465196f", l = "797171a0da1d459dba7c9a7dc0cdadaf", c = "7f97f9240a3f4a979a4d5bbd6d76d648", r = "1dc21941e53b43f19b3dd2f6a886adb1", bl = "7887285fa389492bb15074c6c0fa77a0", b = "a1876c67b0d1432d9d328a91e7f5c39e", br = "f025777f9d0343f09361cf4fbc69032e" }
-		t["status_card"] = { full = "82b714a1f6f04812b5d2075234184bfe", tl = "105e24187ee14d7b960a08436e47c358", t = "2c604d95a00f41bb98dceeda0b939ec8", tr = "527e52a031e84326a5664b064134cd49", l = "5d3b40cee14b4617b3ae40d47568f3bd", c = "b12bc680eb21494db3f36a4a853c62b5", r = "264b7c48626b4c16b1c50961a6cdc275", bl = "f39b1d5f48c24a729157625cac96fc3a", b = "541f0e7bb7b849999086e3e7f6eb5249", br = "75fd3d645ced44e5bbb6c2827334ada9" }
-		t["row"] = { full = "5818835f9df4481c8b418880ade7e6aa", l = "3db306e689ee4e648785bffcec23c1d8", c = "f922b9bca2c84b6ba711c94f8801d9ea", r = "3f76fbad1759446ebdf796a321c8721d" }
-		t["row_sel"] = { full = "40f6f68a8da54646ad7e156b82bf4ba9", l = "cd6b0130ad7a48fd865a16d617e115cc", c = "4632ba13752c4253b61a99cb87bc0596", r = "4761cc1ebe8143c2a49c768bb4725996" }
-		t["row_wide"] = { full = "d5512dc4e6ed485db8d8e98366f9e705", l = "30d5aea9dfb344db8a2501e213470249", c = "764aeb7d8218472098f8aa5e9c271519", r = "309c64ebedcc47c8a57da6ec6ef1fdd1" }
-		t["row_wide_sel"] = { full = "0b0ce06e9178436aa1fa41e5fc5b08ed", l = "e892648f303d491282eaf195f7a35bb6", c = "b8ee7c8625f84f96bdb4771f70973044", r = "bfc7c7a8dd1b44c1a8be648d983ad5a7" }
-		t["btn_amber"] = { full = "40e03d848166411d8a0e3f6ea5f6e91d", l = "8fe4c20f0fc84a1bbb5dbefe687a693f", c = "3c9cde78b97f4bf6a7469e93dc570385", r = "08f7cfbffdc94e6f9a4f8c288ef7e0d6" }
-		t["btn_oak"] = { full = "e1b82a929fc943389bcdff08224b6341", l = "ba08e2625e7f4be2895ed05fecc4a395", c = "2881a01145f14642b788d658f9991555", r = "6dbeccbdc0624bbf91b12f11ed46e251" }
-		t["btn_green"] = { full = "a24e09ed5e7b49d1895e6b7935f71d12", l = "6d44bad896d64642af3a77b6c293bbea", c = "3ebb904226b14e2599cc840b4c4be65f", r = "f6ba4c81062847c9b0b8d858e945b243" }
-		t["btn_olive"] = { full = "83faa6e88ae543f68d6704cf10d914b5", l = "595f83cbe4e748028aa3842b5d2a3ad7", c = "9887a75c438342118e0326d4d9428fc9", r = "7c900045f964417dbe2594a93449c263" }
-		t["btn_red"] = { full = "1d91c5e9203d49b7a54553b9d330df8e", l = "e06426add73142c09e9b408bea44e2b4", c = "b6e2642d8a9d443f8cb7fa392b88e91b", r = "ffe1924ec21246ff87bcd9be6843caf9" }
-		t["btn_disabled"] = { full = "b88d493e65aa428cbe0d070677678eec", l = "c36fd81f34b44f8595be30851772dfc6", c = "61f85ac9a33f400abd3bab96d185dbd3", r = "6bf371d79259430e8e3886130d086893" }
-		t["fish_track"] = { full = "1e797a5b875f402e9b9392f3313d4281", l = "6df1022536164305b47b3a35f4a7e135", c = "4363478fdbd248ff9eda2b803f544336", r = "5e15f2c3bd6e42b79910aa1787581f0f" }
-		t["fish_fill_amber"] = { full = "9750b0dec9d34626a2a734fd7f1e0a20", l = "c013618354674aaa8443ed9363db5ac2", c = "5d3eed2451ad40a0807d5a5feefe5cc0", r = "275e322272d84650a5ae08f9e9cd36f1" }
-		t["fish_fill_red"] = { full = "67d91b731f924f64b86b52121f6dcc50", l = "540b7a473dac4498b7dc7217949698fe", c = "9049437917b247239dcd6927308898c9", r = "393ea071b47f40c090bd9ef63ac51814" }
-		t["fish_fill_cream"] = { full = "d5704a9f0f3446c09247a10ae95c996a", l = "cda655b93bc047bd947890901637a87c", c = "bdd86ee55b404e089324c9b5c61f0079", r = "9045c06d233943afbe6d1bcd7e776431" }
-		t["badge_left"] = { full = "7bcff1d3bc8c4c29a89484cefcd86cb5", l = "9d201689d7764415bb8baa9cb6242fc7", c = "f9d48d1bfd434025acc6db846fc5c996", r = "649ddc053924498bb49f36c3773a3963" }
-		t["badge_right"] = { full = "dde5dedbdb0f4fb5aca9d47e9442443d", l = "efd1216fdb714ef383124e0a113e2bc5", c = "7d70779b25ac443a9efeda568cbf1c09", r = "1095e0f5e72048389c67b6b377fae9d1" }
-		t["tip_plaque"] = { full = "d4b1d03a1ac3403b983a941d19a3469f", l = "26a899232eaa4b0690f193352a8282a7", c = "6f67c486ebcf4caea17ce555cdce6f3f", r = "f6db9ac25abc4fbb80cef065bd6d2e36" }
-		t["skill_node"] = { full = "cf4ffaa34ba94a13bed40aa51905821a", l = "b85efb884b154913887913c557b82d04", c = "7a2f558c27ae48a281df78325354f0a0", r = "8d4952092ed84f5dad4ef59b92d94c06" }
-		t["gauge_track"] = { full = "53fecd5199224e37a16dd0285e601703", l = "2413db0865f648d690a2b7b7310b415f", c = "78732c0bcc4f48a18b0362787f000d0c", r = "3a5a9c29095940368113a169a6adf2eb" }
-		t["gauge_hp"] = { full = "5693529d588f48edb586985965bc0b1d", l = "c16b0f64c68841508dfb1ba8e7318e8c", c = "725c046b1eb14760802b79cf691164f4", r = "7722d63815444397a1da7a1123016bf6" }
-		t["gauge_mp"] = { full = "3a8fdf8e006f42a0908ccc390d993822", l = "fc72e2cffb6b4b77bf76bfb99677ab13", c = "33045fbdc6db4ce09a0bccb1bab00773", r = "9f93b68e661d491987d753a6b4042fa1" }
-		t["gauge_st"] = { full = "f75732f1af5d470d92cd9b59c46fd487", l = "d6ef18cd39ea4a8f8f2a9120902aa593", c = "def80318822d495bad1e4fdb0533b48e", r = "00121a1000d845449fea7f56ee7d51ee" }
-		t["gauge_exp"] = { full = "31c50f3e84274f02be52d8d7d7151fae", l = "fb5759ba9b8143c5bcb80a23a279b317", c = "d9b73c806b7b48d582a495109fd26161", r = "3c109bb094ef4acd8cce8f54e105731a" }
-		t["tab_on"] = { full = "cd6aa8589818438b9a2010c69a08ade5", l = "718dbe9fb0c545d3ba5c420857720777", c = "794d0929a2854cfc999a386a08b95495", r = "0f14b59055374d4d863c80321f65f0eb" }
-		t["tab_off"] = { full = "9dcbfffd575e4a8683a9057fdde5d951", l = "a7ae88cc9de943a1bed1d1e900216234", c = "a1d25ae3452a43e7b016ccab393732a6", r = "4c73fe65a33241ffbfc992629ac6176f" }
-		t["input"] = { full = "6260492a67be40b6b20da24aec2b4ff6", l = "4deed0d311ac469d85a4d27f0dafa19f", c = "c5b746b8d69043639d11e27979d4b1e6", r = "8907251456574d30b51ffe0f7015bfaa" }
-		t["pill_badge"] = { full = "3600c78e475b4f8aa77b44c91092a2c6", l = "0a7d6d3f3be14ee6a661d2f2f9e857af", c = "223f5c00fe004dc09dcad2d6f8e6b627", r = "760e33bea1774b34893f7beb889d4cdc" }
-		t["toast_leaf"] = { full = "2c774186d9854decaa7bd5820501955f", l = "a0fb45ffd5b04c159142c2e7db8e410e", c = "fe41f6a1ff964a65b54e69457fbbce2a", r = "243b00ece7144ffd9bbbba15438f31f5" }
-		t["dialog_nameplate"] = { full = "749b26b1ee0c4e369fc1771bf1c88acc", l = "ca1f96a1846f4d7997aa8679c5c69074", c = "75b14feac27d4966a1b7256e0780274a", r = "eb562d3598d0414682a472e1cfbf0d3b" }
-		t["scroll_banner"] = { full = "636d7e2fdd7c4fbba998f17d65ab515c", l = "ad46b077025243a9a702289208e92b3f", c = "820b69a0bc604f0bb649ac54476886e1", r = "40fb2a3f4bf24f3eb472bce927334b18" }
+		t["popup_frame"] = { full = "a9803eda3ef94f27afa4288f6384b974", tl = "b0c98dd657ea42b28d625f8d7944ee44", t = "3aa6482bb2c847adbd93972341b6ae8a", tr = "6435a073e54c485faf33389e9794b972", l = "2aeaf41c268544cbaecf0a9a5b9f5318", c = "41a50d5d2f2d4aefae334423489276e8", r = "1e38677aa5db4748bdd12f46aec7330b", bl = "a8ecc9ccdff24ff192198cba54c1b0eb", b = "1b02a9180c5545bf8e02c2f1dd512bf3", br = "b935725a41264ebfb5c607feb6b5f138" }
+		t["subpanel"] = { full = "c0a5ff7d776e42b0a44ebe720422864e", tl = "5fdd5d92bdb54d1ab8c085e7d9eb0f67", t = "8775a679bbeb41baa26208968ac72126", tr = "ca9ebd847288490e9c7c267ca393f46d", l = "2b06e29c43104fb6b2127cbcb5b2e0ce", c = "9c6d0fc981af48b48d05cbbdb8248117", r = "3eda4af5862943f7a97ce4641be6b9f4", bl = "ba294aec71e24c06abe78b028cd83f38", b = "44e599d80e494832bd2477badc4fa830", br = "22a1965480bf4afcbc02fde23645cf67" }
+		t["dialog_frame"] = { full = "6c14a296c624476f901975526e731bfc", tl = "09e04aaa36f9495889123d2660c1edbf", t = "ef3cb2a3b1f944e7b6235609f03ca0cd", tr = "6a4d8b2c48224e50b9a5d3110ef2f613", l = "8f5b6a999aea4aa799d07baa20f9f978", c = "50cf6992ae154d48a9de502234fe4aa9", r = "083e1344f5164900883c5b72854b691b", bl = "7b5931900505454a9921c4b3669e7145", b = "7aa9da181c6f4cd2b8500c1078bae7f5", br = "d6d74e14f59b467fb8ea6509e977623c" }
+		t["darkwood_filigree"] = { full = "66eb734bb7e14bd799c4ca822d62ef1b", tl = "75ff35e3652f4eb39015852ce8c95a18", t = "14d212ce51ca45d5a32ef8fdb257ca7d", tr = "6c89eb52d81148f49c7d96be6f7bb2ed", l = "369614535b7e4471859c0ed7f8655038", c = "3cedab48e36c41f1bb29372f07419b61", r = "14297f3c6ab94451b90d8bd5924b0483", bl = "1b5f0056743c4f49acb2530411417aa0", b = "26a26849c60445da8b943ea63cf1fede", br = "74e96616cd31481f991317e414fd83ae" }
+		t["fish_board"] = { full = "fb5eb5c3436449668aef3ddb7cd38842", tl = "baa70560b5b849dab41a916b88809d6f", t = "7f888a51ac594d3daa5c7cf226d9d861", tr = "ec8699c78dbf41c6ab90dcc8af0ddf8d", l = "dc8dc261d6844e228962f33a55d08e97", c = "bba4569533ef45e8b2b39fbe84a7010b", r = "0ba332ee427d412a8c96fda7db5c4e71", bl = "c7b177f3e2fb472ca6dade7ee80a33d6", b = "74d8931fb2214842b143b91747401141", br = "3c196296120b47b8accae6c9dd9aa29c" }
+		t["status_card"] = { full = "82b714a1f6f04812b5d2075234184bfe", tl = "b166894fd405484cad1001941851eb34", t = "3ef2e62949f9487eab6c70560de7ec72", tr = "61c1dd57e4254795842b99b9a00268f0", l = "5729f9dd82c745848b821a2cfc829288", c = "de3cd22b8a354e7abd2f7773363ef093", r = "a69a735460c74a72a6247c6c99490d51", bl = "51d54717dac548a8be6f85c79f97e903", b = "57f744c65d054086af38ebfe6c1f4c17", br = "687174987c0346e7a95a14dc212f93e9" }
+		t["row"] = { full = "5818835f9df4481c8b418880ade7e6aa", l = "602c238d44404f09a49d8fba97fa7e43", c = "b486aa4586ec46c6b750f1f34c4edba6", r = "276f3104009344c3a0842c9abecec3a9" }
+		t["row_sel"] = { full = "40f6f68a8da54646ad7e156b82bf4ba9", l = "463c3f0fcdc94bd8aadafe5bcc553a85", c = "e2f37938ce8b40c4a048a9e1c11cd8fc", r = "7b8f36326d36477da13c12cfb9743e39" }
+		t["row_wide"] = { full = "d5512dc4e6ed485db8d8e98366f9e705", l = "6522132f4ca34f4b955634cf2208a6da", c = "e5586a993cd3431f9171441e5e179aba", r = "6cc9c7a53e294d618022934827d5ce96" }
+		t["row_wide_sel"] = { full = "0b0ce06e9178436aa1fa41e5fc5b08ed", l = "1cf47b50e99346b7b63191892569bd65", c = "0ce30059434e416a8d51d3958df5bd58", r = "4db76bc10fb346339dd934b9a33f9fad" }
+		t["btn_amber"] = { full = "40e03d848166411d8a0e3f6ea5f6e91d", l = "02340084dfbd48eba0c5bafdc3f0efdb", c = "df31b0b01bc944a3a5935ef35ca42c4d", r = "78677b88d30541ceafee42523b96c8e4" }
+		t["btn_oak"] = { full = "e1b82a929fc943389bcdff08224b6341", l = "a3ca5a63c40c47a086a6ab71f5d56566", c = "7e4732e45c9c42e4aa2dbdd0ba981097", r = "b2ab97326536409bb15cd304a245e390" }
+		t["btn_green"] = { full = "a24e09ed5e7b49d1895e6b7935f71d12", l = "a280ea4a744d49a69f7e490c496b41b7", c = "fb1f0ed1573b425cb3d19bd41c258232", r = "1263fba92fa144b496b293bb46612b1e" }
+		t["btn_olive"] = { full = "83faa6e88ae543f68d6704cf10d914b5", l = "d782edc3ab9343d288a247ff2aa6eaa8", c = "35ee03e7ff5b4e43a76b7d214d2b21dd", r = "7fe8cd37529c415fbafafab9af872ba9" }
+		t["btn_red"] = { full = "1d91c5e9203d49b7a54553b9d330df8e", l = "838ef2d786cb4dc09f401e61cec4c700", c = "b14dd04f07a0483898763406eb6fede0", r = "bfc095f4cfff40a2acea0894e0999f98" }
+		t["btn_disabled"] = { full = "b88d493e65aa428cbe0d070677678eec", l = "f7f85be00b1c4cfda15bf5e8a8ebd64b", c = "56ae1c64c525401c89606cc059a8b8e4", r = "e3d40ae6e3694bc998194545a8024589" }
+		t["fish_track"] = { full = "1e797a5b875f402e9b9392f3313d4281", l = "2385a99e32e341998fa61f1c400a3d56", c = "7c352ee3d8644d36864fd40daad867de", r = "d649df4486f0447bb9dcd6c48b8821de" }
+		t["fish_fill_amber"] = { full = "9750b0dec9d34626a2a734fd7f1e0a20", l = "5b48fdd6aeee43839b6b8d0b34c039a6", c = "af901799b2044b5ebfb3134cee16dacd", r = "93456c656c4a493e9111aef61418a187" }
+		t["fish_fill_red"] = { full = "67d91b731f924f64b86b52121f6dcc50", l = "fddc12b998a54bac820b9b5b0c74b1e7", c = "fc4c6c2581044b8bbb09d5b26eefac1b", r = "eeb42a8951124cbc88b9eef810e4c54a" }
+		t["fish_fill_cream"] = { full = "d5704a9f0f3446c09247a10ae95c996a", l = "9f1d4a9bc108441d80182bcb284298a3", c = "5e7ff854634441d481b6baed0e12dd10", r = "a311ac003e5f4adaa315a6911702fd72" }
+		t["badge_left"] = { full = "7bcff1d3bc8c4c29a89484cefcd86cb5", l = "4a14446787104a2796a0134520b58363", c = "da32d2389eaa4aeea5e61bb562446668", r = "cce71df4baa946709660807e395c5c3e" }
+		t["badge_right"] = { full = "dde5dedbdb0f4fb5aca9d47e9442443d", l = "303bed7674384cc388c24f5f8c61f8a1", c = "2241404853174c0f93c91e9c28447182", r = "11fae67fb5d54864abd3499ea6356c3d" }
+		t["tip_plaque"] = { full = "d4b1d03a1ac3403b983a941d19a3469f", l = "15f40c59bb0845b99757344ac8434d2a", c = "f959ec4dfd1b482693cc1fa3be672b70", r = "40582c068d5d4e34b67a9d39bd2a3f7f" }
+		t["skill_node"] = { full = "cf4ffaa34ba94a13bed40aa51905821a", l = "e3e7b9c344c7418b926326ff36dc58a7", c = "842e10fc2d504279b8049a747ec96b12", r = "49660dc93625468ea535a695888d306e" }
+		t["gauge_track"] = { full = "53fecd5199224e37a16dd0285e601703", l = "172eaf57e384459da48e03d5dd85fbb2", c = "7e844d503e4f4fd5ada1e9000e1747a5", r = "583bf30431e04ed4b3d7d7d4ecf9bcb1" }
+		t["gauge_hp"] = { full = "5693529d588f48edb586985965bc0b1d", l = "b6373cb2fbcf432eb55a06cca3d23353", c = "c52960bcc85846f6a252c3e372d23cef", r = "9fae7ce82e4b47f8baa60630e97b798a" }
+		t["gauge_mp"] = { full = "3a8fdf8e006f42a0908ccc390d993822", l = "f9b3ca3ba2b34d368a0f10bd209c538c", c = "390b73ba6e274a14aa2a9170fb91b918", r = "0683260949a44aa7a7a72aa7c3be4ce3" }
+		t["gauge_st"] = { full = "f75732f1af5d470d92cd9b59c46fd487", l = "96e0205225ab4d6d965aa487f297d2f4", c = "6079c15b6107400c97a632df38be7572", r = "805c205ad3a74baba5d9a0c8ab422f60" }
+		t["gauge_exp"] = { full = "31c50f3e84274f02be52d8d7d7151fae", l = "7ae76416fd4d447f8f8194115b32dfd7", c = "58891c7d8c344c4d9aaf355747b763bd", r = "c93903c3846a460197f3f4478a4658f0" }
+		t["tab_on"] = { full = "cd6aa8589818438b9a2010c69a08ade5", l = "b913f847cc6340fe85402037c69f2b4c", c = "d264a9edc2314b91bde4151e95f65492", r = "a2d1fc88f29640a39c5e119f3c42c8d2" }
+		t["tab_off"] = { full = "9dcbfffd575e4a8683a9057fdde5d951", l = "e8fade00869a43a78812ad2bd5d7956b", c = "fd97db88c5984b0fb6357f654bdf3839", r = "7d51ba2bcce140238f1fdacb9ed91454" }
+		t["input"] = { full = "6260492a67be40b6b20da24aec2b4ff6", l = "3e949fe36da24dfaa9a93c064bced777", c = "8da01257e3ff4aa585bf96704cb9683f", r = "bfc42452e04d4938b1cd57b57d49f153" }
+		t["pill_badge"] = { full = "3600c78e475b4f8aa77b44c91092a2c6", l = "f60b4094ab1f47ae82834cccad9ada19", c = "2ee511726e67426e954e27fc1a6afe1c", r = "39dd42f666b84a5798d7d0dc9efd07cf" }
+		t["toast_leaf"] = { full = "2c774186d9854decaa7bd5820501955f", l = "746acc4ef9a44f4b8b7a47d35ebcaf57", c = "c52c61cd7cfc467bb351e458b165057d", r = "76fd7f93cbe94f5db6a4a071251b1430" }
+		t["dialog_nameplate"] = { full = "749b26b1ee0c4e369fc1771bf1c88acc", l = "fef62a4dd2af405181df10de1092acda", c = "35acff27a6b445229a27286d4df83d82", r = "9897a958e175430992cbaa707af8ce48" }
+		t["scroll_banner"] = { full = "636d7e2fdd7c4fbba998f17d65ab515c", l = "59fc3d424d8c40feb25c9ffb2f6e658d", c = "ab916e27545d4a87818e25fbb03d4fa6", r = "b2f58436c9b543918f43a6b2fd43102b" }
 		t["btn_close"] = { full = "ae6b4ee3fc4748698bd5cce50bec1196" }
 		t["btn_minus"] = { full = "fc8f77bd3e8248bea522756f1ac9c088" }
 		t["btn_plus"] = { full = "60003f3131bb441baa0b7dc322aae693" }
@@ -271,6 +421,176 @@ script UI8Skin extends Logic
 		t["toggle_off"] = { full = "69a97f9b476e4373bcecc64f0295d3be" }
 		t["toggle_on"] = { full = "35ddbbf4f0ca41cebd833163e30f75a0" }
 		-- [UI8-VARIANTS-END]
+		return t
+	end
+
+	method table BuildBleed()
+		-- 생성 영역(손으로 고치지 말 것 — scripts/ui8_apply_20261017.cjs 가 ui8_bleed.json 에서 다시 쓴다).
+		local t = {}
+		-- [UI8-BLEED-BEGIN]
+		t["da32d2389eaa4aeea5e61bb562446668"] = { w = 105, h = 74, e = 8 } -- ui8b_badge_left_c
+		t["4a14446787104a2796a0134520b58363"] = { w = 36, h = 74, e = 8 } -- ui8b_badge_left_l
+		t["cce71df4baa946709660807e395c5c3e"] = { w = 36, h = 74, e = 8 } -- ui8b_badge_left_r
+		t["2241404853174c0f93c91e9c28447182"] = { w = 106, h = 74, e = 8 } -- ui8b_badge_right_c
+		t["303bed7674384cc388c24f5f8c61f8a1"] = { w = 36, h = 74, e = 8 } -- ui8b_badge_right_l
+		t["11fae67fb5d54864abd3499ea6356c3d"] = { w = 36, h = 74, e = 8 } -- ui8b_badge_right_r
+		t["df31b0b01bc944a3a5935ef35ca42c4d"] = { w = 130, h = 65, e = 8 } -- ui8b_btn_amber_c
+		t["02340084dfbd48eba0c5bafdc3f0efdb"] = { w = 24, h = 65, e = 8 } -- ui8b_btn_amber_l
+		t["78677b88d30541ceafee42523b96c8e4"] = { w = 24, h = 65, e = 8 } -- ui8b_btn_amber_r
+		t["56ae1c64c525401c89606cc059a8b8e4"] = { w = 126, h = 63, e = 8 } -- ui8b_btn_disabled_c
+		t["f7f85be00b1c4cfda15bf5e8a8ebd64b"] = { w = 24, h = 63, e = 8 } -- ui8b_btn_disabled_l
+		t["e3d40ae6e3694bc998194545a8024589"] = { w = 24, h = 63, e = 8 } -- ui8b_btn_disabled_r
+		t["fb1f0ed1573b425cb3d19bd41c258232"] = { w = 130, h = 67, e = 8 } -- ui8b_btn_green_c
+		t["a280ea4a744d49a69f7e490c496b41b7"] = { w = 24, h = 67, e = 8 } -- ui8b_btn_green_l
+		t["1263fba92fa144b496b293bb46612b1e"] = { w = 24, h = 67, e = 8 } -- ui8b_btn_green_r
+		t["7e4732e45c9c42e4aa2dbdd0ba981097"] = { w = 131, h = 66, e = 8 } -- ui8b_btn_oak_c
+		t["a3ca5a63c40c47a086a6ab71f5d56566"] = { w = 24, h = 66, e = 8 } -- ui8b_btn_oak_l
+		t["b2ab97326536409bb15cd304a245e390"] = { w = 24, h = 66, e = 8 } -- ui8b_btn_oak_r
+		t["35ee03e7ff5b4e43a76b7d214d2b21dd"] = { w = 130, h = 67, e = 8 } -- ui8b_btn_olive_c
+		t["d782edc3ab9343d288a247ff2aa6eaa8"] = { w = 24, h = 67, e = 8 } -- ui8b_btn_olive_l
+		t["7fe8cd37529c415fbafafab9af872ba9"] = { w = 24, h = 67, e = 8 } -- ui8b_btn_olive_r
+		t["b14dd04f07a0483898763406eb6fede0"] = { w = 130, h = 67, e = 8 } -- ui8b_btn_red_c
+		t["838ef2d786cb4dc09f401e61cec4c700"] = { w = 24, h = 67, e = 8 } -- ui8b_btn_red_l
+		t["bfc095f4cfff40a2acea0894e0999f98"] = { w = 24, h = 67, e = 8 } -- ui8b_btn_red_r
+		t["26a26849c60445da8b943ea63cf1fede"] = { w = 503, h = 42, e = 8 } -- ui8b_darkwood_filigree_b
+		t["1b5f0056743c4f49acb2530411417aa0"] = { w = 42, h = 42, e = 8 } -- ui8b_darkwood_filigree_bl
+		t["74e96616cd31481f991317e414fd83ae"] = { w = 42, h = 42, e = 8 } -- ui8b_darkwood_filigree_br
+		t["3cedab48e36c41f1bb29372f07419b61"] = { w = 503, h = 148, e = 8 } -- ui8b_darkwood_filigree_c
+		t["369614535b7e4471859c0ed7f8655038"] = { w = 42, h = 148, e = 8 } -- ui8b_darkwood_filigree_l
+		t["14297f3c6ab94451b90d8bd5924b0483"] = { w = 42, h = 148, e = 8 } -- ui8b_darkwood_filigree_r
+		t["14d212ce51ca45d5a32ef8fdb257ca7d"] = { w = 503, h = 42, e = 8 } -- ui8b_darkwood_filigree_t
+		t["75ff35e3652f4eb39015852ce8c95a18"] = { w = 42, h = 42, e = 8 } -- ui8b_darkwood_filigree_tl
+		t["6c89eb52d81148f49c7d96be6f7bb2ed"] = { w = 42, h = 42, e = 8 } -- ui8b_darkwood_filigree_tr
+		t["7aa9da181c6f4cd2b8500c1078bae7f5"] = { w = 610, h = 36, e = 8 } -- ui8b_dialog_frame_b
+		t["7b5931900505454a9921c4b3669e7145"] = { w = 36, h = 36, e = 8 } -- ui8b_dialog_frame_bl
+		t["d6d74e14f59b467fb8ea6509e977623c"] = { w = 36, h = 36, e = 8 } -- ui8b_dialog_frame_br
+		t["50cf6992ae154d48a9de502234fe4aa9"] = { w = 610, h = 147, e = 8 } -- ui8b_dialog_frame_c
+		t["8f5b6a999aea4aa799d07baa20f9f978"] = { w = 36, h = 147, e = 8 } -- ui8b_dialog_frame_l
+		t["083e1344f5164900883c5b72854b691b"] = { w = 36, h = 147, e = 8 } -- ui8b_dialog_frame_r
+		t["ef3cb2a3b1f944e7b6235609f03ca0cd"] = { w = 610, h = 36, e = 8 } -- ui8b_dialog_frame_t
+		t["09e04aaa36f9495889123d2660c1edbf"] = { w = 36, h = 36, e = 8 } -- ui8b_dialog_frame_tl
+		t["6a4d8b2c48224e50b9a5d3110ef2f613"] = { w = 36, h = 36, e = 8 } -- ui8b_dialog_frame_tr
+		t["35acff27a6b445229a27286d4df83d82"] = { w = 240, h = 58, e = 8 } -- ui8b_dialog_nameplate_c
+		t["fef62a4dd2af405181df10de1092acda"] = { w = 20, h = 58, e = 8 } -- ui8b_dialog_nameplate_l
+		t["9897a958e175430992cbaa707af8ce48"] = { w = 20, h = 58, e = 8 } -- ui8b_dialog_nameplate_r
+		t["74d8931fb2214842b143b91747401141"] = { w = 310, h = 28, e = 8 } -- ui8b_fish_board_b
+		t["c7b177f3e2fb472ca6dade7ee80a33d6"] = { w = 28, h = 28, e = 8 } -- ui8b_fish_board_bl
+		t["3c196296120b47b8accae6c9dd9aa29c"] = { w = 28, h = 28, e = 8 } -- ui8b_fish_board_br
+		t["bba4569533ef45e8b2b39fbe84a7010b"] = { w = 310, h = 195, e = 8 } -- ui8b_fish_board_c
+		t["dc8dc261d6844e228962f33a55d08e97"] = { w = 28, h = 195, e = 8 } -- ui8b_fish_board_l
+		t["0ba332ee427d412a8c96fda7db5c4e71"] = { w = 28, h = 195, e = 8 } -- ui8b_fish_board_r
+		t["7f888a51ac594d3daa5c7cf226d9d861"] = { w = 310, h = 28, e = 8 } -- ui8b_fish_board_t
+		t["baa70560b5b849dab41a916b88809d6f"] = { w = 28, h = 28, e = 8 } -- ui8b_fish_board_tl
+		t["ec8699c78dbf41c6ab90dcc8af0ddf8d"] = { w = 28, h = 28, e = 8 } -- ui8b_fish_board_tr
+		t["af901799b2044b5ebfb3134cee16dacd"] = { w = 199, h = 35, e = 8 } -- ui8b_fish_fill_amber_c
+		t["5b48fdd6aeee43839b6b8d0b34c039a6"] = { w = 17, h = 35, e = 8 } -- ui8b_fish_fill_amber_l
+		t["93456c656c4a493e9111aef61418a187"] = { w = 17, h = 35, e = 8 } -- ui8b_fish_fill_amber_r
+		t["5e7ff854634441d481b6baed0e12dd10"] = { w = 255, h = 35, e = 8 } -- ui8b_fish_fill_cream_c
+		t["9f1d4a9bc108441d80182bcb284298a3"] = { w = 17, h = 35, e = 8 } -- ui8b_fish_fill_cream_l
+		t["a311ac003e5f4adaa315a6911702fd72"] = { w = 17, h = 35, e = 8 } -- ui8b_fish_fill_cream_r
+		t["fc4c6c2581044b8bbb09d5b26eefac1b"] = { w = 255, h = 35, e = 8 } -- ui8b_fish_fill_red_c
+		t["fddc12b998a54bac820b9b5b0c74b1e7"] = { w = 17, h = 35, e = 8 } -- ui8b_fish_fill_red_l
+		t["eeb42a8951124cbc88b9eef810e4c54a"] = { w = 17, h = 35, e = 8 } -- ui8b_fish_fill_red_r
+		t["7c352ee3d8644d36864fd40daad867de"] = { w = 259, h = 64, e = 8 } -- ui8b_fish_track_c
+		t["2385a99e32e341998fa61f1c400a3d56"] = { w = 30, h = 64, e = 8 } -- ui8b_fish_track_l
+		t["d649df4486f0447bb9dcd6c48b8821de"] = { w = 30, h = 64, e = 8 } -- ui8b_fish_track_r
+		t["58891c7d8c344c4d9aaf355747b763bd"] = { w = 369, h = 32, e = 8 } -- ui8b_gauge_exp_c
+		t["7ae76416fd4d447f8f8194115b32dfd7"] = { w = 16, h = 32, e = 8 } -- ui8b_gauge_exp_l
+		t["c93903c3846a460197f3f4478a4658f0"] = { w = 16, h = 32, e = 8 } -- ui8b_gauge_exp_r
+		t["c52960bcc85846f6a252c3e372d23cef"] = { w = 363, h = 31, e = 8 } -- ui8b_gauge_hp_c
+		t["b6373cb2fbcf432eb55a06cca3d23353"] = { w = 15, h = 31, e = 8 } -- ui8b_gauge_hp_l
+		t["9fae7ce82e4b47f8baa60630e97b798a"] = { w = 15, h = 31, e = 8 } -- ui8b_gauge_hp_r
+		t["390b73ba6e274a14aa2a9170fb91b918"] = { w = 458, h = 31, e = 8 } -- ui8b_gauge_mp_c
+		t["f9b3ca3ba2b34d368a0f10bd209c538c"] = { w = 15, h = 31, e = 8 } -- ui8b_gauge_mp_l
+		t["0683260949a44aa7a7a72aa7c3be4ce3"] = { w = 15, h = 31, e = 8 } -- ui8b_gauge_mp_r
+		t["6079c15b6107400c97a632df38be7572"] = { w = 274, h = 31, e = 8 } -- ui8b_gauge_st_c
+		t["96e0205225ab4d6d965aa487f297d2f4"] = { w = 15, h = 31, e = 8 } -- ui8b_gauge_st_l
+		t["805c205ad3a74baba5d9a0c8ab422f60"] = { w = 15, h = 31, e = 8 } -- ui8b_gauge_st_r
+		t["7e844d503e4f4fd5ada1e9000e1747a5"] = { w = 198, h = 42, e = 8 } -- ui8b_gauge_track_c
+		t["172eaf57e384459da48e03d5dd85fbb2"] = { w = 21, h = 42, e = 8 } -- ui8b_gauge_track_l
+		t["583bf30431e04ed4b3d7d7d4ecf9bcb1"] = { w = 21, h = 42, e = 8 } -- ui8b_gauge_track_r
+		t["8da01257e3ff4aa585bf96704cb9683f"] = { w = 220, h = 44, e = 8 } -- ui8b_input_c
+		t["3e949fe36da24dfaa9a93c064bced777"] = { w = 10, h = 44, e = 8 } -- ui8b_input_l
+		t["bfc42452e04d4938b1cd57b57d49f153"] = { w = 10, h = 44, e = 8 } -- ui8b_input_r
+		t["2ee511726e67426e954e27fc1a6afe1c"] = { w = 108, h = 32, e = 8 } -- ui8b_pill_badge_c
+		t["f60b4094ab1f47ae82834cccad9ada19"] = { w = 16, h = 32, e = 8 } -- ui8b_pill_badge_l
+		t["39dd42f666b84a5798d7d0dc9efd07cf"] = { w = 16, h = 32, e = 8 } -- ui8b_pill_badge_r
+		t["1b02a9180c5545bf8e02c2f1dd512bf3"] = { w = 483, h = 88, e = 8 } -- ui8b_popup_frame_b
+		t["a8ecc9ccdff24ff192198cba54c1b0eb"] = { w = 44, h = 88, e = 8 } -- ui8b_popup_frame_bl
+		t["b935725a41264ebfb5c607feb6b5f138"] = { w = 44, h = 88, e = 8 } -- ui8b_popup_frame_br
+		t["41a50d5d2f2d4aefae334423489276e8"] = { w = 483, h = 97, e = 8 } -- ui8b_popup_frame_c
+		t["2aeaf41c268544cbaecf0a9a5b9f5318"] = { w = 44, h = 97, e = 8 } -- ui8b_popup_frame_l
+		t["1e38677aa5db4748bdd12f46aec7330b"] = { w = 44, h = 97, e = 8 } -- ui8b_popup_frame_r
+		t["3aa6482bb2c847adbd93972341b6ae8a"] = { w = 483, h = 96, e = 8 } -- ui8b_popup_frame_t
+		t["b0c98dd657ea42b28d625f8d7944ee44"] = { w = 44, h = 96, e = 8 } -- ui8b_popup_frame_tl
+		t["6435a073e54c485faf33389e9794b972"] = { w = 44, h = 96, e = 8 } -- ui8b_popup_frame_tr
+		t["b486aa4586ec46c6b750f1f34c4edba6"] = { w = 346, h = 83, e = 8 } -- ui8b_row_c
+		t["602c238d44404f09a49d8fba97fa7e43"] = { w = 28, h = 83, e = 8 } -- ui8b_row_l
+		t["276f3104009344c3a0842c9abecec3a9"] = { w = 28, h = 83, e = 8 } -- ui8b_row_r
+		t["e2f37938ce8b40c4a048a9e1c11cd8fc"] = { w = 349, h = 86, e = 8 } -- ui8b_row_sel_c
+		t["463c3f0fcdc94bd8aadafe5bcc553a85"] = { w = 28, h = 86, e = 8 } -- ui8b_row_sel_l
+		t["7b8f36326d36477da13c12cfb9743e39"] = { w = 28, h = 86, e = 8 } -- ui8b_row_sel_r
+		t["e5586a993cd3431f9171441e5e179aba"] = { w = 482, h = 84, e = 8 } -- ui8b_row_wide_c
+		t["6522132f4ca34f4b955634cf2208a6da"] = { w = 28, h = 84, e = 8 } -- ui8b_row_wide_l
+		t["6cc9c7a53e294d618022934827d5ce96"] = { w = 28, h = 84, e = 8 } -- ui8b_row_wide_r
+		t["0ce30059434e416a8d51d3958df5bd58"] = { w = 484, h = 87, e = 8 } -- ui8b_row_wide_sel_c
+		t["1cf47b50e99346b7b63191892569bd65"] = { w = 28, h = 87, e = 8 } -- ui8b_row_wide_sel_l
+		t["4db76bc10fb346339dd934b9a33f9fad"] = { w = 28, h = 87, e = 8 } -- ui8b_row_wide_sel_r
+		t["ab916e27545d4a87818e25fbb03d4fa6"] = { w = 470, h = 140, e = 8 } -- ui8b_scroll_banner_c
+		t["59fc3d424d8c40feb25c9ffb2f6e658d"] = { w = 72, h = 140, e = 8 } -- ui8b_scroll_banner_l
+		t["b2f58436c9b543918f43a6b2fd43102b"] = { w = 72, h = 140, e = 8 } -- ui8b_scroll_banner_r
+		t["842e10fc2d504279b8049a747ec96b12"] = { w = 212, h = 92, e = 8 } -- ui8b_skill_node_c
+		t["e3e7b9c344c7418b926326ff36dc58a7"] = { w = 24, h = 92, e = 8 } -- ui8b_skill_node_l
+		t["49660dc93625468ea535a695888d306e"] = { w = 24, h = 92, e = 8 } -- ui8b_skill_node_r
+		t["57f744c65d054086af38ebfe6c1f4c17"] = { w = 366, h = 40, e = 8 } -- ui8b_status_card_b
+		t["51d54717dac548a8be6f85c79f97e903"] = { w = 40, h = 40, e = 8 } -- ui8b_status_card_bl
+		t["687174987c0346e7a95a14dc212f93e9"] = { w = 40, h = 40, e = 8 } -- ui8b_status_card_br
+		t["de3cd22b8a354e7abd2f7773363ef093"] = { w = 366, h = 249, e = 8 } -- ui8b_status_card_c
+		t["5729f9dd82c745848b821a2cfc829288"] = { w = 40, h = 249, e = 8 } -- ui8b_status_card_l
+		t["a69a735460c74a72a6247c6c99490d51"] = { w = 40, h = 249, e = 8 } -- ui8b_status_card_r
+		t["3ef2e62949f9487eab6c70560de7ec72"] = { w = 366, h = 80, e = 8 } -- ui8b_status_card_t
+		t["b166894fd405484cad1001941851eb34"] = { w = 40, h = 80, e = 8 } -- ui8b_status_card_tl
+		t["61c1dd57e4254795842b99b9a00268f0"] = { w = 40, h = 80, e = 8 } -- ui8b_status_card_tr
+		t["44e599d80e494832bd2477badc4fa830"] = { w = 147, h = 20, e = 8 } -- ui8b_subpanel_b
+		t["ba294aec71e24c06abe78b028cd83f38"] = { w = 20, h = 20, e = 8 } -- ui8b_subpanel_bl
+		t["22a1965480bf4afcbc02fde23645cf67"] = { w = 20, h = 20, e = 8 } -- ui8b_subpanel_br
+		t["9c6d0fc981af48b48d05cbbdb8248117"] = { w = 147, h = 224, e = 8 } -- ui8b_subpanel_c
+		t["2b06e29c43104fb6b2127cbcb5b2e0ce"] = { w = 20, h = 224, e = 8 } -- ui8b_subpanel_l
+		t["3eda4af5862943f7a97ce4641be6b9f4"] = { w = 20, h = 224, e = 8 } -- ui8b_subpanel_r
+		t["8775a679bbeb41baa26208968ac72126"] = { w = 147, h = 20, e = 8 } -- ui8b_subpanel_t
+		t["5fdd5d92bdb54d1ab8c085e7d9eb0f67"] = { w = 20, h = 20, e = 8 } -- ui8b_subpanel_tl
+		t["ca9ebd847288490e9c7c267ca393f46d"] = { w = 20, h = 20, e = 8 } -- ui8b_subpanel_tr
+		t["fd97db88c5984b0fb6357f654bdf3839"] = { w = 66, h = 34, e = 8 } -- ui8b_tab_off_c
+		t["e8fade00869a43a78812ad2bd5d7956b"] = { w = 17, h = 34, e = 8 } -- ui8b_tab_off_l
+		t["7d51ba2bcce140238f1fdacb9ed91454"] = { w = 17, h = 34, e = 8 } -- ui8b_tab_off_r
+		t["d264a9edc2314b91bde4151e95f65492"] = { w = 66, h = 34, e = 8 } -- ui8b_tab_on_c
+		t["b913f847cc6340fe85402037c69f2b4c"] = { w = 17, h = 34, e = 8 } -- ui8b_tab_on_l
+		t["a2d1fc88f29640a39c5e119f3c42c8d2"] = { w = 17, h = 34, e = 8 } -- ui8b_tab_on_r
+		t["f959ec4dfd1b482693cc1fa3be672b70"] = { w = 373, h = 137, e = 8 } -- ui8b_tip_plaque_c
+		t["15f40c59bb0845b99757344ac8434d2a"] = { w = 40, h = 137, e = 8 } -- ui8b_tip_plaque_l
+		t["40582c068d5d4e34b67a9d39bd2a3f7f"] = { w = 40, h = 137, e = 8 } -- ui8b_tip_plaque_r
+		t["c52c61cd7cfc467bb351e458b165057d"] = { w = 476, h = 155, e = 8 } -- ui8b_toast_leaf_c
+		t["746acc4ef9a44f4b8b7a47d35ebcaf57"] = { w = 64, h = 155, e = 8 } -- ui8b_toast_leaf_l
+		t["76fd7f93cbe94f5db6a4a071251b1430"] = { w = 64, h = 155, e = 8 } -- ui8b_toast_leaf_r
+		t["0449cb551ba141caa3f5b277b6b1620e"] = { w = 503, h = 32, e = 8 } -- ui8b_darkwood_filigree_s32_b
+		t["3a44476386c24059bf89dd446fdf6f6c"] = { w = 32, h = 32, e = 8 } -- ui8b_darkwood_filigree_s32_bl
+		t["0c91941b2205479287ec408b04664807"] = { w = 32, h = 32, e = 8 } -- ui8b_darkwood_filigree_s32_br
+		t["2169697a61924d4496e7848fbcd7e139"] = { w = 503, h = 148, e = 8 } -- ui8b_darkwood_filigree_s32_c
+		t["23816c65ee6a45ca875b94ae425dd093"] = { w = 32, h = 148, e = 8 } -- ui8b_darkwood_filigree_s32_l
+		t["4f213f7329e24163b362df6d79e3b91a"] = { w = 32, h = 148, e = 8 } -- ui8b_darkwood_filigree_s32_r
+		t["3233199e97564f2cae88775971d2cec8"] = { w = 503, h = 32, e = 8 } -- ui8b_darkwood_filigree_s32_t
+		t["4514c8f4eccb4655af652e0d7d91a69f"] = { w = 32, h = 32, e = 8 } -- ui8b_darkwood_filigree_s32_tl
+		t["cb646018d189434eaba0328326998549"] = { w = 32, h = 32, e = 8 } -- ui8b_darkwood_filigree_s32_tr
+		t["fe7cdbc5b61240eaa524914ff948171b"] = { w = 310, h = 24, e = 8 } -- ui8b_fish_board_s24_b
+		t["08f853b4bc704a9cae33ea75e87f4359"] = { w = 24, h = 24, e = 8 } -- ui8b_fish_board_s24_bl
+		t["81a886e4b644446ea9cdf2d30f24a9d2"] = { w = 24, h = 24, e = 8 } -- ui8b_fish_board_s24_br
+		t["d1f9060bcb9044ab9e84b3fd6946dbf9"] = { w = 310, h = 195, e = 8 } -- ui8b_fish_board_s24_c
+		t["5f08d1dbbe8f447a8c30b4621a704074"] = { w = 24, h = 195, e = 8 } -- ui8b_fish_board_s24_l
+		t["601121ad3e9146529305bc43c102ae0e"] = { w = 24, h = 195, e = 8 } -- ui8b_fish_board_s24_r
+		t["c15d657e090a40f8bd22be4ab2bd6994"] = { w = 310, h = 24, e = 8 } -- ui8b_fish_board_s24_t
+		t["7d41219625ec49b29a5cf5c7ff552a31"] = { w = 24, h = 24, e = 8 } -- ui8b_fish_board_s24_tl
+		t["a27dad40ccb44c0fa6fda37350157f2a"] = { w = 24, h = 24, e = 8 } -- ui8b_fish_board_s24_tr
+		-- [UI8-BLEED-END]
 		return t
 	end
 

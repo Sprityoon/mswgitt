@@ -641,4 +641,6 @@ function gauge(b, track, fill, kind) {
   const out = src.slice(0, a) + "-- [UI8-VARIANTS-BEGIN]\n" + K.luaVariantTable() + "\n" + src.slice(z);
   fs.writeFileSync(p, out, "utf8");
   console.log("UI8Skin variants injected");
+  K.injectLuaBlock(p, "UI8-BLEED", K.luaBleedTable());
+  console.log("UI8Skin bleed table injected");
 }

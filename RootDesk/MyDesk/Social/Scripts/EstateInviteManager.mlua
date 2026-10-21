@@ -138,7 +138,15 @@ script EstateInviteManager extends Logic
 		if isvalid(pc) then
 			---@type PlayerController
 			local controller = pc
-			arrive = controller:ResolveHomeWarpPosition(mapName, -3, 0)
+			-- 초대한 사람 영지의 포탈 옆에 도착(포탈을 옮겨도 따라감). 포탈을 못 찾으면 기본 스폰.
+			local fromName = ""
+			if isvalid(guest.CurrentMap) then fromName = guest.CurrentMap.Name end
+			local near = controller:FindPortalArrival(mapName, fromName)
+			if near ~= nil then
+				arrive = near
+			else
+				arrive = controller:ResolveHomeWarpPosition(mapName, -3, 0)
+			end
 		end
 		guest.PlayerComponent:MoveToMapPosition(mapName, arrive)
 

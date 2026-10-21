@@ -68,6 +68,11 @@ script UIShopController extends Component
 	property table chipHandlers = {}
 	property any sortHandler = nil
 
+	-- 구매 수량 모달(기존 버리기 수량 선택 방식 재사용).
+	property Entity buyPopup = "818ff2e6-f3fd-4cf5-8a0e-c165d178ccd3"
+	property Entity buyCard = "f9a9db7a-7cf7-41be-a25b-283529d7e04a"
+	property table buyHandlers = {}
+
 	-- Runtime state (client-only)
 	property string currentTab = "buy"  -- "buy" or "sell"
 	property table shopItems = {}       -- index -> { name, price }
@@ -75,7 +80,9 @@ script UIShopController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
+		-- 기존 상점과 수량 모달의 버튼을 한 번만 연결한다.
 		self.Entity.Enable = false
+		self:InitBuyQuantity()
 
 		if isvalid(self.btnClose) then
 			self.btnClose:ConnectEvent(ButtonClickEvent, function() self:Close() end)
@@ -120,6 +127,12 @@ script UIShopController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnEndPlay()
+		-- 수량 모달의 입력도 함께 해제한다.
+		self:CloseBuyQuantity()
+		for _, rec in ipairs(self.buyHandlers) do
+			if isvalid(rec.entity) then rec.entity:DisconnectEvent(ButtonClickEvent, rec.hook) end
+		end
+		self.buyHandlers = {}
 		for i = 1, 6 do
 			local slot = self["slot" .. i]
 			local h = self.slotHandlers[i]
@@ -230,11 +243,15 @@ script UIShopController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void Close()
+		-- 상점을 닫으면 미확정 구매도 취소한다(ESC/공통 닫기 포함).
+		self:CloseBuyQuantity()
 		self.Entity.Enable = false
 	end
 
 	@ExecSpace("ClientOnly")
 	method void SetTab(string tabName)
+		-- 구매/판매 전환 시 이전 구매 선택은 취소한다.
+		self:CloseBuyQuantity()
 		self.currentTab = tabName
 		self.currentPage = 1
 		self.currentCategory = ""
@@ -317,7 +334,7 @@ script UIShopController extends Component
 		for i = 1, shopDs:GetRowCount() do
 			if self:RowVendor(shopDs, i) == self.currentVendor then
 				local itemName = shopDs:GetCell(i, "Name") or ""
-				local buyPrice = tonumber(shopDs:GetCell(i, "BuyPrice")) or 0
+				local buyPrice = inv:GetShopBuyPrice(itemName)
 				local sellPrice = tonumber(shopDs:GetCell(i, "SellPrice")) or 0
 				local price = 0
 				if self.currentTab == "buy" then price = buyPrice else price = sellPrice end
@@ -447,10 +464,13 @@ script UIShopController extends Component
 			self.btnNextPage.Enable = multi
 			if multi and _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(self.btnNextPage, self.currentPage < self.pageCount) end
 		end
+		self:RefreshBuyQuantity()
 	end
 
 	@ExecSpace("ClientOnly")
 	method void OnSlotClick(integer index)
+		-- 구매는 수량 확인을 거친다. 모달 뒤 슬롯의 중복 입력은 무시한다.
+		if isvalid(self.buyPopup) and self.buyPopup.Enable then return end
 		local item = self.shopItems[index]
 		if item == nil then return end
 
@@ -461,7 +481,7 @@ script UIShopController extends Component
 		if not isvalid(inv) then return end
 
 		if self.currentTab == "buy" then
-			inv:ServerRequestBuyItem(item.name)
+			self:OpenBuyQuantity(item.name)
 		else
 			-- Verify item exists in inventory first (client check before server request)
 			if inv:GetItemCount(item.name) <= 0 then
@@ -475,6 +495,122 @@ script UIShopController extends Component
 			end
 			inv:ServerRequestSellItem(item.name)
 		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void InitBuyQuantity()
+		-- 고정 수량 버튼은 기존 가방 수량창처럼 +/-/최소/최대를 쓴다.
+		self:CloseBuyQuantity()
+		if not isvalid(self.buyCard) then return end
+		local actions = {
+			BtnMinus = function() self:ChangeBuyCount(-1) end,
+			BtnPlus = function() self:ChangeBuyCount(1) end,
+			BtnMin = function() self:SetBuyCount(1) end,
+			BtnMax = function() self:SetBuyCount(self._T.buyMax or 1) end,
+			BtnBuy = function() self:ConfirmBuyQuantity() end,
+			BtnCancel = function() self:CloseBuyQuantity() end,
+			BtnClose = function() self:CloseBuyQuantity() end,
+		}
+		for name, action in pairs(actions) do
+			local button = self.buyCard:GetChildByName(name)
+			if isvalid(button) then
+				self.buyHandlers[#self.buyHandlers + 1] = { entity = button, hook = button:ConnectEvent(ButtonClickEvent, action) }
+			end
+		end
+		log("[VRF][SHOP-QUANTITY] ready buttons=" .. tostring(#self.buyHandlers))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenBuyQuantity(string itemName)
+		-- 슬롯 인덱스 대신 품목 키를 고정해 목록 재정렬/동기화에도 다른 물건을 사지 않는다.
+		if not isvalid(self.buyPopup) or not isvalid(self.buyCard) then return end
+		self._T.buyItem = itemName
+		self._T.buyCount = 1
+		local ds = _DataService:GetTable("item_dataset")
+		local row = ds ~= nil and ds:FindRow("Name", itemName) or nil
+		local label = row ~= nil and row:GetItem("DisplayName") or ""
+		if label == nil or label == "" then label = itemName end
+		self:SetAnyText(self.buyCard:GetChildByName("ItemName"), label)
+		self.buyPopup.Enable = true
+		self:RefreshBuyQuantity()
+		log("[VRF][SHOP-QUANTITY] open item=" .. itemName)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetBuyCount(integer value)
+		-- 실제 잔액·품목별 상한으로 RefreshBuyQuantity가 다시 제한한다.
+		self._T.buyCount = value
+		self:RefreshBuyQuantity()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ChangeBuyCount(integer delta)
+		-- 단품 제한 품목은 plus/minus를 눌러도 1을 넘을 수 없다.
+		self:SetBuyCount((self._T.buyCount or 1) + delta)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetBuyButtonActive(string buttonName, boolean active)
+		-- 공용 비활성 스타일과 실제 입력 차단을 함께 적용한다.
+		local button = self.buyCard:GetChildByName(buttonName)
+		if not isvalid(button) then return end
+		if _UIButtonStyle ~= nil then
+			_UIButtonStyle:SetActive(button, active)
+		elseif isvalid(button.ButtonComponent) then
+			button.ButtonComponent.Enable = active
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshBuyQuantity()
+		-- 수량·단가·총액과 잔액 기준 최대치를 갱신한다. AP/SP 제한도 서버와 같은 함수를 쓴다.
+		if not isvalid(self.buyPopup) or not self.buyPopup.Enable or not isvalid(self.buyCard) then return end
+		local player = _UserService.LocalPlayer
+		local inv = isvalid(player) and player:GetComponent("script.PlayerInventory") or nil
+		local itemName = self._T.buyItem or ""
+		if not isvalid(inv) or itemName == "" then self:CloseBuyQuantity() return end
+		local price = inv:GetShopBuyPrice(itemName)
+		local limit = inv:GetShopMaxBuyCount(itemName)
+		if price <= 0 or limit < 1 then self:CloseBuyQuantity() return end
+		local affordable = math.max(0, math.floor(inv.Coin / price))
+		self._T.buyMax = math.max(1, math.min(limit, affordable))
+		self._T.buyCount = math.max(1, math.min(self._T.buyMax, self._T.buyCount or 1))
+		self._T.buyPrice = price
+		local count = self._T.buyCount
+		self:SetAnyText(self.buyCard:GetChildByName("CountText"), tostring(count) .. "개")
+		self:SetAnyText(self.buyCard:GetChildByName("UnitPrice"), "개당 " .. tostring(price) .. " 코인 · 보유 " .. tostring(inv.Coin) .. " 코인")
+		local hint = "1회 구매 한도: " .. tostring(limit) .. "개"
+		if limit == 1 then hint = "한 번에 1개만 구매할 수 있습니다." end
+		self:SetAnyText(self.buyCard:GetChildByName("LimitText"), hint)
+		local total = "합계 " .. tostring(price * count) .. " 코인"
+		if affordable < 1 then total = total .. " (코인 부족)" end
+		self:SetAnyText(self.buyCard:GetChildByName("TotalPrice"), total)
+		self:SetBuyButtonActive("BtnMinus", count > 1)
+		self:SetBuyButtonActive("BtnMin", count > 1)
+		self:SetBuyButtonActive("BtnPlus", count < self._T.buyMax)
+		self:SetBuyButtonActive("BtnMax", count < self._T.buyMax)
+		self:SetBuyButtonActive("BtnBuy", affordable >= count)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void CloseBuyQuantity()
+		-- 취소/상점 닫기/탭 전환에서는 서버 구매 요청을 보내지 않는다.
+		if isvalid(self.buyPopup) then self.buyPopup.Enable = false end
+		self._T.buyItem = ""
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ConfirmBuyQuantity()
+		-- 표시했던 단가를 서버에 전달한다. 클릭 즉시 모달을 닫아 중복 확인을 막는다.
+		if not isvalid(self.buyPopup) or not self.buyPopup.Enable then return end
+		local player = _UserService.LocalPlayer
+		local inv = isvalid(player) and player:GetComponent("script.PlayerInventory") or nil
+		local itemName = self._T.buyItem or ""
+		if not isvalid(inv) or itemName == "" then return end
+		local count = self._T.buyCount or 1
+		local price = self._T.buyPrice or 0
+		self:CloseBuyQuantity()
+		inv:ServerRequestBuyQuantity(itemName, count, price)
 	end
 
 end

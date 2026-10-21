@@ -29,6 +29,26 @@
 1. `ui8_*.sprite`·`ui8p_*.sprite` 이름으로 RUID 수집(`ui8_ruids.json`).
 2. UIBuilder 스크립트로 전 화면 적용 — 조각은 부모 엔티티 아래 앵커(모서리 고정·가장자리 한 축 stretch·가운데 stretch)로 조립.
 
+## 3차 — 가장자리 정리 + 실금 방지 여백 (2026-10-21)
+
+받은 원본의 배경 제거가 거칠어 외곽선에 1~3px 구멍, 바깥으로 튀어나온 점, 떨어진 잔여 점이 많았다(77장 중 66장).
+그리고 아틀라스로 묶으면 조각 경계에 1px 어두운 실금이 생긴다(pitfalls #78).
+
+생성 순서 (원본 01~07 폴더는 건드리지 않는다):
+1. `python -I build_ui8_assets.py` → `ui8_import/` (원본 그대로 복사·가공)
+2. `python -I clean_ui8_edges.py` → `ui8_import/` 를 제자리 정리(처음 실행 때 원래본을 `ui8_import_raw/` 에 보관 — 1을 다시 돌렸다면 `ui8_import_raw/` 를 먼저 지운다)
+   - 떨어진 잔여 점(12px 이하 덩어리) 제거 → 알파 3×3 중앙값(아이콘 1번, 판·버튼·배지 2번) → 늘림 그림 양 끝은 좌우 거울로 홈 메움 → 늘림 구간은 줄마다 튀는 알파 바로잡기. 새로 채운 화소 색 = 가장 가까운 외곽선 색
+   - 알약 배지(몸통 알파 225 일정)·선택 칸 빛은 의도된 반투명이라 알파 그대로
+   - 점검: `python -I audit_ui8_edges.py` (정리 전 잔여 점 629·구멍 1,891·튐 1,298 → 후 64·99·54. 남은 건 아이콘 세부 묘사·불꽃 불씨)
+   - 전후 비교: `python -I clean_ui8_edges.py --preview 이름...` → `ui8_preview/edge_*.png`
+3. `build_ui8_pieces.py` → `ui8_import2/`, `build_ui8_sized.py` → `ui8_import3/`, `build_ui8_piece_sized.py` → `ui8_import4/`
+4. `python -I build_ui8_bleed.py` → `ui8_import5/ui8b_*` (조각마다 여백 8텍셀·색 번짐·alpha 1/255) + `ui8_bleed.json`
+
+제작자 등록:
+- **바꿔 넣기(같은 이름)**: `ui8_import/` 77장, `ui8_import3/` 11장 — 이미 등록된 그림이라 Maker Workspace 에서 같은 이름으로 다시 올려 교체(RUID 유지가 목적. 새 RUID 로 생기면 에이전트가 적용 스크립트로 다시 연결)
+- **새로 등록**: `ui8_import5/` 162장 — `ui8_import2`(ui8p)·`ui8_import4` 대신 이것만 쓰면 된다(키트가 `ui8b_*` 를 우선 사용)
+- 등록 뒤 `BP` 아틀라스에 `ui8b_*` 추가(+ 교체한 그림 갱신) → Pack
+
 ## 가공 내역
 
 | 대상 | 처리 |

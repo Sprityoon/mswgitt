@@ -16,6 +16,8 @@ script Projectile extends Component
 	property number SplashMultiplier = 0
 	property boolean ImpactOnly = false
 	property boolean Grow = false
+	-- 평타 탄의 경직 간격(WeaponAttackDataSet.StaggerEvery). 0·1 = 맞을 때마다(기존). 5 = 1·6·11…번째 타격만 경직.
+	property integer StaggerEvery = 0
 
 	method void Initialize(Entity owner, Vector2 dir, integer dmg, number speed, string hitEffectRUID)
 		self.Owner = owner
@@ -72,7 +74,10 @@ script Projectile extends Component
 		if not isvalid(self.Owner) then return end
 		local combat = self.Owner:GetComponent("script.PlayerCombat")
 		if not isvalid(combat) then return end
+		-- 경직 간격은 이 한 번의 타격 판정 동안만 싣는다(DealSkillHit → HitEvent 가 같은 호출 안에서 처리된다).
+		combat.PendingStaggerEvery = self.StaggerEvery
 		combat:DealSkillHit(target, self.Damage, self.SkillId, self.HitEffectRUID, self.HitEffectScale)
+		combat.PendingStaggerEvery = 0
 	end
 
 	@ExecSpace("ServerOnly")

@@ -92,6 +92,8 @@ script UITooltipLogic extends Logic
 			t.RectSize = Vector2(width, height)
 			t.anchoredPosition = Vector2(x, top)
 		end
+		-- 판 조각 여백을 이 크기에 맞춘다(실금 방지 — UI8Skin.FitSkin, 모든 ui8 판 공용).
+		if _UI8Skin ~= nil then _UI8Skin:FitSkin(self.tipPanel) end
 		self.CurrentOwner = owner
 		self.tipPanel.Enable = true
 	end

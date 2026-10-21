@@ -1016,6 +1016,7 @@ script PersistenceManager extends Logic
 					inv.Items = {}
 				end
 				inv.Coin = data.coin or 0
+				inv.ShopPurchasesJson = data.shopPurchases or "{}"
 				inv.EquippedTool = data.equippedTool or ""
 				inv.QuickSlotsJson = data.quickSlots or "[\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"]"
 				inv.SelectedQuickSlotIndex = data.selectedSlot or 1
@@ -1261,6 +1262,14 @@ script PersistenceManager extends Logic
 					local sp = _ResourceSpawner:FindSafeSpawnPosition(townMap, tx + 0.5, ty + 0.5)
 					if sp ~= nil then townSafe = sp end
 				end
+				-- 마을 포탈 옆으로(포탈을 옮겨도 따라감). 못 찾으면 위 IsDefault 좌표.
+				local pcComp = player:GetComponent("script.PlayerController")
+				if isvalid(pcComp) then
+					---@type PlayerController
+					local controller = pcComp
+					local near = controller:FindPortalArrival(townMap, "")
+					if near ~= nil then townSafe = near end
+				end
 				player.PlayerComponent:MoveToMapPosition(townMap, townSafe)
 				log("PersistenceManager: Player warped to " .. townMap
 					.. " (lastMapKind=" .. tostring(lastKind) .. ") at ("
@@ -1359,6 +1368,7 @@ script PersistenceManager extends Logic
 		if isvalid(inv) then
 			inv.GearJson = "{}"
 			inv.EnhanceJson = "{}"
+			inv.ShopPurchasesJson = "{}"
 			-- 보유 동물 명부도 비운다 (다른 슬롯 캐릭터의 가축·펫이 남지 않게).
 			inv.CreaturesJson = "[]"
 			inv.ActivePetId = ""
@@ -1451,6 +1461,7 @@ script PersistenceManager extends Logic
 		local capSleeping = pc.IsSleeping == true
 		local capSleepTicks = pc.SleepStartTimeTicks or "0"
 		local capCoin = tonumber(inv.Coin) or 0
+		local capShopPurchases = inv.ShopPurchasesJson or "{}"
 		local capInvJson = inv.InventoryDataJson or "{}"
 		local capEquipped = inv.EquippedTool or ""
 		-- 장비 슬롯(주무기·방어구) — 선캡처(규칙 9: 추가 Yield 금지)
@@ -1627,6 +1638,7 @@ script PersistenceManager extends Logic
 			maxStamina = capMaxStamina,
 			gatheringSpeed = capGather,
 			coin = capCoin,
+			shopPurchases = capShopPurchases,
 			inventoryData = capInvJson,
 			equippedTool = capEquipped,
 			quickSlots = capQuick,

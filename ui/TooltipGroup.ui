@@ -270,7 +270,7 @@
         }
       },
       {
-        "id": "d4aec298-daba-44ce-97c5-9576c4dd9ca5",
+        "id": "20afdacc-f90d-48ff-bd20-25196d8538ea",
         "path": "/ui/TooltipGroup/Tip/Skin",
         "componentNames": "MOD.Core.UITransformComponent",
         "jsonString": {
@@ -338,8 +338,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 150.0,
+                "y": -80.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -361,7 +361,7 @@
         }
       },
       {
-        "id": "8d502027-834b-4adf-ae86-5b066506043c",
+        "id": "e9d71928-a4e9-4089-aa55-2b31e31f45ae",
         "path": "/ui/TooltipGroup/Tip/Skin/c",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -397,20 +397,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -28.0,
-                "y": -28.0
+                "x": -24.1199951,
+                "y": -22.3800049
               },
               "OffsetMin": {
-                "x": 28.0,
-                "y": 28.0
+                "x": 24.1199951,
+                "y": 22.3800049
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 244.0,
-                "y": 104.0
+                "x": 251.76001,
+                "y": 115.23999
               },
               "UIMode": 1,
               "UIScale": {
@@ -453,7 +453,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "1451707c05454c3898e1a0573314b2ca"
+                "DataId": "2169697a61924d4496e7848fbcd7e139"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -512,7 +512,7 @@
         }
       },
       {
-        "id": "34569faf-f2f2-4246-8384-e79194e00771",
+        "id": "3f7fb488-00d8-4a91-91a7-7f12bcc7d113",
         "path": "/ui/TooltipGroup/Tip/Skin/t",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -548,20 +548,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -28.0,
-                "y": 0.0
+                "x": -24.1199951,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 28.0,
-                "y": -32.0
+                "x": 24.1199951,
+                "y": -40.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 244.0,
-                "y": 32.0
+                "x": 251.76001,
+                "y": 48.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -572,7 +572,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -581,7 +581,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": 88.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -604,7 +604,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "d5a65abeace34f3a90edd9929846eb3e"
+                "DataId": "3233199e97564f2cae88775971d2cec8"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -663,7 +663,7 @@
         }
       },
       {
-        "id": "05f9355f-0e1d-4bf5-ac4b-ac260461c94d",
+        "id": "cc381e13-bd35-489c-9289-5c8d3cea53d3",
         "path": "/ui/TooltipGroup/Tip/Skin/b",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -699,20 +699,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -28.0,
-                "y": 32.0
+                "x": -24.1199951,
+                "y": 40.0
               },
               "OffsetMin": {
-                "x": 28.0,
-                "y": 0.0
+                "x": 24.1199951,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 244.0,
-                "y": 32.0
+                "x": 251.76001,
+                "y": 48.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -723,7 +723,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -732,7 +732,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": -88.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -755,7 +755,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "264a92e44385407581ed75e63e95da34"
+                "DataId": "0449cb551ba141caa3f5b277b6b1620e"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -814,7 +814,7 @@
         }
       },
       {
-        "id": "cdcdb191-fef4-4591-a96e-9a42f62fd8e9",
+        "id": "cccf5a54-a271-4980-a6aa-c94d450a5dfc",
         "path": "/ui/TooltipGroup/Tip/Skin/l",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -850,20 +850,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 32.0,
-                "y": -28.0
+                "x": 40.0,
+                "y": -22.3800049
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 28.0
+                "x": -8.0,
+                "y": 22.3800049
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 32.0,
-                "y": 104.0
+                "x": 48.0,
+                "y": 115.23999
               },
               "UIMode": 1,
               "UIScale": {
@@ -873,7 +873,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": -8.0,
                 "y": 0.0
               },
               "Rotation": {
@@ -882,7 +882,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": -158.0,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -906,7 +906,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "c6664b8b19e34123a7642ad966e2797e"
+                "DataId": "23816c65ee6a45ca875b94ae425dd093"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -965,7 +965,7 @@
         }
       },
       {
-        "id": "d455b0bc-06cd-47d8-a673-c78c4d1c8245",
+        "id": "aa266d19-a45e-4298-a9fd-f14a696bfae6",
         "path": "/ui/TooltipGroup/Tip/Skin/r",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1001,20 +1001,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": -28.0
+                "x": 8.0,
+                "y": -22.3800049
               },
               "OffsetMin": {
-                "x": -32.0,
-                "y": 28.0
+                "x": -40.0,
+                "y": 22.3800049
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 32.0,
-                "y": 104.0
+                "x": 48.0,
+                "y": 115.23999
               },
               "UIMode": 1,
               "UIScale": {
@@ -1024,7 +1024,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": 8.0,
                 "y": 0.0
               },
               "Rotation": {
@@ -1033,7 +1033,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": 158.0,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -1057,7 +1057,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "9beffab73ead4d76a45980098121e823"
+                "DataId": "4f213f7329e24163b362df6d79e3b91a"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1116,7 +1116,7 @@
         }
       },
       {
-        "id": "6ee89d53-843f-48d6-b0dc-0282ae8b81a5",
+        "id": "2d7fa194-faf8-47b2-b665-6b41496683e5",
         "path": "/ui/TooltipGroup/Tip/Skin/tl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1152,20 +1152,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 32.0,
-                "y": 0.0
+                "x": 40.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": -32.0
+                "x": -8.0,
+                "y": -40.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 32.0,
-                "y": 32.0
+                "x": 48.0,
+                "y": 48.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1175,8 +1175,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1184,8 +1184,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -158.0,
+                "y": 88.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1208,7 +1208,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "bdb8c319edfc4563b681a9e34c289594"
+                "DataId": "4514c8f4eccb4655af652e0d7d91a69f"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1267,7 +1267,7 @@
         }
       },
       {
-        "id": "3362becb-1a3a-43ad-a252-9b0ee62c536c",
+        "id": "efd2c624-3644-439c-baaa-d6cbeb10e47d",
         "path": "/ui/TooltipGroup/Tip/Skin/tr",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1303,20 +1303,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": -32.0,
-                "y": -32.0
+                "x": -40.0,
+                "y": -40.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 32.0,
-                "y": 32.0
+                "x": 48.0,
+                "y": 48.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1326,8 +1326,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1335,8 +1335,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 158.0,
+                "y": 88.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1359,7 +1359,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "e750aa0fb3e8446383eaa49bcb88b615"
+                "DataId": "cb646018d189434eaba0328326998549"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1418,7 +1418,7 @@
         }
       },
       {
-        "id": "c5153b9a-d32d-41e9-87f6-95f84cf9eac3",
+        "id": "95e2dedc-a269-4ffa-ba0b-f21fbbe2e6da",
         "path": "/ui/TooltipGroup/Tip/Skin/bl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1454,20 +1454,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 32.0,
-                "y": 32.0
+                "x": 40.0,
+                "y": 40.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 32.0,
-                "y": 32.0
+                "x": 48.0,
+                "y": 48.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1477,8 +1477,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1486,8 +1486,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -158.0,
+                "y": -88.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1510,7 +1510,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "d6a0b823332d47c7b8d00836090a77a1"
+                "DataId": "3a44476386c24059bf89dd446fdf6f6c"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1569,7 +1569,7 @@
         }
       },
       {
-        "id": "9a828d1c-64a6-4f8c-9768-964b8c6f5266",
+        "id": "84d49a47-5654-4ee5-8061-5d97da0ad57a",
         "path": "/ui/TooltipGroup/Tip/Skin/br",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1605,20 +1605,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 32.0
+                "x": 8.0,
+                "y": 40.0
               },
               "OffsetMin": {
-                "x": -32.0,
-                "y": 0.0
+                "x": -40.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 32.0,
-                "y": 32.0
+                "x": 48.0,
+                "y": 48.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1628,8 +1628,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1637,8 +1637,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 158.0,
+                "y": -88.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1661,7 +1661,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "a8b64b9d6f8c4abda0f3ba2605bc0cd7"
+                "DataId": "0c91941b2205479287ec408b04664807"
               },
               "LocalPosition": {
                 "x": 0.0,

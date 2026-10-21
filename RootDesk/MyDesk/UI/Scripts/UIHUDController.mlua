@@ -117,10 +117,14 @@ script UIHUDController extends Component
 	-- 화면 후처리라 해상도·화면비(모바일 포함)와 무관하게 가장자리까지 덮는다. 구 NightOverlay(UGC 이미지)는 Play에서 렌더되지 않아 폐기.
 	property string VignetteMaterialName = "NightVignette"
 	-- 한밤중 비네트 세기(0~1)와 가장자리 번짐(클수록 중앙까지 부드럽게 퍼짐)
-	-- 2026-10-15: 밤의 분위기를 남기면서 지형·오브젝트가 읽히도록 농도와 번짐을 완화한다.
-	property number NightVignetteIntensity = 0.52
+	-- 2026-10-21: 야외 밤은 조금 진하게, 마을·불 주변은 부드럽게 완화한다.
+	property number NightVignetteIntensity = 0.58
 	property number VignetteSmoothness = 0.65
 	property number WeatherHazeFadeSeconds = 1.5
+	property string EnvironmentTownMapName = "town"
+	property number TownEnvironmentScale = 0.55
+	property number EnvironmentReliefFadeSeconds = 1.5
+	property number EnvironmentLightScanSeconds = 1
 	-- 날씨 OverlayColor 알파(비 0.06 · 안개 0.07)에 곱해 비네트 세기로 환산.
 	-- 2026-09-18: 밤+비가 겹쳐 과하게 어두워져 0 으로 — 날씨는 비네트 대신 날씨 파티클(WeatherDataSet.ParticleType)이 전담.
 	property number WeatherVignetteScale = 0
@@ -146,7 +150,7 @@ script UIHUDController extends Component
 		local names = {
 			"BtnCollection", "BtnSkillTree", "BtnBossRaid", "Minimap", "MobileUI",
 			"QuestTracker", "QuestNavigator", "QuickSlots", "SkillBar", "UIMyInfo",
-			"FishingGauge",
+			"FishingGauge", "CombatHpLayer",
 		}
 		for i = 1, #names do
 			local ent = self.Entity:GetChildByName(names[i], false)
@@ -536,6 +540,10 @@ script UIHUDController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void OnEndPlay()
+		-- 이번 세션의 광원/맵 참조는 다음 시작으로 넘기지 않는다.
+		self._T.EnvironmentLights = nil
+		self._T.EnvironmentLightSettings = nil
+		self._T.EnvironmentLightMap = nil
 		if self.updateTimer then
 			_TimerService:ClearTimer(self.updateTimer)
 			self.updateTimer = nil
@@ -1153,10 +1161,10 @@ script UIHUDController extends Component
 			local tipContent = tipPlate:GetChildByName("TipContent", true)
 			if isvalid(tipContent) and isvalid(tipContent.TextGUIRendererComponent) then
 				local tips = {
-					"밤이 되면 필드 몬스터의 공격력이 상승합니다. 화로를 설치해 안전 구역을 확보하세요!",
+					"밤이 되면 필드 몬스터의 개체 수와 공격력이 1.5배 상승하니 위험할 땐 영지로 대피하세요!",
 					"대장간 모루에서는 장착 중인 무기와 방어구의 강화 및 속성 인챈트가 가능합니다.",
 					"낚시로 낚은 물고기는 요리 솥에서 스태미나를 대폭 회복하는 요리로 만들 수 있습니다.",
-					"사냥터 3구역(hunt03) 깊은 곳에는 고대 보스의 대기실 게이트가 숨겨져 있습니다.",
+					"사냥터 3구역 깊은 곳에는 고대 보스의 대기실 게이트가 숨겨져 있습니다.",
 					"영지에 밭을 갈고 씨앗을 심으면 시간이 지나 신선한 농작물을 수확할 수 있습니다.",
 					"F 키로 주변의 NPC, 작업대, 포탈, 보관함 등 다양한 오브젝트와 상호작용합니다.",
 					"인벤토리가 가득 찼다면 영지에 나무 보관함을 제작하여 자원을 안전하게 보관하세요.",
@@ -1556,6 +1564,8 @@ script UIHUDController extends Component
 		-- 격자는 설정이 바뀌면 전부 새로 만든다
 		self:ClearWeatherGrid()
 		self._T.WeatherGridCfg = nil
+		self._T.WeatherFollowCfg = nil
+		self._T.WeatherReliefAffected = cell("ReliefAffected") == "true"
 		fx.Enable = false
 
 		local typeName = cell("ParticleType")
@@ -1567,6 +1577,7 @@ script UIHUDController extends Component
 		local cfg = {
 			type = particleType,
 			color = self:ParseOverlayColorPipe(cell("ParticleColor")),
+			relief = self._T.WeatherReliefAffected,
 			count = tonumber(cell("ParticleCount")) or 1,
 			speed = tonumber(cell("ParticleSpeed")) or 1,
 			size = tonumber(cell("ParticleSize")) or 1,
@@ -1577,6 +1588,7 @@ script UIHUDController extends Component
 			log("[WEATHER-FX] on weather=" .. tostring(weatherId) .. " type=" .. typeName .. " layout=World")
 			return
 		end
+		self._T.WeatherFollowCfg = cfg
 		self:ConfigureWeatherEmitter(fx, cfg, self.WeatherParticleArea)
 		log("[WEATHER-FX] on weather=" .. tostring(weatherId) .. " type=" .. typeName .. " layout=Follow")
 	end
@@ -1587,7 +1599,7 @@ script UIHUDController extends Component
 		e.Enable = false
 		apc.ParticleType = cfg.type
 		apc.AreaSize = area
-		apc.Color = cfg.color
+		apc.Color = self:EnvironmentParticleColor(cfg)
 		apc.ParticleCount = cfg.count
 		apc.ParticleSpeed = cfg.speed
 		apc.ParticleSize = cfg.size
@@ -1716,11 +1728,114 @@ script UIHUDController extends Component
 	end
 
 	@ExecSpace("ClientOnly")
+	method void ScanEnvironmentLights(Entity map)
+		-- 1초마다 가구 목록만 갱신한다. 아이템명 분기 없이 데이터가 지정한 광원만 캐시한다.
+		self._T.EnvironmentLightMap = map
+		self._T.EnvironmentLights = {}
+		if not isvalid(map) then return end
+		local ds = _DataService:GetTable("item_dataset")
+		if ds == nil then return end
+		local settings = self._T.EnvironmentLightSettings or {}
+		self._T.EnvironmentLightSettings = settings
+		for _, furniture in pairs(map:GetChildComponentsByTypeName("script.PlaceableFurniture", true) or {}) do
+			local e = furniture.Entity
+			local key = furniture.ItemId
+			local cfg = settings[key]
+			if cfg == nil then
+				local row = ds:FindRow("Name", key)
+				if row ~= nil then
+					cfg = { radius = tonumber(row:GetItem("EnvironmentLightRadius")) or 0, strength = math.max(0, math.min(1, tonumber(row:GetItem("EnvironmentLightStrength")) or 0)) }
+					settings[key] = cfg
+				end
+			end
+			if cfg ~= nil and cfg.radius > 0 and cfg.strength > 0 and isvalid(e) then
+				self._T.EnvironmentLights[#self._T.EnvironmentLights + 1] = { entity = e, furniture = furniture, furnace = e:GetComponent("script.Furnace"), radius = cfg.radius, strength = cfg.strength }
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method number GetEnvironmentReliefTarget(Entity player)
+		-- 마을과 가까운 광원 중 강한 완화만 적용한다. 여러 등을 겹쳐도 무한히 밝아지지 않는다.
+		if not isvalid(player) or not isvalid(player.CurrentMap) then return 1 end
+		local map = player.CurrentMap
+		local now = _UtilLogic.ElapsedSeconds
+		if self._T.EnvironmentLightMap ~= map or now >= (self._T.EnvironmentLightNextScan or 0) then
+			self:ScanEnvironmentLights(map)
+			self._T.EnvironmentLightNextScan = now + self.EnvironmentLightScanSeconds
+		end
+		local scale = 1
+		local zone = "field"
+		if map.Name == self.EnvironmentTownMapName then
+			scale = math.max(0, math.min(1, self.TownEnvironmentScale))
+			zone = "town"
+		end
+		local p = player.TransformComponent.WorldPosition
+		for _, rec in ipairs(self._T.EnvironmentLights or {}) do
+			local e = rec.entity
+			-- 화로/냄비는 실제 가동 중일 때만. 등불처럼 Furnace가 없는 광원은 상시 켜짐.
+			local lit = rec.furnace == nil or (isvalid(rec.furnace) and rec.furnace.IsSmelting)
+			if isvalid(e) and isvalid(rec.furniture) and rec.furniture.EnableInHierarchy and e.EnabledInHierarchy and e.CurrentMap == map and lit then
+				local q = e.TransformComponent.WorldPosition
+				local dx, dy = p.x - q.x, p.y - q.y
+				local distance = math.sqrt(dx * dx + dy * dy)
+				local t = math.min(1, distance / rec.radius)
+				local relief = rec.strength * (1 - t * t * (3 - 2 * t))
+				if 1 - relief < scale then
+					scale = 1 - relief
+					zone = "light"
+				end
+			end
+		end
+		if self._T.EnvironmentReliefZone ~= zone then
+			self._T.EnvironmentReliefZone = zone
+			log(string.format("[VRF][ENV-RELIEF] zone=%s map=%s target=%.2f lights=%d", zone, map.Name, scale, #(self._T.EnvironmentLights or {})))
+		end
+		return scale
+	end
+
+	@ExecSpace("ClientOnly")
+	method Color EnvironmentParticleColor(any cfg)
+		-- 비는 그대로, ReliefAffected로 표시된 날씨(안개)만 현재 완화 배율을 적용한다.
+		local c = cfg.color
+		if not cfg.relief then return c end
+		return Color(c.r, c.g, c.b, c.a * (self._T.EnvironmentReliefScale or 1))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateEnvironmentRelief(number delta)
+		-- 경계 진입/이탈은 지수 보간. 전체 맵 재검색은 캐시 주기에만 한다.
+		local target = self:GetEnvironmentReliefTarget(_UserService.LocalPlayer)
+		local current = self._T.EnvironmentReliefScale or 1
+		local blend = 1 - math.exp(-delta * 3 / math.max(0.01, self.EnvironmentReliefFadeSeconds))
+		local scale = current + (target - current) * blend
+		self._T.EnvironmentReliefScale = scale
+		if math.abs(scale - (self._T.EnvironmentParticleScale or -1)) < 0.002 then return end
+		self._T.EnvironmentParticleScale = scale
+		local cfg = self._T.WeatherGridCfg
+		if cfg ~= nil and cfg.relief then
+			local color = self:EnvironmentParticleColor(cfg)
+			for _, e in pairs(self._T.WeatherGridCells or {}) do
+				if isvalid(e) and isvalid(e.AreaParticleComponent) then e.AreaParticleComponent.Color = color end
+			end
+		end
+		local follow = self._T.WeatherFollowCfg
+		local fx = self._T.WeatherParticle
+		if follow ~= nil and follow.relief and isvalid(fx) and isvalid(fx.AreaParticleComponent) then
+			fx.AreaParticleComponent.Color = self:EnvironmentParticleColor(follow)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
 	method void OnUpdate(number delta)
-		-- 기존 안개 막만 프레임 보간한다. 추가 타이머·이미터를 만들지 않는다.
+		-- 장소별 완화와 기존 안개 막만 보간한다. 추가 타이머·이미터는 만들지 않는다.
+		self:UpdateEnvironmentRelief(delta)
 		local haze = self._T.WeatherHaze
-		local target = self._T.WeatherHazeTarget
-		if not isvalid(haze) or target == nil or not isvalid(haze.SpriteRendererComponent) then return end
+		local base = self._T.WeatherHazeTarget
+		if not isvalid(haze) or base == nil or not isvalid(haze.SpriteRendererComponent) then return end
+		local scale = 1
+		if self._T.WeatherReliefAffected then scale = self._T.EnvironmentReliefScale or 1 end
+		local target = Color(base.r, base.g, base.b, base.a * scale)
 		local sr = haze.SpriteRendererComponent
 		local current = sr.Color
 		if math.abs(current.a - target.a) < 0.0001 then
@@ -1748,7 +1863,7 @@ script UIHUDController extends Component
 			log("[VIGNETTE] applied to camera of " .. tostring(cam.Entity.Name))
 		end
 
-		local nightI = night * self.NightVignetteIntensity
+		local nightI = night * self.NightVignetteIntensity * (self._T.EnvironmentReliefScale or 1)
 		local weatherI = weather.a * self.WeatherVignetteScale
 		if weatherI > 1 then weatherI = 1 end
 		local intensity = nightI + weatherI

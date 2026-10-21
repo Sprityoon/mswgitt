@@ -1,0 +1,157 @@
+@Logic
+script UICombatHpLogic extends Logic
+	property number MonsterVisibleSeconds = 5
+	property number MonsterHeadOffset = 0.3
+	property number BossRefreshSeconds = 0.1
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 몬스터가 먼저 등록된 경우도 보존한다. 기존 @Sync HP만 읽는다.
+		self._T.bars = self._T.bars or {}
+		self._T.bosses = self._T.bosses or {}
+		log("[VRF][COMBAT-HP] ready")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowMonster(Entity monster)
+		-- 실제 HP 감소가 동기화된 일반 몬스터만 잠시 표시하고 재타격하면 연장한다.
+		if not isvalid(monster) then return end
+		self._T.bars = self._T.bars or {}
+		local rec = self._T.bars[monster.Id]
+		if rec == nil then
+			rec = { entity = monster }
+			self._T.bars[monster.Id] = rec
+			log("[VRF][COMBAT-HP] show monster=" .. monster.Name)
+		end
+		rec.untilAt = _UtilLogic.ElapsedSeconds + self.MonsterVisibleSeconds
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RegisterBoss(Entity boss)
+		-- 스폰/IsBoss 동기화 순서와 무관하게 등록한다. 다른 맵의 보스는 표시하지 않는다.
+		if not isvalid(boss) then return end
+		self._T.bosses = self._T.bosses or {}
+		self._T.bosses[boss.Id] = boss
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Remove(Entity monster)
+		-- 디스폰 때 화면 막대와 참조를 함께 정리한다.
+		if monster == nil then return end
+		local rec = (self._T.bars or {})[monster.Id]
+		if rec ~= nil then
+			if isvalid(rec.bar) then rec.bar:Destroy() end
+			self._T.bars[monster.Id] = nil
+		end
+		if self._T.bosses ~= nil then self._T.bosses[monster.Id] = nil end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ClearBars()
+		-- 맵 전환/세션 종료 후 이전 맵의 막대가 HUD에 남지 않게 한다.
+		for _, rec in pairs(self._T.bars or {}) do
+			if isvalid(rec.bar) then rec.bar:Destroy() end
+		end
+		self._T.bars = {}
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- UI 클론만 정리한다. 몬스터와 저장 데이터는 건드리지 않는다.
+		self:ClearBars()
+		self._T.bosses = {}
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Paint(Entity fill, number hp, number maxHp)
+		-- 같은 HUD 게이지 그림을 Filled로 자르므로 조각 크기를 바꿀 필요가 없다.
+		if not isvalid(fill) then return end
+		local ratio = math.max(0, math.min(1, hp / math.max(1, maxHp)))
+		fill.SpriteGUIRendererComponent.FillAmount = ratio
+		fill.Enable = ratio > 0
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 활성 일반 막대만 매 프레임 따라간다. 보스 수치는 0.1초 주기다.
+		local player = _UserService.LocalPlayer
+		local map = isvalid(player) and player.CurrentMap or nil
+		if self._T.map ~= map then
+			self:ClearBars()
+			self._T.map = map
+			self._T.bossId = nil
+		end
+		local layer = _EntityService:GetEntityByPath("/ui/HUDGroup/CombatHpLayer")
+		local template = isvalid(layer) and layer:GetChildByName("MonsterHpTemplate") or nil
+		local now = _UtilLogic.ElapsedSeconds
+		for key, rec in pairs(self._T.bars or {}) do
+			local e = rec.entity
+			local mon = isvalid(e) and e:GetComponent("script.Monster") or nil
+			if not isvalid(mon) or not e.EnabledInHierarchy or e.CurrentMap ~= map or mon.IsDead or mon.IsBoss or mon.Hp <= 0 or now >= rec.untilAt then
+				if isvalid(rec.bar) then rec.bar:Destroy() end
+				self._T.bars[key] = nil
+			elseif isvalid(template) and layer.EnabledInHierarchy then
+				if not isvalid(rec.bar) then
+					rec.bar = template:Clone("MonsterHp_" .. key, false, true)
+					if isvalid(rec.bar) then rec.fill = rec.bar:GetChildByName("Fill") end
+				end
+				if isvalid(rec.bar) then
+					local p = e.TransformComponent.WorldPosition
+					local sy = math.abs(e.TransformComponent.Scale.y)
+					local head = p.y + 0.9 * sy
+					local hit = e.HitComponent
+					if isvalid(hit) then head = p.y + (hit.ColliderOffset.y + hit.BoxSize.y * 0.5) * sy end
+					local screen = _UILogic:WorldToScreenPosition(Vector2(p.x, head + self.MonsterHeadOffset))
+					rec.bar.UITransformComponent.anchoredPosition = _UILogic:ScreenToUIPosition(screen)
+					self:Paint(rec.fill, mon.Hp, mon.MaxHp)
+					rec.bar.Enable = true
+				end
+			end
+		end
+		self._T.bossAccum = (self._T.bossAccum or 0) + delta
+		if self._T.bossAccum >= self.BossRefreshSeconds then
+			self._T.bossAccum = 0
+			self:UpdateBoss(map, layer)
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateBoss(Entity map, Entity layer)
+		-- 같은 맵의 살아 있는 보스만 상단 표시. 여럿이면 Id순으로 고정해 깜빡임을 막는다.
+		if not isvalid(layer) then return end
+		local panel = layer:GetChildByName("BossHpPanel")
+		if not isvalid(panel) then return end
+		local pick = nil
+		for key, boss in pairs(self._T.bosses or {}) do
+			if not isvalid(boss) then
+				self._T.bosses[key] = nil
+			else
+				local mon = boss:GetComponent("script.Monster")
+				if isvalid(mon) and mon.IsBoss and not mon.IsDead and mon.Hp > 0 and boss.EnabledInHierarchy and boss.CurrentMap == map then
+					if pick == nil or boss.Id < pick.Id then pick = boss end
+				end
+			end
+		end
+		panel.Enable = isvalid(pick)
+		if not isvalid(pick) then
+			self._T.bossId = nil
+			return
+		end
+		local mon = pick:GetComponent("script.Monster")
+		if self._T.bossId ~= pick.Id or self._T.bossKey ~= mon.MonsterId then
+			self._T.bossId = pick.Id
+			self._T.bossKey = mon.MonsterId
+			local name = mon:GetMonsterId()
+			local ds = _DataService:GetTable("MonsterCoinDropDataSet")
+			local row = ds ~= nil and ds:FindRow("MonsterId", name) or nil
+			if row ~= nil then
+				local displayName = row:GetItem("DisplayName")
+				if displayName ~= nil and displayName ~= "" then name = displayName end
+			end
+			panel:GetChildByName("BossName").TextGUIRendererComponent.Text = name
+			log("[VRF][COMBAT-HP] boss=" .. tostring(name) .. " maxHp=" .. tostring(mon.MaxHp))
+		end
+		self:Paint(panel:GetChildByName("Track"):GetChildByName("Fill"), mon.Hp, mon.MaxHp)
+		panel:GetChildByName("HpText").TextGUIRendererComponent.Text = tostring(math.max(0, math.floor(mon.Hp))) .. " / " .. tostring(math.floor(mon.MaxHp))
+	end
+end

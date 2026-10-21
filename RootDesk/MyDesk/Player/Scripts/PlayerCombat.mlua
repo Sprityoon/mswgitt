@@ -14,6 +14,8 @@ script PlayerCombat extends AttackComponent
 	-- ⚠ 원본 클립 크기가 스킬마다 4배 가까이 차이나므로(56x37 ~ 219x187) 배율 없이는
 	--   타격감이 스킬마다 들쭉날쭉해진다. 1.0 = 원본 픽셀 그대로(100px = 1 월드 유닛).
 	@HideFromInspector property number PendingHitEffectScale = 1.0
+	-- 평타 탄의 경직 간격(Projectile.StaggerEvery 가 타격 순간에만 싣는다). 0 = 매번 경직(기존 평타·스킬).
+	@HideFromInspector property integer PendingStaggerEvery = 0
 
 	@ExecSpace("ServerOnly")
 	method void DoAttackAt(Vector2 worldPos)

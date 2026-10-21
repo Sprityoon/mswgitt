@@ -17,7 +17,7 @@ function scanRuids() {
     for (const f of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, f.name);
       if (f.isDirectory()) walk(p);
-      else if (/^ui8[ps]?_.*\.sprite$/.test(f.name)) {
+      else if (/^ui8[psb]?_.*\.sprite$/.test(f.name)) {
         const j = JSON.parse(fs.readFileSync(p, "utf8")).ContentProto.Json;
         out[j.name] = j.resource_guid;
       }
@@ -39,7 +39,17 @@ function ruid(name) {
   if (!r) throw new Error("ui8 RUID 없음: " + name);
   return r;
 }
-const pieceRuid = (asset, k) => ruid(asset.replace(/^ui8_/, "ui8p_") + "_" + k);
+// 아틀라스 실금 방지 조각(ui8b_*, build_ui8_bleed.py): 바깥 여백 e 텍셀(색 번짐 + alpha≈0)을 붙인 판.
+// 아틀라스의 투명-검정 padding 이 필터링 때 조각 가장자리에 섞여 1px 어두운 선이 생겼다(pitfalls #78).
+// 등록돼 있으면 그것을 쓰고 piece() 가 여백만큼 넓혀 그려 실제 그림 위치를 유지한다.
+const BLEED_PATH = path.join(PACK, "ui8_bleed.json");
+const BLEED = fs.existsSync(BLEED_PATH) ? JSON.parse(fs.readFileSync(BLEED_PATH, "utf8")) : {};
+function pieceRef(asset, k) {
+  const bled = asset.replace(/^ui8_/, "ui8b_") + "_" + k;
+  if (RUID[bled] && BLEED[bled]) return { ruid: RUID[bled], ...BLEED[bled] };
+  return { ruid: ruid(asset.replace(/^ui8_/, "ui8p_") + "_" + k), e: 0, w: 1, h: 1 };
+}
+const pieceRuid = (asset, k) => pieceRef(asset, k).ruid;
 
 // 빌더 생성자는 그룹 기준 상대 경로를 받는다
 const rel = (full) => full.replace(/^\/ui\/[^/]+\//, "");
@@ -67,12 +77,34 @@ function sendToBack(b, p, name) {
   kids.forEach((k, i) => b.patch(k.path, { display_order: i + 1 }));
 }
 
-function piece(b, p, ruidStr, anchor, rect, offMin, offMax) {
-  b.sprite(p, { anchor, pos: [0, 0], rect_size: rect, image_ruid: ruidStr, color: "#FFFFFF", sprite_type: 0, raycast: false });
+// 고정 앵커 조각의 피벗(빌더 자동 피벗 = 앵커 점)
+const ANCHOR_PIVOT = { "top-left": [0, 1], "top-right": [1, 1], "bottom-left": [0, 0], "bottom-right": [1, 0] };
+const r2 = (v) => Math.round(v * 100) / 100;
+
+function piece(b, p, ref, anchor, rect, offMin, offMax) {
+  const e = ref.e || 0;
+  let pos = [0, 0];
+  let rs = rect;
+  if (e && !offMin) {
+    // 고정 크기 조각(모서리): 여백만큼 키우고, 피벗 기준으로 밀어 실제 그림 사각형을 원래 자리에 둔다
+    const [px, py] = ANCHOR_PIVOT[anchor];
+    const ex = (e * rect[0]) / ref.w, ey = (e * rect[1]) / ref.h;
+    pos = [r2(ex * (2 * px - 1)), r2(ey * (2 * py - 1))];
+    rs = [r2(rect[0] + 2 * ex), r2(rect[1] + 2 * ey)];
+  }
+  b.sprite(p, { anchor, pos, rect_size: rs, image_ruid: ref.ruid, color: "#FFFFFF", sprite_type: 0, raycast: false });
   if (offMin) {
     const t = b.getComponent(p, UIT);
     const parent = p.slice(0, p.lastIndexOf("/"));
     const [w, h] = rectOf(b, parent);
+    if (e) {
+      // 늘어나는 조각: 표시 크기 기준 배율로 여백을 환산해 Offset 을 바깥으로 넓힌다
+      const dw = w * (t.AnchorsMax.x - t.AnchorsMin.x) + offMax[0] - offMin[0];
+      const dh = h * (t.AnchorsMax.y - t.AnchorsMin.y) + offMax[1] - offMin[1];
+      const ex = (e * dw) / ref.w, ey = (e * dh) / ref.h;
+      offMin = [r2(offMin[0] - ex), r2(offMin[1] - ey)];
+      offMax = [r2(offMax[0] + ex), r2(offMax[1] + ey)];
+    }
     // Offset만 늘리면 명시 RectSize에는 겹침이 빠진다(pitfalls #10).
     b.patchComponent(p, UIT, {
       OffsetMin: { x: offMin[0], y: offMin[1] }, OffsetMax: { x: offMax[0], y: offMax[1] },
@@ -107,19 +139,19 @@ function skin9(b, p, asset, opt = {}) {
   // 모서리를 줄여 쓰면(k<1) 최근접 축소로 둥근 선이 깨진다 → 그 크기로 미리 줄인 조각 세트(build_ui8_piece_sized.py,
   // ui8p_<이름>_s<모서리px>_*)가 등록돼 있으면 그것을 1:1 로 쓴다.
   const sized = asset + "_s" + L;
-  const pa = k < 1 && RUID[sized.replace(/^ui8_/, "ui8p_") + "_tl"] ? sized : asset;
+  const pa = k < 1 && (RUID[sized.replace(/^ui8_/, "ui8p_") + "_tl"] || RUID[sized.replace(/^ui8_/, "ui8b_") + "_tl"]) ? sized : asset;
   const sp = resetSkin(b, p);
   b.empty(sp, { anchor: "stretch", pos: [0, 0], rect_size: [W, H] });
   const P = (n) => sp + "/" + n;
-  piece(b, P("c"), pieceRuid(pa, "c"), "stretch", [W - L - R, H - T - B], [L - o, B - o], [-(R - o), -(T - o)]);
-  piece(b, P("t"), pieceRuid(pa, "t"), "stretch-top", [W - L - R, T], [L - o, -T], [-(R - o), 0]);
-  piece(b, P("b"), pieceRuid(pa, "b"), "stretch-bottom", [W - L - R, B], [L - o, 0], [-(R - o), B]);
-  piece(b, P("l"), pieceRuid(pa, "l"), "stretch-left", [L, H - T - B], [0, B - o], [L, -(T - o)]);
-  piece(b, P("r"), pieceRuid(pa, "r"), "stretch-right", [R, H - T - B], [-R, B - o], [0, -(T - o)]);
-  piece(b, P("tl"), pieceRuid(pa, "tl"), "top-left", [L, T]);
-  piece(b, P("tr"), pieceRuid(pa, "tr"), "top-right", [R, T]);
-  piece(b, P("bl"), pieceRuid(pa, "bl"), "bottom-left", [L, B]);
-  piece(b, P("br"), pieceRuid(pa, "br"), "bottom-right", [R, B]);
+  piece(b, P("c"), pieceRef(pa, "c"), "stretch", [W - L - R, H - T - B], [L - o, B - o], [-(R - o), -(T - o)]);
+  piece(b, P("t"), pieceRef(pa, "t"), "stretch-top", [W - L - R, T], [L - o, -T], [-(R - o), 0]);
+  piece(b, P("b"), pieceRef(pa, "b"), "stretch-bottom", [W - L - R, B], [L - o, 0], [-(R - o), B]);
+  piece(b, P("l"), pieceRef(pa, "l"), "stretch-left", [L, H - T - B], [0, B - o], [L, -(T - o)]);
+  piece(b, P("r"), pieceRef(pa, "r"), "stretch-right", [R, H - T - B], [-R, B - o], [0, -(T - o)]);
+  piece(b, P("tl"), pieceRef(pa, "tl"), "top-left", [L, T]);
+  piece(b, P("tr"), pieceRef(pa, "tr"), "top-right", [R, T]);
+  piece(b, P("bl"), pieceRef(pa, "bl"), "bottom-left", [L, B]);
+  piece(b, P("br"), pieceRef(pa, "br"), "bottom-right", [R, B]);
   hideOwn(b, p);
   sendToBack(b, p, "Skin");
   return b;
@@ -141,9 +173,9 @@ function skin3(b, p, asset, opt = {}) {
     b.empty(sp, { anchor: "stretch-middle", pos: [0, 0], rect_size: [W, h] });
     b.patchComponent(sp, UIT, { OffsetMin: { x: 0, y: -h / 2 }, OffsetMax: { x: 0, y: h / 2 } });
   }
-  piece(b, sp + "/c", pieceRuid(asset, "c"), "stretch", [W - L - R, h], [L - o, 0], [-(R - o), 0]);
-  piece(b, sp + "/l", pieceRuid(asset, "l"), "stretch-left", [L, h], [0, 0], [L, 0]);
-  piece(b, sp + "/r", pieceRuid(asset, "r"), "stretch-right", [R, h], [-R, 0], [0, 0]);
+  piece(b, sp + "/c", pieceRef(asset, "c"), "stretch", [W - L - R, h], [L - o, 0], [-(R - o), 0]);
+  piece(b, sp + "/l", pieceRef(asset, "l"), "stretch-left", [L, h], [0, 0], [L, 0]);
+  piece(b, sp + "/r", pieceRef(asset, "r"), "stretch-right", [R, h], [-R, 0], [0, 0]);
   hideOwn(b, p);
   sendToBack(b, p, "Skin");
   return b;
@@ -265,4 +297,23 @@ function luaVariantTable() {
   return lines.join("\n");
 }
 
-module.exports = { normalizeOrder, rel, full, backdrop, RUID, META, ruid, pieceRuid, skin9, skin3, simple, hideOwn, sendToBack, rectOf, childrenOf, luaVariantTable };
+// 런타임 UI8Skin.FitSkin 이 쓰는 여백 표(Lua) — 조각 RUID → { w, h, e }
+function luaBleedTable() {
+  const lines = [];
+  for (const [n, b] of Object.entries(BLEED)) {
+    if (!RUID[n]) continue;
+    lines.push(`\t\tt["${RUID[n]}"] = { w = ${b.w}, h = ${b.h}, e = ${b.e} } -- ${n}`);
+  }
+  return lines.join("\n");
+}
+
+// UI8Skin.mlua 의 생성 영역(begin~end 표시 사이)을 body 로 바꾼다
+function injectLuaBlock(file, tag, body) {
+  const src = fs.readFileSync(file, "utf8");
+  const a = src.indexOf(`-- [${tag}-BEGIN]`);
+  const z = src.indexOf(`\t\t-- [${tag}-END]`);
+  if (a < 0 || z < 0) throw new Error("UI8Skin 표시 없음: " + tag);
+  fs.writeFileSync(file, src.slice(0, a) + `-- [${tag}-BEGIN]\n` + body + "\n" + src.slice(z), "utf8");
+}
+
+module.exports = { luaBleedTable, injectLuaBlock, normalizeOrder, rel, full, backdrop, RUID, META, ruid, pieceRuid, pieceRef, skin9, skin3, simple, hideOwn, sendToBack, rectOf, childrenOf, luaVariantTable };

@@ -58,6 +58,9 @@ script PlayerController extends Component
 	@Sync
 	property Entity ActivePortal = nil
 
+	-- 마을·영지 도착 위치 = 그 맵에 실제로 놓인 포탈에서 이만큼 아래(월드 단위). 포탈 트리거(0.85×2, 위로 0.69 치우침) 바로 밖.
+	property number PortalArriveOffsetY = 1.0
+
 	-- 전환 연출에 표시할 실제 목적지 맵 이름. 호출부가 ClientWarpWithCover 호출 직전에 채워 두면
 	-- UIHUDController.pendingWarpDestMap 으로 그대로 전달해 출발지 추정만으로 라벨을 잘못 붙이지 않게 한다
 	-- (규칙 46 — ClientWarpWithCover/BeginWarpTransition 인자 수는 고정, 값은 프로퍼티로 전달한다).
@@ -2875,6 +2878,55 @@ script PlayerController extends Component
 		return clamped
 	end
 
+	@ExecSpace("ServerOnly")
+	method any FindPortalArrival(string targetMap, string fromMap)
+		-- 마을(town)·영지(Home_<UserId>) 도착 위치를 그 맵에 지금 놓인 포탈 기준으로 정한다.
+		-- 고정 좌표(PortalGate.TargetPosition·PortalDestinationDataSet.ArriveX/Y)는 포탈을 옮겨도 그대로라
+		-- 에디터에서 town 포탈을 옮기거나 플레이어가 영지 포탈을 옮기면 엉뚱한 곳에 도착했다(2026-10-21).
+		-- 영지: 메인 포탈(PortalGate.IsMainPortal)만 기준 — 부두 배도 town 행 PortalGate 라 "돌아갈 포탈 우선"으로는 배가 잡혔다.
+		-- 마을: 돌아갈 곳(fromMap)으로 가는 포탈을 우선, 없으면 첫 포탈. 맵 미로드·포탈 없음이면 nil → 호출자가 기존 좌표를 쓴다.
+		if targetMap == nil then return nil end
+		local isHome = string.sub(targetMap, 1, 5) == "Home_" and string.find(targetMap, "_Sub_", 1, true) == nil
+		if targetMap ~= "town" and not isHome then return nil end
+		local map = _EntityService:GetEntityByPath("/maps/" .. targetMap)
+		if not isvalid(map) then return nil end
+		local comps = map:GetChildComponentsByTypeName("script.PortalGate", true)
+		if comps == nil then return nil end
+		local backKey = fromMap or ""
+		if string.sub(backKey, 1, 5) == "Home_" then backKey = "Home" end
+		local pick = nil
+		for _, pg in ipairs(comps) do
+			local e = isvalid(pg) and pg.Entity or nil
+			if isHome then
+				if isvalid(e) and e.Enable and isvalid(e.TransformComponent) and pg.IsMainPortal == true then
+					pick = pg
+					break
+				end
+			elseif isvalid(e) and e.Enable and isvalid(e.TransformComponent) and not isvalid(e:GetComponent("script.RaidGate")) then
+				if pg.TargetMapName == backKey then
+					pick = pg
+					break
+				end
+				if pick == nil then pick = pg end
+			end
+		end
+		if pick == nil then return nil end
+		local p = pick.Entity.TransformComponent.WorldPosition
+		local x = p.x
+		local y = p.y - self.PortalArriveOffsetY
+		if _ResourceSpawner ~= nil then
+			local safe = _ResourceSpawner:FindSafeSpawnPosition(targetMap, x, y)
+			if safe ~= nil then
+				x = safe.x
+				y = safe.y
+			end
+		end
+		local out = self:ResolveHomeWarpPosition(targetMap, x, y)
+		log("[VRF][PORTAL] arrive " .. targetMap .. " near portal '" .. pick.Entity.Name .. "' (" .. string.format("%.2f, %.2f", p.x, p.y)
+			.. ") -> " .. string.format("(%.2f, %.2f)", out.x, out.y) .. " from=" .. tostring(fromMap))
+		return out
+	end
+
 	@ExecSpace("Server")
 	method void ServerRequestWarp()
 		local playerComp = self.Entity.PlayerComponent
@@ -2919,8 +2971,13 @@ script PlayerController extends Component
 				targetMap = "Home_" .. playerComp.UserId
 			end
 			
-			local targetPos = portalGate.TargetPosition
-			local safe = self:ResolveHomeWarpPosition(targetMap, targetPos.x, targetPos.y)
+			local fromName = ""
+			if isvalid(currentMap) then fromName = currentMap.Name end
+			local safe = self:FindPortalArrival(targetMap, fromName)
+			if safe == nil then
+				local targetPos = portalGate.TargetPosition
+				safe = self:ResolveHomeWarpPosition(targetMap, targetPos.x, targetPos.y)
+			end
 			playerComp:MoveToMapPosition(targetMap, safe)
 			log("PlayerController: Warped player " .. playerComp.UserId .. " to " .. targetMap .. " at " .. tostring(safe))
 
@@ -3227,9 +3284,12 @@ script PlayerController extends Component
 		if target == "Home" then
 			target = "Home_" .. playerComp.UserId
 		end
-		local arriveX = tonumber(row:GetItem("ArriveX")) or 0
-		local arriveY = tonumber(row:GetItem("ArriveY")) or 0
-		local safe = self:ResolveHomeWarpPosition(target, arriveX, arriveY)
+		local safe = self:FindPortalArrival(target, currentMap.Name)
+		if safe == nil then
+			local arriveX = tonumber(row:GetItem("ArriveX")) or 0
+			local arriveY = tonumber(row:GetItem("ArriveY")) or 0
+			safe = self:ResolveHomeWarpPosition(target, arriveX, arriveY)
+		end
 		playerComp:MoveToMapPosition(target, safe)
 		log("PlayerController: List-warped " .. playerComp.UserId .. " to " .. target)
 		-- 업적/퀘스트 진행: 포탈 이동 액션 발행
@@ -3420,7 +3480,12 @@ script PlayerController extends Component
 		local mapName = "Home_" .. targetUserId
 		local map = _EntityService:GetEntityByPath("/maps/" .. mapName)
 		if isvalid(map) then
-			local safe = self:ResolveHomeWarpPosition(mapName, -3, 0)
+			local fromName = ""
+			if isvalid(self.Entity.CurrentMap) then fromName = self.Entity.CurrentMap.Name end
+			local safe = self:FindPortalArrival(mapName, fromName)
+			if safe == nil then
+				safe = self:ResolveHomeWarpPosition(mapName, -3, 0)
+			end
 			playerComp:MoveToMapPosition(mapName, safe)
 			self:ClientShowWarpFeedback(targetResolvedName .. "님의 영지에 입장했습니다.")
 		else
@@ -5446,6 +5511,7 @@ script PlayerController extends Component
 		p.SplashMultiplier = spec.splashMul
 		p.ImpactOnly = spec.impactOnly
 		p.Grow = spec.grow
+		p.StaggerEvery = spec.staggerEvery or 0
 		return true
 	end
 
@@ -5542,6 +5608,8 @@ script PlayerController extends Component
 			grow = false,
 			hitRUID = self:SkillText(row, "HitEffectRUID"),
 			hitScale = self:SkillNumber(row, "HitEffectScale", 1.0),
+			-- StaggerEvery: 이 평타 탄이 몇 타마다 경직(넉백)을 주는가. 공란 = 매번, 간격은 해당 데이터 행에서 지정.
+			staggerEvery = math.floor(self:SkillNumber(row, "StaggerEvery", 0)),
 		}
 		if not self:SpawnPlayerProjectile(spec) then return end
 		self:PlayWeaponAttackPresentation(row, dirX, dirY, false)

@@ -121,7 +121,7 @@
       {
         "id": "182f526a-ed01-454e-a778-f81e7fcbfb64",
         "path": "/ui/MainMenuGroup/Bg",
-        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent,MOD.Core.MaskComponent",
+        "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
           "name": "Bg",
           "path": "/ui/MainMenuGroup/Bg",
@@ -263,21 +263,6 @@
               "OutlineWidth": 3.0,
               "RaycastTarget": false,
               "Type": 0,
-              "Enable": true
-            },
-            {
-              "@type": "MOD.Core.MaskComponent",
-              "Padding": {
-                "left": 0,
-                "right": 0,
-                "top": 0,
-                "bottom": 0
-              },
-              "Shape": 0,
-              "Softness": {
-                "x": 0,
-                "y": 0
-              },
               "Enable": true
             }
           ],

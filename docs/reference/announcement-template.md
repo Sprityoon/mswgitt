@@ -1,94 +1,117 @@
 # 업데이트 공지사항 작성 가이드 & 템플릿 (Announcement Guide & Templates)
 
-> 이 문서는 메이플크래프트의 정기 업데이트, 패치노트, 점검 및 시스템 개선 공지사항을 작성할 때 사용하는 공식 가이드 및 템플릿입니다.
+> 이 문서는 메이플크래프트의 정기 업데이트, 패치노트, 점검 및 시스템 개선 공지사항을 작성할 때 사용하는 공식 가이드 및 템플릿입니다.  
+> 작성된 모든 패치노트는 [`docs/patchnotes/`](../patchnotes/) 폴더에 날짜별(`YYYY-MM-DD.md`)로 영구 아카이빙합니다.
 
 ---
 
-## 1. 톤앤매너 (Tone & Manner)
+## 1. 톤앤매너 및 작성 원칙 (Tone & Principles)
 
 1. **친절하고 정중한 모험가 친화적 어투**
    - 모험가를 존중하는 따뜻하고 신뢰감 있는 높임말 사용 (`~했습니다`, `~안내해 드립니다`).
    - 첫인사 및 끝인사는 간결하면서도 감사를 담아 전달.
-2. **명확하고 직관적인 기능 설명**
-   - 개발 내부 코드명이나 함수명(예: `Reticle offset`, `Vector3`, `RPC`) 대신, 플레이어 관점의 체감 변화(예: "도구 조준점과 실제 채광 위치 일치", "2×2 넓은 흙터 확장")로 풀어 설명.
-3. **실험실/BETA 기능의 투명한 고지**
+2. **명확하고 직관적인 플레이어 관점 설명**
+   - 개발 내부 코드명이나 함수명(예: `Reticle offset`, `Vector3`, `RPC`, `FitSkin 실금 보정`) 대신, 플레이어 체감 변화(예: "대량 구매 수량 선택창 신설", "포탈 위치 변경 시 도착점 실시간 동기화")로 풀어 설명.
+   - 개발 중간 과정에서 일어난 마감/실금 보정 등은 유저 대상 패치노트에서는 생략하고 본질적인 기능에 집중.
+3. **전투/직업 밸런스 패치의 투명한 고지**
+   - 스킬이나 직업 성능 조정 시(예: 무한 경직 완화 등), 단순 수치 변경이 아닌 `[전투 밸런스]` 항목으로 명확히 분류하고 조정 배경(전투 긴장감 및 직업 간 형평성 확보 등)을 친절히 설명.
+4. **실험실/BETA 기능의 투명한 고지**
    - 안정화 전인 신규 기능(예: 영지 초대, 일부 소셜 기능 등)은 제목이나 본문에 `(🧪 테스트 기능)` 또는 `(BETA)`를 명시하고, 이용 시 유의사항을 하단 괄호 안내로 표기.
-4. **디스코드 마크다운 최적화 필수 규칙**
-   - ⚠️ 줄 맨 앞에 `- ` (하이픈 + 공백)를 사용하지 마십시오. (디스코드에서 의도치 않은 자동 들여쓰기 목록으로 변환되어 서식이 깨짐)
-   - 목록 기호는 **`▶ `** (세모) 또는 **`▪ `** (네모)를 사용하십시오.
-   - 글로벌 서비스 및 커뮤니티 공유를 위해 **한국어와 영문(English)** 버전을 항상 함께 제공하십시오.
-   - 사용자가 원클릭으로 복사할 수 있도록 코드 블록(```text) 형태로 제공하십시오.
 
 ---
 
-## 2. 공지사항 표준 구조
+## 2. 채널별 서식 최적화 규칙
 
-1. **헤더**: `[업데이트 안내] 메이플크래프트 {핵심 테마/키워드} 안내`
-2. **도입부**: 모험가 인사 및 업데이트 취지 한 줄 요약
-3. **본문 (항목별 3~5개 섹션)**:
-   - `1. {핵심 콘텐츠/시스템 개편}`
-     - `▶ [도구/기능명]: 상세 설명`
-   - `2. {신규 기능/소셜/편의성}`
-   - `3. {UI/모바일/환경 최적화}`
-   - `4. {버그 수정 및 시스템 안정화}`
-4. **마무리**: 감사 인사 및 피드백 독려
+### A. 디스코드 공지용 서식 (Discord Native Markdown)
+디스코드는 자체 마크다운 엔진을 사용하므로, 복사해 붙여넣었을 때 풍부한 스타일이 렌더링되도록 작성합니다.
+- **제목/소제목**: 대제목은 `# 📢 [업데이트 안내] ...`, 각 섹션 제목은 `### 🎨 {섹션명}` 사용.
+- **목록 번호**: 숫자 목록이나 화살표 기호 대신, 디스코드 네이티브 불릿으로 자동 렌더링되는 **`- **[{항목명}]**: {상세 설명}`** 형태 사용.
+- **글자 수 제한 준수**: 디스코드 메시지당 2,000자 제한을 초과하지 않도록 한국어 공지와 영문(English) 공지를 각각 1,000~1,500자 내외로 분리하여 코드 블록으로 제공.
+
+### B. 요약 업로드용 서식 (메이플월드 공식 설명란 / 게임 내 공지용)
+메이플월드 월드 소개란이나 인게임 팝업 공지는 특수 마크다운 헤더(`#`)가 지원되지 않거나 단순 텍스트로 보일 수 있습니다.
+- **카테고리 헤더**: **`▶ [{카테고리명}]`** 사용.
+- **세부 내용**: **`- {요약 내용}`** 불릿 사용.
+- 4~5개 핵심 영역(UI, 전투/밸런스, 상점/편의성, 환경/이동 등)으로 2~3줄씩 압축 작성.
 
 ---
 
 ## 3. 공식 템플릿 (복사용)
 
-### 🇰🇷 한국어 공지사항 템플릿
+### 1) 디스코드 공지용 템플릿 (한국어 & English)
 
-```text
-[업데이트 안내] 메이플크래프트 {업데이트 주제} 안내
+````markdown
+# 📢 [업데이트 안내] 메이플크래프트 {업데이트 주제} 안내
 
 모험가 여러분, 안녕하세요!  
 더욱 쾌적하고 즐거운 모험을 위해 진행된 주요 업데이트 내용을 안내해 드립니다.
 
-1. {주요 기능 개편 / 신규 시스템}
-{기능 도입 배경 또는 요약}
-▶ [{기능/도구 1}]: {사용법 및 상세 동작 안내}
-▶ [{기능/도구 2}]: {사용법 및 상세 동작 안내}
+### 🎨 {주요 시스템 / UI 개편}
+{개편 배경 또는 요약 1줄}
+- **[{기능/창 1}]**: {사용법 및 상세 동작 안내}
+- **[{기능/창 2}]**: {사용법 및 상세 동작 안내}
 
-2. {신규 기능 / 소셜 시스템}
-▶ {기능명}: {상세 설명}
-▶ {테스트 기능명} (BETA): {설명}
-(※ {테스트 기능명}은 현재 테스트 단계로, 일부 환경에 따라 불안정할 수 있으며 지속적으로 보완될 예정입니다.)
+### ⚔️ {전투 개편 및 밸런스 패치}
+- **[{전투 UI/신규 기능}]**: {상세 설명}
+- **[전투 밸런스 - {스킬/직업명}]**: {기존 과도한 문제 및 조정 이유, 변경 수치 설명}
 
-3. UI 및 환경 최적화
-▶ {개선 항목}: {개선 내용 및 효과}
+### 🛒 {상점 및 경제 편의성}
+- **[{편의 기능}]**: {상세 설명}
+- **[{가격/한도 정책}]**: {설명}
 
-4. 시스템 안정성 및 편의성 강화
-▶ {안정화 항목}: {수정 내용}
+### 🌲 {환경 및 시스템 편의성}
+- **[{환경/조명 항목}]**: {개선 내용 및 효과}
+- **[{편의성/동선 항목}]**: {개선 내용 및 효과}
 
 앞으로도 모험가 여러분의 소중한 피드백을 바탕으로 더욱 발전하는 메이플크래프트가 되겠습니다. 감사합니다!
-```
+
+--------------------------------------------------
+
+# 📢 [Update Notice] MapleCraft {Update Subject}
+
+Hello, Adventurers!  
+Here are the details for the latest update, focused on new features, balance adjustments, and quality-of-life improvements.
+
+### 🎨 {Major Feature / UI Revamp}
+{Brief introduction or summary}
+- **[{Feature 1}]**: {Usage details and mechanics}
+- **[{Feature 2}]**: {Usage details and mechanics}
+
+### ⚔️ {Combat & Class Balance}
+- **[{Combat Feature}]**: {Detailed description}
+- **[Combat Balance - {Skill/Class}]**: {Rationale and tuning details}
+
+### 🛒 {Shop & Economy}
+- **[{Feature}]**: {Details}
+- **[{Balance Item}]**: {Details}
+
+### 🌲 {Environment & Quality of Life}
+- **[{Environment}]**: {Details}
+- **[{QoL Feature}]**: {Details}
+
+Thank you for your continued support and feedback as we keep improving MapleCraft!
+````
 
 ---
 
-### 🇺🇸 영문 공지사항 템플릿 (English Template)
+### 2) 요약 업로드용 템플릿 (메이플월드 설명란용)
 
 ```text
-[Update Notice] MapleCraft {Update Subject}
+[메이플크래프트 주요 업데이트 요약]
 
-Hello, Adventurers!  
-Here are the details for the latest update, focused on new features and quality-of-life improvements.
+▶ [{카테고리 1 - 예: UI 전면 리디자인}]
+- {핵심 요약 1}
+- {핵심 요약 2}
 
-1. {Key Feature Revamp / New System}
-{Brief introduction or summary}
-▶ [{Item/Feature 1}]: {Usage details and mechanics}
-▶ [{Item/Feature 2}]: {Usage details and mechanics}
+▶ [{카테고리 2 - 예: 전투 UI & 밸런스 패치}]
+- {핵심 요약 1}
+- [밸런스] {핵심 요약 2}
 
-2. {New Features / Social System}
-▶ {Feature Name}: {Detailed description}
-▶ {Test Feature Name} (BETA): {Description}
-(※ Please note: The {Test Feature Name} is currently in testing and will continue to be refined in upcoming patches.)
+▶ [{카테고리 3 - 예: 상점 편의성 & 경제}]
+- {핵심 요약 1}
+- {핵심 요약 2}
 
-3. UI & Optimization
-▶ {Improvement}: {Details and effects}
-
-4. System Stability & Bug Fixes
-▶ {Fix Item}: {Resolution details}
-
-Thank you for your continued support and feedback as we keep improving MapleCraft!
+▶ [{카테고리 4 - 예: 환경 & 이동 편의성}]
+- {핵심 요약 1}
+- {핵심 요약 2}
 ```

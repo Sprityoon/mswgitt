@@ -703,7 +703,16 @@ script BossRaidLogic extends Logic
 			if users ~= nil then
 				for _, user in ipairs(users) do
 					if isvalid(user) and user.PlayerComponent ~= nil then
-						user.PlayerComponent:MoveToMapPosition("town", Vector2(10, -2))
+						-- 마을 포탈 옆으로(포탈을 옮겨도 따라감). 못 찾으면 기존 마을 기본 좌표.
+						local arrive = Vector2(10, -2)
+						local pc = user:GetComponent("script.PlayerController")
+						if isvalid(pc) then
+							---@type PlayerController
+							local controller = pc
+							local near = controller:FindPortalArrival("town", mapName)
+							if near ~= nil then arrive = near end
+						end
+						user.PlayerComponent:MoveToMapPosition("town", arrive)
 					end
 				end
 			end

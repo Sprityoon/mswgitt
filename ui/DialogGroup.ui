@@ -512,7 +512,7 @@
         }
       },
       {
-        "id": "97e99ce7-954d-423a-8ea6-c1f6622addb3",
+        "id": "716ef7cc-c602-41ad-acaa-1ad6cf977d28",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin",
         "componentNames": "MOD.Core.UITransformComponent",
         "jsonString": {
@@ -603,7 +603,7 @@
         }
       },
       {
-        "id": "4b0b5d10-553e-4cd4-83c9-029b6d7395ed",
+        "id": "e319b06f-b255-4946-b39e-3f22e1dbb706",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin/c",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -639,20 +639,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -32.0,
-                "y": -32.0
+                "x": -11.8599854,
+                "y": -20.23999
               },
               "OffsetMin": {
-                "x": 32.0,
-                "y": 32.0
+                "x": 11.8599854,
+                "y": 20.23999
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 1536.0,
-                "y": 216.0
+                "x": 1576.28,
+                "y": 239.52002
               },
               "UIMode": 1,
               "UIScale": {
@@ -695,7 +695,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "30f2f4633e8f4aa29a5ce5807523b63f"
+                "DataId": "50cf6992ae154d48a9de502234fe4aa9"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -754,7 +754,7 @@
         }
       },
       {
-        "id": "eddded66-1d95-4dba-b6b0-13af92601e14",
+        "id": "a3ab1917-45f8-46df-99cf-10e23a65516c",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin/t",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -790,20 +790,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -32.0,
-                "y": 0.0
+                "x": -11.8599854,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 32.0,
-                "y": -36.0
+                "x": 11.8599854,
+                "y": -44.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 1536.0,
-                "y": 36.0
+                "x": 1576.28,
+                "y": 52.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -814,7 +814,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -823,7 +823,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": 148.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -846,7 +846,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "8fc86fd6fe864981906228bb29ba26ba"
+                "DataId": "ef3cb2a3b1f944e7b6235609f03ca0cd"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -905,7 +905,7 @@
         }
       },
       {
-        "id": "498ab05d-8a3a-4515-b934-5903b4627eb3",
+        "id": "67122da5-7ff1-44dc-b7c8-08f02c20b6ac",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin/b",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -941,20 +941,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -32.0,
-                "y": 36.0
+                "x": -11.8599854,
+                "y": 44.0
               },
               "OffsetMin": {
-                "x": 32.0,
-                "y": 0.0
+                "x": 11.8599854,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 1536.0,
-                "y": 36.0
+                "x": 1576.28,
+                "y": 52.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -965,7 +965,7 @@
               "UIVersion": 2,
               "anchoredPosition": {
                 "x": 0.0,
-                "y": 0.0
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -974,7 +974,7 @@
               },
               "Position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": -148.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -997,7 +997,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "632df6814c7f496ab40913766db7c34f"
+                "DataId": "7aa9da181c6f4cd2b8500c1078bae7f5"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1056,7 +1056,7 @@
         }
       },
       {
-        "id": "f5ac84e7-6110-447d-a360-3bb3c9d9f89d",
+        "id": "8867c6b4-bf17-4fd1-b10d-ae392b036bab",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin/l",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1092,20 +1092,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 36.0,
-                "y": -32.0
+                "x": 44.0,
+                "y": -20.23999
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 32.0
+                "x": -8.0,
+                "y": 20.23999
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 36.0,
-                "y": 216.0
+                "x": 52.0,
+                "y": 239.52002
               },
               "UIMode": 1,
               "UIScale": {
@@ -1115,7 +1115,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": -8.0,
                 "y": 0.0
               },
               "Rotation": {
@@ -1124,7 +1124,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": -808.0,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -1148,7 +1148,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "d7cf60a82ad648e99c311866071c0766"
+                "DataId": "8f5b6a999aea4aa799d07baa20f9f978"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1207,7 +1207,7 @@
         }
       },
       {
-        "id": "8618e77b-6fc1-459e-9a92-233b59ea43f8",
+        "id": "f4dece4b-a126-43f7-9fb8-6440d8fca8d8",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin/r",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1243,20 +1243,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": -32.0
+                "x": 8.0,
+                "y": -20.23999
               },
               "OffsetMin": {
-                "x": -36.0,
-                "y": 32.0
+                "x": -44.0,
+                "y": 20.23999
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 36.0,
-                "y": 216.0
+                "x": 52.0,
+                "y": 239.52002
               },
               "UIMode": 1,
               "UIScale": {
@@ -1266,7 +1266,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": 8.0,
                 "y": 0.0
               },
               "Rotation": {
@@ -1275,7 +1275,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": 808.0,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -1299,7 +1299,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "bcee9cd5f5394993b77b27bdee59b18d"
+                "DataId": "083e1344f5164900883c5b72854b691b"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1358,7 +1358,7 @@
         }
       },
       {
-        "id": "ec6b643e-4bd9-473d-85f7-bb76a13fda43",
+        "id": "eb92069c-c211-4dc6-b327-e5d7453f28ce",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin/tl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1394,20 +1394,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 36.0,
-                "y": 0.0
+                "x": 44.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": -36.0
+                "x": -8.0,
+                "y": -44.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 36.0,
-                "y": 36.0
+                "x": 52.0,
+                "y": 52.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1417,8 +1417,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1426,8 +1426,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -808.0,
+                "y": 148.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1450,7 +1450,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "0d15aa6b5ae74c38953e5840c91ff440"
+                "DataId": "09e04aaa36f9495889123d2660c1edbf"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1509,7 +1509,7 @@
         }
       },
       {
-        "id": "e5a033e4-6b52-4eac-9486-256f65511f06",
+        "id": "14bc3d75-f312-482e-b2ce-430bebc75ed5",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin/tr",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1545,20 +1545,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "OffsetMin": {
-                "x": -36.0,
-                "y": -36.0
+                "x": -44.0,
+                "y": -44.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 1.0
               },
               "RectSize": {
-                "x": 36.0,
-                "y": 36.0
+                "x": 52.0,
+                "y": 52.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1568,8 +1568,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": 8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1577,8 +1577,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 808.0,
+                "y": 148.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1601,7 +1601,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "312c6d7139b94ae880c109f676a7858e"
+                "DataId": "6a4d8b2c48224e50b9a5d3110ef2f613"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1660,7 +1660,7 @@
         }
       },
       {
-        "id": "3073753a-32c0-4555-8986-a17dc30334fb",
+        "id": "4ec57e34-c832-4e02-980e-5a73055514a3",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin/bl",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1696,20 +1696,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 36.0,
-                "y": 36.0
+                "x": 44.0,
+                "y": 44.0
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 36.0,
-                "y": 36.0
+                "x": 52.0,
+                "y": 52.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1719,8 +1719,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1728,8 +1728,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": -808.0,
+                "y": -148.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1752,7 +1752,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "aea45a016f114e2d9a4f8123ebdfc569"
+                "DataId": "7b5931900505454a9921c4b3669e7145"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -1811,7 +1811,7 @@
         }
       },
       {
-        "id": "33d81a96-3df0-4bf5-806e-ede41ad4a255",
+        "id": "a320e496-f33f-4dc5-aa0d-5f9e7e4a8414",
         "path": "/ui/DialogGroup/DialogWindow/Frame/Skin/br",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -1847,20 +1847,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 36.0
+                "x": 8.0,
+                "y": 44.0
               },
               "OffsetMin": {
-                "x": -36.0,
-                "y": 0.0
+                "x": -44.0,
+                "y": -8.0
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.0
               },
               "RectSize": {
-                "x": 36.0,
-                "y": 36.0
+                "x": 52.0,
+                "y": 52.0
               },
               "UIMode": 1,
               "UIScale": {
@@ -1870,8 +1870,8 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 8.0,
+                "y": -8.0
               },
               "Rotation": {
                 "x": 0.0,
@@ -1879,8 +1879,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 808.0,
+                "y": -148.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -1903,7 +1903,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "18fa4cbce86b4cb4862b9f57a49ac3af"
+                "DataId": "d6d74e14f59b467fb8ea6509e977623c"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -2113,7 +2113,7 @@
         }
       },
       {
-        "id": "1f792f70-37e0-46b9-b275-7c35a568ad2f",
+        "id": "02a78277-53d3-400a-ac9d-320093fc6f60",
         "path": "/ui/DialogGroup/DialogWindow/NamePlate/Skin",
         "componentNames": "MOD.Core.UITransformComponent",
         "jsonString": {
@@ -2181,8 +2181,8 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
-                "y": 0.0,
+                "x": 140.0,
+                "y": -24.0,
                 "z": 0.0
               },
               "QuaternionRotation": {
@@ -2204,7 +2204,7 @@
         }
       },
       {
-        "id": "fbb52376-918e-4dbe-b1f4-10049b6cceb6",
+        "id": "385c357d-381c-4a4c-ae18-baf400d698de",
         "path": "/ui/DialogGroup/DialogWindow/NamePlate/Skin/c",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -2240,20 +2240,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": -15.0,
-                "y": 0.0
+                "x": -6.67001343,
+                "y": 6.619999
               },
               "OffsetMin": {
-                "x": 15.0,
-                "y": 0.0
+                "x": 6.67001343,
+                "y": -6.619999
               },
               "Pivot": {
                 "x": 0.5,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 250.0,
-                "y": 48.0
+                "x": 266.659973,
+                "y": 61.2399979
               },
               "UIMode": 1,
               "UIScale": {
@@ -2296,7 +2296,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "75b14feac27d4966a1b7256e0780274a"
+                "DataId": "35acff27a6b445229a27286d4df83d82"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -2355,7 +2355,7 @@
         }
       },
       {
-        "id": "b3daf59d-f72a-47bb-a872-1171bd4f4ad6",
+        "id": "9e3a140c-8894-4c3f-bbe6-70400a8e90cc",
         "path": "/ui/DialogGroup/DialogWindow/NamePlate/Skin/l",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -2391,20 +2391,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 17.0,
-                "y": 0.0
+                "x": 23.8,
+                "y": 6.619999
               },
               "OffsetMin": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -6.8,
+                "y": -6.619999
               },
               "Pivot": {
                 "x": 0.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 17.0,
-                "y": 48.0
+                "x": 30.6,
+                "y": 61.2399979
               },
               "UIMode": 1,
               "UIScale": {
@@ -2414,7 +2414,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": -6.8,
                 "y": 0.0
               },
               "Rotation": {
@@ -2423,7 +2423,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": -146.8,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -2447,7 +2447,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "ca1f96a1846f4d7997aa8679c5c69074"
+                "DataId": "fef62a4dd2af405181df10de1092acda"
               },
               "LocalPosition": {
                 "x": 0.0,
@@ -2506,7 +2506,7 @@
         }
       },
       {
-        "id": "ad735d74-1e1c-4ade-8bad-49f842139a86",
+        "id": "9d5b17ee-2f80-4d50-92b1-e0b0a76d74d9",
         "path": "/ui/DialogGroup/DialogWindow/NamePlate/Skin/r",
         "componentNames": "MOD.Core.UITransformComponent,MOD.Core.SpriteGUIRendererComponent",
         "jsonString": {
@@ -2542,20 +2542,20 @@
               },
               "MobileOnly": false,
               "OffsetMax": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 6.8,
+                "y": 6.619999
               },
               "OffsetMin": {
-                "x": -17.0,
-                "y": 0.0
+                "x": -23.8,
+                "y": -6.619999
               },
               "Pivot": {
                 "x": 1.0,
                 "y": 0.5
               },
               "RectSize": {
-                "x": 17.0,
-                "y": 48.0
+                "x": 30.6,
+                "y": 61.2399979
               },
               "UIMode": 1,
               "UIScale": {
@@ -2565,7 +2565,7 @@
               },
               "UIVersion": 2,
               "anchoredPosition": {
-                "x": 0.0,
+                "x": 6.8,
                 "y": 0.0
               },
               "Rotation": {
@@ -2574,7 +2574,7 @@
                 "z": 0.0
               },
               "Position": {
-                "x": 0.0,
+                "x": 146.8,
                 "y": 0.0,
                 "z": 0.0
               },
@@ -2598,7 +2598,7 @@
               "EndFrameIndex": 2147483647,
               "IgnoreMapLayerCheck": false,
               "ImageRUID": {
-                "DataId": "eb562d3598d0414682a472e1cfbf0d3b"
+                "DataId": "9897a958e175430992cbaa707af8ce48"
               },
               "LocalPosition": {
                 "x": 0.0,

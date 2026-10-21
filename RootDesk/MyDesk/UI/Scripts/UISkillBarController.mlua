@@ -20,15 +20,25 @@ script UISkillBarController extends Component
 		self.hoverHandlers = {}
 		self.hoverSlotIndex = 0
 		self:SetupSlotEvents()
+		-- 창 밖으로 나가면 커서 좌표가 마지막 값에 멈춰 폴링이 못 잡는다 → 게임 창이 포커스를 잃으면 닫는다.
+		self._T.focusOutHandler = _ApplicationService:ConnectEvent(ApplicationFocusOutEvent, function()
+			if not isvalid(self) then return end
+			self.hoverSlotIndex = 0
+			self:HideTooltip()
+		end)
 		self:HideTooltip()
 		self:UpdateSlots()
 		self.UpdateTimer = _TimerService:SetTimerRepeat(function()
 			if not isvalid(self) or not isvalid(self.Entity) then return end
 			self:UpdateSlots()
 			-- 커서가 칸을 벗어났는데 Normal 이벤트를 놓치면 툴팁이 계속 남는다 → 떠 있는 동안 직접 확인해 닫는다.
-			if self.hoverSlotIndex > 0 and self._T.cursorCheckOff ~= true and not self:IsCursorOverSlot(self.hoverSlotIndex) then
-				self.hoverSlotIndex = 0
-				self:HideTooltip()
+			if self.hoverSlotIndex > 0 then
+				if not self:IsCursorOverSlot(self.hoverSlotIndex) then
+					self.hoverSlotIndex = 0
+					self:HideTooltip()
+				else
+					self:TraceHeldTooltip()
+				end
 			end
 		end, 0.04)
 		log("[SKILL-BAR] OnBeginPlay")
@@ -53,6 +63,10 @@ script UISkillBarController extends Component
 			end
 		end
 		self.hoverHandlers = {}
+		if self._T.focusOutHandler ~= nil then
+			_ApplicationService:DisconnectEvent(ApplicationFocusOutEvent, self._T.focusOutHandler)
+			self._T.focusOutHandler = nil
+		end
 		self:HideTooltip()
 	end
 
@@ -111,12 +125,16 @@ script UISkillBarController extends Component
 		-- 짧은 클릭/탭은 Released 가 아니라 Clicked 로 끝난다 — 이걸 닫지 않으면 툴팁이 남는다(꾹 누르기는 Released 라 정상).
 		if ev == nil then return end
 		if ev.state == ButtonState.Hover then
-			self.hoverSlotIndex = slotIndex
-			-- 자체 점검: Hover 순간엔 커서가 반드시 칸 안이다. 여기서 밖으로 나오면 좌표 변환을 못 믿으니 폴링 검사를 끈다.
-			if self._T.cursorCheckOff ~= true and not self:IsCursorOverSlot(slotIndex) then
-				self._T.cursorCheckOff = true
-				log_warning("[SKILL-BAR] cursor rect check disagrees with Hover — falling back to events only")
+			-- 빠르게 스치면 Hover 가 커서가 이미 칸을 떠난 뒤에 도착한다 → 띄우지 않는다.
+			-- (구 자체 점검은 이 경우를 "좌표 변환 불량"으로 오판해 폴링을 영구히 껐다 — 2026-10-21 Play 로그로 확인)
+			if not self:IsCursorOverSlot(slotIndex) then
+				if self.hoverSlotIndex == slotIndex then
+					self.hoverSlotIndex = 0
+					self:HideTooltip()
+				end
+				return
 			end
+			self.hoverSlotIndex = slotIndex
 			self:ShowTooltipForSlot(slotIndex)
 		elseif ev.state == ButtonState.Clicked then
 			self.hoverSlotIndex = 0
@@ -131,18 +149,47 @@ script UISkillBarController extends Component
 
 	@ExecSpace("ClientOnly")
 	method boolean IsCursorOverSlot(integer slotIndex)
-		-- 커서(화면 좌표)가 슬롯 사각형 안인지. 슬롯 모서리(피벗 기준 로컬 UI) → 월드 → 화면으로 바꿔 비교한다(여유 6px).
+		-- 커서(화면 좌표)를 슬롯 로컬 UI 좌표(피벗 원점)로 바꿔 사각형 안인지 본다(여유 6px).
+		-- 구 방식(LocalUIToWorld → WorldToScreen)은 게임 카메라 기준이라 UI 와 어긋났다 → 자체 점검이 폴링을 꺼 버려 빠른 이탈 시 툴팁이 남았다.
+		-- ScreenToLocalUIPosition 은 인벤 드래그 드롭 판정(UIInventoryController)에서 검증된 경로다.
 		local slot = self.Entity:GetChildByName("SkillSlot" .. slotIndex, true)
 		if not isvalid(slot) or not isvalid(slot.UITransformComponent) then return false end
 		local t = slot.UITransformComponent
+		local p = _UILogic:ScreenToLocalUIPosition(_InputService:GetCursorPosition(), t)
+		if p == nil then return false end
 		local size = t.RectSize
 		local piv = t.Pivot
-		local s1 = _UILogic:WorldToScreenPosition(_UILogic:LocalUIToWorldPosition(Vector2(-size.x * piv.x, -size.y * piv.y), t))
-		local s2 = _UILogic:WorldToScreenPosition(_UILogic:LocalUIToWorldPosition(Vector2(size.x * (1 - piv.x), size.y * (1 - piv.y)), t))
-		local c = _InputService:GetCursorPosition()
 		local pad = 6
-		return c.x >= math.min(s1.x, s2.x) - pad and c.x <= math.max(s1.x, s2.x) + pad
-			and c.y >= math.min(s1.y, s2.y) - pad and c.y <= math.max(s1.y, s2.y) + pad
+		return p.x >= -size.x * piv.x - pad and p.x <= size.x * (1 - piv.x) + pad
+			and p.y >= -size.y * piv.y - pad and p.y <= size.y * (1 - piv.y) + pad
+	end
+
+	@ExecSpace("ClientOnly")
+	method void TraceHeldTooltip()
+		-- 진단(빠른 스침 후 툴팁이 남는 재발 추적): 툴팁이 뜬 채 커서 좌표가 1초 넘게 그대로면 한 번 기록한다.
+		-- 커서가 화면 가장자리면 "게임 화면 밖으로 나가 좌표가 멈춤", 칸 한가운데면 실제로 칸 위에 있는 것.
+		local c = _InputService:GetCursorPosition()
+		local last = self._T.heldCur
+		if last == nil or last.x ~= c.x or last.y ~= c.y then
+			self._T.heldCur = c
+			self._T.heldFor = 0
+			self._T.heldLogged = false
+			return
+		end
+		self._T.heldFor = (self._T.heldFor or 0) + 0.04
+		if self._T.heldFor < 1.0 or self._T.heldLogged == true then return end
+		self._T.heldLogged = true
+		local slot = self.Entity:GetChildByName("SkillSlot" .. self.hoverSlotIndex, true)
+		local loc = "?"
+		local size = "?"
+		if isvalid(slot) and isvalid(slot.UITransformComponent) then
+			local p = _UILogic:ScreenToLocalUIPosition(c, slot.UITransformComponent)
+			if p ~= nil then loc = string.format("(%.1f,%.1f)", p.x, p.y) end
+			local rs = slot.UITransformComponent.RectSize
+			size = string.format("%dx%d", math.floor(rs.x), math.floor(rs.y))
+		end
+		log(string.format("[VRF][SKILL-BAR] tooltip held slot=%d cursor=(%.1f,%.1f) screen=%dx%d local=%s slotSize=%s",
+			self.hoverSlotIndex, c.x, c.y, _UILogic.ScreenWidth, _UILogic.ScreenHeight, loc, size))
 	end
 
 	@ExecSpace("ClientOnly")
