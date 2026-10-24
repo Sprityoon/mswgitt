@@ -90,6 +90,8 @@
 | [76](#76-런타임-형제-렌더-순서는-ui-파일-안-엔티티-배열-순서다--displayorder-값이-아니다) | 런타임 형제 순서 = `.ui` 파일 배열 순서(`displayOrder` 아님) | 배경 판이 형제 글자·게이지를 통째로 덮음 (에러 0) |
 | [77](#77-조각-스킨은-scrolllayoutgroup-안에-넣지-않고-늘어나는-조각은-이웃-아래로-넉넉히-겹친다) | 스크롤 목록 안 `Skin` 은 항목으로 배치됨 · 조각 겹침 1px 은 축소 시 틈 | 목록 첫 칸에 판 조각이 겹침 / 창 바닥띠 위 가는 줄 |
 | [78](#78-아틀라스로-묶은-조각-경계의-1px-어두운-선--투명-검정-padding-이-필터에-섞인다) | 아틀라스 투명-검정 padding 이 조각 가장자리에 섞임 → 1px 어두운 선 | 창 조각 경계마다 가는 실선 (같은 그림으로 바꿔도 남음) |
+| [79](#79-serveronly-데이터셋을-클라에서-읽으면-lea-3022-로-그-메서드가-통째로-멈춘다) | `serveronly` 데이터셋을 클라에서 읽으면 `LEA-3022` | 클라 기능(길안내 등)이 조용히 멈춤 · 정적 검사·빌드는 통과 |
+| [80](#80-다중-반환값을-변수-1개에-받으면-maker-빌드가-lwa-1111-경고--괄호로는-안-사라진다) | 다중 반환 → 변수 1개 = 빌드 `LWA-1111` (괄호 무효) | 경고 baseline 증가 |
 
 ---
 
@@ -939,3 +941,49 @@ AtlasBlueprint(`BP.blueprintatlas`, padding 4)로 조각을 묶고 필터를 Tri
 - ✅ 조각 PNG 바깥에 **여백 e 텍셀(투명 화소 RGB = 가장 가까운 불투명 색, 여백 alpha 1/255)** 을 붙이고(`docs/design/ui/msw_custom_ui_assets_pack/build_ui8_bleed.py` → `ui8_import5/ui8b_*`), 그린 쿼드를 여백만큼 넓혀 실제 그림 위치를 유지한다(`ui8_kit.pieceRef`/`piece`, `ui8_bleed.json`). 흉내 결과 밉맵 0~2단계 경계 = 종이 색 그대로. alpha 1/255 는 가져오기가 투명 테두리를 잘라낼 위험을 막는다.
 - 배치 검증: `scratch/ui8_bleedcheck.cjs`(가짜 등록 후 실제 그림 사각형 = 기존 조각 사각형, 최대 0.005px).
 - ⚠️ **후속 함정 (2026-10-21)**: 늘어나는 조각(c·t·b·l·r)의 여백 폭은 "늘린 길이 × e / 원래 크기"라 **`.ui` 저장 크기에서만 맞다**. 런타임에 판 `RectSize` 를 바꾸면(툴팁·포탈 목록 등) 그림이 안쪽으로 밀려 조각 사이에 새 실금이 생긴다(큰 판일수록 심함 — 툴팁 높이 250 이면 가운데 판이 4px 겹침을 넘어 0.4px 틈). ✅ `UI8Skin` 이 모든 `Skin` 을 감시해 host 크기가 바뀌면 `FitSkin` 으로 다시 맞춘다 — 판 크기를 바꾸는 새 UI 도 자동 적용. 루트 목록(`UI8Skin.Scan` 의 roots)에 없는 UI 그룹에 ui8 판을 쓰면 루트를 추가할 것.
+
+### 79. `serveronly` 데이터셋을 클라에서 읽으면 `LEA-3022` 로 그 메서드가 통째로 멈춘다
+
+`.userdataset` 의 `"serveronly": true` 표(이 저장소: `ItemDropDataSet` · `ResourceDataSet` · `BiomeResourceDataSet` · `BiomeTerrainDataSet` · `TreasureChestSpawnDataSet` 등)는 클라 `_DataService:GetTable` 에서 `[LEA-3022] InvalidExecSpace : '<표>' 엔트리는 서버 전용입니다` 를 낸다. LSP·빌드는 모두 통과한다.
+
+- **실측 (2026-10-23)**: 튜토리얼 길안내(`UIQuestNavigationController`, ClientOnly)가 채집 목표물을 찾으려 `ItemDropDataSet` 을 읽다가 Play 에서 처음 터졌다 — 안내 문구는 떴지만 ▼ 목표물이 안 잡혔다.
+- ✅ 클라가 필요하면 서버가 **필요한 부분만** `@Sync` 로 내려준다(확률·수량 같은 민감 값은 빼고). 선례: `ResourceSpawner.GatherSourcesJson`(아이템 Name → 드롭 자원 SourceId 목록).
+- ✅ 새 클라 코드에서 데이터셋을 읽기 전에 그 `.userdataset` 의 `serveronly` 를 확인한다.
+
+### 80. 다중 반환값을 변수 1개에 받으면 Maker 빌드가 `LWA-1111` 경고 — 괄호로는 안 사라진다
+
+`local sep = string.find(s, ":", 1, true)` · `local n = string.gsub(...)` 처럼 값 2개를 1개 변수에 받으면 빌드 로그에 `LWA&Default&1111` (`2`,`1`)이 쌓인다. 반대로 `local a, b = string.match(...)` 는 엔진이 반환 개수를 1개로 보고 (`1`,`2`) 경고를 낸다.
+
+- **실측 (2026-10-22~23)**: `(string.find(...))` 처럼 괄호로 잘라도 LSP 는 조용해지지만 **Maker 빌드 경고는 그대로** 남았다. `string.match` 다중 캡처도 경고.
+- ✅ 받는 쪽 변수 수를 엔진 기준 반환 수에 맞춘다: `local sStart, sEnd = string.find(...)` · `local out, _count = string.gsub(...)`. 문자열 분해는 `for a, b in string.gmatch(s, "([^|:]+):(%d+)") do` 가 경고 없이 깔끔하다.
+- 빌드 로그 `stackTrace` 의 `methodName`/`methodLineNum`(메서드 시작 기준 줄)으로 위치를 찾는다. 확인은 수정 후 refresh 를 한 번 더 돌려 타임스탬프가 바뀐 로그로(규칙 22).
+- **재발 (2026-10-24)**: `FriendManager:NameOf` 에 `local clean = (string.gsub(...))` 를 써서 다시 경고가 났다 → `local clean, _ = string.gsub(...)` 로 해소.
+
+### 81. 저장된 지형 편집을 재생할 때 점유 검사를 하면, 나중에 올린 작물·가구 때문에 밭·길이 조용히 사라진다
+
+영지 복원은 **설치물(작물·가구) 먼저 → 지형 편집 델타 재생**(`ResourceSpawner.ReconstructTerrainEditsForMap` → `ApplyTerrainEdit(..., persist=false)`) 순서다. `ApplyTerrainEdit` 안의 `IsGridOccupied` 검사가 재생에도 걸리면, 편집 당시엔 비어 있던 칸에 **그 뒤에 심은 작물**이 점유로 잡혀 재생이 `false` 로 끝난다. 에러 로그 없이 `Replayed n/m` 숫자만 줄어든다.
+
+- **실측 (2026-10-23)**: 작물 점유를 2×2로 넓힌 뒤, 재접속하면 밭(`till_field`)이 사라지고 당근만 남았다. 작물을 캐고 재접속하면 밭이 다시 보였다(제작자 확인).
+- ✅ 점유 검사는 `persist=true`(실제 플레이어 편집)일 때만 한다. 실제 편집은 `PlayerInventory:ServerRequestTerrainEdit` 가 먼저 점유를 막는다.
+- 새 지형 편집 종류를 추가할 때도 재생 경로에서는 "당시엔 유효했던 편집"으로 보고 점유·설치물 조건을 다시 검사하지 않는다.
+
+### 82. `self.Items` 같은 엔진 프로퍼티 테이블을 자주 pairs 로 돌면 비싸다 — 줍기마다 수십 번이면 렉
+
+`property table` 은 엔진이 감싼 테이블이라 `pairs` 순회가 일반 Lua 테이블보다 훨씬 느리다(2026-10-23 MakerScript 실측: 45칸 순회 = 빈 호출의 26배). 클라에서 `@Sync` JSON 을 매 호출 `JSONDecode` 하는 것도 같은 종류의 비용이다.
+
+- **실측**: `GetItemCount` 가 매번 `Items` 전체 순회(클라는 JSON 재해석)를 했고, 줍기 1개마다 퀘스트 보유량 재평가(`RefreshHeldConditions`)와 UI 갱신이 이를 수십 번 불러 나무 드롭 흡수 때 렉이 났다(재평가 1회 263ms, 클라 동기화 처리 1회 1.7초 — 측정 환경 기준).
+- ✅ 변경될 때만 다시 만드는 캐시: 키 = 그 데이터의 JSON 문자열(Lua 문자열 비교는 내부 공유라 O(1)). 선례 `PlayerInventory:GetInvCache()` · `GetDexItemsCached()`.
+- ⚠️ 캐시 키로 JSON 을 쓰려면 원본 테이블을 바꾸는 **모든** 경로가 같은 함수 안에서 JSON 을 다시 인코딩해야 한다. 새 변경 경로를 만들면 인코딩을 빠뜨리지 말 것.
+
+### 83. `handler` 는 mlua 예약어다 — 변수·테이블 필드 이름으로 쓰면 빌드 에러(LEA-1001/1003/1005)
+
+`handler` 는 이벤트 핸들러 선언 키워드라 `local handler = e:ConnectEvent(...)`, `{ handler = h }`, `h.handler` 가 모두 구문 오류가 된다. LSP 는 첫 편집 전후로 "Expected token '<name>'" 를 내기도 하지만 놓치기 쉽고, Maker 빌드에는 `LEA-1001`·`LEA-1003 end`·`LEA-1005 handler` 가 같은 메서드에 여러 개 쌓인다.
+
+- **실측 (2026-10-24)**: `UIFriendController:Wire`/`OnEndPlay` 에서 Error 7건.
+- ✅ 연결 핸들 이름은 `conn` · `xxxHandler`(접미어는 괜찮다) 처럼 쓴다. 기존 코드의 `self.closeHandler` 같은 이름은 문제없다.
+
+### 84. Lua 5.3 `string.gmatch` 에서는 `^` 가 앵커가 아니다 — 패턴 맨 앞에 두면 아무것도 안 잡힌다
+
+`string.gmatch(s, "^(a)|(b)$")` 처럼 시작 앵커를 넣으면 5.3 에서는 `^` 가 앵커로 동작하지 않아(반복 검색이라 의미가 없다) 조용히 0회 반복된다. 에러도 경고도 없다. (근거: Lua 5.3 매뉴얼 — MSW 런타임 실측은 아직 없음. 2026-10-24 `FriendManager:ParseFriends` 작성 중 발견해 미리 고쳤다.)
+
+- ✅ gmatch 패턴에는 `^` 를 넣지 않는다. 한 덩어리를 분해할 때는 앞에서부터 잡히는 패턴(`"([^|]*)|([^|]*)|(.*)"`)을 쓴다. 전체 일치가 꼭 필요하면 `string.find(s, "^...$")` 로 먼저 검사한다(받는 변수 수는 규칙 80).

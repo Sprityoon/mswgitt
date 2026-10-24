@@ -11,6 +11,9 @@ script UISkillBarController extends Component
 	property table clickHandlers = {}
 	property table hoverHandlers = {}
 	property integer hoverSlotIndex = 0
+	-- 커서가 칸 위에 이만큼 가만히 있으면 툴팁을 닫는다 — 키보드로 플레이하는 동안 마우스가 스킬 칸 위에 놓여 있으면
+	-- 판정상 계속 호버라 툴팁이 남았다(2026-10-23 로그: slot=1 칸 안에서 커서 정지). 다시 보려면 칸에 다시 올린다.
+	property number HoverIdleHideSeconds = 3
 
 
 	@ExecSpace("ClientOnly")
@@ -38,6 +41,11 @@ script UISkillBarController extends Component
 					self:HideTooltip()
 				else
 					self:TraceHeldTooltip()
+					if (self._T.heldFor or 0) >= self.HoverIdleHideSeconds then
+						self.hoverSlotIndex = 0
+						self:HideTooltip()
+						self._T.idleHiddenAt = _InputService:GetCursorPosition()
+					end
 				end
 			end
 		end, 0.04)
@@ -134,6 +142,15 @@ script UISkillBarController extends Component
 				end
 				return
 			end
+			-- 가만히 있어 닫은 자리에서 Hover 가 다시 와도(팝업 닫힘 등) 커서가 움직이기 전엔 다시 띄우지 않는다.
+			local idleAt = self._T.idleHiddenAt
+			if idleAt ~= nil then
+				local c = _InputService:GetCursorPosition()
+				if c.x == idleAt.x and c.y == idleAt.y then return end
+				self._T.idleHiddenAt = nil
+			end
+			self._T.heldFor = 0
+			self._T.heldCur = nil
 			self.hoverSlotIndex = slotIndex
 			self:ShowTooltipForSlot(slotIndex)
 		elseif ev.state == ButtonState.Clicked then

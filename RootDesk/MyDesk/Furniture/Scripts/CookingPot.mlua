@@ -1,0 +1,373 @@
+@Component
+script CookingPot extends Component
+
+	-- 조리 냄비: 레시피 선택형 요리 (화로와 분리, 2026-10-22). 땔감 없음 · 짧은 타이머 · 예약 큐.
+	-- 레시피 = CookingRecipeDataSet (RecipeName · Ing1~3Name/Count · CookDuration · OutputCount · UnlockId).
+	-- 완성품은 냄비에 쌓이고 F로 수거한다 (수거 시 ActionEnum.Craft 발행 — 퀘스트 Craft,<요리 Name>).
+	property string RecipeTableName = "CookingRecipeDataSet"
+
+	property string StationTitle = "조리 냄비"
+
+	-- T67: 조준선 footprint
+	property integer AimFootprintW = 1
+	property integer AimFootprintH = 1
+
+	-- 조준 가이드 라벨 (PlayerController:ReadInteractLabel이 읽음)
+	property string InteractLabel = "요리하기"
+
+	property string IdleSpriteRUID = "a0e44f8d1b3d404baa8b9578727a480f"
+
+	property string ActiveSpriteRUID = "4fed0c652e734a8088630fd28044b7a0"
+
+	property integer MaxQueue = 10
+
+	-- 예약 목록: RecipeName 배열 JSON (첫 항목이 지금 끓는 요리)
+	@Sync
+	property string QueueJson = "[]"
+
+	-- 완성품·돌려줄 재료: { itemName -> count } 평탄 JSON
+	@Sync
+	property string OutputJson = "{}"
+
+	-- 지금 끓는 요리 (= 예약 첫 항목 캐시, 매 프레임 JSON 해석을 피한다)
+	@Sync
+	property string CurrentRecipe = ""
+
+	@Sync
+	property number CurrentDuration = 0.0
+
+	@Sync
+	property number ProgressTime = 0.0
+
+	@Sync
+	property boolean IsCooking = false
+
+	@ExecSpace("ServerOnly")
+	method void OnBeginPlay()
+		-- 서버 초기 상태. 세이브 복원은 ApplySaveData가 덮어쓴다.
+		self.QueueJson = "[]"
+		self.OutputJson = "{}"
+		self.CurrentRecipe = ""
+		self.CurrentDuration = 0.0
+		self.ProgressTime = 0.0
+		self.IsCooking = false
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SetQueue(table q)
+		-- 예약 목록 저장 + 현재 요리 캐시 갱신.
+		self.QueueJson = self:EncodeTable(q, "[]")
+		local first = ""
+		if #q > 0 then first = tostring(q[1] or "") end
+		if first ~= self.CurrentRecipe then self.ProgressTime = 0.0 end
+		self.CurrentRecipe = first
+		if first ~= "" then
+			self.CurrentDuration = self:GetDuration(first)
+		else
+			self.CurrentDuration = 0.0
+		end
+	end
+
+	method table DecodeList(string raw)
+		-- 배열 JSON → table (실패 시 빈 표).
+		if raw == nil or raw == "" or raw == "[]" then return {} end
+		local ok, v = pcall(function() return _HttpService:JSONDecode(raw) end)
+		if ok and type(v) == "table" then return v end
+		return {}
+	end
+
+	method table DecodeMap(string raw)
+		-- 평탄 객체 JSON → table (실패 시 빈 표).
+		if raw == nil or raw == "" or raw == "{}" then return {} end
+		local ok, v = pcall(function() return _HttpService:JSONDecode(raw) end)
+		if ok and type(v) == "table" then return v end
+		return {}
+	end
+
+	method string EncodeTable(table tbl, string emptyVal)
+		-- 빈 표는 emptyVal (MSW JSONEncode는 빈/중첩 표에서 실패할 수 있다).
+		if tbl == nil or next(tbl) == nil then return emptyVal end
+		local ok, v = pcall(function() return _HttpService:JSONEncode(tbl) end)
+		if ok and v ~= nil and v ~= "" then return v end
+		return emptyVal
+	end
+
+	method any GetRecipeRow(string recipeName)
+		-- CookingRecipeDataSet 행 (RecipeName = 결과 아이템 Name).
+		if recipeName == nil or recipeName == "" then return nil end
+		local ds = _DataService:GetTable(self.RecipeTableName)
+		if ds == nil then return nil end
+		return ds:FindRow("RecipeName", recipeName)
+	end
+
+	method string GetRecipeCell(string recipeName, string colName)
+		-- 레시피 한 칸 (선택 컬럼은 pcall).
+		local row = self:GetRecipeRow(recipeName)
+		if row == nil then return "" end
+		local ok, v = pcall(function() return row:GetItem(colName) end)
+		if ok and v ~= nil then return tostring(v) end
+		return ""
+	end
+
+	method table GetIngredients(string recipeName)
+		-- { {name, count}, ... } — Ing1~Ing3 중 채워진 칸만.
+		local list = {}
+		for i = 1, 3 do
+			local name = self:GetRecipeCell(recipeName, "Ing" .. tostring(i) .. "Name")
+			local cnt = math.floor(tonumber(self:GetRecipeCell(recipeName, "Ing" .. tostring(i) .. "Count")) or 0)
+			if name ~= "" and cnt > 0 then
+				table.insert(list, { name = name, count = cnt })
+			end
+		end
+		return list
+	end
+
+	method number GetDuration(string recipeName)
+		-- 한 그릇 조리 시간(초). 공란이면 5초.
+		local d = tonumber(self:GetRecipeCell(recipeName, "CookDuration")) or 5.0
+		if d < 0.5 then d = 0.5 end
+		return d
+	end
+
+	method integer GetOutputCount(string recipeName)
+		-- 한 번에 나오는 수량 (공란 1).
+		local n = math.floor(tonumber(self:GetRecipeCell(recipeName, "OutputCount")) or 1)
+		if n < 1 then n = 1 end
+		return n
+	end
+
+	method integer GetQueueLength()
+		-- 예약된 그릇 수 (조리 중 포함).
+		return #self:DecodeList(self.QueueJson)
+	end
+
+	method integer GetOutputTotal()
+		-- 수거 대기 중인 완성품 총수.
+		local total = 0
+		for _, c in pairs(self:DecodeMap(self.OutputJson)) do
+			total = total + math.floor(tonumber(c) or 0)
+		end
+		return total
+	end
+
+	@ExecSpace("ServerOnly")
+	method void OnUpdate(number delta)
+		-- 예약 첫 요리를 진행하고, 시간이 차면 완성품에 더한다 (땔감 없음).
+		local current = self.CurrentRecipe
+		if current == "" then
+			if self.IsCooking then
+				self.IsCooking = false
+				self.ProgressTime = 0.0
+				self:ApplySprite()
+			end
+			return
+		end
+		if not self.IsCooking then
+			self.IsCooking = true
+			self:ApplySprite()
+		end
+		self.ProgressTime = self.ProgressTime + delta
+		if self.ProgressTime < self.CurrentDuration then return end
+
+		local out = self:DecodeMap(self.OutputJson)
+		out[current] = math.floor(tonumber(out[current]) or 0) + self:GetOutputCount(current)
+		self.OutputJson = self:EncodeTable(out, "{}")
+		local q = self:DecodeList(self.QueueJson)
+		table.remove(q, 1)
+		self.ProgressTime = 0.0
+		self:SetQueue(q)
+		self:MarkOwnerDirty()
+		log("[VRF][COOK] done " .. current .. " left=" .. tostring(#q) .. " ready=" .. tostring(self:GetOutputTotal()))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplySprite()
+		-- 조리 중/대기 스프라이트 전환.
+		local sprite = self.Entity.SpriteRendererComponent
+		if not isvalid(sprite) then return end
+		local ruid = self.IdleSpriteRUID
+		if self.IsCooking then ruid = self.ActiveSpriteRUID end
+		if ruid ~= "" and sprite.SpriteRUID ~= ruid then sprite.SpriteRUID = ruid end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void MarkOwnerDirty()
+		-- 영지 냄비면 영지 주인 세이브를 표시한다.
+		local map = self.Entity.CurrentMap
+		if _PersistenceManager ~= nil and isvalid(map) and string.sub(map.Name, 1, 5) == "Home_" then
+			_PersistenceManager:MarkPlayerDirty(string.sub(map.Name, 6))
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method Entity ResolveRequester(string userId)
+		-- RPC 호출자 검증: 플레이어 엔티티 + 영지 상호작용 권한. 실패 시 nil.
+		if userId == nil or userId == "" then return nil end
+		local playerEntity = _UserService:GetUserEntityByUserId(userId)
+		if not isvalid(playerEntity) then return nil end
+		local currentMap = self.Entity.CurrentMap
+		if isvalid(currentMap) and string.sub(currentMap.Name, 1, 5) == "Home_" then
+			local ownerId = string.sub(currentMap.Name, 6)
+			if _PersistenceManager and not _PersistenceManager:CheckGuestPermission(ownerId, userId, "interact") then
+				local pc = playerEntity:GetComponent("script.PlayerController")
+				if isvalid(pc) then pc:ShowMineFeedback("이 영지의 조리 냄비를 이용할 수 있는 권한이 없습니다.") end
+				return nil
+			end
+		end
+		return playerEntity
+	end
+
+	@ExecSpace("Server")
+	method void RequestCook(string recipeName)
+		-- 레시피 1그릇 예약: 해금·재료 확인 → 재료 차감 → 큐에 추가.
+		local playerEntity = self:ResolveRequester(senderUserId)
+		if not isvalid(playerEntity) then return end
+		local pc = playerEntity:GetComponent("script.PlayerController")
+		local inv = playerEntity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return end
+		if self:GetRecipeRow(recipeName) == nil then return end
+
+		local unlockId = self:GetRecipeCell(recipeName, "UnlockId")
+		if unlockId ~= "" and not inv:HasRecipeUnlock(unlockId) then
+			if isvalid(pc) then pc:ShowMineFeedback("아직 모르는 요리입니다.") end
+			return
+		end
+		local q = self:DecodeList(self.QueueJson)
+		if #q >= self.MaxQueue then
+			if isvalid(pc) then pc:ShowMineFeedback("냄비가 가득 찼습니다. (예약 " .. tostring(self.MaxQueue) .. "그릇)") end
+			return
+		end
+		local ings = self:GetIngredients(recipeName)
+		for _, ing in ipairs(ings) do
+			if inv:GetItemCount(ing.name) < ing.count then
+				if isvalid(pc) then pc:ShowMineFeedback("재료가 부족합니다: " .. inv:GetItemDisplayName(ing.name) .. " x" .. tostring(ing.count)) end
+				return
+			end
+		end
+		for i, ing in ipairs(ings) do
+			if not inv:RemoveItem(ing.name, ing.count) then
+				-- 앞서 뺀 재료는 되돌린다.
+				for j = 1, i - 1 do inv:AddItem(ings[j].name, ings[j].count) end
+				if isvalid(pc) then pc:ShowMineFeedback("재료 차감에 실패했습니다.") end
+				return
+			end
+		end
+		table.insert(q, recipeName)
+		self:SetQueue(q)
+		self:MarkOwnerDirty()
+		if isvalid(pc) then
+			pc:ShowMineFeedback(inv:GetItemDisplayName(recipeName) .. " 조리 시작 (예약 " .. tostring(#q) .. "그릇)")
+		end
+		log("[VRF][COOK] queue " .. recipeName .. " by " .. tostring(senderUserId) .. " len=" .. tostring(#q))
+	end
+
+	@ExecSpace("Server")
+	method void RequestCancelLast()
+		-- 마지막 예약 1그릇 취소 → 재료 환불. 남은 게 지금 끓는 1그릇뿐이면 그것도 취소(진행도 초기화).
+		local playerEntity = self:ResolveRequester(senderUserId)
+		if not isvalid(playerEntity) then return end
+		local inv = playerEntity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return end
+		local pc = playerEntity:GetComponent("script.PlayerController")
+		local q = self:DecodeList(self.QueueJson)
+		if #q == 0 then
+			if isvalid(pc) then pc:ShowMineFeedback("취소할 예약이 없습니다.") end
+			return
+		end
+		local recipeName = tostring(table.remove(q, #q))
+		local refund = {}
+		for _, ing in ipairs(self:GetIngredients(recipeName)) do
+			inv:AddItem(ing.name, ing.count)
+			table.insert(refund, inv:GetItemDisplayName(ing.name) .. " x" .. tostring(ing.count))
+		end
+		self:SetQueue(q)
+		self:MarkOwnerDirty()
+		if isvalid(pc) then
+			pc:ShowMineFeedback(inv:GetItemDisplayName(recipeName) .. " 예약 취소 — 재료 반환: " .. table.concat(refund, " · "))
+		end
+		log("[VRF][COOK] cancel " .. recipeName .. " by " .. tostring(senderUserId) .. " left=" .. tostring(#q))
+	end
+
+	@ExecSpace("Server")
+	method void RequestCollect()
+		-- 완성품 전부 수거 → 가방. 요리마다 Craft 신호.
+		local playerEntity = self:ResolveRequester(senderUserId)
+		if not isvalid(playerEntity) then return end
+		local inv = playerEntity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return end
+		local out = self:DecodeMap(self.OutputJson)
+		local parts = {}
+		for name, c in pairs(out) do
+			local n = math.floor(tonumber(c) or 0)
+			if n > 0 then
+				inv:AddItem(name, n)
+				table.insert(parts, inv:GetItemDisplayName(name) .. " x" .. tostring(n))
+				if _ActionSignals ~= nil and self:GetRecipeRow(name) ~= nil then
+					_ActionSignals:EmitToPlayer(playerEntity, _ActionEnum.Craft, name, n)
+				end
+			end
+		end
+		if #parts == 0 then return end
+		self.OutputJson = "{}"
+		self:MarkOwnerDirty()
+		local pc = playerEntity:GetComponent("script.PlayerController")
+		if isvalid(pc) then pc:ShowMineFeedback("요리 수거: " .. table.concat(parts, " · ")) end
+		log("[VRF][COOK] collect " .. table.concat(parts, ",") .. " by " .. tostring(senderUserId))
+	end
+
+	@ExecSpace("ServerOnly")
+	method table GetDropContents()
+		-- 철거 시 떨굴 것: 완성품 + 아직 끓지 않은(진행 중 포함) 예약분의 재료. { itemName -> count }
+		local drops = {}
+		for name, c in pairs(self:DecodeMap(self.OutputJson)) do
+			drops[name] = (drops[name] or 0) + math.floor(tonumber(c) or 0)
+		end
+		for _, recipeName in ipairs(self:DecodeList(self.QueueJson)) do
+			for _, ing in ipairs(self:GetIngredients(tostring(recipeName))) do
+				drops[ing.name] = (drops[ing.name] or 0) + ing.count
+			end
+		end
+		return drops
+	end
+
+	@ExecSpace("ServerOnly")
+	method table BuildSaveData()
+		-- 세이브용 평탄 표 (비어 있으면 nil — 빈 중첩 구조는 LEA-3001).
+		if self.QueueJson == "[]" and self.OutputJson == "{}" then return nil end
+		return { queue = self.QueueJson, output = self.OutputJson, progress = self.ProgressTime }
+	end
+
+	@ExecSpace("ServerOnly")
+	method void ApplySaveData(string queueJson, string outputJson, number progress)
+		-- 세이브 복원. 레시피 표에서 사라진 요리는 예약에서 뺀다.
+		local q = {}
+		for _, name in ipairs(self:DecodeList(queueJson)) do
+			if self:GetRecipeRow(tostring(name)) ~= nil then table.insert(q, tostring(name)) end
+		end
+		self:SetQueue(q)
+		self.OutputJson = outputJson or "{}"
+		if self.OutputJson == "" then self.OutputJson = "{}" end
+		self.ProgressTime = progress or 0.0
+	end
+
+	@ExecSpace("ServerOnly")
+	method void AbsorbLegacyFurnace(string inName, integer inCount, string fuelName, integer fuelCount, string outName, integer outCount)
+		-- 화로식 냄비(구 세이브)에 들어 있던 재료·땔감·결과물을 수거 대기 목록으로 옮겨 잃지 않게 한다.
+		local out = self:DecodeMap(self.OutputJson)
+		local pairsList = { { inName, inCount }, { fuelName, fuelCount }, { outName, outCount } }
+		local moved = 0
+		for _, p in ipairs(pairsList) do
+			local name = p[1]
+			local n = math.floor(tonumber(p[2]) or 0)
+			if name ~= nil and name ~= "" and n > 0 then
+				out[name] = math.floor(tonumber(out[name]) or 0) + n
+				moved = moved + n
+			end
+		end
+		if moved > 0 then
+			self.OutputJson = self:EncodeTable(out, "{}")
+			log("[VRF][COOK] legacy furnace contents moved to output x" .. tostring(moved))
+		end
+	end
+
+end

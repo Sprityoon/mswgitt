@@ -21,6 +21,9 @@ script UIQuestController extends Component
 	-- 유저가 퀘스트 로그에서 직접 고른 추적 대상. 0이면 우선순위 최소 퀘스트를 자동 추적한다.
 	property integer TrackedQuestId = 0
 
+	-- 지금 트래커에 표시 중인 퀘스트 (없으면 0). 튜토리얼 길안내(UIQuestNavigationController)가 같은 퀘스트를 안내한다.
+	@HideFromInspector property integer DisplayedQuestId = 0
+
 	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
 
 	property number uiSfxVolume = 1.0
@@ -244,9 +247,11 @@ script UIQuestController extends Component
 		end
 
 		if activeId == nil then
+			self.DisplayedQuestId = 0
 			self:ShowIdleTracker()
 			return
 		end
+		self.DisplayedQuestId = activeId
 
 		self:SetChromeVisible(true)
 		local userData = userDataTable[activeId]

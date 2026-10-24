@@ -109,6 +109,11 @@ script PlayerBuffs extends Component
 		else
 			self.ActiveBuffsJson = "[]"
 		end
+		-- 최대 체력 버프(MaxHpPct)가 붙거나 풀리면 파생 최대 HP 를 다시 계산한다(만료 시 넘친 HP 는 잘린다).
+		if self:IsServer() then
+			local pc = self.Entity:GetComponent("script.PlayerController")
+			if isvalid(pc) then pc:ApplyDerivedStats() end
+		end
 	end
 
 	@ExecSpace("ServerOnly")

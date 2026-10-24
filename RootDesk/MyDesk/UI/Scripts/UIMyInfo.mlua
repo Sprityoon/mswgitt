@@ -97,7 +97,7 @@ script UIMyInfo extends Component
 				if isvalid(self.mpText) then self.mpText.Text = string.format("%d / %d", pcon.Mana, maxMp) end
 			end
 
-			local maxSta = pcon.MaxStamina
+			local maxSta = pcon:GetMaxStamina()
 			if maxSta > 0 then
 				self:SetFill(self.staBar, self.staMaxWidth, pcon.Stamina / maxSta)
 				if isvalid(self.staText) then self.staText.Text = string.format("%d / %d", pcon.Stamina, maxSta) end

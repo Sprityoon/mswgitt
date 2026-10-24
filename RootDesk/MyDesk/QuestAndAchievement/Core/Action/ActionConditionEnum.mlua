@@ -36,6 +36,8 @@ script ActionConditionEnum extends Logic
 
 	property integer Research = 13
 
+	property integer Deliver = 14
+
 	method boolean Init()
 		local configTable = {
 			{ "Attend", ActionConditionData_Attend },
@@ -51,6 +53,7 @@ script ActionConditionEnum extends Logic
 			{ "LearnSkill", ActionConditionData_LearnSkill },
 			{ "ChargeAttack", ActionConditionData_ChargeAttack },
 			{ "Research", ActionConditionData_Research },
+			{ "Deliver", ActionConditionData_Deliver },
 		}
 
 		local structTable = self.StructTypeTable

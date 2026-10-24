@@ -78,6 +78,25 @@ script PlayerController extends Component
 
 	property number MineCooldown = 0.6
 
+	-- 스윙 간격(2026-10-23 분리): 손에 든 게 채집 도구면 채집 간격, 무기·맨손이면 평타 간격. 대상(몬스터/자원)이 아니라
+	-- 손에 든 아이템으로 고르므로 클라 모션 판정과 서버 판정이 어긋나지 않는다.
+	-- 채집 = MineCooldown × (1 − 신속 채집 GatherSpeedPct) ÷ 채집 버프, 하한 MinGatherCooldown.
+	-- 평타 = 무기 AttackInterval(item_dataset, 공란 = BaseAttackInterval / 맨손 BareHandAttackInterval) ÷ (1 + 공속), 하한 MinAttackInterval.
+	-- 공속 = 패시브·장비 AttackSpeedPct + 버프 AttackSpeed + 연타 리듬(AttackRhythm × 스택), 합산 상한 MaxAttackSpeedBonus.
+	property number BaseAttackInterval = 0.6
+	property number BareHandAttackInterval = 0.5
+	property number MinAttackInterval = 0.35
+	property number MinGatherCooldown = 0.25
+	property number MaxGatherSpeedPct = 0.6
+	property number MaxAttackSpeedBonus = 0.5
+	-- 연타 리듬: 평타를 끊지 않고 이으면 스택 +1(최대 RhythmMaxStacks). 마지막 스윙 뒤 RhythmWindow 초가 지나면 0.
+	property integer RhythmMaxStacks = 5
+	property number RhythmWindow = 1.5
+	@Sync
+	property integer AttackRhythmStacks = 0
+	-- 전직 뒤 채집 도구로 몬스터를 치면 평타 피해 × ToolCombatRatio (전직 전엔 도구가 곧 무기라 그대로).
+	property number ToolCombatRatio = 0.7
+
 	property boolean HasRequestedInitialStones = false
 
 	@Sync
@@ -191,8 +210,9 @@ script PlayerController extends Component
 	property number LevelManaGrowth = 2
 	property number IntManaPerPoint = 1
 	-- 능력치 공통 효과 계수 (1 포인트당).
-	-- 힘: 공격·채집 속도 +0.5% / 솜씨: 치명타 확률 +0.4%p / 교감: 내가 건 상태이상 지속 +0.5% / 회복 스킬: 그 스킬 계열 능력치 1당 회복량 +1%
-	property number StrSpeedPerPoint = 0.005
+	-- 힘: 최대 기력 +1 / 솜씨: 치명타 확률 +0.4%p / 교감: 내가 건 상태이상 지속 +0.5% / 회복 스킬: 그 스킬 계열 능력치 1당 회복량 +1%
+	-- (2026-10-23: 힘의 공격·채집 속도 효과 폐지 — 공속은 무기·숙련 패시브·버프·연타 리듬, 채집 속도는 신속 채집·채집 요리.)
+	property number StrStaminaPerPoint = 1
 	property number DexCritPerPoint = 0.004
 	property number SpiControlPerPoint = 0.005
 	property number HealPowerPerPoint = 0.01
@@ -369,7 +389,7 @@ script PlayerController extends Component
 					-- 수면 회복: 초당 최대치의 SleepRestorePerSecond(기본 10%)씩 HP·마나·기력을 채운다(약 10초 풀충전).
 					local rate = self.SleepRestorePerSecond
 					self._T.SleepHpAccum = (self._T.SleepHpAccum or 0.0) + (playerComp.MaxHp * rate)
-					self._T.SleepStaminaAccum = (self._T.SleepStaminaAccum or 0.0) + (self.MaxStamina * rate)
+					self._T.SleepStaminaAccum = (self._T.SleepStaminaAccum or 0.0) + (self:GetMaxStamina() * rate)
 					self.Mana = math.min(self:GetMaxMana(), self.Mana + self:GetMaxMana() * rate)
 					
 					local hpAdd = math.floor(self._T.SleepHpAccum)
@@ -380,14 +400,14 @@ script PlayerController extends Component
 					
 					local staminaAdd = math.floor(self._T.SleepStaminaAccum)
 					if staminaAdd > 0 then
-						self.Stamina = math.min(self.MaxStamina, self.Stamina + staminaAdd)
+						self.Stamina = math.min(self:GetMaxStamina(), self.Stamina + staminaAdd)
 						self._T.SleepStaminaAccum = self._T.SleepStaminaAccum - staminaAdd
 					end
 				else
-					if self.Stamina < self.MaxStamina then
+					if self.Stamina < self:GetMaxStamina() then
 						local regen = math.floor(self:GetBuffedStaminaRegen() + 0.5)
 						if regen < 1 then regen = 1 end
-						self.Stamina = math.min(self.MaxStamina, self.Stamina + regen)
+						self.Stamina = math.min(self:GetMaxStamina(), self.Stamina + regen)
 					end
 					self:TickOutOfCombatHeal()
 				end
@@ -1135,6 +1155,15 @@ script PlayerController extends Component
 		local targetCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
 		if targetCell == nil then return end
 
+		if isvalid(inv) and activeItem ~= "" then
+			local ds = _DataService:GetTable("item_dataset")
+			local row = ds ~= nil and ds:FindRow("Name", inv:GetBaseItemName(activeItem)) or nil
+			if row ~= nil and (row:GetItem("CropCareAction") or "") ~= "" then
+				inv:ServerRequestCropCare(activeItem, targetCell.x, targetCell.y)
+				return
+			end
+		end
+
 		local isPlaceable = false
 		local isBuildItem = false
 		local terrainAction = ""
@@ -1199,11 +1228,16 @@ script PlayerController extends Component
 			local baseName = inv:GetBaseItemName(activeItem)
 			-- 점유 n×n (가구 기본 2, item_dataset.FootprintSize) — 미리보기·서버 검증과 같은 단일 소스.
 			local footprint = _ResourceSpawner:GetPlaceFootprint(baseName)
-			if footprint > 1 then
+			local cropDs = _DataService:GetTable("CropDataSet")
+			if cropDs ~= nil and cropDs:FindRow("SeedItem", baseName) ~= nil then
+				-- 씨앗: 조준 칸을 품은 2×2 밭 블록으로 맞춘다 (미리보기·서버와 같은 단일 소스).
+				local origin = _ResourceSpawner:ResolveSeedBlockOrigin(currentMap, targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY)
+				targetCell = Vector2Int(origin.x, origin.y)
+			elseif footprint > 1 then
 				local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, footprint)
 				targetCell = Vector2Int(origin.x, origin.y)
 			end
-			log("[PLACE] Requesting placement of " .. activeItem .. " at cell (" .. targetCell.x .. ", " .. targetCell.y .. ")")
+			log("[VRF][PLACE] Requesting placement of " .. activeItem .. " at cell (" .. targetCell.x .. ", " .. targetCell.y .. ")")
 			inv:ServerRequestPlace(activeItem, targetCell.x, targetCell.y)
 			return
 		end
@@ -1287,13 +1321,13 @@ script PlayerController extends Component
 				end
 			end
 		elseif key == KeyboardKey.Q then
-			self:TryCastSlot(1)
+			self:PressSkillKey(1, key)
 		elseif key == KeyboardKey.W then
-			self:TryCastSlot(2)
+			self:PressSkillKey(2, key)
 		elseif key == KeyboardKey.E then
-			self:TryCastSlot(3)
+			self:PressSkillKey(3, key)
 		elseif key == KeyboardKey.R then
-			self:TryCastSlot(4)
+			self:PressSkillKey(4, key)
 		elseif key == KeyboardKey.K then
 			-- 스킬트리 팝업 토글 (S3)
 			local popup = _EntityService:GetEntityByPath("/ui/PopupGroup/SkillTreePopup")
@@ -1332,6 +1366,13 @@ script PlayerController extends Component
 				controller:Toggle()
 			else
 				log_warning("[DEX] J key: UICollectionController missing")
+			end
+		elseif key == KeyboardKey.L then
+			-- 친구 창 토글 (HUD BtnFriend 와 같은 경로, 2026-10-24)
+			local popup = _EntityService:GetEntityByPath("/ui/PopupGroup/FriendPopup")
+			if isvalid(popup) then
+				local controller = popup:GetComponent("script.UIFriendController")
+				if isvalid(controller) then controller:Toggle() end
 			end
 		elseif key == KeyboardKey.F then
 			-- T59: F 본문은 TryInteract로 추출(로직 변경 없음). 분산 핸들러는 기존 KeyDown 동시 리슨 유지.
@@ -1387,6 +1428,31 @@ script PlayerController extends Component
 			end
 		end
 		
+		return closest
+	end
+
+	@ExecSpace("ClientOnly")
+	method Entity FindNearbyCookingPot()
+		-- 조준선(IsAimTarget) 안의 가장 가까운 조리 냄비 (FindNearbyFurnace와 같은 규칙).
+		local currentMap = self.Entity.CurrentMap
+		if not isvalid(currentMap) then return nil end
+		local myPos = self.Entity.TransformComponent.WorldPosition:ToVector2()
+		local closest = nil
+		local minDist = 9999.0
+		local pots = currentMap:GetChildComponentsByTypeName("script.CookingPot", true)
+		if not pots then return nil end
+		for _, comp in ipairs(pots) do
+			if isvalid(comp) then
+				local ent = comp.Entity
+				if isvalid(ent) and self:IsAimTargetCore(ent, false) then
+					local dist = (myPos - ent.TransformComponent.WorldPosition:ToVector2()):Magnitude()
+					if dist < minDist then
+						minDist = dist
+						closest = ent
+					end
+				end
+			end
+		end
 		return closest
 	end
 
@@ -1543,6 +1609,7 @@ script PlayerController extends Component
 		end
 		local monsterEntity = self:FindMonsterInFront(currentMap, playerPos, self.LastDirectionX, self.LastDirectionY)
 		if isvalid(monsterEntity) then
+			self:AdvanceAttackRhythm()
 			if tapRow ~= nil then
 				self:FireWeaponProjectile(tapRow, self.LastDirectionX, self.LastDirectionY)
 			else
@@ -1572,15 +1639,20 @@ script PlayerController extends Component
 				targetEntity = gridData.entity
 			end
 			
-			-- 타겟 셀에서 미검출 시, 바라보는 방향 전방(2.0 유닛) 셀 추가 탐색 (2배 스케일 채광 판정)
-			if pivotKey == nil then
-				local probeX = math.floor(playerPos.x + self.LastDirectionX * 2.0)
-				local probeY = math.floor(playerPos.y + self.LastDirectionY * 2.0)
-				local probeKey = probeX .. "_" .. probeY
-				local pData = gridToEntity[probeKey]
-				if pData and (pData.isTile or pData.isBuild or isvalid(pData.entity)) then
-					pivotKey = math.floor(pData.pivotX) .. "_" .. math.floor(pData.pivotY)
-					targetEntity = pData.entity
+			-- 조준 셀에 없으면 조준점이 가리키는 2×2 블록(삽·호미와 같은 GetAimBlockOrigin — 규칙 18)의 나머지 칸을 본다.
+			-- 조준점 표시(UpdateMineReticle)가 이 블록 중앙이라, 표시 안에 보이는 대상은 모두 맞는다.
+			if pivotKey == nil and resourceSpawner ~= nil then
+				local block = resourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, 2)
+				for by = block.y, block.y + 1 do
+					for bx = block.x, block.x + 1 do
+						if pivotKey == nil and (bx ~= targetCell.x or by ~= targetCell.y) then
+							local pData = gridToEntity[bx .. "_" .. by]
+							if pData and (pData.isTile or pData.isBuild or isvalid(pData.entity)) then
+								pivotKey = math.floor(pData.pivotX) .. "_" .. math.floor(pData.pivotY)
+								targetEntity = pData.entity
+							end
+						end
+					end
 				end
 			end
 		end
@@ -1944,13 +2016,17 @@ script PlayerController extends Component
 	@ExecSpace("ServerOnly")
 	method void AddXP(integer amount)
 		self.XP = self.XP + amount
+		-- 머리 위 "+N EXP" (본인 화면만). 연달아 들어오면 클라에서 0.2초 단위로 묶는다.
+		if amount > 0 and self:IsServer() and self.Entity.PlayerComponent ~= nil then
+			self:ClientShowXpGain(amount, self.Entity.PlayerComponent.UserId)
+		end
 		local leveledUp = false
 		while self.XP >= self.MaxXP do
 			self.Level = self.Level + 1
 			self.XP = self.XP - self.MaxXP
 			self.MaxXP = math.floor(self.MaxXP * 1.5)
 			self.MaxStamina = self.MaxStamina + 10
-			self.Stamina = self.MaxStamina
+			self.Stamina = self:GetMaxStamina()
 			self.GatheringSpeed = self.GatheringSpeed + 0.2
 			self.SP = self.SP + self.SPPerLevelUp
 			self.AP = self.AP + self.APPerLevelUp
@@ -1977,6 +2053,7 @@ script PlayerController extends Component
 	method void UpdatePlacementPreview()
 		-- description: Updates the local placement preview entity when holding placeable furniture or tiles.
 		if self.Entity ~= _UserService.LocalPlayer then return end
+		if self:UpdateSkillPlacePreview() then return end
 		
 		local inv = self.Entity:GetComponent("script.PlayerInventory")
 		if not isvalid(inv) then return end
@@ -2022,9 +2099,15 @@ script PlayerController extends Component
 				local aimWorldY = playerWorldPos.y + self.LastDirectionY * 1.8
 				local targetCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
 				if targetCell == nil then return end
-				-- 점유 n×n (바닥 타일·씨앗 = 1, 가구 = item_dataset.FootprintSize, 공란 2) — 설치 요청·서버 검증과 같은 단일 소스.
+				-- 점유 n×n (바닥 타일 = 1, 씨앗 = 2, 가구 = 데이터 값) — 설치 요청·서버 검증과 같은 단일 소스.
 				local footprint = _ResourceSpawner:GetPlaceFootprint(inv:GetBaseItemName(activeItem))
-				if footprint > 1 then
+				local cropBlockOk = true
+				if isCropSeed then
+					-- 씨앗: 조준 칸을 품은 2×2 밭 블록 중 빈 블록 (설치 요청과 같은 ResolveSeedBlockOrigin).
+					local origin = _ResourceSpawner:ResolveSeedBlockOrigin(self.Entity.CurrentMap, targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY)
+					targetCell = Vector2Int(origin.x, origin.y)
+					cropBlockOk = origin.ok == true
+				elseif footprint > 1 then
 					local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, footprint)
 					targetCell = Vector2Int(origin.x, origin.y)
 				end
@@ -2035,6 +2118,12 @@ script PlayerController extends Component
 				local previewScaleNum = tonumber(previewScaleRaw)
 				if previewScaleNum ~= nil and previewScaleNum > 0 then
 					previewScale = Vector3(previewScaleNum, previewScaleNum, 1.0)
+				end
+				-- 씨앗: 새싹 그림(캔버스의 1/4 남짓)은 화면에서 0.2칸 정도라 어디 심는지 안 보였다(2026-10-23 제작자) →
+				-- 삽·호미와 같은 2×2 조준 상자를 심을 밭 블록 정중앙에 띄운다. 심을 수 있는지는 아래 색 처리 그대로.
+				if isCropSeed then
+					cellWorldPos = Vector3(targetCell.x + 1.0 + self.ReticleOffsetX, targetCell.y + 1.0 + self.ReticleOffsetY, 0)
+					previewScale = Vector3(self.ReticleScale, self.ReticleScale, 1.0)
 				end
 				
 				local preview = self._T.PlacementPreviewEntity
@@ -2056,6 +2145,7 @@ script PlayerController extends Component
 								spriteRuid = previewRuid
 							end
 						end
+						if isCropSeed then spriteRuid = self.ReticleSpriteRUID end
 						if sprite.SpriteRUID ~= spriteRuid then
 							sprite.SpriteRUID = spriteRuid
 							self._T.LastActiveItem = activeItem
@@ -2067,7 +2157,7 @@ script PlayerController extends Component
 				if isvalid(preview) then
 					preview.TransformComponent.WorldPosition = cellWorldPos
 					
-					local canPlace = not isCropSeed or _ResourceSpawner:IsPlantableFarmCell(self.Entity.CurrentMap, targetCell.x, targetCell.y)
+					local canPlace = not isCropSeed or cropBlockOk
 					-- Client-side occupancy check using collision simulator
 					local simulator = _CollisionService:GetSimulator(self.Entity)
 					if simulator then
@@ -2252,6 +2342,7 @@ script PlayerController extends Component
 			"script.BulletinBoard",
 			"script.Furniture_Bed",
 			"script.Furnace",
+			"script.CookingPot",
 			"script.Chest",
 			"script.FishingSpot",
 			"script.TreasureChest",
@@ -2310,17 +2401,14 @@ script PlayerController extends Component
 		local targetCell = tilemap:ToCellPosition(Vector3(aimWorldX, aimWorldY, 0))
 		if targetCell == nil then return end
 
-		local isTerrain = self:IsTerrainEditItemActive()
 		local cellWorldPos = nil
-		if isTerrain and _ResourceSpawner ~= nil then
-			-- 2×2 지형 편집 도구(물삽/호미/삽/풀씨 등):
-			-- 서버(PlayerInventory:ServerRequestTerrainEdit)와 동일하게 GetAimBlockOrigin을 호출하여
-			-- 실제로 편집되는 2×2 블록(origin.x .. origin.x+2, origin.y .. origin.y+2)의 정중앙에 조준점을 위치시킨다.
+		if _ResourceSpawner ~= nil then
+			-- ⚖️ 2026-10-22 제작자: 모든 도구의 조준점을 삽류(2×2 지형 편집)에 맞춘다.
+			-- 삽·호미·물삽(ServerRequestTerrainEdit)과 도끼·곡괭이·무기·맨손(RequestMine — 같은 2×2 블록 안을 탐색)이
+			-- 전부 GetAimBlockOrigin 블록을 쓰므로, 조준점은 그 블록의 정중앙 하나다.
 			local origin = _ResourceSpawner:GetAimBlockOrigin(targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY, 2)
 			cellWorldPos = Vector3(origin.x + 1.0 + self.ReticleOffsetX, origin.y + 1.0 + self.ReticleOffsetY, 0)
 		else
-			-- 일반 채광/벌목 도구 및 맨손 (1×1 단일 타일):
-			-- 대상 타일 셀(targetCell.x .. targetCell.x+1, targetCell.y .. targetCell.y+1)의 정중앙에 조준점을 위치시킨다.
 			cellWorldPos = Vector3(targetCell.x + 0.5 + self.ReticleOffsetX, targetCell.y + 0.5 + self.ReticleOffsetY, 0)
 		end
 
@@ -2347,6 +2435,27 @@ script PlayerController extends Component
 			local mapRadius = 75
 			if _ResourceSpawner then mapRadius = _ResourceSpawner.MapRadius end
 			sprite.OrderInLayer = math.floor((mapRadius - targetCell.y) * 100) + 1
+			-- 농사 도구는 등록한 손 그림/퇴비 아이콘을 밭 조준 미리보기로 쓴다(아바타 장비 RUID가 아님).
+			local inv = self.Entity:GetComponent("script.PlayerInventory")
+			if isvalid(inv) then
+				local slots = _HttpService:JSONDecode(inv.QuickSlotsJson) or {}
+				local active = slots[inv.SelectedQuickSlotIndex] or ""
+				local ds = _DataService:GetTable("item_dataset")
+				local row = ds ~= nil and ds:FindRow("Name", inv:GetBaseItemName(active)) or nil
+				if row ~= nil and (row:GetItem("CropCareAction") or "") ~= "" then
+					local block = _ResourceSpawner:ResolveCropBlockOrigin(currentMap, targetCell.x, targetCell.y, self.LastDirectionX, self.LastDirectionY)
+					if block.ok then
+						preview.TransformComponent.WorldPosition = Vector3(block.x + 1, block.y + 1, 0)
+					end
+					local ruid = row:GetItem("PreviewRUID") or ""
+					if ruid ~= "" then
+						sprite.SpriteRUID = ruid
+						local scale = tonumber(row:GetItem("PreviewScale")) or self.ReticleScale
+						preview.TransformComponent.Scale = Vector3(scale, scale, 1)
+					end
+				end
+			end
+
 		end
 	end
 
@@ -2364,6 +2473,7 @@ script PlayerController extends Component
 			"script.BulletinBoard",
 			"script.Furniture_Bed",
 			"script.Furnace",
+			"script.CookingPot",
 			"script.Chest",
 			"script.FishingSpot",
 			"script.TreasureChest",
@@ -2470,6 +2580,12 @@ script PlayerController extends Component
 		if isvalid(target) then
 			out.target = target
 			out.label = self:ReadInteractLabel(target, "화로 사용하기")
+			return out
+		end
+		target = self:FindNearbyCookingPot()
+		if isvalid(target) then
+			out.target = target
+			out.label = self:ReadInteractLabel(target, "요리하기")
 			return out
 		end
 		target = self:FindNearbyChest()
@@ -2711,6 +2827,28 @@ script PlayerController extends Component
 						c:Close()
 					else
 						c:Open(nearbyFurnace)
+					end
+				end
+			end
+			return true
+		end
+
+		local nearbyPot = self:FindNearbyCookingPot()
+		if isvalid(nearbyPot) then
+			-- 완성품이 있으면 F 한 번에 수거, 없으면 요리 목록(제작창 요리 모드)을 연다.
+			local pot = nearbyPot:GetComponent("script.CookingPot")
+			if isvalid(pot) and pot.OutputJson ~= "{}" and pot.OutputJson ~= "" then
+				pot:RequestCollect()
+				return true
+			end
+			local popup = _EntityService:GetEntityByPath("/ui/PopupGroup/CraftingPopup")
+			if isvalid(popup) then
+				local crafting = popup:GetComponent("script.UICraftingController")
+				if isvalid(crafting) then
+					if popup.Enable and crafting.cookMode then
+						crafting:Close()
+					else
+						crafting:OpenCook(nearbyPot)
 					end
 				end
 			end
@@ -3410,12 +3548,17 @@ script PlayerController extends Component
 					local guestId = user.PlayerComponent.UserId
 					if guestId ~= ownerId then
 						local hasPerm = false
+						-- 표시 이름: 캐릭터 닉네임 → 계정 닉네임. user.Name 은 엔티티 이름(= UserId 숫자)이라 쓰지 않는다.
+						local guestName = ""
 						if _PersistenceManager then
 							hasPerm = _PersistenceManager:CheckGuestPermission(ownerId, guestId, "place")
+							guestName = _PersistenceManager:GetCharacterName(guestId) or ""
 						end
+						if guestName == "" then guestName = user.PlayerComponent.Nickname or "" end
+						if guestName == "" then guestName = "모험가" end
 						table.insert(guestData, {
 							UserId = guestId,
-							Name = user.Name,
+							Name = guestName,
 							HasPermission = hasPerm
 						})
 					end
@@ -4586,7 +4729,7 @@ script PlayerController extends Component
 					if fire then
 						self._T.TriggerAt[skillId] = now
 						if trigger == "LowHp" then
-							self.Stamina = self.MaxStamina
+							self.Stamina = self:GetMaxStamina()
 						elseif self:SkillNumber(row, "StatusValue", 0) > 0 then
 							self:StartGuard(row, self:GetEffectiveDamageMultiplier(skillId, level))
 						end
@@ -4694,20 +4837,181 @@ script PlayerController extends Component
 		return math.floor(p:GetItemNumber(p:GetBaseItemName(key), "Defense") * self.GloveAttackRatio + 0.0001)
 	end
 	method number GetEffectiveMineCooldown()
-		-- 실효 채집 쿨다운 = MineCooldown + Σ패시브(MineCooldown, 음수), 하한 0.2초
-		-- T16 GatherSpeed mult: 쿨다운 / mult (채집 빨라짐)
-		local cd = self.MineCooldown + self:GetPassiveBonus("MineCooldown")
+		-- 이번 스윙의 간격 (서버·클라 공용). 채집 도구를 들었으면 채집 간격, 아니면 평타 간격.
+		if self:IsHoldingGatherTool() then return self:GetEffectiveGatherCooldown() end
+		return self:GetEffectiveAttackInterval()
+	end
+
+	method boolean IsHoldingGatherTool()
+		-- 손에 든 아이템이 채집 도구인가 (Category=tool 이고 ToolType 이 비어 있지 않고 weapon 이 아님 — 도끼·곡괭이·삽·호미 등).
+		local inv = self.Entity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return false end
+		---@type PlayerInventory
+		local p = inv
+		local held = p.EquippedTool or ""
+		if held == "" then return false end
+		local name = p:GetBaseItemName(held)
+		if p:GetItemText(name, "Category") ~= "tool" then return false end
+		local toolType = p:GetItemText(name, "ToolType")
+		return toolType ~= "" and toolType ~= "weapon"
+	end
+
+	method number GetEffectiveGatherCooldown()
+		-- 채집 간격 = MineCooldown × (1 − 신속 채집 %) ÷ 채집 버프 배율 − 채집 버프 가산×0.05, 하한 MinGatherCooldown.
+		local pct = math.min(self.MaxGatherSpeedPct, math.max(0, self:GetPassiveBonus("GatherSpeedPct")))
+		local cd = self.MineCooldown * (1 - pct)
 		local buffs = self.Entity:GetComponent("script.PlayerBuffs")
 		if isvalid(buffs) then
 			local mult = buffs:GetStatMult("GatherSpeed")
-			if mult > 0.01 then
-				cd = cd / mult
-			end
+			if mult > 0.01 then cd = cd / mult end
 			cd = cd - buffs:GetStatAdd("GatherSpeed") * 0.05
 		end
-		-- 힘: 1 포인트당 공격·채집 속도 +StrSpeedPerPoint (평타 간격도 이 쿨다운을 따른다 — 구 솜씨 효과를 힘으로 이관, 2026-10-01)
-		cd = cd / (1 + self.StatStr * self.StrSpeedPerPoint)
-		return math.max(0.2, cd)
+		return math.max(self.MinGatherCooldown, cd)
+	end
+
+	method number GetWeaponAttackInterval()
+		-- 무기별 기본 평타 간격: 손 무기의 item_dataset.AttackInterval (공란 = BaseAttackInterval). 무기 없음·삼위일체 = 맨손.
+		local inv = self.Entity:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return self.BaseAttackInterval end
+		---@type PlayerInventory
+		local p = inv
+		local key = p:GetGearKey("weapon")
+		if key == "" then return self.BareHandAttackInterval end
+		local v = p:GetItemNumber(p:GetBaseItemName(key), "AttackInterval")
+		if v ~= nil and v > 0 then return v end
+		return self.BaseAttackInterval
+	end
+
+	method integer GetActiveRhythmStacks()
+		-- 연타 리듬 스택 (마지막 스윙 뒤 RhythmWindow 가 지났으면 0).
+		if self.AttackRhythmStacks <= 0 then return 0 end
+		local now = _UtilLogic.ElapsedSeconds
+		if self:IsServer() then now = _UtilLogic.ServerElapsedSeconds end
+		if now - self.LastMineTime > self.RhythmWindow + self.BaseAttackInterval then return 0 end
+		return self.AttackRhythmStacks
+	end
+
+	method number GetAttackSpeedBonus()
+		-- 공속 합 = 패시브·장비 AttackSpeedPct + 버프 AttackSpeed(배율−1 + 가산) + 연타 리듬, 0~MaxAttackSpeedBonus.
+		local bonus = self:GetPassiveBonus("AttackSpeedPct")
+		local buffs = self.Entity:GetComponent("script.PlayerBuffs")
+		if isvalid(buffs) then
+			bonus = bonus + (buffs:GetStatMult("AttackSpeed") - 1) + buffs:GetStatAdd("AttackSpeed")
+		end
+		local rhythm = self:GetPassiveBonus("AttackRhythm")
+		if rhythm > 0 then bonus = bonus + rhythm * self:GetActiveRhythmStacks() end
+		return math.min(self.MaxAttackSpeedBonus, math.max(0, bonus))
+	end
+
+	method number GetEffectiveAttackInterval()
+		-- 평타 간격 = 무기 기본 간격 ÷ (1 + 공속), 하한 MinAttackInterval.
+		return math.max(self.MinAttackInterval, self:GetWeaponAttackInterval() / (1 + self:GetAttackSpeedBonus()))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void AdvanceAttackRhythm()
+		-- 평타가 몬스터를 향해 나갈 때(서버 RequestMine 전투 분기) 리듬 스택 갱신. 숙련 패시브(AttackRhythm)가 없으면 항상 0.
+		if self:GetPassiveBonus("AttackRhythm") <= 0 then
+			if self.AttackRhythmStacks ~= 0 then self.AttackRhythmStacks = 0 end
+			return
+		end
+		local prev = self._T.RhythmLastSwing or -999
+		local now = _UtilLogic.ServerElapsedSeconds
+		if now - prev <= self.RhythmWindow + self.BaseAttackInterval then
+			self.AttackRhythmStacks = math.min(self.RhythmMaxStacks, self.AttackRhythmStacks + 1)
+		else
+			self.AttackRhythmStacks = 0
+		end
+		self._T.RhythmLastSwing = now
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean IsPlacedAreaSkill(integer slotIndex)
+		-- 바닥에 놓는 스킬(설치·지연 착탄: SkillDataSet.Type = Trap / Field 이고 AreaReach > 0)인가 — 키를 누르는 동안 자리 미리보기.
+		local skillId = self:GetEquippedSlots()[slotIndex]
+		if skillId == nil or skillId == "" then return false end
+		local ds = _DataService:GetTable("SkillDataSet")
+		local row = ds ~= nil and ds:FindRow("SkillId", skillId) or nil
+		if row == nil then return false end
+		local kind = self:SkillText(row, "Type")
+		return (kind == "Trap" or kind == "Field") and self:SkillNumber(row, "AreaReach", 0) > 0
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PressSkillKey(integer slotIndex, KeyboardKey key)
+		-- Q/W/E/R: 설치형은 누르는 동안 놓일 자리(장판 크기 조준 상자)를 보여 주고 떼는 순간 시전, 나머지는 즉시 시전.
+		if self:IsPlacedAreaSkill(slotIndex) then
+			self._T.SkillPreviewSlot = slotIndex
+			self._T.SkillPreviewKey = key
+			return
+		end
+		self:TryCastSlot(slotIndex)
+	end
+
+	@ExecSpace("ClientOnly")
+	method boolean UpdateSkillPlacePreview()
+		-- 설치형 스킬 키를 누르고 있으면 조준 상자를 장판 자리·크기로 그리고 true. 키를 떼면 시전하고 원래 미리보기로 돌아간다.
+		local slot = self._T.SkillPreviewSlot
+		if slot == nil then return false end
+		local key = self._T.SkillPreviewKey
+		if key == nil or not _InputService:IsKeyPressed(key) then
+			self._T.SkillPreviewSlot = nil
+			self._T.SkillPreviewKey = nil
+			self:TryCastSlot(slot)
+			return false
+		end
+		local preview = self._T.PlacementPreviewEntity
+		if not isvalid(preview) then
+			preview = self.Entity.CurrentMap:GetChildByName("PlacementPreview")
+			self._T.PlacementPreviewEntity = preview
+		end
+		if not isvalid(preview) then return true end
+		local ds = _DataService:GetTable("SkillDataSet")
+		local row = ds ~= nil and ds:FindRow("SkillId", self:GetEquippedSlots()[slot] or "") or nil
+		if row == nil then return true end
+		local pos = self.Entity.TransformComponent.WorldPosition
+		local reach = self:SkillNumber(row, "AreaReach", 0)
+		local size = self:SkillNumber(row, "AreaSize", 3)
+		preview.Enable = true
+		preview.Visible = true
+		preview.TransformComponent.WorldPosition = Vector3(pos.x + self.LastDirectionX * reach, pos.y + self.LastDirectionY * reach, 0)
+		-- 조준 상자 그림은 배율 1 에서 2칸(2×2 블록) — 장판 지름 AreaSize 에 맞춘다.
+		local s = math.max(0.5, size * 0.5)
+		preview.TransformComponent.Scale = Vector3(s, s, 1)
+		local sprite = preview.SpriteRendererComponent
+		if isvalid(sprite) then
+			if sprite.SpriteRUID ~= self.ReticleSpriteRUID then
+				sprite.SpriteRUID = self.ReticleSpriteRUID
+				self._T.LastActiveItem = "__skill__"
+			end
+			sprite.Color = Color(0.45, 0.85, 1.0, 0.75)
+		end
+		return true
+	end
+
+	@ExecSpace("Client")
+	method void ClientShowXpGain(integer amount)
+		-- 서버 AddXP → 본인 클라. 0.2초 안에 들어온 경험치는 합쳐 한 번만 띄운다(수확·채집 연타).
+		self._T.XpFloatPending = (self._T.XpFloatPending or 0) + amount
+		if self._T.XpFloatScheduled == true then return end
+		self._T.XpFloatScheduled = true
+		_TimerService:SetTimerOnce(function()
+			if not isvalid(self) then return end
+			local total = self._T.XpFloatPending or 0
+			self._T.XpFloatPending = 0
+			self._T.XpFloatScheduled = false
+			if total <= 0 then return end
+			local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+			local ctrl = isvalid(hud) and hud:GetComponent("script.UIHUDController") or nil
+			if isvalid(ctrl) then
+				ctrl:ShowWorldFloatText(self.Entity, "+" .. tostring(total) .. " EXP", Color(1.0, 0.93, 0.45, 1)) -- 연두는 잔디 위에서 묻혀 연노랑(2026-10-24)
+			end
+		end, 0.2)
+	end
+
+	method integer GetMaxStamina()
+		-- 최대 기력 = MaxStamina(기본 100 + 레벨업 +10) + 힘 × StrStaminaPerPoint.
+		return math.floor(self.MaxStamina + self.StatStr * self.StrStaminaPerPoint)
 	end
 
 	method number GetBuffedMoveSpeed()
@@ -5082,7 +5386,11 @@ script PlayerController extends Component
 	method integer GetComputedMaxHp()
 		-- 최대 HP = BaseMaxHp + 레벨 성장 + 체력 기여.
 		local lv = math.max(1, self.Level or 1)
-		return math.floor(self.BaseMaxHp + (lv - 1) * self.LevelHpGrowth + self.StatVit * self.VitHpPerPoint)
+		local base = self.BaseMaxHp + (lv - 1) * self.LevelHpGrowth + self.StatVit * self.VitHpPerPoint
+		-- 버프 MaxHpPct(예: 오믈렛 +20%) — PlayerBuffs 가 버프가 바뀔 때마다 ApplyDerivedStats 를 다시 부른다.
+		local buffs = self.Entity:GetComponent("script.PlayerBuffs")
+		if isvalid(buffs) then base = base * (1 + math.max(0, buffs:GetStatAdd("MaxHpPct"))) end
+		return math.floor(base)
 	end
 
 	@ExecSpace("ServerOnly")
@@ -5097,6 +5405,8 @@ script PlayerController extends Component
 		end
 		local maxMana = self:GetMaxMana()
 		if self.Mana > maxMana then self.Mana = maxMana end
+		local maxStamina = self:GetMaxStamina()
+		if self.Stamina > maxStamina then self.Stamina = maxStamina end
 	end
 
 	@ExecSpace("ServerOnly")

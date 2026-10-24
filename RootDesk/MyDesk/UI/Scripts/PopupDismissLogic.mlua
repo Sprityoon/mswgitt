@@ -8,7 +8,7 @@ script PopupDismissLogic extends Logic
 
 	property string PopupGroupPath = "/ui/PopupGroup"
 	-- 대상 팝업 "엔티티이름:컨트롤러스크립트". 제외: EstateInvitePopup · PlayerInteractPopup (응답이 필요한 요청창 — 바깥 클릭으로 닫히면 안 된다).
-	property string PopupControllers = "BossContentsPopup:UIBossContentsController,CharacterPopup:UICharacterController,ChestPopup:UIChestController,CollectionPopup:UICollectionController,CraftingPopup:UICraftingController,FurnacePopup:UIFurnaceController,InventoryPopup:UIInventoryController,PermissionPopup:UIPermissionController,QuestPopup:UIQuestLogController,RaidDifficultyPopup:UIRaidDifficultyController,RequestPopup:UIRequestController,ResearchPopup:UIResearchController,ShopPopup:UIShopController,SkillTreePopup:UISkillTreeController,WarpPopup:UIWarpController"
+	property string PopupControllers = "BossContentsPopup:UIBossContentsController,CharacterPopup:UICharacterController,ChestPopup:UIChestController,CollectionPopup:UICollectionController,CraftingPopup:UICraftingController,FriendPopup:UIFriendController,FurnacePopup:UIFurnaceController,InventoryPopup:UIInventoryController,PermissionPopup:UIPermissionController,QuestPopup:UIQuestLogController,RaidDifficultyPopup:UIRaidDifficultyController,RequestPopup:UIRequestController,ResearchPopup:UIResearchController,ShopPopup:UIShopController,SkillTreePopup:UISkillTreeController,WarpPopup:UIWarpController"
 	-- 막 열린 팝업은 이 시간(초) 동안 바깥 클릭으로 닫지 않는다 — 팝업을 연 그 클릭이 곧바로 닫아 버리는 것을 막는다.
 	property number IgnoreSecondsAfterOpen = 0.3
 

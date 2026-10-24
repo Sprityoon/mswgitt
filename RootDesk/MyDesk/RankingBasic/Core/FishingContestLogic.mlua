@@ -7,6 +7,11 @@ script FishingContestLogic extends Logic
 	property integer LastSnapshotRefreshElapsed = 0
 	property integer SnapshotRefreshDebounceSeconds = 10
 
+	-- 주간 낚시왕 보상(2026-10-24): "순위상한=보상|…;…" — 지난주 내 순위 이하인 가장 작은 상한 구간을 준다. 0 = 순위 밖이라도 점수가 있으면 참가상.
+	-- 보상 형식은 의뢰 보상과 같은 "아이템 Name:수량|…". 로그인 3초 뒤 PlayerDBManager 가 TryGrantLastWeekReward 를 부른다.
+	property string WeeklyRewardTiers = "1=Coin:500|Landscaping Box:1;3=Coin:300|Golden Pumpkin Seed:2;10=Coin:180|Compost:2;20=Coin:100;0=Coin:30"
+	property integer RewardScanCount = 20 -- 순위 구간 판정용으로 지난주 상위 몇 명까지 훑을지(그 밖은 참가상 판정)
+
 	@ExecSpace("ServerOnly")
 	method void AddCatchPoints(Entity player, string fishItem)
 		-- 어종 RankPoints만큼 주간 점수 누적 적립.
@@ -79,6 +84,80 @@ script FishingContestLogic extends Logic
 		if ok then
 			self:MaybeRefreshSnapshotAfterCatch()
 		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void TryGrantLastWeekReward(Entity player)
+		-- 지난주(cycleIndex-1) 낚시왕 순위로 보상을 캐릭터당 한 번 준다. 받은 주차는 PlayerInventory.FishRewardWeek 에 저장.
+		if not isvalid(player) or player.PlayerComponent == nil then return end
+		if _RankingDataStorageLogic == nil or not _RankingDataStorageLogic.IsInit then return end
+		local inv = player:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return end
+		local config = _RankingDataStorageLogic.ConfigData
+		if config == nil or _DateTimeLogic == nil then return end
+		local prev = config:GetCycleIndex(_DateTimeLogic:GetTimeElapsed()) - 1
+		if prev < 0 or inv.FishRewardWeek >= prev then return end
+		local userId = tostring(player.PlayerComponent.UserId or "")
+		local profileCode = ""
+		if _PersistenceManager ~= nil then profileCode = _PersistenceManager:GetCharacterId(userId) end
+		if profileCode == nil or profileCode == "" then return end
+		local ds = _RankingDataStorageLogic:GetSortableDS(prev)
+		if ds == nil then return end
+		local myRank = 0
+		local errorCode, pages = ds:GetSortedAndWait(SortDirection.Descending, 1, math.maxinteger)
+		if errorCode == 0 and pages ~= nil then
+			local n = 0
+			local done = false
+			while not done do
+				for _, item in pairs(pages:GetCurrentPageDatas()) do
+					n = n + 1
+					if item.KeyInfo.Key == profileCode then
+						myRank = n
+						done = true
+						break
+					end
+					if n >= self.RewardScanCount then
+						done = true
+						break
+					end
+				end
+				if done or pages.IsLastPage == true then break end
+				pages:MoveToNextPageAndWait()
+			end
+		end
+		local myScore = 0
+		if myRank == 0 then
+			local mine = _RankingDataStorageLogic:GetMyRankingDataAndWait(profileCode, prev)
+			if mine ~= nil then myScore = math.floor(tonumber(mine.Score) or 0) end
+		end
+		-- 대기(Wait) 사이에 나갔거나 같은 주차를 이미 받았으면 중단.
+		if not isvalid(player) or not isvalid(inv) or inv.FishRewardWeek >= prev then return end
+		inv.FishRewardWeek = prev
+		if _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(userId) end
+		if myRank == 0 and myScore <= 0 then
+			log("[FISHRANK] week=" .. tostring(prev) .. " no entry " .. profileCode)
+			return
+		end
+		local bestCap = nil
+		local bestRewards = ""
+		for tier in string.gmatch(self.WeeklyRewardTiers, "[^;]+") do
+			-- 다중 캡처는 gmatch 로 받는다(string.find 4값 대입은 Maker 빌드 LWA-1111 — pitfalls 80).
+			for capText, rewards in string.gmatch(tier, "(%d+)%s*=(.*)") do
+				local cap = math.floor(tonumber(capText) or 0)
+				local fits = (myRank > 0 and cap > 0 and myRank <= cap) or (cap == 0)
+				if fits and (bestCap == nil or (cap > 0 and (bestCap == 0 or cap < bestCap))) then
+					bestCap = cap
+					bestRewards = rewards
+				end
+			end
+		end
+		if bestRewards == "" then return end
+		local text = inv:GrantRequestRewards("", 0, bestRewards)
+		local pc = player:GetComponent("script.PlayerController")
+		local head = "지난주 낚시왕 참가상"
+		if myRank > 0 then head = "지난주 낚시왕 " .. tostring(myRank) .. "위" end
+		if isvalid(pc) then pc:ShowMineFeedback(head .. "! 보상: " .. text) end
+		log("[VRF][FISHRANK] weekly reward week=" .. tostring(prev) .. " rank=" .. tostring(myRank) .. " -> " .. text)
 	end
 
 	@ExecSpace("ServerOnly")

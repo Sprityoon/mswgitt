@@ -275,7 +275,14 @@ script itemreact extends Component
 		---@type PlayerInventory
 		local inventory = player:GetComponent("script.PlayerInventory")
 		if isvalid(inventory) then
-			inventory:AddItem(self.ItemName, 1)
+			local amount = 1
+			-- 코인 획득 버프(CoinGainPct, 예: 황금 호박 수프 +20%) — 줍는 화폐 한 개마다 그 확률로 1개 더.
+			if inventory:IsCurrencyItem(self.ItemName) then
+				local buffsC = player:GetComponent("script.PlayerBuffs")
+				local cpct = isvalid(buffsC) and buffsC:GetStatAdd("CoinGainPct") or 0
+				if cpct > 0 and math.random() < cpct then amount = amount + 1 end
+			end
+			inventory:AddItem(self.ItemName, amount)
 
 			-- 업적/퀘스트 진행: 아이템 획득 액션 발행
 			if _ActionSignals ~= nil then

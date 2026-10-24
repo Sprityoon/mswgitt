@@ -1,6 +1,15 @@
-InputItem,InputCount,OutputItem,CookDuration
-Carrot,2,Carrot Soup,8
-Grass,3,Veggie Stir Fry,6
-Roasted Grass,2,Feast Dish,15
-Raw Meat,2,Roasted Meat,10
-Egg,2,Egg Omelette,10
+RecipeName,Desc,Ing1Name,Ing1Count,Ing2Name,Ing2Count,Ing3Name,Ing3Count,CookDuration,OutputCount,Tier,Category,UnlockId,UnlockHint
+Carrot Soup,당근을 뭉근히 끓인 따뜻한 수프.,Carrot,2,,0,,0,8,1,1,soup,,
+Roasted Grass,풀을 바삭하게 구운 간단한 주전부리.,Grass,3,,0,,0,4,1,1,grill,,
+Roasted Meat,생고기를 노릇하게 구운 고기.,Raw Meat,2,,0,,0,10,1,1,grill,,
+Veggie Stir Fry,감자와 당근과 토마토를 함께 볶은 야채 볶음.,Potato,1,Carrot,1,Tomato,1,6,1,1,dish,,
+Egg Omelette,달걀에 잘 익은 토마토를 넣어 부친 폭신한 오믈렛.,Egg,2,Tomato,1,,0,10,1,1,dish,,
+Feast Dish,구운 고기와 수프와 구운 풀을 한상에 차린 잔치 요리.,Roasted Meat,1,Carrot Soup,1,Roasted Grass,2,15,1,1,dish,,
+Wheat Porridge,밀을 뭉근히 끓인 고소한 죽.,Wheat,2,,0,,0,8,1,1,soup,,
+Baked Potato,감자를 통째로 노릇하게 구운 요리.,Potato,2,,0,,0,8,1,1,grill,,
+Berry Tart,"딸기와 밀 반죽, 달걀로 구운 상큼한 타르트.",Strawberry,2,Wheat,2,Egg,1,12,1,1,dish,,
+Pumpkin Soup,황금 호박과 당근을 곱게 끓인 진한 수프.,Golden Pumpkin,1,Carrot,1,,0,15,1,1,soup,,
+Potato Gratin,감자 위에 우유와 치즈를 얹어 구운 그라탱.,Potato,2,Milk,1,Cheese,1,12,1,1,dish,cook_potato_gratin,벨라의 가게에서 레시피를 사서 사용하세요
+Butter Potato,찐 감자에 버터를 녹여 올린 간단한 요리.,Potato,2,Butter,1,,0,8,1,1,grill,cook_butter_potato,벨라의 가게에서 레시피를 사서 사용하세요
+Honey Pancake,밀 반죽에 달걀을 풀어 굽고 꿀을 뿌린 팬케이크.,Wheat,2,Egg,1,Honey,1,10,1,1,dish,cook_honey_pancake,벨라의 가게에서 레시피를 사서 사용하세요
+Garlic Skewer,생고기 사이사이 마늘을 끼워 구운 꼬치.,Raw Meat,2,Garlic,1,,0,10,1,1,grill,cook_garlic_skewer,벨라의 가게에서 레시피를 사서 사용하세요

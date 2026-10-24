@@ -8,6 +8,16 @@ script UIRequestController extends Component
 	property Entity requestTemplate = "8c757950-0ad9-4d8b-8b7f-6e3697962b36"
 	property Entity dayText = "f0508707-94d1-4fc1-8943-c7174f814c8f"
 	property Entity hintText = "8a25c360-a28d-4295-9e89-c4766aa0534c"
+	-- 안내 줄 원래 글자색(올클리어 금빛에서 되돌릴 때). ResolveRefs 에서 한 번 기록.
+	property Color hintBaseColor = Color(1, 1, 1, 1)
+	-- 도장 줄(원안 4.3): 오늘 3칸(Today_1~3) + 주간 5칸(Week_1~5). 그림 = UI/Sprites/Stamp (2026-10-23 제작자 등록).
+	property Entity stampRow = "9366af9b-5947-4d42-bb17-19bfd943732a"
+	property string StampEmptyRUID = "cbb1ba981a584758b95d4420724caadb"
+	property string StampDoneRUID = "384b714c5e594216aea380d560e4902a"
+	property string StampFlashRUID = "59a1108cf5574f37afe359b5737a8915"
+	property string StampSoundRUID = "f1d35a2c536945b9adb7f9c5069796ad"
+	property string AllClearSoundRUID = "70563cbc2642429690d64dbabc2eb84c"
+	property boolean hintBaseSaved = false
 
 	property table rowButtons = {}
 	property table rowEntities = {}
@@ -42,6 +52,11 @@ script UIRequestController extends Component
 		end
 		if not isvalid(self.dayText) then self.dayText = bg:GetChildByName("DayText") end
 		if not isvalid(self.hintText) then self.hintText = bg:GetChildByName("HintText") end
+		if not isvalid(self.stampRow) then self.stampRow = bg:GetChildByName("StampRow") end
+		if not self.hintBaseSaved and isvalid(self.hintText) and isvalid(self.hintText.TextComponent) then
+			self.hintBaseColor = self.hintText.TextComponent.FontColor
+			self.hintBaseSaved = true
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -86,16 +101,21 @@ script UIRequestController extends Component
 			local tc = self.dayText.TextComponent
 			if isvalid(tc) then tc.Text = "오늘의 의뢰" end
 		end
-		if isvalid(self.hintText) then
-			local tc = self.hintText.TextComponent
-			if isvalid(tc) then tc.Text = "전 서버 공통 · 의뢰당 하루 1회 납품" end
-		end
-
 		local inv = self:GetLocalInventory()
 		if not isvalid(inv) then return end
 		inv:EnsureDailyRequestState()
 
 		local ids = inv:GetTodaysRequestIds()
+		self:RefreshStamps(inv, #ids)
+		if isvalid(self.hintText) then
+			local tc = self.hintText.TextComponent
+			if isvalid(tc) then
+				tc.Text = self:BuildBonusHint(inv, #ids)
+				-- 오늘 의뢰를 모두 마치면 안내 줄(도장 ★★★)을 진한 호박색으로 — 밝은 금색(1,0.84,0.35)은 종이 바탕에서 안 읽혔다(2026-10-23 제작자).
+				local doneAll = #ids > 0 and inv:CountCompletedTodaysRequests() >= #ids
+				if doneAll then tc.FontColor = Color(0.66, 0.38, 0.02, 1) else tc.FontColor = self.hintBaseColor end
+			end
+		end
 		if not isvalid(self.requestList) or not isvalid(self.requestTemplate) then return end
 		self.requestTemplate.Enable = false
 
@@ -105,7 +125,8 @@ script UIRequestController extends Component
 			return
 		end
 
-		local y0 = 140
+		-- 의뢰 줄 3개(88px, 간격 100)를 목록 칸(300) 가운데에 — 구 140 은 첫 줄이 목록 위로 삐져나와 안내 둘째 줄을 덮었다(2026-10-23 캡처).
+		local y0 = 100
 		local gap = 100
 		for i, reqId in ipairs(ids) do
 			local row = ds:FindRow("RequestId", reqId)
@@ -122,6 +143,9 @@ script UIRequestController extends Component
 				local owned = inv:GetItemCount(reqItem)
 				local done = inv:IsDailyRequestCompleted(reqId)
 				local reqDisp = inv:GetItemDisplayName(reqItem)
+				local requester = tostring(cell("RequesterName", ""))
+				local requesterSuffix = ""
+				if requester ~= "" then requesterSuffix = "  · " .. requester end
 
 				-- Clone(name) 문자열 인자 — Entity parent 전달 시 LEA-1103 (Research BuildList 선례)
 				local clone = self.requestTemplate:Clone("ReqRow_" .. tostring(i))
@@ -136,10 +160,10 @@ script UIRequestController extends Component
 					local nameEnt = clone:GetChildByName("Name")
 					if isvalid(nameEnt) and isvalid(nameEnt.TextComponent) then
 						if done then
-							nameEnt.TextComponent.Text = "[완료] " .. reqDisp .. " x" .. tostring(reqCnt)
+							nameEnt.TextComponent.Text = "[완료] " .. reqDisp .. " x" .. tostring(reqCnt) .. requesterSuffix
 							nameEnt.TextComponent.FontColor = Color(0.52, 0.49, 0.43, 1)
 						else
-							nameEnt.TextComponent.Text = reqDisp .. " x" .. tostring(reqCnt)
+							nameEnt.TextComponent.Text = reqDisp .. " x" .. tostring(reqCnt) .. requesterSuffix
 							nameEnt.TextComponent.FontColor = Color(0.96, 0.94, 0.90, 1)
 						end
 					end
@@ -193,6 +217,112 @@ script UIRequestController extends Component
 				end
 			end
 		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method string BuildBonusHint(any inv, integer total)
+		-- 도장 줄 아래 한 줄: 올클리어 보답(Difficulty=bonus 행) 또는 상태. 진행도는 도장 그림(RefreshStamps)이 보여 준다.
+		local bonusId = inv:GetDailyBonusRequestId()
+		if bonusId == "" then
+			return "의뢰마다 하루 한 번씩 납품할 수 있어요"
+		end
+		if inv:IsDailyRequestCompleted(bonusId) then
+			return "오늘의 보답을 받았습니다. 내일 또 만나요!"
+		end
+		local parts = {}
+		local rewItem = inv:GetRequestCell(bonusId, "RewardItem")
+		local rewCnt = math.floor(tonumber(inv:GetRequestCell(bonusId, "RewardCount")) or 0)
+		if rewItem ~= "" and rewCnt > 0 then
+			table.insert(parts, inv:GetItemDisplayName(rewItem) .. " x" .. tostring(rewCnt))
+		end
+		for rawName, rawCnt in string.gmatch(inv:GetRequestCell(bonusId, "ExtraRewards"), "([^|:]+):(%d+)") do
+			local name = string.match(rawName, "^%s*(.-)%s*$") or ""
+			local cnt = math.floor(tonumber(rawCnt) or 0)
+			if name ~= "" and cnt > 0 then
+				table.insert(parts, inv:GetItemDisplayName(name) .. " x" .. tostring(cnt))
+			end
+		end
+		for rawName, rawCnt, rawP in string.gmatch(inv:GetRequestCell(bonusId, "ChanceRewards"), "([^|:]+):(%d+):([%d%.]+)") do
+			local cName = string.match(rawName, "^%s*(.-)%s*$") or ""
+			local pct = math.floor((tonumber(rawP) or 0) * 100 + 0.5)
+			if cName ~= "" and pct > 0 then
+				table.insert(parts, tostring(pct) .. "% " .. inv:GetItemDisplayName(cName))
+			end
+		end
+		return "모두 마치면 " .. table.concat(parts, " · ")
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RefreshStamps(any inv, integer total)
+		-- 오늘 도장 3칸 = 납품 수, 주간 5칸 = 이번 주 올클리어 일수. 직전 표시보다 늘어난 칸은 "쾅" 연출 + 효과음.
+		if not isvalid(self.stampRow) then return end
+		local done = math.min(inv:CountCompletedTodaysRequests(), total)
+		local goal = inv:GetWeeklyStampGoal()
+		local week = math.min(inv:GetDisplayedWeeklyStampCount(), goal)
+		local prevDone = self._T.shownDone
+		local prevWeek = self._T.shownWeek
+		for i = 1, 3 do
+			local e = self.stampRow:GetChildByName("Today_" .. i)
+			if isvalid(e) then
+				e.Enable = i <= total
+				self:SetStamp(e, i <= done, prevDone ~= nil and i > prevDone and i <= done)
+			end
+		end
+		for i = 1, 5 do
+			local e = self.stampRow:GetChildByName("Week_" .. i)
+			if isvalid(e) then
+				e.Enable = i <= goal
+				self:SetStamp(e, i <= week, prevWeek ~= nil and i > prevWeek and i <= week)
+			end
+		end
+		local label = self.stampRow:GetChildByName("WeekLabel")
+		if isvalid(label) then label.Enable = goal > 0 end
+		if prevDone ~= nil and done > prevDone and _BGMManager ~= nil then
+			if done >= total and total > 0 then
+				_BGMManager:PlayInGameSound(self.AllClearSoundRUID, 1.0)
+			else
+				_BGMManager:PlayInGameSound(self.StampSoundRUID, 1.0)
+			end
+		end
+		self._T.shownDone = done
+		self._T.shownWeek = week
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetStamp(Entity e, boolean stamped, boolean animate)
+		-- 칸 그림 바꾸기. animate = 방금 찍힘 → 반짝이 그림으로 1.6배에서 1.0배로 0.25초 동안 눌러 찍고, 끝나면 보통 도장 그림.
+		local sp = e.SpriteGUIRendererComponent
+		local t = e.UITransformComponent
+		if not isvalid(sp) or not isvalid(t) then return end
+		if not stamped then
+			sp.ImageRUID = self.StampEmptyRUID
+			t.Scale = Vector3(1, 1, 1)
+			return
+		end
+		if not animate then
+			sp.ImageRUID = self.StampDoneRUID
+			t.Scale = Vector3(1, 1, 1)
+			return
+		end
+		sp.ImageRUID = self.StampFlashRUID
+		local steps = 8
+		local n = 0
+		t.Scale = Vector3(1.6, 1.6, 1)
+		local timer = nil
+		timer = _TimerService:SetTimerRepeat(function()
+			n = n + 1
+			if not isvalid(e) or not isvalid(t) then
+				_TimerService:ClearTimer(timer)
+				return
+			end
+			local k = 1.6 - 0.6 * math.min(1, n / steps)
+			t.Scale = Vector3(k, k, 1)
+			if n >= steps + 4 then
+				sp.ImageRUID = self.StampDoneRUID
+				t.Scale = Vector3(1, 1, 1)
+				_TimerService:ClearTimer(timer)
+			end
+		end, 1 / 30)
 	end
 
 	@ExecSpace("ClientOnly")

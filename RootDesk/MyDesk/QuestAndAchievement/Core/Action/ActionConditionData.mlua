@@ -63,7 +63,7 @@ script ActionConditionData
 		end
 		---@type PlayerInventory
 		local p = inv
-		local items = p:DecodeFlatJson(p.DexItemsJson)
+		local items = p:GetDexItemsCached()
 		return math.floor(tonumber(items[itemName]) or 0)
 	end
 

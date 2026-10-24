@@ -1,15 +1,27 @@
-RequestId,RequiredItem,RequiredCount,RewardItem,RewardCount,Weight
-req_wood_5,Wood,5,Coin,15,100
-req_stone_5,Stone,5,Coin,15,100
-req_grass_8,Grass,8,Coin,12,100
-req_carrot_3,Carrot,3,Coin,20,80
-req_copper_3,Copper Ore,3,Coin,25,70
-req_wood_12,Wood,12,Coin,30,60
-req_stone_12,Stone,12,Coin,30,60
-req_carrot_6,Carrot,6,Coin,40,50
-req_carp_2,Carp,2,Coin,25,70
-req_shrimp_2,Shrimp,2,Coin,25,70
-req_salmon_1,Salmon,1,Coin,40,50
-req_tuna_1,Tuna,1,Coin,60,30
-req_egg_2,Egg,2,Coin,30,60
-req_wool_2,Wool,2,Coin,35,55
+RequestId,RequiredItem,RequiredCount,RewardItem,RewardCount,Weight,Difficulty,RequesterNpcId,RequesterName,Story,ThanksText,ExtraRewards,ChanceRewards
+req_wood_10,Wood,10,Coin,30,100,easy,carpenter,잭,공사장 비계가 모자라! 나무 열 개만 베어다 줄래?,치수 딱 맞는 나무였어! 공사에 속도가 붙었다고!,,
+req_stone_10,Stone,10,Coin,30,100,easy,blacksmith,로체,화로 바닥을 새로 깔 거야. 단단한 돌 열 개만 캐다 줘!,돌이 단단해서 화로 바닥이 아주 튼튼해졌어!,,
+req_wood_5,Wood,5,Coin,15,80,easy,fisher,낚시꾼,낚시터 의자가 삐걱대는군. 나무 다섯 개만 가져다주게.,의자를 고쳤더니 찌 보는 맛이 살아났네.,,
+req_stone_5,Stone,5,Coin,15,80,easy,researcher,엘렌,표본 받침으로 쓸 돌 다섯 개가 필요해.,받침돌 덕분에 표본이 흔들리지 않아. 고마워.,,
+req_grass_10,Grass,10,Coin,20,90,easy,barnkeeper,토리,헛간 건초가 모자라… 풀 열 포기만 모아 줄래?,풀 고마웠어. 아이들이 푹신하게 잤대.,,
+req_carrot_5,Carrot,5,Coin,40,80,easy,barnkeeper,토리,아이들 간식 당근이 똑 떨어졌어… 다섯 개만 부탁해.,당근 고마웠어. 아이들이 아삭아삭 잘 먹더라.,,
+req_carrot_10,Carrot,10,Coin,85,50,normal,cook,벨라,오늘 스튜에 넣을 당근이 한참 모자라구나. 열 개만 구해 주렴.,네 당근 덕에 스튜가 달큰하게 잘 됐단다!,,
+req_carrot_soup_2,Carrot Soup,2,Coin,50,55,normal,blacksmith,로체,밤샘 담금질을 버티려면 당근 수프 두 그릇이 필요해!,수프 덕에 밤새 망치질했어! 속이 든든하더라!,,
+req_veggie_2,Veggie Stir Fry,2,Coin,40,55,normal,researcher,엘렌,실험하다 끼니를 걸렀어. 야채 볶음 두 접시만 부탁해.,볶음 고마워. 덕분에 집중이 잘 됐어.,,
+req_roasted_meat_2,Roasted Meat,2,Coin,60,45,normal,guard,카인,야간 순찰조에게 구운 고기 두 개를 보급해 주시겠습니까?,보급 감사합니다! 순찰조 사기가 하늘을 찌릅니다.,,
+req_copper_ore_5,Copper Ore,5,Coin,40,50,normal,blacksmith,로체,새 도구를 벼릴 구리 광석 다섯 개만 캐다 줘!,구리 빛깔 좋던데? 좋은 도구가 나오겠어!,,
+req_slime_jelly_5,Slime Jelly,5,Coin,45,45,normal,researcher,엘렌,잠식 반응을 보려면 슬라임 젤리 다섯 개가 필요해.,젤리 표본 고마워. 잠식 흔적이 조금 보였어.,,
+req_chest_2,Wooden Chest,2,Coin,55,40,normal,vendor,마리,노점 창고가 넘쳐! 정리할 나무 상자 두 개만 짜 줄래?,상자 덕에 노점이 깔끔해졌어! 손재주 최고!,,
+req_carp_2,Carp,2,Coin,30,50,normal,granddaughter,루루,마을 고양이가 배고프대요! 잉어 두 마리만 잡아 주세요.,고양이가 냠냠 다 먹었어요! 고마워요!,,
+req_shrimp_3,Shrimp,3,Coin,30,45,normal,cook,벨라,새우볶음밥을 하려는데 새우 세 마리가 모자라구나.,새우가 탱글탱글하더구나! 손님들이 좋아했단다.,,
+req_omelette_2,Egg Omelette,2,Coin,70,25,hard,researcher,엘렌,밤새 두루마리를 보느라 기운이 없어. 오믈렛 두 개만 부탁해.,오믈렛 폭신하더라. 두루마리가 술술 읽혔어.,,
+req_egg_4,Egg,4,Coin,40,30,hard,cook,벨라,카스텔라 반죽에 넣을 신선한 달걀 네 알이 필요하단다.,달걀이 싱싱해서 카스텔라가 봉긋 솟았단다!,,
+req_wool_3,Wool,3,Coin,55,25,hard,vendor,마리,설원 탐험가 망토를 지어야 해! 양털 세 뭉치만 줘!,양털 폭신하더라! 망토가 아주 따뜻하게 나왔어!,,
+req_boar_leather_3,Boar Leather,3,Coin,60,25,hard,guard,카인,초소 방패 손잡이에 감을 멧돼지 가죽 세 장이 필요합니다.,가죽 덕분에 방패가 손에 착 붙습니다. 감사합니다!,,
+req_feast_1,Feast Dish,1,Coin,80,20,hard,elder,촌장,환절기엔 잔치 요리가 보약이지. 후하게 쳐주겠네.,잔치 요리 덕에 허리가 한결 낫네. 고맙네.,,
+req_salmon_1,Salmon,1,Coin,50,25,hard,cook,벨라,오늘 특선은 연어구이란다. 한 마리만 낚아다 주렴.,연어구이가 금세 동났단다! 고맙구나.,,
+req_grass_5,Grass,5,Coin,10,80,easy,granddaughter,루루,할아버지께 드릴 꽃 화관을 엮을 거예요! 풀 다섯 포기만요.,화관 예쁘게 엮었어요! 할아버지가 웃으셨어요!,,
+req_wood_15,Wood,15,Coin,50,45,normal,carpenter,잭,광장 벤치를 새로 짤 거야! 나무 열다섯 개만 부탁해!,벤치 다 짰어! 앉아 보면 감탄할걸?,,
+req_stone_8,Stone,8,Coin,25,70,easy,guard,카인,초소 담장이 허물어졌습니다. 돌 여덟 개만 부탁드립니다.,담장 보수를 마쳤습니다. 이제 든든합니다!,,
+daily_all_clear,,0,Coin,120,0,bonus,elder,촌장,오늘 의뢰 세 건을 모두 마쳤군. 내 작은 보답일세.,,Compost:1,Golden Pumpkin Seed:1:0.1
+weekly_stamp,,5,Landscaping Box,1,0,weekly,elder,촌장,"한 주에 닷새, 마을 의뢰를 모두 마쳐 준 명예 주민에게 주는 상일세.",,Coin:200,

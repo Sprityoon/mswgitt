@@ -84,6 +84,25 @@ script UICraftingController extends Component
 	-- 제작 요청은 PlayerInventory:ServerRequestBuildCraft(테이블 근접 검증)로 간다.
 	property boolean buildMode = false
 
+	-- 조리 냄비(CookingPot)가 연 창이면 true — 레시피 소스 = 냄비의 RecipeTableName(Ing1~3),
+	-- 요리 요청은 CookingPot:RequestCook(냄비 예약 큐)으로 간다. 재료 3번째 칸은 Slot2를 복제해 쓴다.
+	property boolean cookMode = false
+
+	property Entity cookTarget = nil
+
+	property Entity ingSlot3 = nil
+
+	property any cookStatusTimer = nil
+
+	-- 요리 모드 전용 [예약 취소] 버튼 — 제작 버튼을 한 번 복제해 왼쪽에 둔다 (.ui 원본 수정 없이 Slot3 과 같은 방식).
+	property Entity btnCookCancel = nil
+
+	property any cookCancelHandler = nil
+
+	property number craftBtnBaseX = 0
+
+	property boolean craftBtnBaseSaved = false
+
 	@ExecSpace("ClientOnly")
 	method void OnBeginPlay()
 		self.Entity.Enable = false
@@ -107,6 +126,11 @@ script UICraftingController extends Component
 		local tableName = "RecipeDataSet"
 		if self.buildMode and _BuildingManager ~= nil then
 			tableName = _BuildingManager.RecipeTableName
+		end
+		if self.cookMode then
+			tableName = "CookingRecipeDataSet"
+			local pot = self:GetCookPot()
+			if isvalid(pot) and pot.RecipeTableName ~= "" then tableName = pot.RecipeTableName end
 		end
 		local ds = _DataService:GetTable(tableName)
 		if ds == nil then
@@ -152,8 +176,11 @@ script UICraftingController extends Component
 				ingredients = {}
 			}
 			-- 건축 제작법만 OutputCount 열이 있다(바닥 2장 등). RecipeDataSet 에서 읽으면 LEA-3011 이 남으므로 모드로 가른다.
-			if self.buildMode then
+			if self.buildMode or self.cookMode then
 				entry.outputCount = math.max(1, math.floor(tonumber(ds:GetCell(i, "OutputCount")) or 1))
+			end
+			if self.cookMode then
+				entry.duration = tonumber(ds:GetCell(i, "CookDuration")) or 0
 			end
 
 			local ing1Name = ds:GetCell(i, "Ing1Name") or ""
@@ -167,7 +194,15 @@ script UICraftingController extends Component
 			if ing2Name ~= "" and ing2Count > 0 then
 				table.insert(entry.ingredients, { name = ing2Name, required = ing2Count })
 			end
-		
+			-- 요리 레시피만 Ing3 열이 있다 (다른 표에서 읽으면 LEA-3011).
+			if self.cookMode then
+				local ing3Name = ds:GetCell(i, "Ing3Name") or ""
+				local ing3Count = tonumber(ds:GetCell(i, "Ing3Count")) or 0
+				if ing3Name ~= "" and ing3Count > 0 then
+					table.insert(entry.ingredients, { name = ing3Name, required = ing3Count })
+				end
+			end
+
 			self.recipes[recipeName] = entry
 			table.insert(self.recipeOrder, recipeName)
 		end
@@ -462,6 +497,9 @@ script UICraftingController extends Component
 		if catVal == "misc" then return "기타" end
 		if catVal == "blueprint" then return "설계도" end
 		if catVal == "piece" then return "건축 부품" end
+		if catVal == "soup" then return "국물" end
+		if catVal == "grill" then return "구이" end
+		if catVal == "dish" then return "일품" end
 		return catVal
 	end
 
@@ -545,6 +583,9 @@ script UICraftingController extends Component
 	method void OnEndPlay()
 		if isvalid(self.btnClose) then self.btnClose.Entity:DisconnectEvent(ButtonClickEvent, self.closeHandler) end
 		if isvalid(self.btnCraft) then self.btnCraft.Entity:DisconnectEvent(ButtonClickEvent, self.craftHandler) end
+		if isvalid(self.btnCookCancel) and self.cookCancelHandler ~= nil then
+			self.btnCookCancel:DisconnectEvent(ButtonClickEvent, self.cookCancelHandler)
+		end
 		self:ClearFilterChips()
 		
 		for recipeName, item in pairs(self.recipeButtons) do
@@ -573,9 +614,10 @@ script UICraftingController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void Open()
-		-- description: Opens the crafting popup (일반 제작). 건축 모드였다면 레시피 소스를 RecipeDataSet 으로 되돌린다.
-		if self.buildMode then
+		-- description: Opens the crafting popup (일반 제작). 건축·요리 모드였다면 레시피 소스를 RecipeDataSet 으로 되돌린다.
+		if self.buildMode or self.cookMode then
 			self.buildMode = false
+			self:LeaveCookMode()
 			self.selectedTierIndex = 1
 			self.selectedCategoryIndex = 1
 			self:LoadRecipes()
@@ -586,13 +628,90 @@ script UICraftingController extends Component
 	@ExecSpace("ClientOnly")
 	method void OpenBuild()
 		-- 건축 테이블(BuildingTable)이 여는 창: 같은 팝업에 건축 제작법(BuildingManager.RecipeTableName)을 띄운다.
-		if not self.buildMode then
+		if not self.buildMode or self.cookMode then
 			self.buildMode = true
+			self:LeaveCookMode()
 			self.selectedTierIndex = 1
 			self.selectedCategoryIndex = 1
 			self:LoadRecipes()
 		end
 		self:OpenCurrent()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OpenCook(Entity potEntity)
+		-- 조리 냄비가 여는 창: 같은 팝업에 요리 레시피(Ing1~3)를 띄우고, 요리 버튼은 그 냄비에 예약한다.
+		self.cookTarget = potEntity
+		self.buildMode = false
+		self.cookMode = true
+		self.selectedTierIndex = 1
+		self.selectedCategoryIndex = 1
+		self:LoadRecipes()
+		self:EnsureIngSlot3()
+		self:EnsureCookCancelButton()
+		self:OpenCurrent()
+		if self.cookStatusTimer ~= nil then _TimerService:ClearTimer(self.cookStatusTimer) end
+		self.cookStatusTimer = _TimerService:SetTimerRepeat(function()
+			-- 냄비 진행 표시(남은 시간·완성 수) 갱신. 창이 닫히거나 모드가 바뀌면 스스로 멈춘다.
+			if not self.cookMode or not self.Entity.Enable then
+				if self.cookStatusTimer ~= nil then
+					_TimerService:ClearTimer(self.cookStatusTimer)
+					self.cookStatusTimer = nil
+				end
+				return
+			end
+			self:UpdateDetails()
+		end, 0.5)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void LeaveCookMode()
+		-- 요리 모드 해제: 대상 냄비·상태 타이머·3번째 재료 칸 정리.
+		self.cookMode = false
+		self.cookTarget = nil
+		if self.cookStatusTimer ~= nil then
+			_TimerService:ClearTimer(self.cookStatusTimer)
+			self.cookStatusTimer = nil
+		end
+		if isvalid(self.ingSlot3) then self.ingSlot3.Enable = false end
+		self:UpdateCookCancelButton()
+	end
+
+	@ExecSpace("ClientOnly")
+	method any GetCookPot()
+		-- 요리 모드 대상 냄비의 CookingPot 컴포넌트 (없으면 nil).
+		if not isvalid(self.cookTarget) then return nil end
+		local pot = self.cookTarget:GetComponent("script.CookingPot")
+		if isvalid(pot) then return pot end
+		return nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method void EnsureIngSlot3()
+		-- 요리 레시피는 재료가 최대 3종 — Slot2를 한 번 복제해 Slot3으로 쓴다 (.ui 원본은 2칸).
+		if isvalid(self.ingSlot3) or not isvalid(self.ingSlot2) then return end
+		self.ingSlot3 = self.ingSlot2:Clone("Slot3")
+		if isvalid(self.ingSlot3) then self.ingSlot3.Enable = false end
+	end
+
+	@ExecSpace("ClientOnly")
+	method string BuildCookStatusText()
+		-- 냄비 상태 한 줄: 조리 중 요리·남은 시간·예약 수 / 완성 수거 안내.
+		local pot = self:GetCookPot()
+		if pot == nil then return "" end
+		local parts = {}
+		local current = pot.CurrentRecipe or ""
+		if current ~= "" then
+			local left = math.max(0, math.ceil((pot.CurrentDuration or 0) - (pot.ProgressTime or 0)))
+			local text = "조리 중: " .. self:GetItemDisplayName(current) .. " " .. tostring(left) .. "초"
+			local queued = pot:GetQueueLength()
+			if queued > 1 then text = text .. " · 예약 " .. tostring(queued - 1) end
+			table.insert(parts, text)
+		end
+		local ready = pot:GetOutputTotal()
+		if ready > 0 then table.insert(parts, "완성 " .. tostring(ready) .. "개 · 냄비에 F로 수거") end
+		if #parts == 0 then return "냄비가 비어 있습니다" end
+		return table.concat(parts, "  ")
 	end
 
 	@ExecSpace("ClientOnly")
@@ -678,7 +797,13 @@ script UICraftingController extends Component
 	@ExecSpace("ClientOnly")
 	method void PaintCraftButton(string variant, Color legacy)
 		-- ui8 스킨이면 버튼 그림(앰버=제작 가능 / 비활성 나무)과 글자색을, 아니면 기존 색을 칠한다.
-		local ent = self.btnCraft.Entity
+		self:PaintButtonEntity(self.btnCraft.Entity, variant, legacy)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void PaintButtonEntity(Entity ent, string variant, Color legacy)
+		-- PaintCraftButton 본문 — 복제한 [예약 취소] 버튼도 같은 규칙으로 칠한다.
+		if not isvalid(ent) then return end
 		if _UI8Skin ~= nil and _UI8Skin:HasSkin(ent) then
 			_UI8Skin:SetVariant(ent, variant)
 			local c = Color(0.88, 0.85, 0.80, 1)
@@ -687,7 +812,75 @@ script UICraftingController extends Component
 			elseif isvalid(ent.TextGUIRendererComponent) then ent.TextGUIRendererComponent.FontColor = c end
 			return
 		end
-		ent.SpriteGUIRendererComponent.Color = legacy
+		if isvalid(ent.SpriteGUIRendererComponent) then ent.SpriteGUIRendererComponent.Color = legacy end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void EnsureCookCancelButton()
+		-- 제작 버튼을 한 번 복제해 [예약 취소] 버튼으로 쓴다. 요리 모드 밖에서는 숨긴다.
+		if isvalid(self.btnCookCancel) or not isvalid(self.btnCraft) then return end
+		local src = self.btnCraft.Entity
+		local t = src.UITransformComponent
+		if isvalid(t) and not self.craftBtnBaseSaved then
+			self.craftBtnBaseX = t.anchoredPosition.x
+			self.craftBtnBaseSaved = true
+		end
+		self.btnCookCancel = src:Clone("BtnCookCancel")
+		if not isvalid(self.btnCookCancel) then return end
+		self.btnCookCancel.Enable = false
+		self.cookCancelHandler = self.btnCookCancel:ConnectEvent(ButtonClickEvent, function() self:TryCancelCook() end)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void TryCancelCook()
+		-- 냄비의 마지막 예약 1그릇을 취소한다(재료는 서버가 돌려준다).
+		local pot = self:GetCookPot()
+		if pot == nil or pot:GetQueueLength() <= 0 then return end
+		pot:RequestCancelLast()
+		log("[VRF][COOK] request cancel")
+		_TimerService:SetTimerOnce(function()
+			if isvalid(self) and self.Entity.Enable and self.cookMode then
+				self:RebuildRecipeList()
+			end
+		end, 0.3)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateCookCancelButton()
+		-- 요리 모드: [예약 취소 | 요리] 두 버튼을 원래 제작 버튼 자리 중심으로 나란히. 그 외: 원위치 + 숨김.
+		if not isvalid(self.btnCraft) then return end
+		local craftT = self.btnCraft.Entity.UITransformComponent
+		if not isvalid(craftT) or not self.craftBtnBaseSaved then return end
+		local baseX = self.craftBtnBaseX
+		if not self.cookMode or not isvalid(self.btnCookCancel) then
+			craftT.anchoredPosition = Vector2(baseX, craftT.anchoredPosition.y)
+			if isvalid(self.btnCookCancel) then self.btnCookCancel.Enable = false end
+			return
+		end
+		local w = craftT.RectSize.x
+		local cw = math.floor(w * 0.7)
+		local gap = 12
+		craftT.anchoredPosition = Vector2(baseX + (cw + gap) / 2, craftT.anchoredPosition.y)
+		self.btnCookCancel.Enable = true
+		local ct = self.btnCookCancel.UITransformComponent
+		if isvalid(ct) then
+			ct.RectSize = Vector2(cw, craftT.RectSize.y)
+			ct.anchoredPosition = Vector2(baseX - (w + gap) / 2, craftT.anchoredPosition.y)
+		end
+		local pot = self:GetCookPot()
+		local queued = 0
+		if pot ~= nil then queued = pot:GetQueueLength() end
+		local btn = self.btnCookCancel.ButtonComponent
+		if isvalid(btn) then btn.Enable = queued > 0 end
+		if queued > 0 then
+			self:PaintButtonEntity(self.btnCookCancel, "btn_disabled", Color(0.35, 0.22, 0.12, 1))
+		else
+			self:PaintButtonEntity(self.btnCookCancel, "btn_disabled", Color(0.25, 0.25, 0.25, 1))
+		end
+		local label = "예약 취소"
+		if queued <= 0 then label = "예약 없음" end
+		if isvalid(self.btnCookCancel.TextComponent) then self.btnCookCancel.TextComponent.Text = label
+		elseif isvalid(self.btnCookCancel.TextGUIRendererComponent) then self.btnCookCancel.TextGUIRendererComponent.Text = label end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -754,7 +947,9 @@ script UICraftingController extends Component
 			end
 		end
 		if isvalid(self.unlockHintText) then
-			if unlocked then
+			if unlocked and self.cookMode then
+				self.unlockHintText.Text = self:BuildCookStatusText()
+			elseif unlocked then
 				self.unlockHintText.Text = ""
 			else
 				local hint = recipe.unlockHint
@@ -763,6 +958,7 @@ script UICraftingController extends Component
 			end
 		end
 		self:LayoutDetails()
+		self:UpdateCookCancelButton()
 
 		if isvalid(self.detailIcon) then
 			self.detailIcon.ImageRUID = recipe.icon
@@ -826,6 +1022,36 @@ script UICraftingController extends Component
 			end
 		end
 		
+		-- 재료 3번째 칸 (요리 모드 전용) + 칸 수에 맞춘 가로 배치 (2칸 = ±70 · 3칸 = -130/0/130)
+		local ing3 = recipe.ingredients[3]
+		if isvalid(self.ingSlot3) then self.ingSlot3.Enable = false end
+		if ing3 and self.cookMode and isvalid(self.ingSlot3) then
+			self.ingSlot3.Enable = true
+			local owned = inv:GetItemCount(ing3.name)
+			local iconEnt = self.ingSlot3:GetChildByName("Icon")
+			if isvalid(iconEnt) and isvalid(iconEnt.SpriteGUIRendererComponent) then
+				iconEnt.SpriteGUIRendererComponent.ImageRUID = self:GetIngredientIcon(ing3.name)
+			end
+			local countEnt = self.ingSlot3:GetChildByName("Count")
+			if isvalid(countEnt) and isvalid(countEnt.TextComponent) then
+				countEnt.TextComponent.Text = owned .. " / " .. ing3.required
+				if owned >= ing3.required then
+					countEnt.TextComponent.FontColor = Color(0.16, 0.45, 0.10, 1)
+				else
+					countEnt.TextComponent.FontColor = Color(0.72, 0.12, 0.08, 1)
+					canCraft = false
+				end
+			end
+		end
+		local slotXs = { -70, 70 }
+		if ing3 and self.cookMode then slotXs = { -130, 0, 130 } end
+		for idx, slot in ipairs({ self.ingSlot1, self.ingSlot2, self.ingSlot3 }) do
+			if isvalid(slot) and isvalid(slot.UITransformComponent) and slotXs[idx] ~= nil then
+				local t = slot.UITransformComponent
+				t.anchoredPosition = Vector2(slotXs[idx], t.anchoredPosition.y)
+			end
+		end
+
 		-- Update craft button state
 		if isvalid(self.btnCraft) then
 			if self.isCrafting then
@@ -842,7 +1068,13 @@ script UICraftingController extends Component
 				self:PaintCraftButton("btn_amber", Color(0.18, 0.34, 0.15, 1)) -- Forest Green
 				self.btnCraft.Enable = true
 				local textComp = self.btnCraft.Entity.TextComponent
-				if isvalid(textComp) then textComp.Text = "제작 (스페이스)" end
+				if isvalid(textComp) then
+					if self.cookMode then
+						textComp.Text = "요리 (스페이스)"
+					else
+						textComp.Text = "제작 (스페이스)"
+					end
+				end
 			else
 				self:PaintCraftButton("btn_disabled", Color(0.3, 0.1, 0.1, 1)) -- Dark Red
 				self.btnCraft.Enable = false
@@ -916,7 +1148,7 @@ script UICraftingController extends Component
 			end
 		end
 		local slotY = panelH - slotTop - slotH
-		for _, slot in ipairs({ self.ingSlot1, self.ingSlot2 }) do
+		for _, slot in ipairs({ self.ingSlot1, self.ingSlot2, self.ingSlot3 }) do
 			if isvalid(slot) and isvalid(slot.UITransformComponent) then
 				local t = slot.UITransformComponent
 				t.anchoredPosition = Vector2(t.anchoredPosition.x, slotY)
@@ -963,6 +1195,19 @@ script UICraftingController extends Component
 			end
 		end
 		
+		if canCraft and self.cookMode then
+			-- 요리는 냄비 예약 큐에 넣는다 (연타 = 여러 그릇 예약). 서버가 재료·큐 한도를 다시 검증한다.
+			local pot = self:GetCookPot()
+			if pot == nil then return end
+			pot:RequestCook(recipe.name)
+			log("[VRF][COOK] request " .. recipe.name)
+			_TimerService:SetTimerOnce(function()
+				if isvalid(self) and self.Entity.Enable and self.cookMode then
+					self:RebuildRecipeList()
+				end
+			end, 0.3)
+			return
+		end
 		if canCraft then
 			self.isCrafting = true
 			self:UpdateDetails()

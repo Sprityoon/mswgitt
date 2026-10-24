@@ -18,6 +18,10 @@ script PlayerInventory extends Component
 	-- 도구(고유 키)는 개체별, 장비(이름 키로 중첩)는 종류별로 저장된다. 중첩 테이블 인코딩을 피하려고 값은 문자열이다(LEA-3001).
 	@Sync
 	property string EnhanceJson = "{}"
+
+	-- 모루 강화 결과 효과음(공식 리소스): 성공 = 밝고 긍정적인 성공음, 실패 = 빗나간 듯 짧고 가벼운 소리(실패해도 장비는 유지).
+	property string EnhanceSuccessSoundRUID = "1168b05b9c784da99f86db50d483a328"
+	property string EnhanceFailSoundRUID = "bcffbcf1bd1a4f278f8325954eb09bff"
 	-- 강화 단계가 비율로 올려 주는 item_dataset 수치 열
 	property string EnhanceStatColumns = "Attack|MagicAttack|SkillAttack|Defense"
 	-- 연구 레벨 = 1 + floor(완료한 연구 수 / ResearchCountPerLevel), 최대 5
@@ -54,6 +58,19 @@ script PlayerInventory extends Component
 	@Sync
 	property string DailyCompletedRequestsJson = "[]"
 
+	-- 주간 도장: 그 주(UTC day // 7)에 하루 의뢰 올클리어를 한 날 수. 목표·보상 = RequestPoolDataSet Difficulty=weekly 행.
+	@Sync
+	property string WeeklyStampWeek = "0"
+
+	@Sync
+	property integer WeeklyStampCount = 0
+
+	-- 주간 낚시왕 보상을 마지막으로 받은 랭킹 주차(cycleIndex). FishingContestLogic.TryGrantLastWeekReward 가 중복 지급을 막는 데 쓴다.
+	property integer FishRewardWeek = -1
+
+	-- 게임 내 친구 목록 "캐릭터Id|UserId|이름;…" (FriendManager 가 읽고 쓴다, 서버 전용).
+	property string FriendsData = ""
+
 	-- T22: 도감 통계. 평탄 JSON 2개 — MSW JSONEncode는 중첩 테이블 불가(LEA-3001)라 분리.
 	-- DexItemsJson: { itemName -> 누적 획득 수 }, DexMonstersJson: { monsterId -> 처치 수 }. 발견 = 카운트 > 0.
 	@Sync
@@ -88,6 +105,10 @@ script PlayerInventory extends Component
 		self.ResearchStartTime = "0"
 		self.DailyRequestDay = "0"
 		self.DailyCompletedRequestsJson = "[]"
+		self.WeeklyStampWeek = "0"
+		self.WeeklyStampCount = 0
+		self.FishRewardWeek = -1
+		self.FriendsData = ""
 		self.DexItemsJson = "{}"
 		self.DexMonstersJson = "{}"
 		self.ActivePetId = ""
@@ -123,8 +144,69 @@ script PlayerInventory extends Component
 		end
 	end
 
+	method string GetRequestCell(string requestId, string colName)
+		-- RequestPoolDataSet 한 칸 (선택 컬럼은 pcall — 없거나 빈 값이면 "").
+		local ds = _DataService:GetTable("RequestPoolDataSet")
+		if ds == nil or requestId == nil or requestId == "" then return "" end
+		local row = ds:FindRow("RequestId", requestId)
+		if row == nil then return "" end
+		local ok, v = pcall(function() return row:GetItem(colName) end)
+		if ok and v ~= nil then return tostring(v) end
+		return ""
+	end
+
+	method string GetDailyBonusRequestId()
+		-- Difficulty=bonus 행 = 오늘 의뢰 3건 올클리어 보상 (추첨 풀에서 제외, 지급 기록 키로도 쓴다).
+		return self:GetRequestIdByDifficulty("bonus")
+	end
+
+	method string GetWeeklyStampRequestId()
+		-- Difficulty=weekly 행 = 주간 도장 보상 (RequiredCount = 그 주에 올클리어해야 하는 날 수).
+		return self:GetRequestIdByDifficulty("weekly")
+	end
+
+	method string GetRequestIdByDifficulty(string difficulty)
+		-- 추첨 풀 밖의 보상 행(bonus/weekly) 하나를 찾는다.
+		local ds = _DataService:GetTable("RequestPoolDataSet")
+		if ds == nil then return "" end
+		local n = ds:GetRowCount()
+		for i = 1, n do
+			local id = ds:GetCell(i, "RequestId") or ""
+			if id ~= "" and self:GetRequestCell(id, "Difficulty") == difficulty then
+				return id
+			end
+		end
+		return ""
+	end
+
+	method integer GetWeeklyStampGoal()
+		-- 주간 도장 목표 일수. weekly 행이 없으면 0(기능 꺼짐).
+		local id = self:GetWeeklyStampRequestId()
+		if id == "" then return 0 end
+		local goal = math.floor(tonumber(self:GetRequestCell(id, "RequiredCount")) or 0)
+		if goal < 0 then goal = 0 end
+		return goal
+	end
+
+	method integer GetDisplayedWeeklyStampCount()
+		-- 이번 주 도장 수 (지난주 값이 남아 있으면 0으로 본다 — 클라 표시용, 서버 갱신은 올클리어 때).
+		local week = tostring(math.floor(self:GetServerDayIndex() / 7))
+		if self.WeeklyStampWeek ~= week then return 0 end
+		return self.WeeklyStampCount
+	end
+
+	method integer CountCompletedTodaysRequests()
+		-- 오늘 추첨된 의뢰 중 납품 완료 건수 (보너스 기록은 세지 않는다).
+		local done = 0
+		for _, id in ipairs(self:GetTodaysRequestIds()) do
+			if self:IsDailyRequestCompleted(id) then done = done + 1 end
+		end
+		return done
+	end
+
 	method table GetTodaysRequestIds()
 		-- Deterministic weighted pick of 3 RequestIds from RequestPoolDataSet (day seed).
+		-- 첫 칸은 Difficulty=easy 풀에서 뽑아 신규 유저도 당일 하나는 납품할 수 있게 한다. bonus 행은 추첨 제외.
 		self:EnsureDailyRequestState()
 		local ds = _DataService:GetTable("RequestPoolDataSet")
 		if ds == nil then return {} end
@@ -132,10 +214,12 @@ script PlayerInventory extends Component
 		local n = ds:GetRowCount()
 		for i = 1, n do
 			local id = ds:GetCell(i, "RequestId") or ""
-			if id ~= "" then
+			local difficulty = ""
+			if id ~= "" then difficulty = self:GetRequestCell(id, "Difficulty") end
+			if id ~= "" and difficulty ~= "bonus" and difficulty ~= "weekly" then
 				local w = math.floor(tonumber(ds:GetCell(i, "Weight")) or 100)
 				if w < 1 then w = 1 end
-				table.insert(pool, { id = id, weight = w })
+				table.insert(pool, { id = id, weight = w, easy = (difficulty == "easy") })
 			end
 		end
 		if #pool == 0 then return {} end
@@ -152,19 +236,31 @@ script PlayerInventory extends Component
 		for _, e in ipairs(pool) do table.insert(remaining, e) end
 		local count = 3
 		if count > #remaining then count = #remaining end
-		for _ = 1, count do
-			local totalW = 0
-			for _, e in ipairs(remaining) do totalW = totalW + e.weight end
-			local roll = nextRand() * totalW
-			local acc = 0
-			local idx = 1
-			for j, e in ipairs(remaining) do
-				acc = acc + e.weight
-				if roll <= acc then
-					idx = j
-					break
+		for slot = 1, count do
+			local easyOnly = false
+			if slot == 1 then
+				for _, e in ipairs(remaining) do
+					if e.easy then easyOnly = true break end
 				end
 			end
+			local totalW = 0
+			for _, e in ipairs(remaining) do
+				if not easyOnly or e.easy then totalW = totalW + e.weight end
+			end
+			local roll = nextRand() * totalW
+			local acc = 0
+			local idx = 0
+			for j, e in ipairs(remaining) do
+				if not easyOnly or e.easy then
+					acc = acc + e.weight
+					if idx == 0 then idx = j end
+					if roll <= acc then
+						idx = j
+						break
+					end
+				end
+			end
+			if idx == 0 then idx = 1 end
 			table.insert(picked, remaining[idx].id)
 			table.remove(remaining, idx)
 		end
@@ -238,23 +334,102 @@ script PlayerInventory extends Component
 			return
 		end
 
-		if rewItem ~= "" and rewCnt > 0 then
-			self:AddItem(rewItem, rewCnt)
-		end
+		local rewardText = self:GrantRequestRewards(rewItem, rewCnt, self:GetRequestCell(requestId, "ExtraRewards"))
 
 		local list = self:SafeDecodeJson(self.DailyCompletedRequestsJson, {})
 		table.insert(list, requestId)
 		self.DailyCompletedRequestsJson = self:SafeEncodeJson(list, "[]")
+
+		-- 오늘 3건 올클리어 보너스 (Difficulty=bonus 행, 하루 1회 — 지급 기록은 같은 완료 목록에 그 RequestId로 남긴다).
+		local bonusText = ""
+		local bonusId = self:GetDailyBonusRequestId()
+		local todayCount = #todayIds
+		if bonusId ~= "" and todayCount > 0 and not self:IsDailyRequestCompleted(bonusId)
+			and self:CountCompletedTodaysRequests() >= todayCount then
+			local bonusItem = self:GetRequestCell(bonusId, "RewardItem")
+			local bonusCnt = math.floor(tonumber(self:GetRequestCell(bonusId, "RewardCount")) or 0)
+			bonusText = self:GrantRequestRewards(bonusItem, bonusCnt, self:GetRequestCell(bonusId, "ExtraRewards"))
+			-- ChanceRewards("이름:수량:확률|…"): 올클리어 때 확률로 더 주는 보상(예: 황금 호박 씨앗 10%, ⚖️ 2026-10-23 중간값).
+			for rawName, rawCnt, rawP in string.gmatch(self:GetRequestCell(bonusId, "ChanceRewards"), "([^|:]+):(%d+):([%d%.]+)") do
+				local cName = string.match(rawName, "^%s*(.-)%s*$") or ""
+				local cCnt = math.floor(tonumber(rawCnt) or 0)
+				if cName ~= "" and cCnt > 0 and math.random() < (tonumber(rawP) or 0) then
+					self:AddItem(cName, cCnt)
+					bonusText = bonusText .. " · " .. self:GetItemDisplayName(cName) .. " x" .. tostring(cCnt) .. "(행운!)"
+				end
+			end
+			local list2 = self:SafeDecodeJson(self.DailyCompletedRequestsJson, {})
+			table.insert(list2, bonusId)
+			self.DailyCompletedRequestsJson = self:SafeEncodeJson(list2, "[]")
+			log("[VRF][REQUEST] all-clear bonus " .. bonusId .. " -> " .. bonusText .. " by " .. tostring(userId))
+			bonusText = bonusText .. self:AddWeeklyStamp()
+		end
+
 		if _PersistenceManager then
 			_PersistenceManager:MarkPlayerDirty(userId)
 		end
 
 		local pc = self.Entity:GetComponent("script.PlayerController")
 		if isvalid(pc) then
-			pc:ShowMineFeedback("의뢰 완료! " .. self:GetItemDisplayName(rewItem) .. " x" .. tostring(rewCnt))
+			if bonusText ~= "" then
+				pc:ShowMineFeedback("오늘의 의뢰 모두 완료! 보답: " .. bonusText)
+			else
+				pc:ShowMineFeedback("의뢰 완료! " .. rewardText)
+			end
 		end
-		log("[REQUEST] deliver " .. requestId .. " by " .. tostring(userId)
-			.. " day=" .. tostring(self.DailyRequestDay))
+
+		-- 퀘스트/업적 진행: 게시판 납품 (QuestConditionDataSet CondEnum=Deliver)
+		if _ActionSignals ~= nil then
+			_ActionSignals:EmitToPlayer(self.Entity, _ActionEnum.Deliver, requestId, 1)
+		end
+		log("[VRF][REQUEST] deliver " .. requestId .. " by " .. tostring(userId)
+			.. " day=" .. tostring(self.DailyRequestDay)
+			.. " done=" .. tostring(self:CountCompletedTodaysRequests()) .. "/" .. tostring(todayCount))
+	end
+
+	@ExecSpace("ServerOnly")
+	method string AddWeeklyStamp()
+		-- 올클리어 1회 = 이번 주 도장 1개. 목표에 닿는 순간 weekly 행 보상을 한 번 준다. 안내 문구 꼬리를 돌려준다.
+		local goal = self:GetWeeklyStampGoal()
+		if goal <= 0 then return "" end
+		local week = tostring(math.floor(self:GetServerDayIndex() / 7))
+		if self.WeeklyStampWeek ~= week then
+			self.WeeklyStampWeek = week
+			self.WeeklyStampCount = 0
+		end
+		if self.WeeklyStampCount >= goal then return "" end
+		self.WeeklyStampCount = self.WeeklyStampCount + 1
+		log("[VRF][REQUEST] weekly stamp " .. tostring(self.WeeklyStampCount) .. "/" .. tostring(goal) .. " week=" .. week)
+		if self.WeeklyStampCount < goal then
+			return " (주간 도장 " .. tostring(self.WeeklyStampCount) .. "/" .. tostring(goal) .. ")"
+		end
+		local wid = self:GetWeeklyStampRequestId()
+		local rewItem = self:GetRequestCell(wid, "RewardItem")
+		local rewCnt = math.floor(tonumber(self:GetRequestCell(wid, "RewardCount")) or 0)
+		local text = self:GrantRequestRewards(rewItem, rewCnt, self:GetRequestCell(wid, "ExtraRewards"))
+		log("[VRF][REQUEST] weekly stamp reward " .. wid .. " -> " .. text)
+		return " · 주간 도장 완성! " .. text
+	end
+
+	@ExecSpace("ServerOnly")
+	method string GrantRequestRewards(string rewItem, integer rewCnt, string extraRaw)
+		-- 의뢰 보상 지급: RewardItem/RewardCount + ExtraRewards("Name:수량|Name:수량"). 표시용 요약 문자열 반환.
+		local parts = {}
+		if rewItem ~= nil and rewItem ~= "" and rewCnt ~= nil and rewCnt > 0 then
+			self:AddItem(rewItem, rewCnt)
+			table.insert(parts, self:GetItemDisplayName(rewItem) .. " x" .. tostring(rewCnt))
+		end
+		if extraRaw ~= nil and extraRaw ~= "" then
+			for rawName, rawCnt in string.gmatch(extraRaw, "([^|:]+):(%d+)") do
+				local name = string.match(rawName, "^%s*(.-)%s*$") or ""
+				local n = math.floor(tonumber(rawCnt) or 0)
+				if name ~= "" and n > 0 then
+					self:AddItem(name, n)
+					table.insert(parts, self:GetItemDisplayName(name) .. " x" .. tostring(n))
+				end
+			end
+		end
+		return table.concat(parts, " · ")
 	end
 
 	method boolean HasRecipeUnlock(string unlockId)
@@ -285,6 +460,16 @@ script PlayerInventory extends Component
 			for i = 1, rowCount do
 				if ds:GetCell(i, "UnlockId") == unlockId then
 					displayName = ds:GetCell(i, "RecipeName") or unlockId
+					break
+				end
+			end
+		end
+		-- 요리 레시피(벨라 상점 레시피 두루마리)도 같은 해금 목록을 쓴다 — 이름은 요리 표시명으로.
+		local cookDs = _DataService:GetTable("CookingRecipeDataSet")
+		if displayName == unlockId and cookDs ~= nil then
+			for i = 1, cookDs:GetRowCount() do
+				if cookDs:GetCell(i, "UnlockId") == unlockId then
+					displayName = self:GetItemDisplayName(cookDs:GetCell(i, "RecipeName") or "")
 					break
 				end
 			end
@@ -475,6 +660,11 @@ script PlayerInventory extends Component
 			return
 		end
 
+		-- 요리 즉시 회복(item_dataset.UseHealPct = 최대 체력 비율, 2026-10-23): 버프와 함께 주거나 단독으로 쓴다.
+		local healPct = 0
+		local okH, vH = pcall(function() return row:GetItem("UseHealPct") end)
+		if okH and vH ~= nil then healPct = tonumber(vH) or 0 end
+
 		-- T16: UseBuffId → PlayerBuffs.ApplyBuff (소모는 적용 성공 후에만)
 		local useBuffId = ""
 		local okB, vB = pcall(function() return row:GetItem("UseBuffId") end)
@@ -503,10 +693,29 @@ script PlayerInventory extends Component
 				if isvalid(pc) then pc:ShowMineFeedback("버프 시스템을 불러오지 못했습니다.") end
 				return
 			end
-			if not buffs:ApplyBuff(useBuffId) then
+			-- 요리 버프는 "a|b" 처럼 여러 개를 한 번에 줄 수 있다(예: 황금 호박 수프 = 공격력 + 피해 감소). 하나라도 붙으면 소모.
+			local applied = {}
+			local dsB = _DataService:GetTable("BuffDataSet")
+			for rawId in string.gmatch(useBuffId, "[^|]+") do
+				local bid = string.match(rawId, "^%s*(.-)%s*$") or ""
+				if bid ~= "" then
+					if buffs:ApplyBuff(bid) then
+						local dn = bid
+						if dsB ~= nil then
+							local br = dsB:FindRow("BuffId", bid)
+							if br ~= nil then dn = br:GetItem("DisplayName") or bid end
+						end
+						table.insert(applied, tostring(dn))
+					else
+						log_warning("[USE] ApplyBuff failed id=" .. bid)
+					end
+				end
+			end
+			local healed = 0
+			if healPct > 0 then healed = self:ApplyUseHeal(healPct) end
+			if #applied == 0 and healed <= 0 then
 				local pc = self.Entity:GetComponent("script.PlayerController")
 				if isvalid(pc) then pc:ShowMineFeedback("버프를 적용할 수 없습니다: " .. useBuffId) end
-				log_warning("[USE] ApplyBuff failed id=" .. useBuffId)
 				return
 			end
 			if not self:RemoveItem(baseName, 1) then
@@ -514,15 +723,24 @@ script PlayerInventory extends Component
 			end
 			local pcOk = self.Entity:GetComponent("script.PlayerController")
 			if isvalid(pcOk) then
-				local dsB = _DataService:GetTable("BuffDataSet")
-				local dn = useBuffId
-				if dsB ~= nil then
-					local br = dsB:FindRow("BuffId", useBuffId)
-					if br ~= nil then dn = br:GetItem("DisplayName") or useBuffId end
-				end
-				pcOk:ShowMineFeedback("버프 적용: " .. tostring(dn))
+				local msg = "버프 적용: " .. table.concat(applied, " · ")
+				if healed > 0 then msg = "체력 +" .. tostring(healed) .. " · " .. msg end
+				pcOk:ShowMineFeedback(msg)
 			end
 			log("[USE] buff item " .. baseName .. " -> " .. useBuffId)
+			return
+		end
+
+		-- 회복만 있는 소모품: 체력이 가득하면 소모하지 않는다.
+		if healPct > 0 then
+			local healedOnly = self:ApplyUseHeal(healPct)
+			local pcH = self.Entity:GetComponent("script.PlayerController")
+			if healedOnly <= 0 then
+				if isvalid(pcH) then pcH:ShowMineFeedback("이미 체력이 가득합니다.") end
+				return
+			end
+			self:RemoveItem(baseName, 1)
+			if isvalid(pcH) then pcH:ShowMineFeedback("체력 +" .. tostring(healedOnly)) end
 			return
 		end
 
@@ -585,8 +803,66 @@ script PlayerInventory extends Component
 			return
 		end
 
+		-- 상자(예: 조경 상자): ItemDropDataSet 에 SourceId = 이 아이템 Name 인 행이 있으면 그중 하나를
+		-- Probability 를 가중치로 골라 지급한다(보물 상자처럼 행마다 따로 굴리지 않는다 — 꽝이 없다).
+		local box = self:RollBoxContent(baseName)
+		if box ~= nil then
+			if not self:RemoveItem(baseName, 1) then return end
+			local got = self:AddItem(box.name, box.count)
+			local pcBox = self.Entity:GetComponent("script.PlayerController")
+			if isvalid(pcBox) then
+				pcBox:ShowMineFeedback(self:GetItemDisplayName(baseName) .. "에서 " .. self:GetItemDisplayName(box.name) .. " x" .. tostring(box.count) .. "이(가) 나왔다!")
+			end
+			log("[VRF][BOX] " .. baseName .. " -> " .. tostring(box.name) .. " x" .. tostring(box.count) .. " key=" .. tostring(got))
+			return
+		end
+
 		local pc2 = self.Entity:GetComponent("script.PlayerController")
 		if isvalid(pc2) then pc2:ShowMineFeedback("아직 사용할 수 없습니다.") end
+	end
+
+	@ExecSpace("ServerOnly")
+	method integer ApplyUseHeal(number pct)
+		-- 최대 체력 × pct 만큼 즉시 회복(쓰러진 상태 제외). 실제로 오른 양을 돌려준다.
+		local pcomp = self.Entity.PlayerComponent
+		if pcomp == nil or pcomp.Hp <= 0 or pcomp.Hp >= pcomp.MaxHp then return 0 end
+		local amount = math.max(1, math.floor(pcomp.MaxHp * pct + 0.5))
+		local before = pcomp.Hp
+		pcomp.Hp = math.min(pcomp.MaxHp, pcomp.Hp + amount)
+		return math.floor(pcomp.Hp - before)
+	end
+
+	@ExecSpace("ServerOnly")
+	method table RollBoxContent(string boxName)
+		-- ItemDropDataSet(SourceId = boxName) 행 중 하나를 Probability 가중치로 뽑는다. 행이 없으면 nil.
+		local drops = _DataService:GetTable("ItemDropDataSet")
+		local items = _DataService:GetTable("item_dataset")
+		if drops == nil or items == nil then return nil end
+		local pool = {}
+		local total = 0
+		for i = 1, drops:GetRowCount() do
+			if (drops:GetCell(i, "SourceId") or "") == boxName then
+				local w = tonumber(drops:GetCell(i, "Probability")) or 0
+				local rawId = drops:GetCell(i, "ItemId") or ""
+				local row = items:FindRow("id", rawId)
+				if row == nil then row = items:FindRow("Name", rawId) end
+				if w > 0 and row ~= nil then
+					local minC = math.floor(tonumber(drops:GetCell(i, "MinCount")) or 1)
+					local maxC = math.floor(tonumber(drops:GetCell(i, "MaxCount")) or minC)
+					if maxC < minC then maxC = minC end
+					table.insert(pool, { name = row:GetItem("Name"), w = w, minC = minC, maxC = maxC })
+					total = total + w
+				end
+			end
+		end
+		if #pool == 0 or total <= 0 then return nil end
+		local r = math.random() * total
+		for _, e in ipairs(pool) do
+			r = r - e.w
+			if r <= 0 then return { name = e.name, count = math.random(math.max(1, e.minC), math.max(1, e.maxC)) } end
+		end
+		local last = pool[#pool]
+		return { name = last.name, count = math.max(1, last.minC) }
 	end
 
 	method string GetDeathEffectItemName(string effect)
@@ -634,7 +910,7 @@ script PlayerInventory extends Component
 		if itemKey == nil or itemKey == "" then return false end
 		local items = self.Items
 		if self:IsClient() then
-			items = self:SafeDecodeJson(self.InventoryDataJson, {})
+			items = self:GetInvCache().items
 		end
 		local entry = items[itemKey]
 		return type(entry) == "table" and entry.creatureId ~= nil and entry.creatureId ~= ""
@@ -645,7 +921,7 @@ script PlayerInventory extends Component
 		if itemKey == nil or itemKey == "" then return "" end
 		local items = self.Items
 		if self:IsClient() then
-			items = self:SafeDecodeJson(self.InventoryDataJson, {})
+			items = self:GetInvCache().items
 		end
 		local entry = items[itemKey]
 		if type(entry) == "table" and entry.label ~= nil and tostring(entry.label) ~= "" then
@@ -1215,7 +1491,7 @@ script PlayerInventory extends Component
 		if itemKey == nil or itemKey == "" then return "" end
 		local items = self.Items
 		if self:IsClient() then
-			items = self:SafeDecodeJson(self.InventoryDataJson, {})
+			items = self:GetInvCache().items
 		end
 		local entry = items[itemKey]
 		if type(entry) == "table" and entry.name ~= nil then
@@ -1245,24 +1521,45 @@ script PlayerInventory extends Component
 		if self:IsCurrencyItem(itemName) then
 			return self.Coin
 		end
-		local count = 0
+		return math.floor(self:GetInvCache().counts[itemName] or 0)
+	end
+
+	method table GetDexItemsCached()
+		-- 도감 누적 획득 { 이름 -> 수 } 읽기 전용 캐시 (키 = DexItemsJson 문자열). 퀘스트 State 조건이 줍기마다 읽는다. 고치지 말 것.
+		local json = self.DexItemsJson
+		local c = self._T.DexCache
+		if c ~= nil and c.json == json then return c.items end
+		local items = self:DecodeFlatJson(json)
+		self._T.DexCache = { json = json, items = items }
+		return items
+	end
+
+	method table GetInvCache()
+		-- 인벤토리 스냅샷 캐시 { json, items, counts }. 키 = InventoryDataJson 문자열(모든 Items 변경 경로가 같은 함수 안에서 다시 인코딩한다).
+		-- 2026-10-23 실측: self.Items(엔진 프로퍼티 테이블) pairs 순회가 비싸고 클라는 매 호출 JSON 을 다시 풀어,
+		-- GetItemCount 를 수십 번 부르는 줍기 경로(퀘스트 보유량 재평가 263ms · 클라 동기화 처리)가 렉을 냈다.
+		-- counts: 이름별 합 + (고유 키 칸은 그 키로도) — 구 GetItemCount 의 "k == 이름 or v.name == 이름" 과 같은 결과.
+		local json = self.InventoryDataJson
+		local c = self._T.InvCache
+		if c ~= nil and c.json == json then return c end
 		local items = self.Items
 		if self:IsClient() then
-			items = self:SafeDecodeJson(self.InventoryDataJson, {})
+			items = self:SafeDecodeJson(json, {})
 		end
-		
+		local counts = {}
 		for k, v in pairs(items) do
 			if type(v) == "table" then
-				if k == itemName or v.name == itemName then
-					count = count + (v.count or 1)
-				end
+				local n = v.count or 1
+				local name = v.name
+				if name ~= nil then counts[name] = (counts[name] or 0) + n end
+				if k ~= name then counts[k] = (counts[k] or 0) + n end
 			else
-				if k == itemName then
-					count = count + v
-				end
+				counts[k] = (counts[k] or 0) + (tonumber(v) or 0)
 			end
 		end
-		return count
+		c = { json = json, items = items, counts = counts }
+		self._T.InvCache = c
+		return c
 	end
 
 	method boolean IsUniqueKeyedItem(string itemName)
@@ -1285,7 +1582,7 @@ script PlayerInventory extends Component
 		-- 현재 보유하거나 도감 누적 획득이 있으면 true (첫 제작 해금 게이트용).
 		if itemName == nil or itemName == "" then return false end
 		if self:GetItemCount(itemName) > 0 then return true end
-		local items = self:DecodeFlatJson(self.DexItemsJson)
+		local items = self:GetDexItemsCached()
 		local n = math.floor(tonumber(items[itemName]) or 0)
 		return n > 0
 	end
@@ -1500,7 +1797,7 @@ script PlayerInventory extends Component
 		if itemKey == nil or itemKey == "" then return false end
 		local items = self.Items
 		if self:IsClient() then
-			items = self:SafeDecodeJson(self.InventoryDataJson, {})
+			items = self:GetInvCache().items
 		end
 		local entry = items[itemKey]
 		if entry == nil then return false end
@@ -1860,6 +2157,23 @@ script PlayerInventory extends Component
 		end
 	end
 
+	@ExecSpace("Client")
+	method void ClientOnEnhanceResult(boolean success, integer level)
+		-- 강화 결과 연출(본인 화면): 머리 위 글자 + 효과음.
+		if _BGMManager ~= nil then
+			if success then _BGMManager:PlayInGameSound(self.EnhanceSuccessSoundRUID, 1.0)
+			else _BGMManager:PlayInGameSound(self.EnhanceFailSoundRUID, 1.0) end
+		end
+		local hud = _EntityService:GetEntityByPath("/ui/HUDGroup")
+		local ctrl = isvalid(hud) and hud:GetComponent("script.UIHUDController") or nil
+		if not isvalid(ctrl) then return end
+		if success then
+			ctrl:ShowWorldFloatText(self.Entity, "강화 성공! +" .. tostring(level), Color(1.0, 0.82, 0.3, 1))
+		else
+			ctrl:ShowWorldFloatText(self.Entity, "강화 실패…", Color(0.78, 0.78, 0.82, 1))
+		end
+	end
+
 	@ExecSpace("Server")
 	method void ServerRequestEnhance(string itemKey)
 		-- 대장간 모루: 강화 1단계 시도. 비용(코인+재료)은 성패와 무관하게 소모, 실패해도 단계 유지·파괴 없음.
@@ -1901,6 +2215,7 @@ script PlayerInventory extends Component
 		else
 			self:NotifyAnvil("[강화 실패] " .. disp .. " +" .. tostring(data.lv) .. " 유지 — 재료만 소모됐습니다.")
 		end
+		self:ClientOnEnhanceResult(success, data.lv, playerComp.UserId)
 		if _PersistenceManager ~= nil then _PersistenceManager:MarkPlayerDirty(playerComp.UserId) end
 		self:ClientOnGearChanged(playerComp.UserId)
 		log(string.format("[ANVIL] enhance %s key=%s -> %s lv=%d rate=%.0f", playerComp.UserId, itemKey, success and "OK" or "FAIL", data.lv, rate))
@@ -2518,6 +2833,47 @@ script PlayerInventory extends Component
 	end
 
 	@ExecSpace("Server")
+	method void ServerRequestCropCare(string itemKey, integer cellX, integer cellY)
+		-- 선택·소유·거리·영지 권한을 서버에서 확인하고 성공한 퇴비만 소비한다.
+		local player = self.Entity.PlayerComponent
+		if player == nil or senderUserId ~= player.UserId then return end
+		local slots = self:SafeDecodeJson(self.QuickSlotsJson, {})
+		if slots[self.SelectedQuickSlotIndex] ~= itemKey or not self:HasItem(itemKey, 1) then return end
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) or map.Name == "town" then return end
+		if string.sub(map.Name, 1, 5) == "Home_" then
+			if not _PersistenceManager:CheckGuestPermission(string.sub(map.Name, 6), player.UserId, "mine") then return end
+		end
+		local pc = self.Entity:GetComponent("script.PlayerController")
+		if not isvalid(pc) then return end
+		local pos = self.Entity.TransformComponent.WorldPosition
+		local dx, dy = cellX + 0.5 - pos.x, cellY + 0.5 - pos.y
+		if dx * dx + dy * dy > 12.25 then return end
+		if pc.LastDirectionX * dx < -0.5 or pc.LastDirectionY * dy < -0.5 then return end
+		local ds = _DataService:GetTable("item_dataset")
+		local row = ds ~= nil and ds:FindRow("Name", self:GetBaseItemName(itemKey)) or nil
+		if row == nil then return end
+		local action = row:GetItem("CropCareAction") or ""
+		if action == "" then return end
+		local now = _UtilLogic.ServerElapsedSeconds
+		if self._T.CropCareAt ~= nil and now - self._T.CropCareAt < 0.25 then return end
+		self._T.CropCareAt = now
+		local grid = _ResourceSpawner:GetGridToEntity(map.Name)
+		local data = grid[cellX .. "_" .. cellY]
+		local crop = data ~= nil and isvalid(data.entity) and data.entity:GetComponent("script.Crop") or nil
+		if not isvalid(crop) then
+			pc:ShowMineFeedback("작물을 조준해 주세요.")
+			return
+		end
+		if crop:ApplyCare(action) then
+			if row:GetItem("CropCareConsume") == "true" then self:RemoveItem(itemKey, 1) end
+			pc:ShowMineFeedback(action == "water" and "물을 주었습니다." or "퇴비를 주었습니다.")
+		else
+			pc:ShowMineFeedback("이미 돌보았거나 다 자란 작물입니다.")
+		end
+	end
+
+	@ExecSpace("Server")
 	method void ServerRequestPlace(string itemName, integer cellX, integer cellY)
 		-- description: Handles server-side validation and execution of placing furniture or construction tiles.
 		local cellPos = Vector2Int(cellX, cellY)
@@ -2661,11 +3017,17 @@ script PlayerInventory extends Component
 		end
 		local isCropSeed = cropRow ~= nil
 
-		-- 작물 파종: 호미로 일군 실제 Farm 타일이 있는 셀만 서버에서 허용.
+		-- 작물 파종: 2×2 블록(cellPos = 원점) 네 칸이 모두 호미로 일군 밭일 때만 허용 (ResolveCropBlockOrigin 과 같은 판정).
 		if isCropSeed then
-			if not resourceSpawner:IsPlantableFarmCell(currentMap, cellPos.x, cellPos.y) then
+			local allFarm = true
+			for by = cellPos.y, cellPos.y + footprint - 1 do
+				for bx = cellPos.x, cellPos.x + footprint - 1 do
+					if not resourceSpawner:IsPlantableFarmCell(currentMap, bx, by) then allFarm = false end
+				end
+			end
+			if not allFarm then
 				if isvalid(pc) then
-					pc:ShowMineFeedback("호미로 일군 밭에만 작물을 심을 수 있습니다.")
+					pc:ShowMineFeedback("호미로 일군 2×2 밭에만 작물을 심을 수 있습니다.")
 				end
 				return
 			end
@@ -2699,11 +3061,8 @@ script PlayerInventory extends Component
 				return
 			end
 			
-			local xMin, xMax, yMin, yMax = cellPos.x, cellPos.x, cellPos.y, cellPos.y
-			if not isCropSeed then
-				xMax = cellPos.x + footprint - 1
-				yMax = cellPos.y + footprint - 1
-			end
+			-- 가구·작물 모두 footprint×footprint 를 점유한다(작물 = 2×2 밭 블록 하나).
+			local xMin, xMax, yMin, yMax = cellPos.x, cellPos.x + footprint - 1, cellPos.y, cellPos.y + footprint - 1
 			
 			-- Check player collision overlap
 			local players = _UserService:GetUsersByMapComponent(currentMap.MapComponent)
@@ -2792,6 +3151,10 @@ script PlayerInventory extends Component
 					local cx = (fxMin + fxMax + 1.0) * 0.5
 					local cy = (fyMin + fyMax + 1.0) * 0.5
 					spawnedEntity.TransformComponent.WorldPosition = Vector3(cx, cy, 0)
+				end
+				if isCropSeed then
+					spawnedEntity.TransformComponent.WorldPosition = resourceSpawner:GetCropPlantPosition(itemName, cellPos.x, cellPos.y)
+					log("[VRF][CROP] plant center=" .. tostring(spawnedEntity.TransformComponent.WorldPosition))
 				end
 
 				-- Check Walkable from dataset or component
@@ -3188,6 +3551,24 @@ script PlayerInventory extends Component
 			if occupied then break end
 		end
 		if occupied then
+			-- 삽·호미를 든 채 작물을 겨눴으면: 다 자란 작물은 그대로 수확(맨손과 같은 경로), 덜 자랐으면 기다리라고 알린다.
+			local gridToEntity = resourceSpawner:GetGridToEntity(mapName)
+			for nx = editX, editX + editSize - 1 do
+				for ny = editY, editY + editSize - 1 do
+					local g = gridToEntity[nx .. "_" .. ny]
+					if g ~= nil and g.isCrop == true and isvalid(g.entity) then
+						local crop = g.entity:GetComponent("script.Crop")
+						if isvalid(crop) and crop:IsMature() then
+							local pivotKey = math.floor(g.pivotX) .. "_" .. math.floor(g.pivotY)
+							if isvalid(pc) then pc:ClientPlayMineEffect(true, g.entity) end
+							_TileDurabilityManager:HitResource(currentMap, pivotKey, self.Entity)
+							return
+						end
+						if isvalid(pc) then pc:ShowMineFeedback("작물이 자라는 중이에요. 다 자라면 Ctrl로 거둘 수 있어요.") end
+						return
+					end
+				end
+			end
 			if isvalid(pc) then pc:ShowMineFeedback("자원이나 설치물이 있어 편집할 수 없습니다.") end
 			return
 		end

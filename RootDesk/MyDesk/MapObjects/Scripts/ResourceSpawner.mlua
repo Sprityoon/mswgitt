@@ -1,6 +1,10 @@
 @Logic
 script ResourceSpawner extends Logic
 
+	-- 아이템 Name → 드롭 자원 SourceId 목록("A|B") JSON. 튜토리얼 길안내(클라)용 — BuildGatherSourcesJson 이 채운다.
+	@Sync
+	property string GatherSourcesJson = ""
+
 	property table SpawnedEntitiesMap = {}
 	property table GridToEntityMap = {}
 	property table DestroyedResourcesMap = {}
@@ -347,6 +351,15 @@ script ResourceSpawner extends Logic
 		local isSE = self:IsFarmCell(map, x + 1, y - 1)
 		local isSW = self:IsFarmCell(map, x - 1, y - 1)
 
+		-- 옆 칸 연결은 두 칸이 2×2 사각형을 함께 이룰 때만 인정한다. 블록이 격자에 고정되지 않아 대각선 옆에 일군 2×2 가
+		-- 한 줄 어긋나 변 1칸만 맞닿으면(Z자) 한 덩어리로 칠해져 가운데가 이어지다 만 테두리가 됐다(2026-10-23 실측:
+		-- y=-3 줄 x=-11 FarmT · x=-10 FarmD). 이제 그런 접점은 끊어 둥근 밭 두 개로 그린다. 2칸 이상 폭의 밭은 그대로.
+		local rawN, rawS, rawE, rawW = isN, isS, isE, isW
+		isE = rawE and ((rawN and isNE) or (rawS and isSE))
+		isW = rawW and ((rawN and isNW) or (rawS and isSW))
+		isN = rawN and ((rawE and isNE) or (rawW and isNW))
+		isS = rawS and ((rawE and isSE) or (rawW and isSW))
+
 		-- 1. 4방향 모두 밭인 내부 셀 — 대각이 비면 그 모서리 1서브셀만 파인 오목 코너.
 		-- 🔴 타일명 규약(MaskToWaterTileName / tile-scheme.md L2 잔디 패밀리와 동일):
 		--    FarmRD=마스크11(TL 결손) · FarmLD=7(TR 결손) · FarmRT=14(BL 결손) · FarmLT=13(BR 결손).
@@ -500,17 +513,105 @@ script ResourceSpawner extends Logic
 		return { x = ox, y = oy, size = n }
 	end
 
+	method table ResolveCropBlockOrigin(Entity map, integer aimX, integer aimY, integer dirX, integer dirY)
+		-- 씨앗을 심을 2×2 밭 블록의 원점. 🔴 클라 미리보기·설치 요청·서버 검증 공용 단일 소스(규칙 18).
+		-- 호미는 2×2 단위로 밭을 일구므로, 조준 칸을 포함하는 2×2 후보 중 **네 칸이 모두 밭**인 블록에 맞춘다.
+		-- 후보 순서: 삽·호미와 같은 GetAimBlockOrigin 블록 → 조준 칸을 포함하는 나머지 3개(바라보는 쪽 우선).
+		-- 반환 { x, y, ok } — ok=false 면 2×2 밭 블록을 못 찾은 것(기본 블록 좌표를 돌려준다).
+		local base = self:GetAimBlockOrigin(aimX, aimY, dirX, dirY, 2)
+		local candidates = { { x = base.x, y = base.y } }
+		local xs = { aimX, aimX - 1 }
+		local ys = { aimY, aimY - 1 }
+		if dirX < 0 then xs = { aimX - 1, aimX } end
+		if dirY < 0 then ys = { aimY - 1, aimY } end
+		for _, oy in ipairs(ys) do
+			for _, ox in ipairs(xs) do
+				if ox ~= base.x or oy ~= base.y then
+					table.insert(candidates, { x = ox, y = oy })
+				end
+			end
+		end
+		for _, c in ipairs(candidates) do
+			local all = true
+			for by = c.y, c.y + 1 do
+				for bx = c.x, c.x + 1 do
+					if not self:IsPlantableFarmCell(map, bx, by) then
+						all = false
+						break
+					end
+				end
+				if not all then break end
+			end
+			if all then return { x = c.x, y = c.y, ok = true } end
+		end
+		return { x = base.x, y = base.y, ok = false }
+	end
+
+	method table ResolveSeedBlockOrigin(Entity map, integer aimX, integer aimY, integer dirX, integer dirY)
+		-- 씨앗 전용 2×2 블록: ResolveCropBlockOrigin 과 같은 후보 중 **네 칸이 밭이고 기존 작물과 겹치지 않는** 블록을 먼저 고른다.
+		-- (2026-10-23: 밭 두 블록이 붙어 있으면 빈 밭을 노려도 기존 작물에 반쯤 걸친 블록이 먼저 잡혀 "작물 바로 옆에 못 심음".)
+		-- 빈 블록이 없으면 ResolveCropBlockOrigin 결과(서버가 점유로 거절해 안내한다). 클라 미리보기·설치 요청 공용(물뿌리개·퇴비는 작물 블록을 찾으므로 ResolveCropBlockOrigin).
+		local base = self:GetAimBlockOrigin(aimX, aimY, dirX, dirY, 2)
+		local candidates = { { x = base.x, y = base.y } }
+		local xs = { aimX, aimX - 1 }
+		local ys = { aimY, aimY - 1 }
+		if dirX < 0 then xs = { aimX - 1, aimX } end
+		if dirY < 0 then ys = { aimY - 1, aimY } end
+		for _, oy in ipairs(ys) do
+			for _, ox in ipairs(xs) do
+				if ox ~= base.x or oy ~= base.y then table.insert(candidates, { x = ox, y = oy }) end
+			end
+		end
+		for _, c in ipairs(candidates) do
+			local all = true
+			for by = c.y, c.y + 1 do
+				for bx = c.x, c.x + 1 do
+					if not self:IsPlantableFarmCell(map, bx, by) then all = false break end
+				end
+				if not all then break end
+			end
+			if all and not self:IsCropBlockTaken(map, c.x, c.y) then return { x = c.x, y = c.y, ok = true } end
+		end
+		return self:ResolveCropBlockOrigin(map, aimX, aimY, dirX, dirY)
+	end
+
+	method boolean IsCropBlockTaken(Entity map, integer x, integer y)
+		-- 원점 (x, y) 2×2 블록이 이미 심긴 작물 블록과 한 칸이라도 겹치는가. 작물 위치 = GetCropPlantPosition(원점) 의 역산(서버·클라 공용).
+		if not isvalid(map) then return false end
+		local crops = map:GetChildComponentsByTypeName("script.Crop", true)
+		if crops == nil then return false end
+		for _, crop in ipairs(crops) do
+			if isvalid(crop) and isvalid(crop.Entity) and isvalid(crop.Entity.TransformComponent) then
+				local p = crop.Entity.TransformComponent.WorldPosition
+				local off = self:GetCropPlantPosition(crop.SeedItem, 0, 0).y - 1
+				local cx = math.floor(p.x - 1 + 0.5)
+				local cy = math.floor(p.y - 1 - off + 0.5)
+				if math.abs(cx - x) <= 1 and math.abs(cy - y) <= 1 then return true end
+			end
+		end
+		return false
+	end
+
+	method Vector3 GetCropPlantPosition(string seedItem, integer x, integer y)
+		-- 그림 바닥을 2×2 밭의 중심에 맞춘다. 미리보기·파종·복원 공용(중앙 피벗 PNG).
+		local ds = _DataService:GetTable("CropDataSet")
+		local row = ds ~= nil and ds:FindRow("SeedItem", seedItem) or nil
+		local offset = row ~= nil and (tonumber(row:GetItem("VisualOffsetY")) or 0) or 0
+		return Vector3(x + 1, y + 1 + offset, 0)
+	end
+
 	method integer GetPlaceFootprint(string itemName)
 		-- 설치 아이템의 점유 한 변 칸 수. 🔴 클라 미리보기·설치 요청·서버 검증 공용 단일 소스(규칙 18).
-		-- 바닥 타일(PlacedTileName)·작물 씨앗(CropDataSet.SeedItem) = 1, 가구 = item_dataset.FootprintSize(공란 = 2).
-		-- 모델의 ResourceOccupiedArea 오프셋(0..n-1)과 반드시 같은 값이어야 한다.
+		-- 바닥 타일(PlacedTileName) = 1, 작물 씨앗(CropDataSet.SeedItem) = 2(호미 2×2 밭 블록 하나에 한 포기),
+		-- 가구 = item_dataset.FootprintSize(공란 = 2).
+		-- 모델의 ResourceOccupiedArea 오프셋(0..n-1)과 반드시 같은 값이어야 한다(Crop_* = 0..1).
 		local ds = _DataService:GetTable("item_dataset")
 		if ds == nil or itemName == nil or itemName == "" then return 1 end
 		local row = ds:FindRow("Name", itemName)
 		if row == nil then return 1 end
 		if (row:GetItem("PlacedTileName") or "") ~= "" then return 1 end
 		local cropDs = _DataService:GetTable("CropDataSet")
-		if cropDs ~= nil and cropDs:FindRow("SeedItem", itemName) ~= nil then return 1 end
+		if cropDs ~= nil and cropDs:FindRow("SeedItem", itemName) ~= nil then return 2 end
 		local okF, vF = pcall(function() return row:GetItem("FootprintSize") end)
 		local n = okF and tonumber(vF) or nil
 		if n == nil or n < 1 then return 2 end
@@ -981,6 +1082,9 @@ script ResourceSpawner extends Logic
 
 	@ExecSpace("ServerOnly")
 	method boolean ApplyTerrainEdit(string mapName, Entity map, string action, integer x, integer y, string axis, string side, boolean persist)
+		-- persist=false = 저장된 편집 재생(ReconstructTerrainEditsForMap). 재생은 설치물·작물 복원 뒤에 돌므로 점유 검사를 하지 않는다 —
+		-- 편집 당시엔 비어 있던 칸에 나중에 심은 작물 때문에 밭 일구기 재생이 실패해, 재접속하면 밭이 사라지고 작물만 남았다(2026-10-23).
+		-- 실제 플레이어 편집은 PlayerInventory:ServerRequestTerrainEdit 가 먼저 점유를 막는다.
 		-- 서브셀 마스크 기반 지형 편집 (T11/T12). axis/side는 digPath만 사용 ("" 허용).
 		-- digPath: 밀착 2서브셀 폭 길 밴드(두 셀). digHole: 홀+½프린지.
 		-- plantGrass: digHole 대칭 역연산 — 대상 0 클리어 + 8이웃 대상쪽 비트 감산 (T12).
@@ -1009,7 +1113,7 @@ script ResourceSpawner extends Logic
 			}
 			for _, c in ipairs(cells) do
 				if not self:IsTerrainCellEditable(map, c[1], c[2]) then return false end
-				if self:IsGridOccupied(mapName, c[1], c[2]) then return false end
+				if persist and self:IsGridOccupied(mapName, c[1], c[2]) then return false end
 			end
 
 			local anyChange = false
@@ -1038,7 +1142,7 @@ script ResourceSpawner extends Logic
 			}
 			for _, c in ipairs(cells) do
 				if not self:IsTerrainCellEditable(map, c[1], c[2]) then return false end
-				if self:IsGridOccupied(mapName, c[1], c[2]) then return false end
+				if persist and self:IsGridOccupied(mapName, c[1], c[2]) then return false end
 			end
 
 
@@ -1093,7 +1197,7 @@ script ResourceSpawner extends Logic
 			}
 			for _, c in ipairs(cells) do
 				if not self:IsTerrainCellEditable(map, c[1], c[2]) then return false end
-				if self:IsGridOccupied(mapName, c[1], c[2]) then return false end
+				if persist and self:IsGridOccupied(mapName, c[1], c[2]) then return false end
 			end
 
 			local anyChange = false
@@ -1149,7 +1253,7 @@ script ResourceSpawner extends Logic
 			for by = y, y + n - 1 do
 				for bx = x, x + n - 1 do
 					if not self:IsTerrainCellEditable(map, bx, by) then return false end
-					if (action == "dig_water" or action == "dig_water_large") and self:IsGridOccupied(mapName, bx, by) then return false end
+					if (action == "dig_water" or action == "dig_water_large") and persist and self:IsGridOccupied(mapName, bx, by) then return false end
 				end
 			end
 
@@ -1219,7 +1323,7 @@ script ResourceSpawner extends Logic
 				for by = y, y + n - 1 do
 					for bx = x, x + n - 1 do
 						if not self:IsTerrainCellEditable(map, bx, by) then return false end
-						if self:IsGridOccupied(mapName, bx, by) then return false end
+						if persist and self:IsGridOccupied(mapName, bx, by) then return false end
 						if self:IsWaterCell(tilemap1, bx, by) then return false end
 						-- 🔴 넓게 드러난 순수 흙(L2 홀, 마스크 15)에만 밭 일구기/확장 허용 (이미 밭인 칸은 허용, 잔디/프린지는 차단)
 						if not self:IsFarmCell(map, bx, by) then
@@ -1388,6 +1492,38 @@ script ResourceSpawner extends Logic
 	@ExecSpace("ServerOnly")
 	method void OnBeginPlay()
 		self:TryStartSpawning()
+		self:BuildGatherSourcesJson()
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BuildGatherSourcesJson()
+		-- 튜토리얼 길안내용: 아이템 Name → 그 아이템을 떨구는 자원 SourceId 목록("A|B")을 클라에 동기화한다.
+		-- ItemDropDataSet 은 서버 전용(serveronly)이라 클라가 직접 읽으면 LEA-3022 — 이름 목록만 내려준다(확률·수량은 비공개 유지).
+		local dropDs = _DataService:GetTable("ItemDropDataSet")
+		local itemDs = _DataService:GetTable("item_dataset")
+		if dropDs == nil or itemDs == nil then return end
+		local idToName = {}
+		for _, r in ipairs(itemDs:GetAllRow() or {}) do
+			idToName[tostring(r:GetItem("id") or "")] = tostring(r:GetItem("Name") or "")
+		end
+		local sets = {}
+		for _, r in ipairs(dropDs:GetAllRow() or {}) do
+			local name = idToName[tostring(r:GetItem("ItemId") or "")]
+			local src = tostring(r:GetItem("SourceId") or "")
+			if name ~= nil and name ~= "" and src ~= "" then
+				if sets[name] == nil then sets[name] = {} end
+				sets[name][src] = true
+			end
+		end
+		local flat = {}
+		for name, srcs in pairs(sets) do
+			local list = {}
+			for s, _ in pairs(srcs) do table.insert(list, s) end
+			table.sort(list)
+			flat[name] = table.concat(list, "|")
+		end
+		local ok, json = pcall(function() return _HttpService:JSONEncode(flat) end)
+		if ok and json ~= nil and json ~= "" then self.GatherSourcesJson = json end
 	end
 
 	@ExecSpace("ServerOnly")
@@ -3477,6 +3613,9 @@ script ResourceSpawner extends Logic
 						local ayMax = math.floor(fy + (tonumber(occAlign.OffsetYMax) or 0))
 						spawnedEntity.TransformComponent.WorldPosition = self:GetOccupiedAnchorPosition(occAlign, axMin, axMax, ayMin, ayMax)
 					end
+					if isCrop then
+						spawnedEntity.TransformComponent.WorldPosition = self:GetCropPlantPosition(f.itemName, fx, fy)
+					end
 
 					-- Check Walkable from dataset or component
 					local isWalkable = false
@@ -3526,6 +3665,11 @@ script ResourceSpawner extends Logic
 						end
 						if isvalid(cropComp) then
 							local plantedAt = math.floor(tonumber(f.plantedAt) or 0)
+							cropComp.WateredStage = math.floor(tonumber(f.wateredStage) or 0)
+							cropComp.IsFertilized = f.isFertilized == true
+							cropComp.IsBumper = f.isBumper == true
+							cropComp.BumperRolled = f.bumperRolled == true
+							cropComp.RainTouched = f.rainTouched == true
 							cropComp:InitializePlant(f.itemName, plantedAt)
 						else
 							log_error("ResourceSpawner: failed to attach Crop for " .. tostring(f.itemName))
@@ -3569,6 +3713,12 @@ script ResourceSpawner extends Logic
 							furnaceComp.ProgressTime = tonumber(fd.progressTime) or 0.0
 							furnaceComp.IsSmelting = fd.isSmelting == true
 						end
+					end
+
+					-- 조리 냄비 예약·완성품 복원 (+ 구 화로식 냄비 내용물 이관)
+					local potComp = spawnedEntity:GetComponent("script.CookingPot")
+					if isvalid(potComp) and _PersistenceManager ~= nil then
+						_PersistenceManager:RestoreCookingPot(potComp, f)
 					end
 
 					local plantedAt = math.floor(tonumber(f.plantedAt) or 0)
@@ -3773,6 +3923,9 @@ script ResourceSpawner extends Logic
 				yMin = math.floor(y + (tonumber(occ.OffsetYMin) or 0))
 				yMax = math.floor(y + (tonumber(occ.OffsetYMax) or 0))
 				spawnedEntity.TransformComponent.WorldPosition = self:GetOccupiedAnchorPosition(occ, xMin, xMax, yMin, yMax)
+			end
+			if isCrop then
+				spawnedEntity.TransformComponent.WorldPosition = self:GetCropPlantPosition(fData.itemName, x, y)
 			end
 		end
 

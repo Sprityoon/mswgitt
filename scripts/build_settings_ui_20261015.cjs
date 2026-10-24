@@ -159,31 +159,32 @@ const KEY_ROWS = [
   ["퀵슬롯", [["1 ~ 0", "w"]]],
   ["가방 / 제작 / 정보", [["I", "s"], ["C", "s"], ["H", "s"]]],
   ["스킬 / 도감 / 보스", [["K", "s"], ["J", "s"], ["B", "s"]]],
+  ["친구", [["L", "s"]]],
 ];
 b.empty("Window/KeyRows", { anchor: "middle-center", pos: [0, 0], rect_size: [1920, 1080], pivot: [0.5, 0.5] });
 b.patchComponent("Window/KeyRows", "MOD.Core.UITransformComponent", { ActivePlatform: 1 });
 KEY_ROWS.forEach(([text, keys], i) => {
-  const y = 190 - i * 52;
+  const y = 194 - i * 46;
   const row = `Window/KeyRows/Row${i + 1}`;
-  art(row, "mc_row_card", [RX, y], [330, 46], { text, size: 18, align: 3, padLeft: 16 });
-  rec(row, [RX, y], [330, 46], "mc_row_card", text, { fontSize: 18, color: DARK, align: "left", padLeft: 16 });
+  art(row, "mc_row_card", [RX, y], [330, 42], { text, size: 18, align: 3, padLeft: 16 });
+  rec(row, [RX, y], [330, 42], "mc_row_card", text, { fontSize: 18, color: DARK, align: "left", padLeft: 16 });
   let right = 153;
   for (let k = keys.length - 1; k >= 0; k--) {
     const [cap, kind] = keys[k];
     const w = kind === "w" ? 84 : 34;
     const x = right - w / 2;
     const asset = kind === "w" ? "mc_set_keycap_wide" : "mc_set_keycap_sq";
-    art(`${row}/Key${k + 1}`, asset, [x, 1], [w, 34], { text: cap, size: kind === "w" ? 16 : 17, color: DARK });
+    art(`${row}/Key${k + 1}`, asset, [x, 0], [w, 34], { text: cap, size: kind === "w" ? 16 : 17, color: DARK });
     b.patchComponent(`${row}/Key${k + 1}`, TXT, { Padding: { left: 0, right: 0, top: 0, bottom: 3 } });
-    rec(`${row}/Key${k + 1}`, [RX + x, y + 1], [w, 34], asset, cap, { fontSize: kind === "w" ? 16 : 17, color: DARK });
+    rec(`${row}/Key${k + 1}`, [RX + x, y], [w, 34], asset, cap, { fontSize: kind === "w" ? 16 : 17, color: DARK });
     right -= w + 5;
   }
 });
 art("Window/MobileNotice", "mc_row_card", [RX, 40], [330, 180], { text: "모바일 조작키 설정은\n준비중입니다!", size: 24, color: DARK });
 b.patch("Window/MobileNotice", { enable: false });
 b.patchComponent("Window/MobileNotice", "MOD.Core.UITransformComponent", { ActivePlatform: 2 });
-label("Window/KeyRows/Hint", "현재 기본 조작키 · 키 변경 준비 중", [RX, -215], [330, 32], { size: 16, bold: false });
-rec("Window/KeyRows/Hint", [RX, -215], [330, 32], null, "현재 기본 조작키 · 키 변경 준비 중", { fontSize: 16, color: DARK });
+label("Window/KeyRows/Hint", "현재 기본 조작키 · 키 변경 준비 중", [RX, -215], [330, 26], { size: 16, bold: false });
+rec("Window/KeyRows/Hint", [RX, -215], [330, 26], null, "현재 기본 조작키 · 키 변경 준비 중", { fontSize: 16, color: DARK });
 
 art("Window/Status", "mc_row_card", [LX, -245], [330, 58], { text: " ", size: 16, bold: false });
 b.patchComponent("Window/Status", TXT, { Text: "" });

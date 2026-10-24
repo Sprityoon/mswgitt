@@ -148,7 +148,7 @@ script UIHUDController extends Component
 		-- 타이틀이 떠 있는 동안 HUD 크롬을 끈다. 슬롯 확정(Close) 뒤에만 켠다.
 		self.playHudReady = on
 		local names = {
-			"BtnCollection", "BtnSkillTree", "BtnBossRaid", "Minimap", "MobileUI",
+			"BtnCollection", "BtnSkillTree", "BtnBossRaid", "BtnFriend", "Minimap", "MobileUI",
 			"QuestTracker", "QuestNavigator", "QuickSlots", "SkillBar", "UIMyInfo",
 			"FishingGauge", "CombatHpLayer",
 		}
@@ -388,6 +388,20 @@ script UIHUDController extends Component
 			log_warning("[RAID-UI] BtnBossRaid entity not found on HUD")
 		end
 
+		-- 친구 창 열기 버튼 (L 키와 동일 Toggle 경로, 2026-10-24)
+		local btnFriend = _EntityService:GetEntityByPath("/ui/HUDGroup/BtnFriend")
+		if isvalid(btnFriend) then
+			if isvalid(btnFriend.SpriteGUIRendererComponent) then
+				btnFriend.SpriteGUIRendererComponent.RaycastTarget = true
+			end
+			self._T.btnFriendHandler = btnFriend:ConnectEvent(ButtonClickEvent, function()
+				local popup = _EntityService:GetEntityByPath("/ui/PopupGroup/FriendPopup")
+				if not isvalid(popup) then return end
+				local controller = popup:GetComponent("script.UIFriendController")
+				if isvalid(controller) then controller:Toggle() end
+			end)
+		end
+
 		-- Connect Quick Slot Touch Events for Drag & Drop and Click
 		self.quickSlotHandlers = {}
 		self.quickSlotLastClickTimes = {}
@@ -612,6 +626,11 @@ script UIHUDController extends Component
 		local btnBossRaid = _EntityService:GetEntityByPath("/ui/HUDGroup/BtnBossRaid")
 		if isvalid(btnBossRaid) and self.btnBossRaidHandler then
 			btnBossRaid:DisconnectEvent(ButtonClickEvent, self.btnBossRaidHandler)
+		end
+
+		local btnFriend = _EntityService:GetEntityByPath("/ui/HUDGroup/BtnFriend")
+		if isvalid(btnFriend) and self._T.btnFriendHandler then
+			btnFriend:DisconnectEvent(ButtonClickEvent, self._T.btnFriendHandler)
 		end
 
 		-- Disconnect Quick Slot Touch Events
@@ -1411,7 +1430,7 @@ script UIHUDController extends Component
 			if isvalid(transform) then
 				transform.AlignmentOption = AlignmentType.CastFrom("TopCenter")
 				transform.anchoredPosition = Vector2(0, -48) -- 상단 중앙 배치
-				transform.RectSize = Vector2(380, 48) -- 글자 크기 확대에 맞춘 여유 있는 크기
+				transform.RectSize = Vector2(560, 48) -- 글자 크기 확대 + 날씨 "(작물 성장↑)" 꼬리표까지 한 줄
 			end
 			local textComp = clock.TextComponent
 			if isvalid(textComp) then
@@ -1454,6 +1473,10 @@ script UIHUDController extends Component
 		local weatherName = ""
 		if _WeatherManager ~= nil then
 			weatherName = _WeatherManager.CurrentDisplayName or ""
+			-- 작물 성장 가속 날씨(WeatherDataSet.CropBoostPerMin > 0, 예: 비)는 시계 옆에 알려 준다.
+			if weatherName ~= "" and (tonumber(_WeatherManager.CurrentCropBoostPerMin) or 0) > 0 then
+				weatherName = weatherName .. " (작물 성장↑)"
+			end
 		end
 		
 		-- 1. 시간 텍스트 업데이트 (+ 날씨)
@@ -1506,6 +1529,112 @@ script UIHUDController extends Component
 			weatherId = _WeatherManager.CurrentWeatherId or "clear"
 		end
 		self:UpdateWeatherParticle(weatherId)
+		self:UpdateWeatherTooltip(clock)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowWorldFloatText(Entity target, string text, Color color)
+		-- 대상 머리 위에 글자를 띄워 1.3초 동안 약 70px 떠오르며 사라지게 한다(예: "+12 EXP"). HUD 직속 uitext 를 만들고 끝나면 지운다.
+		if not isvalid(target) or not isvalid(target.TransformComponent) then return end
+		local ent = _SpawnService:SpawnByModelId("uitext", "FloatText", Vector3.zero, self.Entity)
+		if not isvalid(ent) then return end
+		local sprite = ent.SpriteGUIRendererComponent
+		if isvalid(sprite) then
+			sprite.Color = Color(0, 0, 0, 0)
+			sprite.RaycastTarget = false
+		end
+		local t = ent.UITransformComponent
+		if isvalid(t) then
+			t.AlignmentOption = AlignmentType.Center
+			t.RectSize = Vector2(320, 40)
+		end
+		-- 시인성(2026-10-24 제작자 피드백 · Play 실측): 첫 프레임이 발밑에 두 줄로 찍히던 깜빡임 제거 + 크게 + 짙은 외곽선 + 그림자. 외곽선도 페이드에 맞춰 함께 투명해진다.
+		local outline = Color(0.12, 0.08, 0.04, 1)
+		local tc = ent.TextComponent
+		if isvalid(tc) then
+			tc.Text = text
+			tc.FontSize = 32
+			tc.Bold = true
+			-- 첫 프레임은 위치가 적용되기 전(화면 중앙=발밑, 기본 폭 100 → 두 줄)으로 그려지므로 첫 갱신까지 투명하게 둔다.
+			tc.FontColor = Color(color.r, color.g, color.b, 0)
+			pcall(function()
+				tc.UseOutLine = true
+				tc.OutlineColor = Color(outline.r, outline.g, outline.b, 0)
+				tc.OutlineWidth = 2
+				tc.DropShadow = false -- 그림자는 글자 알파를 따르지 않아 첫 프레임 잔상이 남는다 → 첫 갱신에 켜고 페이드 때 끈다
+				tc.DropShadowDistance = 3
+			end)
+		end
+		local elapsed = 0
+		local timer = nil
+		local function place()
+			if not isvalid(target) or not isvalid(t) then return end
+			local wp = target.TransformComponent.WorldPosition
+			local ui = _UILogic:ScreenToUIPosition(_UILogic:WorldToScreenPosition(Vector2(wp.x, wp.y)))
+			t.anchoredPosition = Vector2(ui.x, ui.y + 150 + elapsed * 55)
+		end
+		place()
+		timer = _TimerService:SetTimerRepeat(function()
+			elapsed = elapsed + 1 / 30
+			if not isvalid(ent) then
+				_TimerService:ClearTimer(timer)
+				return
+			end
+			place()
+			if isvalid(tc) and elapsed <= 0.9 then
+				tc.FontColor = color
+				tc.OutlineColor = outline
+				tc.DropShadow = true
+			elseif isvalid(tc) then
+				tc.DropShadow = false
+				local a = math.max(0, 1 - (elapsed - 0.9) / 0.4)
+				tc.FontColor = Color(color.r, color.g, color.b, a)
+				tc.OutlineColor = Color(outline.r, outline.g, outline.b, a)
+			end
+			if elapsed >= 1.3 then
+				_TimerService:ClearTimer(timer)
+				ent:Destroy()
+			end
+		end, 1 / 30)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void UpdateWeatherTooltip(Entity clock)
+		-- 시계(날씨) 위에 커서를 올리면 지금 날씨 효과를 공용 툴팁으로 보여 준다(원안 5.2 "비 내림: 작물 성장 가속 중!").
+		-- 시계는 uitext 라 호버 이벤트가 없어, 0.1초 갱신마다 커서가 시계 사각형 안인지 직접 본다(스킬바와 같은 판정).
+		if _UITooltipLogic == nil then return end
+		local over = false
+		if isvalid(clock) and isvalid(clock.UITransformComponent) and clock.Enable then
+			local t = clock.UITransformComponent
+			local p = _UILogic:ScreenToLocalUIPosition(_InputService:GetCursorPosition(), t)
+			if p ~= nil then
+				local size = t.RectSize
+				local piv = t.Pivot
+				over = p.x >= -size.x * piv.x and p.x <= size.x * (1 - piv.x) and p.y >= -size.y * piv.y and p.y <= size.y * (1 - piv.y)
+			end
+		end
+		if not over or _WeatherManager == nil then
+			if _UITooltipLogic:IsShownBy("weather") then _UITooltipLogic:Hide("weather") end
+			return
+		end
+		local lines = {}
+		local boost = tonumber(_WeatherManager.CurrentCropBoostPerMin) or 0
+		if boost > 0 then
+			table.insert(lines, string.format("작물 성장 +%d%% (1분마다 %d초씩 앞당김)", math.floor(boost / 60 * 100 + 0.5), math.floor(boost)))
+			table.insert(lines, "이 날씨에 자란 작물은 대풍년 확률 2배")
+		end
+		local fish = tonumber(_WeatherManager.CurrentFishBiteMult) or 1
+		if fish < 0.999 then
+			table.insert(lines, string.format("낚시 입질 %d%% 빨라짐", math.floor((1 - fish) * 100 + 0.5)))
+		elseif fish > 1.001 then
+			table.insert(lines, string.format("낚시 입질 %d%% 느려짐", math.floor((fish - 1) * 100 + 0.5)))
+		end
+		if #lines == 0 then table.insert(lines, "특별한 날씨 효과가 없습니다.") end
+		local title = "날씨: " .. tostring(_WeatherManager.CurrentDisplayName or "")
+		if not _UITooltipLogic:IsShownBy("weather") or self._T.WeatherTipKey ~= title .. #lines then
+			self._T.WeatherTipKey = title .. #lines
+			_UITooltipLogic:ShowAtCursor("weather", title, table.concat(lines, "\n"), "", Color(0.75, 0.9, 1.0, 1))
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -1749,7 +1878,7 @@ script UIHUDController extends Component
 				end
 			end
 			if cfg ~= nil and cfg.radius > 0 and cfg.strength > 0 and isvalid(e) then
-				self._T.EnvironmentLights[#self._T.EnvironmentLights + 1] = { entity = e, furniture = furniture, furnace = e:GetComponent("script.Furnace"), radius = cfg.radius, strength = cfg.strength }
+				self._T.EnvironmentLights[#self._T.EnvironmentLights + 1] = { entity = e, furniture = furniture, furnace = e:GetComponent("script.Furnace"), pot = e:GetComponent("script.CookingPot"), radius = cfg.radius, strength = cfg.strength }
 			end
 		end
 	end
@@ -1774,7 +1903,9 @@ script UIHUDController extends Component
 		for _, rec in ipairs(self._T.EnvironmentLights or {}) do
 			local e = rec.entity
 			-- 화로/냄비는 실제 가동 중일 때만. 등불처럼 Furnace가 없는 광원은 상시 켜짐.
-			local lit = rec.furnace == nil or (isvalid(rec.furnace) and rec.furnace.IsSmelting)
+			local lit = (rec.furnace == nil and rec.pot == nil)
+				or (isvalid(rec.furnace) and rec.furnace.IsSmelting)
+				or (isvalid(rec.pot) and rec.pot.IsCooking)
 			if isvalid(e) and isvalid(rec.furniture) and rec.furniture.EnableInHierarchy and e.EnabledInHierarchy and e.CurrentMap == map and lit then
 				local q = e.TransformComponent.WorldPosition
 				local dx, dy = p.x - q.x, p.y - q.y

@@ -36,6 +36,8 @@ script UIQuestLogController extends Component
 	property number LastToggleTime = 0
 	-- 보상 칸의 경험치 아이콘 (공식 item 스프라이트 "EXP" 구슬 40×40)
 	property string ExpRewardIconRUID = "cc20081c70c449f2b9f3a8852d7eda8d"
+	-- SP 보상 칸 아이콘(ui8 금빛 별) — 라벨 "SP n" 과 함께. 직업 퀘스트는 SP 를 주는데 창에 안 보였다(2026-10-24).
+	property string SpRewardIconRUID = "424d7b5bfe3542d08fe06416559f6bb4"
 	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
 	property string uiHoverSfx = "159bf70a74634bfc8e91a29e527a4be5"
 	property number uiSfxVolume = 1.0
@@ -488,7 +490,7 @@ script UIQuestLogController extends Component
 
 	@ExecSpace("ClientOnly")
 	method void FillRewards(any data)
-		-- 보상 칸: 경험치(있으면 첫 칸) → RewardItems 순서로 채운다.
+		-- 보상 칸: 경험치(있으면 첫 칸) → SP → RewardItems 순서로 채운다.
 		local slots = { self._T.slot1, self._T.slot2, self._T.slot3, self._T.slot4 }
 		local entries = {}
 		local exp = math.floor(tonumber(data.RewardExp) or 0)
@@ -502,6 +504,13 @@ script UIQuestLogController extends Component
 				local count = tonumber(items[i][2]) or 0
 				entries[#entries + 1] = { icon = self:GetItemIconRuid(itemName), label = "x" .. tostring(math.floor(count)) }
 			end
+		end
+		-- SP 는 칸이 남을 때만(아이템이 가려지지 않게) 경험치 바로 뒤에 끼운다. 완료 토스트에는 항상 나온다.
+		local sp = math.floor(tonumber(data.RewardSP) or 0)
+		if sp > 0 and #entries < #slots then
+			local at = 1
+			if exp > 0 then at = 2 end
+			table.insert(entries, at, { icon = self.SpRewardIconRUID, label = "SP " .. tostring(sp) })
 		end
 		for i = 1, #slots do
 			local slot = slots[i]

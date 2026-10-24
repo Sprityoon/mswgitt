@@ -1010,7 +1010,11 @@ script UIInventoryController extends Component
 		if isvalid(self.tooltipName) then
 			-- 이름 붙은 칸(가방 속 가축·이름 붙은 호루라기)은 그 동물의 이름을 보인다.
 			if isvalid(inv) then
-				self.tooltipName.Text = inv:GetItemLabel(itemKey)
+				-- 강화한 장비는 이름 뒤에 "+N" (개체별 강화 단계 — EnhanceJson).
+				local label = inv:GetItemLabel(itemKey)
+				local lv = inv:GetEnhanceData(itemKey).lv or 0
+				if lv > 0 then label = label .. " +" .. tostring(lv) end
+				self.tooltipName.Text = label
 			else
 				self.tooltipName.Text = self:GetItemDisplayName(baseName)
 			end

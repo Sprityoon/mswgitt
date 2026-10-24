@@ -38,6 +38,9 @@ script QuestData
 	-- T27: 레시피 해금 키 (공란=없음). GrantRecipeUnlock 연동.
 	property string RewardUnlockId = ""
 
+	-- 2026-10-23: 수락하는 순간 여는 레시피 해금 키 (공란=없음). 예: 벨라 431·당근 수프 111 → 조리 냄비 제작법.
+	property string AcceptUnlockId = ""
+
 	-- 2026-08-10: 완료 시 영지에 개통할 포탈 목적지 (PortalDestinationDataSet.DestinationId, 공란=없음).
 	property string RewardPortalId = ""
 
@@ -134,6 +137,12 @@ script QuestData
 		local okRu, ru = pcall(function() return row:GetItem("RewardUnlockId") end)
 		if okRu and ru ~= nil and not _Util:IsNilorEmptyString(ru) then
 			self.RewardUnlockId = ru
+		end
+
+		self.AcceptUnlockId = ""
+		local okAu, au = pcall(function() return row:GetItem("AcceptUnlockId") end)
+		if okAu and au ~= nil and not _Util:IsNilorEmptyString(au) then
+			self.AcceptUnlockId = au
 		end
 
 		-- 영지 포탈 개통 보상. pcall은 예외만 삼킬 뿐 LEA-3011 로그는 그대로 남는다 — 열 이름 정합은 scripts/check_dataset_columns.cjs 가 정적으로 지킨다.

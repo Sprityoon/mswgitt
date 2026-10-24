@@ -22,6 +22,7 @@
    | Warp | 빈칸 = 아무 맵 / CondArg = `CurrentMap.Name` (`hunt01` 등) | ✅ 107 빈칸 + 205 `Warp,hunt01` (코드 실측 2026-08-15). Play 확인 대기 |
    | Kill | `Monster.MonsterId` (`slime`/`boar`/`horn_mushroom`/`slime_king`) | ✅ 막타 시 `_ActionEnum.Kill` 발행 (코드 실측 2026-08-15). 211·216 투입. Play 확인 대기 |
    | Smelt | 제련 결과 `Name` (`Copper Bar`) | ✅ `Furnace`가 Smelt emit (코드 실측 2026-08-15). 214 투입. Play 확인 대기 |
+   | Deliver | 빈칸 = 아무 게시판 의뢰 / `RequestId` / 납품 아이템 `Name` | ✅ `PlayerInventory.ServerRequestDeliver` 성공 시 발행 (2026-10-22 신설, ActionEnum 14). 112 투입. Play 확인 대기 |
    | Attend·StateChange·MesoChange·StaminaChange | — | ❓ 사용례 0 — 실측 전 콘텐츠 배정 금지 |
 3. **수주/보고 NPC는 `VillagerDialog` 부착 NPC만** (elder · fisher · researcher · vendor · blacksmith · barnkeeper). elder(201) 가동. **2026-08-15** fisher(202)·blacksmith(203/213~215)·researcher(204/212) CSV 투입 — **Play 확인 대기**. `merchant`·시설은 불가 ([npc-cast.md](./npc-cast.md) §0).
 4. **아이템·몬스터·포탈 키는 §6 부록의 영문 키 그대로** (pitfalls 규칙 4). 존재하지 않는 키 금지, 신규 아이템은 ❓ 비용 항목으로 분리.
@@ -35,6 +36,8 @@
 | 블록 | 용도 | 상태 |
 |---|---|---|
 | 101~1xx | 튜토리얼 (AutoAccept 직렬 + 102 분기 108) | ✅ 가동 (108 Play 확인 대기) |
+| 109~112 | 마을 정착 (대면 수주 — 농사·요리·게시판 온보딩, 201 게이트) | ✅ 반영 2026-10-22 ([farming-quest-loop.md](../farming-quest-loop.md)) |
+| 401~439 | 마을 주민 서브 (40x 카인 · 41x 잭 · 42x 루루 · 43x 벨라) | ✅ 401~402 · 411~414 · 421~422 · 431(벨라) 반영 2026-10-23 |
 | 2 0 1~209 | 챕터 1 | 201 ✅ |
 | 211~219 / 221~229 / 231~239 / 241~249 | 챕터 2 / 3 / 4 / 5 | ✅ 반영 — 211~217 · 221~227 · 231~236 · 241~247 (247 = 에필로그) |
 | 3xx | 설원 이후 차기 아크 예약 | — |

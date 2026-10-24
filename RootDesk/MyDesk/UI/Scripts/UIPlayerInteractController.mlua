@@ -1,7 +1,7 @@
 @Component
 script UIPlayerInteractController extends Component
 
-	-- Phase 23-B: 타 유저 클릭 인터랙션 메뉴 (귓속말 / 내 영지로 초대).
+	-- Phase 23-B: 타 유저 클릭 인터랙션 메뉴 (귓속말 / 내 영지로 초대 / 친구 신청).
 	-- 루트 엔티티는 항상 Enable — 화면 터치 리스너가 살아 있어야 하므로, 표시는 자식 Card를 토글한다.
 	--
 	-- ⚠️ design-policy "월드 클릭/터치 상호작용 금지"(2026-07-15)의 예외다. 대상은 **다른 플레이어
@@ -19,6 +19,7 @@ script UIPlayerInteractController extends Component
 	property any closeHandler = nil
 	property any whisperHandler = nil
 	property any inviteHandler = nil
+	property any friendHandler = nil
 
 	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
 	property number uiSfxVolume = 1.0
@@ -47,6 +48,12 @@ script UIPlayerInteractController extends Component
 				self:OnInvite()
 			end)
 		end
+		if isvalid(self._T.friendE) then
+			self.friendHandler = self._T.friendE:ConnectEvent(ButtonClickEvent, function()
+				self:PlayClick()
+				self:OnFriendRequest()
+			end)
+		end
 		log("[PLAYER-INTERACT] ready card=" .. tostring(isvalid(self._T.card)))
 	end
 
@@ -62,6 +69,9 @@ script UIPlayerInteractController extends Component
 		if isvalid(self._T.inviteE) and self.inviteHandler then
 			self._T.inviteE:DisconnectEvent(ButtonClickEvent, self.inviteHandler)
 		end
+		if isvalid(self._T.friendE) and self.friendHandler then
+			self._T.friendE:DisconnectEvent(ButtonClickEvent, self.friendHandler)
+		end
 	end
 
 	@ExecSpace("ClientOnly")
@@ -73,6 +83,7 @@ script UIPlayerInteractController extends Component
 		self._T.closeE = self.Entity:GetChildByName("BtnClose", true)
 		self._T.whisperE = self.Entity:GetChildByName("BtnWhisper", true)
 		self._T.inviteE = self.Entity:GetChildByName("BtnInvite", true)
+		self._T.friendE = self.Entity:GetChildByName("BtnFriend", true)
 	end
 
 	@ExecSpace("ClientOnly")
@@ -169,8 +180,8 @@ script UIPlayerInteractController extends Component
 
 		self:SetLabel(self._T.nameE, name)
 		self:SetLabel(self._T.hintE, self:BuildHint())
-		-- 영지 밖에서는 초대를 보낼 수 없다 → 버튼을 회색 비활성으로 보여 준다(서버도 다시 검증한다).
-		if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(self._T.inviteE, self:IsInOwnEstate()) end
+		-- 2026-10-24: 초대는 어디서든 보낼 수 있다(영지 밖이면 수락 시 함께 이동). 보스전 같은 예외는 서버가 판정한다.
+		if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(self._T.inviteE, true) end
 		if isvalid(self._T.card) then
 			self._T.card.Enable = true
 		end
@@ -179,12 +190,12 @@ script UIPlayerInteractController extends Component
 
 	@ExecSpace("ClientOnly")
 	method string BuildHint()
-		-- 초대 가능 조건(내 영지 안)을 미리 알려 헛클릭을 줄인다.
+		-- 초대 결과(누가 이동하는지)를 미리 알려 준다.
 		-- 힌트 칸 폭(316)에 한 줄이 넘치면 말줄임으로 잘리므로 줄을 직접 나눈다.
 		if self:IsInOwnEstate() then
 			return "초대하면 상대가 수락 후\n내 영지로 이동합니다."
 		end
-		return "초대는 내 영지 안에서만\n보낼 수 있습니다."
+		return "상대가 초대를 수락하면\n함께 내 영지로 이동합니다."
 	end
 
 	@ExecSpace("ClientOnly")
@@ -231,6 +242,15 @@ script UIPlayerInteractController extends Component
 		end
 		_EstateInviteManager:ServerSendInvite(self.targetUserIdCache)
 		log("[PLAYER-INTERACT] invite requested for " .. self.targetNameCache)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnFriendRequest()
+		-- 서버에 친구 신청 전송을 요청한다 (중복·정원 검증은 서버 FriendManager 가 한다).
+		self:Close()
+		if self.targetUserIdCache == "" or _FriendManager == nil then return end
+		_FriendManager:ServerSendRequest(self.targetUserIdCache)
+		log("[PLAYER-INTERACT] friend request for " .. self.targetNameCache)
 	end
 
 	@ExecSpace("ClientOnly")

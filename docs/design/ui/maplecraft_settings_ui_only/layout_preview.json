@@ -365,11 +365,11 @@
    "path": "Window/KeyRows/Row1",
    "abs": [
     256,
-    190
+    194
    ],
    "size": [
     330,
-    46
+    42
    ],
    "image": "mc_row_card",
    "text": "이동",
@@ -383,7 +383,7 @@
    "path": "Window/KeyRows/Row1/Key1",
    "abs": [
     367,
-    191
+    194
    ],
    "size": [
     84,
@@ -399,11 +399,11 @@
    "path": "Window/KeyRows/Row2",
    "abs": [
     256,
-    138
+    148
    ],
    "size": [
     330,
-    46
+    42
    ],
    "image": "mc_row_card",
    "text": "점프",
@@ -417,7 +417,7 @@
    "path": "Window/KeyRows/Row2/Key1",
    "abs": [
     367,
-    139
+    148
    ],
    "size": [
     84,
@@ -433,11 +433,11 @@
    "path": "Window/KeyRows/Row3",
    "abs": [
     256,
-    86
+    102
    ],
    "size": [
     330,
-    46
+    42
    ],
    "image": "mc_row_card",
    "text": "공격 / 채집",
@@ -451,7 +451,7 @@
    "path": "Window/KeyRows/Row3/Key1",
    "abs": [
     367,
-    87
+    102
    ],
    "size": [
     84,
@@ -467,11 +467,11 @@
    "path": "Window/KeyRows/Row4",
    "abs": [
     256,
-    34
+    56
    ],
    "size": [
     330,
-    46
+    42
    ],
    "image": "mc_row_card",
    "text": "상호작용",
@@ -485,7 +485,7 @@
    "path": "Window/KeyRows/Row4/Key1",
    "abs": [
     392,
-    35
+    56
    ],
    "size": [
     34,
@@ -501,11 +501,11 @@
    "path": "Window/KeyRows/Row5",
    "abs": [
     256,
-    -18
+    10
    ],
    "size": [
     330,
-    46
+    42
    ],
    "image": "mc_row_card",
    "text": "스킬 슬롯",
@@ -519,7 +519,7 @@
    "path": "Window/KeyRows/Row5/Key4",
    "abs": [
     392,
-    -17
+    10
    ],
    "size": [
     34,
@@ -535,7 +535,7 @@
    "path": "Window/KeyRows/Row5/Key3",
    "abs": [
     353,
-    -17
+    10
    ],
    "size": [
     34,
@@ -551,7 +551,7 @@
    "path": "Window/KeyRows/Row5/Key2",
    "abs": [
     314,
-    -17
+    10
    ],
    "size": [
     34,
@@ -567,7 +567,7 @@
    "path": "Window/KeyRows/Row5/Key1",
    "abs": [
     275,
-    -17
+    10
    ],
    "size": [
     34,
@@ -583,11 +583,11 @@
    "path": "Window/KeyRows/Row6",
    "abs": [
     256,
-    -70
+    -36
    ],
    "size": [
     330,
-    46
+    42
    ],
    "image": "mc_row_card",
    "text": "퀵슬롯",
@@ -601,7 +601,7 @@
    "path": "Window/KeyRows/Row6/Key1",
    "abs": [
     367,
-    -69
+    -36
    ],
    "size": [
     84,
@@ -617,11 +617,11 @@
    "path": "Window/KeyRows/Row7",
    "abs": [
     256,
-    -122
+    -82
    ],
    "size": [
     330,
-    46
+    42
    ],
    "image": "mc_row_card",
    "text": "가방 / 제작 / 정보",
@@ -635,7 +635,7 @@
    "path": "Window/KeyRows/Row7/Key3",
    "abs": [
     392,
-    -121
+    -82
    ],
    "size": [
     34,
@@ -651,7 +651,7 @@
    "path": "Window/KeyRows/Row7/Key2",
    "abs": [
     353,
-    -121
+    -82
    ],
    "size": [
     34,
@@ -667,7 +667,7 @@
    "path": "Window/KeyRows/Row7/Key1",
    "abs": [
     314,
-    -121
+    -82
    ],
    "size": [
     34,
@@ -683,11 +683,11 @@
    "path": "Window/KeyRows/Row8",
    "abs": [
     256,
-    -174
+    -128
    ],
    "size": [
     330,
-    46
+    42
    ],
    "image": "mc_row_card",
    "text": "스킬 / 도감 / 보스",
@@ -701,7 +701,7 @@
    "path": "Window/KeyRows/Row8/Key3",
    "abs": [
     392,
-    -173
+    -128
    ],
    "size": [
     34,
@@ -717,7 +717,7 @@
    "path": "Window/KeyRows/Row8/Key2",
    "abs": [
     353,
-    -173
+    -128
    ],
    "size": [
     34,
@@ -733,7 +733,7 @@
    "path": "Window/KeyRows/Row8/Key1",
    "abs": [
     314,
-    -173
+    -128
    ],
    "size": [
     34,
@@ -746,6 +746,40 @@
   },
   {
    "screen": "settings",
+   "path": "Window/KeyRows/Row9",
+   "abs": [
+    256,
+    -174
+   ],
+   "size": [
+    330,
+    42
+   ],
+   "image": "mc_row_card",
+   "text": "친구",
+   "fontSize": 18,
+   "color": "#3B2314",
+   "align": "left",
+   "padLeft": 16
+  },
+  {
+   "screen": "settings",
+   "path": "Window/KeyRows/Row9/Key1",
+   "abs": [
+    392,
+    -174
+   ],
+   "size": [
+    34,
+    34
+   ],
+   "image": "mc_set_keycap_sq",
+   "text": "L",
+   "fontSize": 17,
+   "color": "#3B2314"
+  },
+  {
+   "screen": "settings",
    "path": "Window/KeyRows/Hint",
    "abs": [
     256,
@@ -753,7 +787,7 @@
    ],
    "size": [
     330,
-    32
+    26
    ],
    "image": null,
    "text": "현재 기본 조작키 · 키 변경 준비 중",

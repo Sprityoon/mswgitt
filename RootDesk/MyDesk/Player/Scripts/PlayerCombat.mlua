@@ -25,8 +25,12 @@ script PlayerCombat extends AttackComponent
 		if isvalid(pc) then
 			---@type PlayerController
 			local controller = pc
-			-- 평타 = 직업 평타 계열 공격력 + 계열 무기 수치 (DoAttackInFront 와 같은 규약).
+			-- 평타 = 직업 평타 계열 공격력 + 계열 무기 수치 (DoAttackInFront 와 같은 규약 — 도구 ×ToolCombatRatio 포함).
 			dmg = controller:GetStatAttackTotal(controller:GetBasicAttackStat())
+			-- 전직 뒤 채집 도구(도끼 등)로 치면 ×ToolCombatRatio — 도구는 채집 간격(신속 채집)으로 빨라지므로 전용 무기를 넘지 않게.
+			if controller.JobId ~= "" and controller:IsHoldingGatherTool() then
+				dmg = math.max(1, math.floor(dmg * controller.ToolCombatRatio))
+			end
 		end
 
 		self.PendingSkillId = ""
@@ -51,6 +55,10 @@ script PlayerCombat extends AttackComponent
 			-- 평타 = 직업 평타 계열 공격력(레벨·능력치·버프) + 계열 무기 수치. 손에 든 도구는 채집 전용.
 			-- 계열은 PlayerController.BasicAttackStatByJob (기본 STR, 맨주먹 파이터 TRI).
 			dmg = controller:GetStatAttackTotal(controller:GetBasicAttackStat())
+			-- 전직 뒤 채집 도구(도끼 등)로 치면 ×ToolCombatRatio — 도구는 채집 간격(신속 채집)으로 빨라지므로 전용 무기를 넘지 않게.
+			if controller.JobId ~= "" and controller:IsHoldingGatherTool() then
+				dmg = math.max(1, math.floor(dmg * controller.ToolCombatRatio))
+			end
 		end
 
 		-- 평타 강화 버프 (BuffDataSet StatKey)
@@ -69,7 +77,7 @@ script PlayerCombat extends AttackComponent
 			followUp = buffs:GetStatAdd("FollowUpHit")
 			local gain = math.floor(buffs:GetStatAdd("HitStaminaGain"))
 			if gain > 0 and isvalid(pc) then
-				pc.Stamina = math.min(pc.MaxStamina, pc.Stamina + gain)
+				pc.Stamina = math.min(pc:GetMaxStamina(), pc.Stamina + gain)
 			end
 		end
 

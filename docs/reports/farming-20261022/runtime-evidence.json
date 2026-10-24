@@ -1,0 +1,277 @@
+[
+  {
+    "dateTime": "2026-10-22T18:53:34",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] slot=101"
+  },
+  {
+    "dateTime": "2026-10-22T18:54:05",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] plot ready"
+  },
+  {
+    "dateTime": "2026-10-22T18:54:06",
+    "logType": "Info",
+    "message": "[VRF][CROP] plant center=(3.000, 1.435, 0.000)"
+  },
+  {
+    "dateTime": "2026-10-22T18:54:19",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] fresh mature pos=(3.000, 1.435, 0.000) stage=3"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:09",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=water seed=Wheat Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:10",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=fertilize seed=Wheat Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:10",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] model=Crop_Wheat pos=(7.000, 1.435, 0.000) stage=3 mature=true ruid=e5f127a74ebd4185bf6d2acf038d9821"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:12",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=water seed=Potato Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:12",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=fertilize seed=Potato Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:12",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] model=Crop_Potato pos=(11.000, 1.435, 0.000) stage=4 mature=true ruid=f203e61aad1b4b64a9a865410e436df3"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:14",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=water seed=Tomato Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:14",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=fertilize seed=Tomato Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:15",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] model=Crop_Tomato pos=(3.000, 5.435, 0.000) stage=4 mature=true ruid=518a405040f74ccdb0087cff60c43e1e"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:17",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=water seed=Strawberry Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:17",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=fertilize seed=Strawberry Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:17",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] model=Crop_Strawberry pos=(7.000, 5.435, 0.000) stage=5 mature=true ruid=4a4645bfa7d34ae3a53fed75931bacd1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:19",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=water seed=Golden Pumpkin Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:19",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=fertilize seed=Golden Pumpkin Seed stage=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:20",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] model=Crop_GoldenPumpkin pos=(11.000, 5.435, 0.000) stage=5 mature=true ruid=2a49eac06bda43d8a10d1da5feb636e3"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:48",
+    "logType": "Info",
+    "message": "[VRF][CROP] regrow=Tomato Seed stage=2"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:48",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] real harvest regrow key=2_4 seed=Tomato Seed stage=2"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:49",
+    "logType": "Info",
+    "message": "[VRF][CROP] regrow=Strawberry Seed stage=3"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:49",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] real harvest regrow key=6_4 seed=Strawberry Seed stage=3"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:49",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] care slots=[\"Watering Can_162775_585403\",\"Compost\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"] compost=3"
+  },
+  {
+    "dateTime": "2026-10-22T18:55:51",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=water seed=Tomato Seed stage=2"
+  },
+  {
+    "dateTime": "2026-10-22T18:56:10",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] compost selected"
+  },
+  {
+    "dateTime": "2026-10-22T18:56:36",
+    "logType": "Info",
+    "message": "[VRF][CROP] care=fertilize seed=Tomato Seed stage=3"
+  },
+  {
+    "dateTime": "2026-10-22T18:56:58",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] care RPC/persist PASS compost=2 wateredStage=2 plantedAt=1792662828"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:31",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] duplicate care no consumption; recipe test pot ready"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:33",
+    "logType": "Info",
+    "message": "[VRF][COOK] queue Wheat Porridge by 20372100009902983 len=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:33",
+    "logType": "Info",
+    "message": "[VRF][COOK] queue Baked Potato by 20372100009902983 len=2"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:33",
+    "logType": "Info",
+    "message": "[VRF][COOK] queue Berry Tart by 20372100009902983 len=3"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:33",
+    "logType": "Info",
+    "message": "[VRF][COOK] queue Pumpkin Soup by 20372100009902983 len=4"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:41",
+    "logType": "Info",
+    "message": "[VRF][COOK] done Wheat Porridge left=3 ready=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:49",
+    "logType": "Info",
+    "message": "[VRF][COOK] done Baked Potato left=2 ready=2"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:50",
+    "logType": "Info",
+    "message": "[VRF][COOK] done Berry Tart left=1 ready=3"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:50",
+    "logType": "Info",
+    "message": "[VRF][COOK] done Berry Tart left=0 ready=3"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:54",
+    "logType": "Info",
+    "message": "[VRF][COOK] collect 구운 감자 x1,딸기 타르트 x1,밀죽 x1 by 20372100009902983"
+  },
+  {
+    "dateTime": "2026-10-22T18:57:57",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] cooking UI opened"
+  },
+  {
+    "dateTime": "2026-10-22T18:58:35",
+    "logType": "Info",
+    "message": "[VRF][COOK] queue Pumpkin Soup by 20372100009902983 len=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:58:50",
+    "logType": "Info",
+    "message": "[VRF][COOK] done Pumpkin Soup left=0 ready=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:59:10",
+    "logType": "Info",
+    "message": "[VRF][COOK] collect 황금 호박 수프 x1 by 20372100009902983"
+  },
+  {
+    "dateTime": "2026-10-22T18:59:12",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] collected Wheat Porridge count=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:59:13",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] collected Baked Potato count=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:59:13",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] collected Berry Tart count=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:59:13",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] collected Pumpkin Soup count=1"
+  },
+  {
+    "dateTime": "2026-10-22T18:59:13",
+    "logType": "Info",
+    "message": "[VRF][FARMFIX] root still stable after updates"
+  },
+  {
+    "dateTime": "2026-10-22T19:00:53",
+    "logType": "Info",
+    "message": "[VRF][FARMRESTORE] active=101"
+  },
+  {
+    "dateTime": "2026-10-22T19:01:30",
+    "logType": "Info",
+    "message": "[VRF][FARMRESTORE] crop=Carrot Seed root=(3.000, 1.435, 0.000)"
+  },
+  {
+    "dateTime": "2026-10-22T19:01:30",
+    "logType": "Info",
+    "message": "[VRF][FARMRESTORE] crop=Wheat Seed root=(7.000, 1.435, 0.000)"
+  },
+  {
+    "dateTime": "2026-10-22T19:01:30",
+    "logType": "Info",
+    "message": "[VRF][FARMRESTORE] crop=Potato Seed root=(11.000, 1.435, 0.000)"
+  },
+  {
+    "dateTime": "2026-10-22T19:01:30",
+    "logType": "Info",
+    "message": "[VRF][FARMRESTORE] crop=Tomato Seed root=(3.000, 5.435, 0.000)"
+  },
+  {
+    "dateTime": "2026-10-22T19:01:30",
+    "logType": "Info",
+    "message": "[VRF][FARMRESTORE] crop=Strawberry Seed root=(7.000, 5.435, 0.000)"
+  },
+  {
+    "dateTime": "2026-10-22T19:01:30",
+    "logType": "Info",
+    "message": "[VRF][FARMRESTORE] crop=Golden Pumpkin Seed root=(11.000, 5.435, 0.000)"
+  },
+  {
+    "dateTime": "2026-10-22T19:01:30",
+    "logType": "Info",
+    "message": "[VRF][FARMRESTORE] PASS six roots + fertilizer/watering state + inventory restored in slot101"
+  }
+]

@@ -39,6 +39,7 @@
 | 단위 | 상태 | 게임 데이터 |
 |---|---|---|
 | 튜토리얼 101~108 | ✅ 반영 (108 CountMode=State, Play 확인 대기) | `QuestDataSet` 101~108. 108=`왠지 던질 수 있을것 같습니다..` (LearnSkill `hand_axe_throw`, 이미 배웠으면 자동 완료, 보상 Hand Axe:20) |
+| 마을 정착 109~112 (농사 온보딩) | ✅ 반영 (2026-10-22, Play 확인 대기) | `QuestDataSet` 109~112. 촌장→토리(밭·당근)→벨라(수프)→촌장(게시판 첫 납품) → 201. 상세 [farming-quest-loop.md](../farming-quest-loop.md) |
 | 챕터 1 「마을의 푸른 빛」 | ✅ 반영 (2026-08-15, Play 확인 대기) | `QuestDataSet` 201~205. fisher/blacksmith/researcher 대면 수주 첫 투입 |
 | 챕터 2 「검은 이슬」 | ✅ 맵/시스템 반영 (퀘스트 211~217) | 무대: 흙 벌판 3단계 (`hunt01`~`03`) / **1막 관문 보스: 슬라임킹** (`slime_king`) ➔ 격파 시 `rocky01` 해금 |
 | 챕터 3 「바위 메아리」 | ✅ 반영 (2026-09-26, Play 확인 대기) | `QuestDataSet` 221~227. 무대: 바위 고원 (`rocky01`~`03`) / **2막 관문 보스: 스톤골렘** (`stone_golem`) ➔ 격파 시 `desert01` 해금 |

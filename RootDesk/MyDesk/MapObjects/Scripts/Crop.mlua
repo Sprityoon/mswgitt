@@ -2,7 +2,7 @@
 script Crop extends Component
 	-- 작물 성장 컴포넌트. SeedItem으로 CropDataSet을 조회하며, 심은 시각(PlantedAtUnix) 기준 단계 환산.
 	-- MVP: 낮/밤 비연동 서버 타이머. 재접속 시에도 심은 시각으로 경과 재계산(오프라인 성장).
-	-- 성숙 조건: 경과 >= GrowthStages * StageDuration (3×15s=45s).
+	-- 성숙 조건: 경과 >= GrowthStages * StageDuration (3×15s=45s). 마지막 단계 그림 = 성숙 순간(ComputeStage).
 
 	@Sync
 	property string SeedItem = ""
@@ -12,6 +12,29 @@ script Crop extends Component
 
 	@Sync
 	property integer CurrentStage = 1
+
+	@Sync
+	property integer WateredStage = 0
+
+	@Sync
+	property boolean IsFertilized = false
+
+	-- 대풍년(2026-10-23): 다 자라는 순간 딱 한 번 판정(CropDataSet.BumperChance). 퇴비·비를 맞았으면 확률 ×BumperCareMult.
+	-- 당첨 시 크기 ×BumperScaleMult · 금빛 틴트 · 수확량 MaxYield×2 · 수확 경험치 ×BumperXpMult.
+	@Sync
+	property boolean IsBumper = false
+
+	property boolean BumperRolled = false
+
+	property boolean RainTouched = false
+
+	property number BumperScaleMult = 1.35
+
+	property number BumperCareMult = 2.0
+
+	property integer BumperXpMult = 3
+
+	property Color BumperTint = Color(1.0, 0.93, 0.62, 1.0)
 
 	property integer stageTimerId = 0
 
@@ -61,18 +84,38 @@ script Crop extends Component
 	end
 
 	method integer ComputeStage()
-		-- 경과 / StageDuration → 1..GrowthStages. 성숙 전에도 마지막 단계 스프라이트까지 표시.
+		-- 성장 시간(GrowthStages × StageDuration)을 앞 단계(1..GrowthStages-1)에 고르게 나누고, 마지막 단계 그림은 성숙하는 순간에만 보인다.
+		-- (2026-10-23: 구 방식 경과/StageDuration+1 은 마지막 그림이 한 단계 일찍 떠 "다 자란 모양인데 아직 자라지 않았습니다"가 한 단계 동안 났다.)
 		local row = self:GetCropRow()
 		if row == nil then return 1 end
 		local stages = math.floor(tonumber(row:GetItem("GrowthStages")) or 1)
-		local duration = math.floor(tonumber(row:GetItem("StageDuration")) or 1)
 		if stages < 1 then stages = 1 end
-		if duration < 1 then duration = 1 end
-		local elapsed = self:GetElapsedSeconds()
-		local stage = math.floor(elapsed / duration) + 1
-		if stage > stages then stage = stages end
+		if stages == 1 or self:IsMature() then return stages end
+		local total = self:GetTotalGrowSeconds()
+		local stage = math.floor(self:GetElapsedSeconds() * (stages - 1) / total) + 1
+		if stage > stages - 1 then stage = stages - 1 end
 		if stage < 1 then stage = 1 end
 		return stage
+	end
+
+	method integer GetTotalGrowSeconds()
+		-- 성숙까지 걸리는 시간 = GrowthStages × StageDuration.
+		local row = self:GetCropRow()
+		if row == nil then return 1 end
+		local stages = math.max(1, math.floor(tonumber(row:GetItem("GrowthStages")) or 1))
+		local duration = math.max(1, math.floor(tonumber(row:GetItem("StageDuration")) or 1))
+		return stages * duration
+	end
+
+	method integer GetStageStartSeconds(integer stage)
+		-- ComputeStage 의 역: 그 단계 그림이 처음 보이는 경과 초 (재수확 되감기용).
+		local row = self:GetCropRow()
+		if row == nil then return 0 end
+		local stages = math.max(1, math.floor(tonumber(row:GetItem("GrowthStages")) or 1))
+		local total = self:GetTotalGrowSeconds()
+		if stage <= 1 or stages <= 1 then return 0 end
+		if stage >= stages then return total end
+		return math.ceil((stage - 1) * total / (stages - 1))
 	end
 
 	method boolean IsMature()
@@ -155,13 +198,34 @@ script Crop extends Component
 				.. " seed=" .. tostring(self.SeedItem)
 				.. " scale=" .. tostring(self:GetStageScale(stage)))
 		end
+		if not self.BumperRolled and self:IsMature() then
+			self:RollBumper()
+		end
 		local ruid = self:GetStageSpriteRuid(stage)
 		local scale = self:GetStageScale(stage)
+		local sprite = self.Entity.SpriteRendererComponent
+		if self.IsBumper and self:IsMature() then
+			scale = scale * self.BumperScaleMult
+			if isvalid(sprite) then sprite.Color = self.BumperTint end
+		elseif isvalid(sprite) and sprite.Color ~= Color.white then
+			sprite.Color = Color.white
+		end
 		if ruid ~= nil and ruid ~= "" then
 			self:ApplyStageVisual(ruid, scale)
 		else
 			self:ApplyStageVisual("", scale)
 		end
+		self:UpdateRainDrop()
+	end
+
+	@ExecSpace("ServerOnly")
+	method void UpdateRainDrop()
+		-- 비가 작물 성장을 당겨 주는 동안(WeatherManager 작물 가속 > 0) 아직 덜 자란 작물 머리 위에 이슬 아이콘(자식 RainDrop)을 띄운다.
+		local drop = self.Entity:GetChildByName("RainDrop")
+		if not isvalid(drop) then return end
+		local raining = _WeatherManager ~= nil and (tonumber(_WeatherManager:GetCropBoostPerMin()) or 0) > 0
+		local show = raining and not self:IsMature()
+		if drop.Enable ~= show then drop.Enable = show end
 	end
 
 	@ExecSpace("ServerOnly")
@@ -188,12 +252,30 @@ script Crop extends Component
 		end
 	end
 
+	@ExecSpace("ServerOnly")
+	method void RollBumper()
+		-- 성숙 순간 1회 대풍년 판정 (결과는 배치 델타에 저장 — 재접속해도 다시 굴리지 않는다).
+		self.BumperRolled = true
+		local row = self:GetCropRow()
+		local chance = 0
+		if row ~= nil then
+			local ok, v = pcall(function() return row:GetItem("BumperChance") end)
+			if ok then chance = tonumber(v) or 0 end
+		end
+		if self.IsFertilized or self.RainTouched then chance = chance * self.BumperCareMult end
+		self.IsBumper = chance > 0 and math.random() < chance
+		log("[VRF][CROP] bumper roll seed=" .. tostring(self.SeedItem) .. " chance=" .. tostring(chance) .. " hit=" .. tostring(self.IsBumper))
+		self:PersistState()
+	end
+
 	method integer RollHarvestCount()
-		-- MinYield~MaxYield 사이 수확 수량.
+		-- MinYield~MaxYield 사이 수확 수량. 대풍년이면 MaxYield×2 확정.
 		local row = self:GetCropRow()
 		if row == nil then return 1 end
 		local minY = math.floor(tonumber(row:GetItem("MinYield")) or 1)
 		local maxY = math.floor(tonumber(row:GetItem("MaxYield")) or minY)
+		if self.IsBumper then return math.max(1, maxY * 2) end
+		if self.IsFertilized then minY = minY + 1 end
 		if minY < 1 then minY = 1 end
 		if maxY < minY then maxY = minY end
 		return math.random(minY, maxY)
@@ -214,12 +296,91 @@ script Crop extends Component
 		if self.PlantedAtUnix <= 0 then return end
 		if self:IsMature() then return end
 		self.PlantedAtUnix = self.PlantedAtUnix - boostSeconds
+		self.RainTouched = true
 		log("[WEATHER] crop boost seed=" .. tostring(self.SeedItem)
 			.. " plantedAt=" .. tostring(self.PlantedAtUnix)
 			.. " -" .. tostring(boostSeconds) .. "s"
 			.. " elapsed=" .. tostring(self:GetElapsedSeconds())
 			.. " mature=" .. tostring(self:IsMature()))
 		self:RefreshGrowthVisual()
+		self:PersistState()
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean ApplyCare(string action)
+		-- 같은 단계 물주기와 같은 수확 주기 퇴비 중복을 거절한다.
+		if self:IsMature() then return false end
+		if action == "water" then
+			local stage = self:ComputeStage()
+			if self.WateredStage == stage then return false end
+			local row = self:GetCropRow()
+			if row == nil then return false end
+			local seconds = math.floor((tonumber(row:GetItem("StageDuration")) or 0) * 0.5)
+			if seconds <= 0 then return false end
+			self.PlantedAtUnix = self.PlantedAtUnix - seconds
+			self:RefreshGrowthVisual()
+			-- 가속으로 다음 단계에 진입해도 같은 연타로 또 물을 줄 수 없게 한다.
+			self.WateredStage = self:ComputeStage()
+		elseif action == "fertilize" then
+			if self.IsFertilized then return false end
+			self.IsFertilized = true
+		else
+			return false
+		end
+		self:PersistState()
+		log("[VRF][CROP] care=" .. action .. " seed=" .. self.SeedItem .. " stage=" .. tostring(self.CurrentStage))
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method boolean TryRegrow()
+		-- 데이터의 단계로 되돌리고 밭 점유·엔티티를 유지한다. 일회성 작물은 false.
+		local row = self:GetCropRow()
+		if row == nil then return false end
+		local stage = math.floor(tonumber(row:GetItem("RegrowStage")) or 0)
+		if stage <= 0 then return false end
+		self.PlantedAtUnix = math.floor(os.time()) - self:GetStageStartSeconds(stage)
+		self.WateredStage = 0
+		self.IsFertilized = false
+		self.IsBumper = false
+		self.BumperRolled = false
+		self.RainTouched = false
+		self:RefreshGrowthVisual()
+		self:PersistState()
+		log("[VRF][CROP] regrow=" .. self.SeedItem .. " stage=" .. tostring(stage))
+		return true
+	end
+
+	@ExecSpace("ServerOnly")
+	method void PersistState()
+		-- 기존 영지 배치 델타에 상태만 갱신한다. DataStorage 호출·추가 Yield 없음.
+		local map = self.Entity.CurrentMap
+		if not isvalid(map) then return end
+		local grids = _ResourceSpawner:GetGridToEntity(map.Name)
+		local pivot = nil
+		for _, data in pairs(grids) do
+			if data.entity == self.Entity then
+				data.plantedAt = self.PlantedAtUnix
+				pivot = data
+			end
+		end
+		if pivot == nil then return end
+		local raw = _ResourceSpawner:GetPlacedFurnitureJson(map.Name)
+		local placements = (raw ~= nil and raw ~= "") and _HttpService:JSONDecode(raw) or {}
+		for _, entry in ipairs(placements) do
+			if entry.x == pivot.pivotX and entry.y == pivot.pivotY then
+				entry.plantedAt = self.PlantedAtUnix
+				entry.wateredStage = self.WateredStage
+				entry.isFertilized = self.IsFertilized
+				entry.isBumper = self.IsBumper
+				entry.bumperRolled = self.BumperRolled
+				entry.rainTouched = self.RainTouched
+			end
+		end
+		_ResourceSpawner:SetPlacedFurnitureJson(map.Name, _HttpService:JSONEncode(placements))
+		if string.sub(map.Name, 1, 5) == "Home_" then
+			_PersistenceManager:MarkPlayerDirty(string.sub(map.Name, 6))
+		end
 	end
 
 end

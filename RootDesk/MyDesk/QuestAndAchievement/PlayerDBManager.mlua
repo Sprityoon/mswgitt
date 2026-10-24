@@ -42,6 +42,13 @@ script PlayerDBManager extends Component
 		-- 퀘스트 상태가 메모리에 올라온 뒤에만 판정 가능한 보정 — 이미 완료한 퀘스트의 영지 포탈 개통.
 		if _PersistenceManager ~= nil then
 			_PersistenceManager:BackfillEarnedPortals(playerEntity)
+			_PersistenceManager:BackfillEarnedUnlocks(playerEntity)
+			-- 지난주 낚시왕 보상(랭킹 저장소 대기가 있어 로그인 흐름과 분리해 3초 뒤).
+			if _FishingContestLogic ~= nil then
+				_TimerService:SetTimerOnce(function()
+					if isvalid(playerEntity) then _FishingContestLogic:TryGrantLastWeekReward(playerEntity) end
+				end, 3)
+			end
 		end
 
 		return true

@@ -2,9 +2,9 @@
 script EstateInviteManager extends Logic
 
 	-- Phase 23-B: 개인 영지 초대 라우터.
-	-- 초대자는 자기 영지(Home_<userId>) 안에서만 초대를 보낼 수 있다 — 영지 맵은 동적 맵이라
-	-- 소유자가 영지를 비우면 파괴되고(PersistenceManager.OnPlayerMapChanged), 그 뒤에는 워프 대상이
-	-- 존재하지 않기 때문이다. 수락 시점에도 맵 존재를 다시 확인한다.
+	-- 2026-10-24: 어디서든 초대할 수 있다(보스전 제외). 영지 맵은 소유자가 로그아웃할 때만 파괴되므로 접속 중이면 항상 있다.
+	-- 영지 밖에서 보낸 초대를 수락하면 초대한 사람도 함께 영지로 이동한다(BringInviterHome). 수락 시점에도 맵 존재를 다시 확인한다.
+	-- 입구: 다른 유저 클릭 메뉴(UIPlayerInteractController) · 친구 창(FriendManager.ServerInviteFriend).
 	-- 방문객 권한은 부여하지 않는다 — 채굴/설치/상호작용은 영지 권한 설정(UIPermissionController)이 전담한다.
 
 	property number InviteExpireSeconds = 60.0
@@ -54,6 +54,15 @@ script EstateInviteManager extends Logic
 		-- 클라이언트(플레이어 인터랙션 메뉴)가 요청하는 영지 초대 전송.
 		local fromUserId = senderUserId
 		if fromUserId == nil or fromUserId == "" then return end
+		self:SendInviteFrom(fromUserId, targetPlayerId)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void SendInviteFrom(string fromUserId, string targetPlayerId)
+		-- 초대 본체 — 플레이어 클릭 메뉴와 친구 창(FriendManager)이 함께 쓴다.
+		-- 2026-10-24: "내 영지 안에서만" 제한 폐지. 영지는 소유자가 접속해 있는 동안 파괴되지 않으므로(2026-09-25)
+		-- 어디서든 보낼 수 있고, 영지 밖에서 보냈다면 수락 순간 초대한 사람도 함께 영지로 간다("같이 가기").
+		if fromUserId == nil or fromUserId == "" then return end
 		if targetPlayerId == nil or targetPlayerId == "" then return end
 		if targetPlayerId == fromUserId then
 			self:Notify(fromUserId, "자신을 초대할 수 없습니다.")
@@ -70,9 +79,12 @@ script EstateInviteManager extends Logic
 		local inviter = _UserService:GetUserEntityByUserId(fromUserId)
 		if not isvalid(inviter) then return end
 		local currentMap = inviter.CurrentMap
-		local homeMapName = "Home_" .. fromUserId
-		if not isvalid(currentMap) or currentMap.Name ~= homeMapName then
-			self:Notify(fromUserId, "내 영지 안에서만 초대할 수 있습니다.")
+		if isvalid(currentMap) and string.sub(currentMap.Name, 1, 4) == "raid" then
+			self:Notify(fromUserId, "보스전 중에는 영지로 초대할 수 없습니다.")
+			return
+		end
+		if not isvalid(_EntityService:GetEntityByPath("/maps/Home_" .. fromUserId)) then
+			self:Notify(fromUserId, "내 영지가 아직 준비되지 않았습니다.")
 			return
 		end
 
@@ -149,10 +161,36 @@ script EstateInviteManager extends Logic
 			end
 		end
 		guest.PlayerComponent:MoveToMapPosition(mapName, arrive)
+		self:BringInviterHome(record.fromUserId, mapName)
 
 		self:Notify(guestUserId, record.fromName .. "님의 영지에 입장했습니다.")
 		self:Notify(record.fromUserId, guestName .. "님이 영지에 입장했습니다.")
 		log("[ESTATE-INVITE] accepted: " .. guestName .. " -> " .. mapName)
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BringInviterHome(string inviterUserId, string mapName)
+		-- "같이 가기": 초대한 사람이 자기 영지(하위 영지 포함) 밖에 있으면 함께 영지 포탈 옆으로 보낸다. 보스전 중이면 두고 간다.
+		local inviter = _UserService:GetUserEntityByUserId(inviterUserId)
+		if not isvalid(inviter) or not isvalid(inviter.PlayerComponent) then return end
+		local cur = ""
+		if isvalid(inviter.CurrentMap) then cur = inviter.CurrentMap.Name end
+		if string.sub(cur, 1, 4) == "raid" then return end
+		if _PersistenceManager ~= nil and _PersistenceManager:GetHomeOwnerId(cur) == inviterUserId then return end
+		local arrive = Vector2(-3, 0)
+		local pc = inviter:GetComponent("script.PlayerController")
+		if isvalid(pc) then
+			---@type PlayerController
+			local controller = pc
+			local near = controller:FindPortalArrival(mapName, cur)
+			if near ~= nil then
+				arrive = near
+			else
+				arrive = controller:ResolveHomeWarpPosition(mapName, -3, 0)
+			end
+		end
+		inviter.PlayerComponent:MoveToMapPosition(mapName, arrive)
+		log("[VRF][ESTATE-INVITE] inviter follows home " .. inviterUserId .. " from " .. cur)
 	end
 
 	@ExecSpace("Client")

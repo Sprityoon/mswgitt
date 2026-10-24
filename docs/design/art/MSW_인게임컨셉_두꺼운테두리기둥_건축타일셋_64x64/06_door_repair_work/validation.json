@@ -1,0 +1,75 @@
+{
+  "tile_size": [
+    64,
+    64
+  ],
+  "border_px": 24,
+  "leaf_change_bounds": [
+    35,
+    47,
+    93,
+    126
+  ],
+  "open_change_bounds": [
+    35,
+    51,
+    93,
+    126
+  ],
+  "variants": [
+    {
+      "folder": "07_tiles_64x64_24px_border_door_fixed",
+      "count": 48,
+      "changed_indices": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "unchanged_tiles_byte_identical": 32,
+      "open_tiles_unchanged": false,
+      "architecture_outside_door_bounds_unchanged": true,
+      "tile_split_roundtrip": true,
+      "strip": "Cabin_strip_24px_border_door_fixed.png"
+    },
+    {
+      "folder": "08_tiles_64x64_24px_outer_edge_door_fixed",
+      "count": 48,
+      "changed_indices": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "unchanged_tiles_byte_identical": 32,
+      "open_tiles_unchanged": false,
+      "architecture_outside_door_bounds_unchanged": true,
+      "tile_split_roundtrip": true,
+      "strip": "Cabin_strip_24px_outer_edge_door_fixed.png"
+    }
+  ]
+}

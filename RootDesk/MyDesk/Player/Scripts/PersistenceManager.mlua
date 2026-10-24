@@ -967,7 +967,7 @@ script PersistenceManager extends Logic
 						local elapsedSeconds = elapsedTicks / 10000000.0
 						if elapsedSeconds > 0 then
 							local maxHp = player.PlayerComponent.MaxHp
-							local maxSt = pc.MaxStamina
+							local maxSt = pc:GetMaxStamina()
 							local fullSeconds = 600.0
 							if pc.SleepRestorePerSecond > 0 then fullSeconds = 1.0 / pc.SleepRestorePerSecond end
 							if elapsedSeconds >= fullSeconds then
@@ -1025,6 +1025,10 @@ script PersistenceManager extends Logic
 				inv.ResearchStartTime = data.researchStartTime or "0"
 				inv.DailyRequestDay = data.dailyRequestDay or "0"
 				inv.DailyCompletedRequestsJson = data.dailyCompletedRequests or "[]"
+				inv.WeeklyStampWeek = data.weeklyStampWeek or "0"
+				inv.WeeklyStampCount = math.floor(tonumber(data.weeklyStampCount) or 0)
+				inv.FishRewardWeek = math.floor(tonumber(data.fishRewardWeek) or -1)
+				inv.FriendsData = data.friends or ""
 				inv.DexItemsJson = data.dexItems or "{}"
 				inv.DexMonstersJson = data.dexMonsters or "{}"
 				inv.ActivePetId = data.activePetId or ""
@@ -1203,6 +1207,24 @@ script PersistenceManager extends Logic
 										comp.FuelTimeRemaining = tonumber(fd.fuelTime) or 0.0
 										comp.ProgressTime = tonumber(fd.progressTime) or 0.0
 										comp.IsSmelting = fd.isSmelting == true
+										break
+									end
+								end
+							end
+						end
+					end
+				end
+
+				local potComps = map:GetChildComponentsByTypeName("script.CookingPot", true)
+				if potComps then
+					for _, comp in ipairs(potComps) do
+						local ent = comp.Entity
+						if isvalid(ent) then
+							local entCell = tilemap:ToCellPosition(ent.TransformComponent.WorldPosition)
+							if entCell then
+								for _, furn in ipairs(furnList) do
+									if furn.x == entCell.x and furn.y == entCell.y then
+										self:RestoreCookingPot(comp, furn)
 										break
 									end
 								end
@@ -1475,6 +1497,10 @@ script PersistenceManager extends Logic
 		local capResearchStart = inv.ResearchStartTime or "0"
 		local capDailyDay = inv.DailyRequestDay or "0"
 		local capDailyDone = inv.DailyCompletedRequestsJson or "[]"
+		local capWeeklyWeek = inv.WeeklyStampWeek or "0"
+		local capWeeklyCount = tonumber(inv.WeeklyStampCount) or 0
+		local capFishRewardWeek = tonumber(inv.FishRewardWeek) or -1
+		local capFriends = inv.FriendsData or ""
 		local capDexItems = inv.DexItemsJson or "{}"
 		local capDexMonsters = inv.DexMonstersJson or "{}"
 		local capActivePet = inv.ActivePetId or ""
@@ -1569,10 +1595,29 @@ script PersistenceManager extends Logic
 						end
 					end
 				end
+
+				-- 조리 냄비(CookingPot): 예약·완성품 스냅샷 (비어 있으면 nil)
+				local potComps = map:GetChildComponentsByTypeName("script.CookingPot", true)
+				if potComps then
+					for _, comp in ipairs(potComps) do
+						local ent = comp.Entity
+						if isvalid(ent) then
+							local entCell = tilemap:ToCellPosition(ent.TransformComponent.WorldPosition)
+							if entCell then
+								for _, furn in ipairs(furnList) do
+									if furn.x == entCell.x and furn.y == entCell.y then
+										furn.rawCook = comp:BuildSaveData()
+										break
+									end
+								end
+							end
+						end
+					end
+				end
 			end
 		end
 
-		-- 상자 / 화로 내용 정제: 빈 중첩 구조 → LEA-3001. 비어 있으면 생략, 있으면 평문 복사만.
+		-- 상자 / 화로 / 냄비 내용 정제: 빈 중첩 구조 → LEA-3001. 비어 있으면 생략, 있으면 평문 복사만.
 		for _, furn in ipairs(furnList) do
 			local rawItems = furn.chestItems
 			furn.chestItems = nil
@@ -1619,6 +1664,17 @@ script PersistenceManager extends Logic
 					}
 				end
 			end
+
+			local rawCook = furn.rawCook
+			furn.rawCook = nil
+			furn.cookData = nil
+			if rawCook ~= nil and type(rawCook) == "table" then
+				furn.cookData = {
+					queue = tostring(rawCook.queue or "[]"),
+					output = tostring(rawCook.output or "{}"),
+					progress = tonumber(rawCook.progress) or 0.0
+				}
+			end
 		end
 
 		local furnJson = self:SafeEncodeJson(furnList, "[]")
@@ -1648,6 +1704,10 @@ script PersistenceManager extends Logic
 			researchStartTime = capResearchStart,
 			dailyRequestDay = capDailyDay,
 			dailyCompletedRequests = capDailyDone,
+			weeklyStampWeek = capWeeklyWeek,
+			weeklyStampCount = capWeeklyCount,
+			fishRewardWeek = capFishRewardWeek,
+			friends = capFriends,
 			dexItems = capDexItems,
 			dexMonsters = capDexMonsters,
 			activePetId = capActivePet,
@@ -1801,6 +1861,22 @@ script PersistenceManager extends Logic
 					self:WriteSlotMetaTable(userId, meta)
 				end
 			end)
+		end
+	end
+
+	@ExecSpace("ServerOnly")
+	method void RestoreCookingPot(any potComp, table furn)
+		-- 조리 냄비 복원: cookData(예약·완성품) 적용 + 구 화로식 냄비의 furnaceData 내용물은 수거 대기로 옮긴다.
+		if not isvalid(potComp) or furn == nil then return end
+		local cd = furn.cookData
+		if cd ~= nil and type(cd) == "table" then
+			potComp:ApplySaveData(tostring(cd.queue or "[]"), tostring(cd.output or "{}"), tonumber(cd.progress) or 0.0)
+		end
+		local fd = furn.furnaceData
+		if fd ~= nil and type(fd) == "table" then
+			potComp:AbsorbLegacyFurnace(tostring(fd.inputName or ""), math.floor(tonumber(fd.inputCount) or 0),
+				tostring(fd.fuelName or ""), math.floor(tonumber(fd.fuelCount) or 0),
+				tostring(fd.outputName or ""), math.floor(tonumber(fd.outputCount) or 0))
 		end
 	end
 
@@ -2257,6 +2333,32 @@ script PersistenceManager extends Logic
 			.. " dest=" .. tostring(destinationId)
 			.. " cell=(" .. tostring(rec.x) .. "," .. tostring(rec.y) .. ")"
 			.. " live=" .. tostring(spawned))
+	end
+
+	@ExecSpace("ServerOnly")
+	method void BackfillEarnedUnlocks(Entity player)
+		-- 로그인 보정: 완료한 퀘스트의 RewardUnlockId, 수락·완료한 퀘스트의 AcceptUnlockId 제작법이 없으면 지금 연다.
+		-- (해금 보상이 나중에 붙은 퀘스트를 이미 끝낸 세이브 구제 — 예: 107 넓은 세계로 → 조리 냄비.) GrantRecipeUnlock 은 멱등.
+		-- 인벤토리 복원(LoadPlayerData) 뒤에 퀘스트 DB 를 읽으므로 PlayerDBManager.PostOnLoadedDataFromDB 에서 부른다.
+		if not isvalid(player) then return end
+		---@type PlayerQuest
+		local pq = player:GetComponent("script.PlayerQuest")
+		local inv = player:GetComponent("script.PlayerInventory")
+		if not isvalid(pq) or not isvalid(inv) then return end
+		local ds = _DataService:GetTable("QuestDataSet")
+		if ds == nil then return end
+		for i = 1, ds:GetRowCount() do
+			local qid = math.floor(tonumber(ds:GetCell(i, "Id")) or 0)
+			local ud = pq.UserDataTable[qid]
+			if ud ~= nil then
+				local done = ud.State == _QuestStateEnum.Completed
+				local accepted = done or ud.State == _QuestStateEnum.InProgress
+				local reward = ds:GetCell(i, "RewardUnlockId") or ""
+				if done and reward ~= "" then inv:GrantRecipeUnlock(reward) end
+				local onAccept = ds:GetCell(i, "AcceptUnlockId") or ""
+				if accepted and onAccept ~= "" then inv:GrantRecipeUnlock(onAccept) end
+			end
+		end
 	end
 
 	@ExecSpace("ServerOnly")

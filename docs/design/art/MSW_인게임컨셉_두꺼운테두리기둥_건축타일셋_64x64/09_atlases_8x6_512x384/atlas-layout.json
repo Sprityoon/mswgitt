@@ -1,0 +1,994 @@
+[
+  {
+    "atlas": "Cabin_atlas_24px_border_door_fixed_8x6.png",
+    "source": "07_tiles_64x64_24px_border_door_fixed",
+    "width": 512,
+    "height": 384,
+    "columns": 8,
+    "rows": 6,
+    "tile_width": 64,
+    "tile_height": 64,
+    "margin": 0,
+    "spacing": 0,
+    "order": "left-to-right, top-to-bottom",
+    "lossless_tile_checks": 48,
+    "tiles": [
+      {
+        "index": 0,
+        "file": "00_wall_corner_tl_outer.png",
+        "column": 0,
+        "row": 0,
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 1,
+        "file": "01_wall_top_beam.png",
+        "column": 1,
+        "row": 0,
+        "x": 64,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 2,
+        "file": "02_wall_corner_tr_outer.png",
+        "column": 2,
+        "row": 0,
+        "x": 128,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 3,
+        "file": "03_wall_left_border.png",
+        "column": 3,
+        "row": 0,
+        "x": 192,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 4,
+        "file": "04_transparent_empty.png",
+        "column": 4,
+        "row": 0,
+        "x": 256,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 5,
+        "file": "05_wall_right_border.png",
+        "column": 5,
+        "row": 0,
+        "x": 320,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 6,
+        "file": "06_wall_corner_tl_inner.png",
+        "column": 6,
+        "row": 0,
+        "x": 384,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 7,
+        "file": "07_wall_corner_tr_inner.png",
+        "column": 7,
+        "row": 0,
+        "x": 448,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 8,
+        "file": "08_north_wall_upper_L_border.png",
+        "column": 0,
+        "row": 1,
+        "x": 0,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 9,
+        "file": "09_north_wall_upper_M.png",
+        "column": 1,
+        "row": 1,
+        "x": 64,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 10,
+        "file": "10_north_wall_upper_R_border.png",
+        "column": 2,
+        "row": 1,
+        "x": 128,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 11,
+        "file": "11_north_wall_lower_L_border.png",
+        "column": 3,
+        "row": 1,
+        "x": 192,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 12,
+        "file": "12_north_wall_lower_M.png",
+        "column": 4,
+        "row": 1,
+        "x": 256,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 13,
+        "file": "13_north_wall_lower_R_border.png",
+        "column": 5,
+        "row": 1,
+        "x": 320,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 14,
+        "file": "14_south_wall_upper_L_border.png",
+        "column": 6,
+        "row": 1,
+        "x": 384,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 15,
+        "file": "15_south_wall_upper_M.png",
+        "column": 7,
+        "row": 1,
+        "x": 448,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 16,
+        "file": "16_south_wall_upper_R_border.png",
+        "column": 0,
+        "row": 2,
+        "x": 0,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 17,
+        "file": "17_south_wall_lower_L_border.png",
+        "column": 1,
+        "row": 2,
+        "x": 64,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 18,
+        "file": "18_south_wall_lower_M.png",
+        "column": 2,
+        "row": 2,
+        "x": 128,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 19,
+        "file": "19_south_wall_lower_R_border.png",
+        "column": 3,
+        "row": 2,
+        "x": 192,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 20,
+        "file": "20_int_door_closed_TL.png",
+        "column": 4,
+        "row": 2,
+        "x": 256,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 21,
+        "file": "21_int_door_closed_TR.png",
+        "column": 5,
+        "row": 2,
+        "x": 320,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 22,
+        "file": "22_int_door_closed_BL.png",
+        "column": 6,
+        "row": 2,
+        "x": 384,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 23,
+        "file": "23_int_door_closed_BR.png",
+        "column": 7,
+        "row": 2,
+        "x": 448,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 24,
+        "file": "24_int_door_open_TL.png",
+        "column": 0,
+        "row": 3,
+        "x": 0,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 25,
+        "file": "25_int_door_open_TR.png",
+        "column": 1,
+        "row": 3,
+        "x": 64,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 26,
+        "file": "26_int_door_open_BL.png",
+        "column": 2,
+        "row": 3,
+        "x": 128,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 27,
+        "file": "27_int_door_open_BR.png",
+        "column": 3,
+        "row": 3,
+        "x": 192,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 28,
+        "file": "28_ext_door_closed_TL.png",
+        "column": 4,
+        "row": 3,
+        "x": 256,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 29,
+        "file": "29_ext_door_closed_TR.png",
+        "column": 5,
+        "row": 3,
+        "x": 320,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 30,
+        "file": "30_ext_door_closed_BL.png",
+        "column": 6,
+        "row": 3,
+        "x": 384,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 31,
+        "file": "31_ext_door_closed_BR.png",
+        "column": 7,
+        "row": 3,
+        "x": 448,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 32,
+        "file": "32_ext_door_open_TL.png",
+        "column": 0,
+        "row": 4,
+        "x": 0,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 33,
+        "file": "33_ext_door_open_TR.png",
+        "column": 1,
+        "row": 4,
+        "x": 64,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 34,
+        "file": "34_ext_door_open_BL.png",
+        "column": 2,
+        "row": 4,
+        "x": 128,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 35,
+        "file": "35_ext_door_open_BR.png",
+        "column": 3,
+        "row": 4,
+        "x": 192,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 36,
+        "file": "36_int_window_TL.png",
+        "column": 4,
+        "row": 4,
+        "x": 256,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 37,
+        "file": "37_int_window_TR.png",
+        "column": 5,
+        "row": 4,
+        "x": 320,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 38,
+        "file": "38_int_window_BL.png",
+        "column": 6,
+        "row": 4,
+        "x": 384,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 39,
+        "file": "39_int_window_BR.png",
+        "column": 7,
+        "row": 4,
+        "x": 448,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 40,
+        "file": "40_ext_window_TL.png",
+        "column": 0,
+        "row": 5,
+        "x": 0,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 41,
+        "file": "41_ext_window_TR.png",
+        "column": 1,
+        "row": 5,
+        "x": 64,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 42,
+        "file": "42_ext_window_BL.png",
+        "column": 2,
+        "row": 5,
+        "x": 128,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 43,
+        "file": "43_ext_window_BR.png",
+        "column": 3,
+        "row": 5,
+        "x": 192,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 44,
+        "file": "44_floor_oak_TL.png",
+        "column": 4,
+        "row": 5,
+        "x": 256,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 45,
+        "file": "45_floor_oak_TR.png",
+        "column": 5,
+        "row": 5,
+        "x": 320,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 46,
+        "file": "46_floor_oak_BL.png",
+        "column": 6,
+        "row": 5,
+        "x": 384,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 47,
+        "file": "47_floor_oak_BR.png",
+        "column": 7,
+        "row": 5,
+        "x": 448,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      }
+    ]
+  },
+  {
+    "atlas": "Cabin_atlas_24px_outer_edge_door_fixed_8x6.png",
+    "source": "08_tiles_64x64_24px_outer_edge_door_fixed",
+    "width": 512,
+    "height": 384,
+    "columns": 8,
+    "rows": 6,
+    "tile_width": 64,
+    "tile_height": 64,
+    "margin": 0,
+    "spacing": 0,
+    "order": "left-to-right, top-to-bottom",
+    "lossless_tile_checks": 48,
+    "tiles": [
+      {
+        "index": 0,
+        "file": "00_wall_corner_tl_outer.png",
+        "column": 0,
+        "row": 0,
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 1,
+        "file": "01_wall_top_beam.png",
+        "column": 1,
+        "row": 0,
+        "x": 64,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 2,
+        "file": "02_wall_corner_tr_outer.png",
+        "column": 2,
+        "row": 0,
+        "x": 128,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 3,
+        "file": "03_wall_left_border.png",
+        "column": 3,
+        "row": 0,
+        "x": 192,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 4,
+        "file": "04_transparent_empty.png",
+        "column": 4,
+        "row": 0,
+        "x": 256,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 5,
+        "file": "05_wall_right_border.png",
+        "column": 5,
+        "row": 0,
+        "x": 320,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 6,
+        "file": "06_wall_corner_tl_inner.png",
+        "column": 6,
+        "row": 0,
+        "x": 384,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 7,
+        "file": "07_wall_corner_tr_inner.png",
+        "column": 7,
+        "row": 0,
+        "x": 448,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 8,
+        "file": "08_north_wall_upper_L_border.png",
+        "column": 0,
+        "row": 1,
+        "x": 0,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 9,
+        "file": "09_north_wall_upper_M.png",
+        "column": 1,
+        "row": 1,
+        "x": 64,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 10,
+        "file": "10_north_wall_upper_R_border.png",
+        "column": 2,
+        "row": 1,
+        "x": 128,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 11,
+        "file": "11_north_wall_lower_L_border.png",
+        "column": 3,
+        "row": 1,
+        "x": 192,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 12,
+        "file": "12_north_wall_lower_M.png",
+        "column": 4,
+        "row": 1,
+        "x": 256,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 13,
+        "file": "13_north_wall_lower_R_border.png",
+        "column": 5,
+        "row": 1,
+        "x": 320,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 14,
+        "file": "14_south_wall_upper_L_border.png",
+        "column": 6,
+        "row": 1,
+        "x": 384,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 15,
+        "file": "15_south_wall_upper_M.png",
+        "column": 7,
+        "row": 1,
+        "x": 448,
+        "y": 64,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 16,
+        "file": "16_south_wall_upper_R_border.png",
+        "column": 0,
+        "row": 2,
+        "x": 0,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 17,
+        "file": "17_south_wall_lower_L_border.png",
+        "column": 1,
+        "row": 2,
+        "x": 64,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 18,
+        "file": "18_south_wall_lower_M.png",
+        "column": 2,
+        "row": 2,
+        "x": 128,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 19,
+        "file": "19_south_wall_lower_R_border.png",
+        "column": 3,
+        "row": 2,
+        "x": 192,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 20,
+        "file": "20_int_door_closed_TL.png",
+        "column": 4,
+        "row": 2,
+        "x": 256,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 21,
+        "file": "21_int_door_closed_TR.png",
+        "column": 5,
+        "row": 2,
+        "x": 320,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 22,
+        "file": "22_int_door_closed_BL.png",
+        "column": 6,
+        "row": 2,
+        "x": 384,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 23,
+        "file": "23_int_door_closed_BR.png",
+        "column": 7,
+        "row": 2,
+        "x": 448,
+        "y": 128,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 24,
+        "file": "24_int_door_open_TL.png",
+        "column": 0,
+        "row": 3,
+        "x": 0,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 25,
+        "file": "25_int_door_open_TR.png",
+        "column": 1,
+        "row": 3,
+        "x": 64,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 26,
+        "file": "26_int_door_open_BL.png",
+        "column": 2,
+        "row": 3,
+        "x": 128,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 27,
+        "file": "27_int_door_open_BR.png",
+        "column": 3,
+        "row": 3,
+        "x": 192,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 28,
+        "file": "28_ext_door_closed_TL.png",
+        "column": 4,
+        "row": 3,
+        "x": 256,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 29,
+        "file": "29_ext_door_closed_TR.png",
+        "column": 5,
+        "row": 3,
+        "x": 320,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 30,
+        "file": "30_ext_door_closed_BL.png",
+        "column": 6,
+        "row": 3,
+        "x": 384,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 31,
+        "file": "31_ext_door_closed_BR.png",
+        "column": 7,
+        "row": 3,
+        "x": 448,
+        "y": 192,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 32,
+        "file": "32_ext_door_open_TL.png",
+        "column": 0,
+        "row": 4,
+        "x": 0,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 33,
+        "file": "33_ext_door_open_TR.png",
+        "column": 1,
+        "row": 4,
+        "x": 64,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 34,
+        "file": "34_ext_door_open_BL.png",
+        "column": 2,
+        "row": 4,
+        "x": 128,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 35,
+        "file": "35_ext_door_open_BR.png",
+        "column": 3,
+        "row": 4,
+        "x": 192,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 36,
+        "file": "36_int_window_TL.png",
+        "column": 4,
+        "row": 4,
+        "x": 256,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 37,
+        "file": "37_int_window_TR.png",
+        "column": 5,
+        "row": 4,
+        "x": 320,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 38,
+        "file": "38_int_window_BL.png",
+        "column": 6,
+        "row": 4,
+        "x": 384,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 39,
+        "file": "39_int_window_BR.png",
+        "column": 7,
+        "row": 4,
+        "x": 448,
+        "y": 256,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 40,
+        "file": "40_ext_window_TL.png",
+        "column": 0,
+        "row": 5,
+        "x": 0,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 41,
+        "file": "41_ext_window_TR.png",
+        "column": 1,
+        "row": 5,
+        "x": 64,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 42,
+        "file": "42_ext_window_BL.png",
+        "column": 2,
+        "row": 5,
+        "x": 128,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 43,
+        "file": "43_ext_window_BR.png",
+        "column": 3,
+        "row": 5,
+        "x": 192,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 44,
+        "file": "44_floor_oak_TL.png",
+        "column": 4,
+        "row": 5,
+        "x": 256,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 45,
+        "file": "45_floor_oak_TR.png",
+        "column": 5,
+        "row": 5,
+        "x": 320,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 46,
+        "file": "46_floor_oak_BL.png",
+        "column": 6,
+        "row": 5,
+        "x": 384,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "index": 47,
+        "file": "47_floor_oak_BR.png",
+        "column": 7,
+        "row": 5,
+        "x": 448,
+        "y": 320,
+        "width": 64,
+        "height": 64
+      }
+    ]
+  }
+]

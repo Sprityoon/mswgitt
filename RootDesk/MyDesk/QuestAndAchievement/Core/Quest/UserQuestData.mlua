@@ -125,6 +125,12 @@ script UserQuestData
 		self.State = _QuestStateEnum.InProgress
 		self.AcceptTime = elapsed
 		self:ResetValues()
+		-- AcceptUnlockId: 수락 즉시 제작법을 연다 (조건을 채우는 데 그 제작법이 필요한 퀘스트용, 멱등).
+		local unlockId = data.AcceptUnlockId
+		if unlockId ~= nil and unlockId ~= "" and isvalid(userEntity) then
+			local inv = userEntity:GetComponent("script.PlayerInventory")
+			if isvalid(inv) then inv:GrantRecipeUnlock(unlockId) end
+		end
 		self:UpdateValues(userEntity, data)
 	end
 

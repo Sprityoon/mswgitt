@@ -1,0 +1,282 @@
+@Component
+script UIFriendController extends Component
+
+	-- 친구 창 (L 키 / HUD 친구 버튼, 2026-10-24). 목록 데이터는 서버 FriendManager 가 보낸다(ClientApplyList → ApplyList).
+	-- 한 페이지 6줄: 받은 신청(수락/거절) → 접속 중 친구(초대/삭제) → 접속 안 한 친구 순. 삭제는 두 번 눌러 확정한다.
+	-- 줄 엔티티: Bg/Row1..Row6 (각각 Name · Status · BtnA · BtnB), Bg/BtnPrev · Bg/BtnNext · Bg/PageText · Bg/Title · Bg/EmptyHint.
+
+	property integer RowsPerPage = 6
+	property number RefreshSeconds = 5.0
+	property number DeleteConfirmSeconds = 3.0
+
+	property string uiClickSfx = "972843e759204d3e9ad84e7d3fa94f83"
+	property number uiSfxVolume = 1.0
+
+	property Color RequestColor = Color(0.72, 0.42, 0.04, 1)
+	property Color OnlineColor = Color(0.18, 0.48, 0.20, 1)
+	property Color OfflineColor = Color(0.55, 0.50, 0.45, 1)
+
+	@HideFromInspector property table entries = {}
+	@HideFromInspector property integer page = 1
+	@HideFromInspector property number refreshAccum = 0
+
+	@ExecSpace("ClientOnly")
+	method void OnBeginPlay()
+		-- 참조 캐시 + 버튼 배선. 창은 닫힌 상태로 시작한다.
+		self:ResolveRefs()
+		self._T.handlers = {}
+		for i = 1, self.RowsPerPage do
+			local row = self._T.rows[i]
+			if row ~= nil then
+				self:Wire(row.btnA, function() self:OnRowButton(i, true) end)
+				self:Wire(row.btnB, function() self:OnRowButton(i, false) end)
+			end
+		end
+		self:Wire(self._T.closeE, function() self:Close() end)
+		self:Wire(self._T.prevE, function() self:ShowPage(self.page - 1) end)
+		self:Wire(self._T.nextE, function() self:ShowPage(self.page + 1) end)
+		self.Entity.Enable = false
+		log("[FRIEND-UI] ready rows=" .. tostring(#self._T.rows))
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnEndPlay()
+		-- 버튼 이벤트 해제.
+		if self._T.handlers == nil then return end
+		for _, h in ipairs(self._T.handlers) do
+			if isvalid(h.e) then h.e:DisconnectEvent(ButtonClickEvent, h.conn) end
+		end
+		self._T.handlers = {}
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Wire(Entity e, any fn)
+		-- 버튼 클릭 → 클릭음 + fn. 해제용으로 핸들러를 모아 둔다.
+		if not isvalid(e) then return end
+		-- ⚠ 'handler' 는 mlua 예약어라 변수·필드 이름으로 쓰면 LEA-1001 빌드 에러가 난다.
+		local conn = e:ConnectEvent(ButtonClickEvent, function()
+			_BGMManager:PlayInGameSound(self.uiClickSfx, self.uiSfxVolume)
+			fn()
+		end)
+		local list = self._T.handlers
+		list[#list + 1] = { e = e, conn = conn }
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ResolveRefs()
+		-- 자식 엔티티 캐시.
+		local root = self.Entity
+		self._T.titleE = root:GetChildByName("Title", true)
+		self._T.closeE = root:GetChildByName("BtnClose", true)
+		self._T.prevE = root:GetChildByName("BtnPrev", true)
+		self._T.nextE = root:GetChildByName("BtnNext", true)
+		self._T.pageE = root:GetChildByName("PageText", true)
+		self._T.emptyE = root:GetChildByName("EmptyHint", true)
+		local rows = {}
+		for i = 1, self.RowsPerPage do
+			local r = root:GetChildByName("Row" .. tostring(i), true)
+			if isvalid(r) then
+				rows[i] = {
+					root = r,
+					nameE = r:GetChildByName("Name", false),
+					statusE = r:GetChildByName("Status", false),
+					btnA = r:GetChildByName("BtnA", false),
+					btnB = r:GetChildByName("BtnB", false),
+				}
+			end
+		end
+		self._T.rows = rows
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnUpdate(number delta)
+		-- 열려 있는 동안 접속 상태·위치를 주기적으로 새로 받는다.
+		if not self.Entity.Enable then return end
+		self.refreshAccum = self.refreshAccum + delta
+		if self.refreshAccum < self.RefreshSeconds then return end
+		self.refreshAccum = 0
+		self:RequestList()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Toggle()
+		-- L 키 / HUD 버튼.
+		if self.Entity.Enable then
+			self:Close()
+		else
+			self:Open()
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Open()
+		-- 창을 열고 서버에 목록을 요청한다(도착 전엔 이전 목록을 그대로 보여 준다).
+		self.Entity.Enable = true
+		self.refreshAccum = 0
+		self._T.confirmCid = nil
+		self:Render()
+		self:RequestList()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Close()
+		-- 창 닫기 (PopupDismissLogic 도 이 메서드를 부른다).
+		self.Entity.Enable = false
+		self._T.confirmCid = nil
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RequestList()
+		-- 서버 FriendManager 에 목록 요청.
+		if _FriendManager == nil then return end
+		_FriendManager:ServerRequestList()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ApplyList(string payload, integer friendCount, integer maxFriends)
+		-- 서버 목록 수신: "종류\tId\t이름\t상태\t접속" 줄들.
+		local list = {}
+		for line in string.gmatch(payload or "", "[^\n]+") do
+			for kind, id, name, status, online in string.gmatch(line, "([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)") do
+				list[#list + 1] = { kind = kind, id = id, name = name, status = status, online = (online == "1") }
+			end
+		end
+		self.entries = list
+		self._T.friendCount = friendCount
+		self._T.maxFriends = maxFriends
+		if self.Entity.Enable then self:Render() end
+	end
+
+	@ExecSpace("ClientOnly")
+	method integer PageCount()
+		-- 전체 페이지 수 (최소 1).
+		local n = math.ceil(#self.entries / self.RowsPerPage)
+		if n < 1 then n = 1 end
+		return math.floor(n)
+	end
+
+	@ExecSpace("ClientOnly")
+	method void ShowPage(integer p)
+		-- 페이지 이동 (범위 밖이면 무시).
+		if p < 1 or p > self:PageCount() then return end
+		self.page = p
+		self._T.confirmCid = nil
+		self:Render()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void Render()
+		-- 현재 페이지를 그린다.
+		if self._T.rows == nil then self:ResolveRefs() end
+		local pages = self:PageCount()
+		if self.page > pages then self.page = pages end
+		if self.page < 1 then self.page = 1 end
+		local count = self._T.friendCount or 0
+		local maxF = self._T.maxFriends or 50
+		self:SetLabel(self._T.titleE, "친구 " .. tostring(count) .. "/" .. tostring(maxF))
+		self:SetLabel(self._T.pageE, tostring(self.page) .. " / " .. tostring(pages))
+		if _UIButtonStyle ~= nil then
+			_UIButtonStyle:SetActive(self._T.prevE, self.page > 1)
+			_UIButtonStyle:SetActive(self._T.nextE, self.page < pages)
+		end
+		if isvalid(self._T.emptyE) then
+			self._T.emptyE.Enable = (#self.entries == 0)
+			if #self.entries == 0 then
+				self:SetLabel(self._T.emptyE, "아직 친구가 없어요.\n마을에서 다른 모험가를 클릭해\n친구 신청을 보내 보세요.")
+			end
+		end
+		local base = (self.page - 1) * self.RowsPerPage
+		for i = 1, self.RowsPerPage do
+			local row = self._T.rows[i]
+			if row ~= nil then
+				local e = self.entries[base + i]
+				if e == nil then
+					row.root.Enable = false
+				else
+					row.root.Enable = true
+					self:RenderRow(row, e)
+				end
+			end
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void RenderRow(table row, table e)
+		-- 한 줄: 신청이면 수락/거절, 친구면 초대(접속 중만)/삭제.
+		self:SetLabel(row.nameE, e.name)
+		self:SetLabel(row.statusE, e.status)
+		if e.kind == "R" then
+			self:SetColor(row.statusE, self.RequestColor)
+			self:SetLabel(row.btnA, "수락")
+			self:SetLabel(row.btnB, "거절")
+			if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(row.btnA, true) end
+		else
+			if e.online then
+				self:SetColor(row.statusE, self.OnlineColor)
+			else
+				self:SetColor(row.statusE, self.OfflineColor)
+			end
+			self:SetLabel(row.btnA, "초대")
+			if self._T.confirmCid == e.id then
+				self:SetLabel(row.btnB, "확인")
+			else
+				self:SetLabel(row.btnB, "삭제")
+			end
+			if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(row.btnA, e.online) end
+		end
+		if _UIButtonStyle ~= nil then _UIButtonStyle:SetActive(row.btnB, true) end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void OnRowButton(integer i, boolean isA)
+		-- 줄 버튼 처리. 서버가 처리 뒤 목록을 다시 보내 준다.
+		local e = self.entries[(self.page - 1) * self.RowsPerPage + i]
+		if e == nil or _FriendManager == nil then return end
+		if e.kind == "R" then
+			_FriendManager:ServerRespondRequest(e.id, isA)
+			return
+		end
+		if isA then
+			if not e.online then return end
+			_FriendManager:ServerInviteFriend(e.id)
+			return
+		end
+		-- 삭제: 첫 클릭은 "확인"으로 바꾸고, 제한 시간 안에 한 번 더 누르면 삭제한다.
+		local now = _UtilLogic.ElapsedSeconds
+		if self._T.confirmCid == e.id and now - (self._T.confirmAt or 0) <= self.DeleteConfirmSeconds then
+			self._T.confirmCid = nil
+			_FriendManager:ServerRemoveFriend(e.id)
+			return
+		end
+		self._T.confirmCid = e.id
+		self._T.confirmAt = now
+		self:Render()
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetLabel(Entity ent, string text)
+		-- 프로젝트 UI 텍스트 2계열(TextGUIRenderer / 레거시 Text) 공통 세터.
+		if not isvalid(ent) then return end
+		if isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.Text = text
+			return
+		end
+		if isvalid(ent.TextComponent) then
+			ent.TextComponent.Text = text
+		end
+	end
+
+	@ExecSpace("ClientOnly")
+	method void SetColor(Entity ent, Color c)
+		-- 글자색 (두 텍스트 계열 공통).
+		if not isvalid(ent) then return end
+		if isvalid(ent.TextGUIRendererComponent) then
+			ent.TextGUIRendererComponent.FontColor = c
+			return
+		end
+		if isvalid(ent.TextComponent) then
+			ent.TextComponent.FontColor = c
+		end
+	end
+
+end

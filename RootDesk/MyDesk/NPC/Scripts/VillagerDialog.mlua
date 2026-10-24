@@ -131,6 +131,17 @@ script VillagerDialog extends Component
 			end
 		end
 
+		-- 오늘 게시판에 이 주민이 올린 의뢰가 있으면 부탁(미납품)·감사(납품 후) 한마디를 상점·잡담보다 먼저 한 번 들려준다.
+		if self:GetQuestPingKind(localPlayer) ~= "done" then
+			local requestPages = self:BuildRequestTalkPages(localPlayer)
+			if #requestPages > 0 and dialog ~= nil then
+				dialog.portraitSource = self.Entity
+				dialog:OpenTalk(speaker, requestPages)
+				log("[VRF][DIALOG] request talk npc=" .. tostring(self.NpcId) .. " pages=" .. tostring(#requestPages))
+				return
+			end
+		end
+
 		-- 상점을 겸하는 주민(ShopItemDataSet.Vendor == NpcId, 예: 헛간지기 토리 "barnkeeper"):
 		-- 보고할 퀘스트·새 제안이 없으면 잡담 대신 상점을 연다. 퀘스트가 우선이라 전직·스토리 흐름은 그대로다.
 		if self:GetQuestPingKind(localPlayer) ~= "done" then
@@ -191,7 +202,49 @@ script VillagerDialog extends Component
 		if id == "vendor" or id == "resident_b" then return "노점상 마리" end
 		if id == "blacksmith" or id == "resident_c" then return "대장장이 로체" end
 		if id == "barnkeeper" or id == "rancher" or id == "resident_d" then return "헛간지기 토리" end
+		if id == "cook" then return "식당 주인 벨라" end
+		if id == "guard" then return "경비대장 카인" end
+		if id == "carpenter" then return "목수 잭" end
+		if id == "granddaughter" then return "촌장 손녀 루루" end
 		return id
+	end
+
+	@ExecSpace("ClientOnly")
+	method table BuildRequestTalkPages(Entity player)
+		-- RequestPoolDataSet.RequesterNpcId == NpcId 인 오늘의 의뢰: 미납품이면 Story, 납품했으면 ThanksText.
+		-- 같은 날·같은 의뢰·같은 상태는 한 번만 들려준다(다음 대화부터는 평소 상점·잡담).
+		local pages = {}
+		if not isvalid(player) then return pages end
+		local inv = player:GetComponent("script.PlayerInventory")
+		if not isvalid(inv) then return pages end
+		if self._T.RequestTalkSeen == nil then self._T.RequestTalkSeen = {} end
+		local day = tostring(inv:GetServerDayIndex())
+		for _, reqId in ipairs(inv:GetTodaysRequestIds()) do
+			if inv:GetRequestCell(reqId, "RequesterNpcId") == self.NpcId then
+				local done = inv:IsDailyRequestCompleted(reqId)
+				local text = ""
+				local stateKey = "story"
+				if done then
+					text = inv:GetRequestCell(reqId, "ThanksText")
+					stateKey = "thanks"
+				else
+					text = inv:GetRequestCell(reqId, "Story")
+				end
+				local key = day .. "/" .. reqId .. "/" .. stateKey
+				if text ~= "" and not self._T.RequestTalkSeen[key] then
+					self._T.RequestTalkSeen[key] = true
+					table.insert(pages, text)
+					if not done then
+						local reqItem = inv:GetRequestCell(reqId, "RequiredItem")
+						local reqCnt = inv:GetRequestCell(reqId, "RequiredCount")
+						table.insert(pages, "〔오늘의 의뢰〕 " .. inv:GetItemDisplayName(reqItem) .. " x" .. reqCnt
+							.. " · 광장 게시판에서 납품할 수 있습니다.")
+					end
+					return pages
+				end
+			end
+		end
+		return pages
 	end
 
 	@ExecSpace("ClientOnly")

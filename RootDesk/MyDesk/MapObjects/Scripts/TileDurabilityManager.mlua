@@ -334,6 +334,20 @@ script TileDurabilityManager extends Logic
 					end
 				end
 				
+				-- 조리 냄비: 완성품 + 예약분 재료를 떨군다
+				local potComp = resourceEntity:GetComponent("script.CookingPot")
+				if isvalid(potComp) then
+					local p_ds = _DataService:GetTable("item_dataset")
+					for potItem, potCount in pairs(potComp:GetDropContents()) do
+						local n = math.floor(tonumber(potCount) or 0)
+						if n > 0 then
+							local p_row = p_ds and p_ds:FindRow("Name", potItem)
+							local p_id = p_row and p_row:GetItem("id") or potItem
+							data.dropPool[p_id] = (data.dropPool[p_id] or 0) + n
+						end
+					end
+				end
+
 				-- If it's a chest, add its contents to the drop pool (generic check + script.Chest check)
 				local chestComp = resourceEntity:GetComponent("script.Chest")
 				if isvalid(chestComp) then
@@ -558,13 +572,23 @@ script TileDurabilityManager extends Logic
 				log("Tile demolished: " .. gridData.tileName .. " at " .. pivotKey)
 			elseif isCrop then
 				-- 성숙 작물 수확: 가구 영속 델타에서 제거 후 엔티티 파괴 (재파종은 빈 홀에 다시 씨앗).
-				resourceSpawner:RemovePlacedFurniture(mapName, gridData.pivotX, gridData.pivotY)
-				resourceEntity:Destroy()
+				-- 대풍년 여부는 재수확(TryRegrow)이 상태를 초기화하기 전에 읽는다.
+				local wasBumper = isvalid(cropComp) and cropComp.IsBumper == true
+				local bumperXpMult = 1
+				if wasBumper then bumperXpMult = math.max(1, math.floor(tonumber(cropComp.BumperXpMult) or 1)) end
+				local regrowing = isvalid(cropComp) and cropComp:TryRegrow()
+				if not regrowing then
+					resourceSpawner:RemovePlacedFurniture(mapName, gridData.pivotX, gridData.pivotY)
+					resourceEntity:Destroy()
+				end
 				log("Crop harvested: " .. tostring(gridData.itemName) .. " at " .. pivotKey)
 				if isvalid(attacker) and attacker.PlayerComponent ~= nil then
 					local pcCrop = attacker:GetComponent("script.PlayerController")
 					if isvalid(pcCrop) then
-						pcCrop:AddXP(5)
+						pcCrop:AddXP(5 * bumperXpMult)
+						if wasBumper then
+							pcCrop:ShowMineFeedback("대풍년! 탐스럽게 자란 작물을 잔뜩 거뒀습니다.")
+						end
 					end
 					if _PersistenceManager then
 						-- 영지 세이브는 소유자 맵 기준 — 맵 이름이 Home_* 이면 소유자 dirty.
@@ -620,6 +644,25 @@ script TileDurabilityManager extends Logic
 				log("Resource entity destroyed: " .. sourceName .. " at " .. pivotKey)
 			end
 		
+			-- 채집 추가 드롭 버프(GatherDropPct, 예: 구운 감자 +15%) — 나무·돌 같은 자원을 다 부쉈을 때 남은 드롭에만 붙는다.
+			if not isTile and not isCrop and not isFurniture and isvalid(attacker) then
+				local buffsG = attacker:GetComponent("script.PlayerBuffs")
+				local gpct = isvalid(buffsG) and buffsG:GetStatAdd("GatherDropPct") or 0
+				if gpct > 0 then
+					for itemId, remainingCount in pairs(data.dropPool) do
+						if remainingCount > 0 then
+							local bonus = remainingCount * gpct
+							local extra = math.floor(bonus)
+							if math.random() < bonus - extra then extra = extra + 1 end
+							if extra > 0 then
+								data.dropPool[itemId] = remainingCount + extra
+								log("[VRF][BUFF] gather drop bonus " .. tostring(itemId) .. " +" .. tostring(extra))
+							end
+						end
+					end
+				end
+			end
+
 			-- Spawn remaining pool drops
 			for itemId, remainingCount in pairs(data.dropPool) do
 				if remainingCount > 0 then

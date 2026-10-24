@@ -453,3 +453,84 @@ QuestId,NpcId,Phase,Seq,Text,Speaker
 349,elder,progress,1,추위에 몸이 굳으면 주먹도 굳네. 투혼을 잊지 말게!,npc
 349,elder,complete,1,허허! 추위도 자네 주먹을 막지 못하는구먼. 자 수련비일세.,npc
 349,elder,complete,2,저 벽의 붉은 너클을 내릴 때가 가까워졌네. 준비되면 다시 오게.,npc
+109,elder,offer,1,어서 오게. 영지에 상자까지 짰다니 손이 야무지군.,npc
+109,elder,offer,2,허나 진짜 정착은 제 땅에서 거둔 걸로 밥 한 끼 짓는 걸세.,npc
+109,elder,offer,3,헛간지기 토리에게 가 보게. 씨앗을 챙겨 두었을 거야.,npc
+109,barnkeeper,complete,1,아… 촌장님이 보내셨구나. 반가워.,npc
+109,barnkeeper,complete,2,밭을 일구려면 삽이랑 호미가 있어야 해.,npc
+109,barnkeeper,complete,3,재료를 조금 챙겨 줄게. 당근 씨앗도 같이 넣었어.,npc
+110,barnkeeper,offer,1,영지 잔디를 삽으로 두 번 파면 넓은 흙이 드러나.,npc
+110,barnkeeper,offer,2,그 흙에 호미질을 하면 폭신한 밭이 돼.,npc
+110,barnkeeper,offer,3,당근 씨앗 세 알만 심어 볼래? 흙이 금방 반겨 줄 거야.,npc
+110,barnkeeper,progress,1,삽으로 흙을 넓게 드러낸 다음에 호미를 써 봐… 서두르지 않아도 돼.,npc
+110,barnkeeper,complete,1,흙냄새가 여기까지 나는 것 같아.,npc
+110,barnkeeper,complete,2,당근은 금방 자라. 다 크면 맨손으로 톡 건드려서 거두면 돼.,npc
+111,barnkeeper,offer,1,당근이 자랐으면 세 개만 거둬 봐.,npc
+111,barnkeeper,offer,2,그걸로 조리 냄비에 수프를 끓여서 벨라 아주머니께 가져가 줄래?,npc
+111,barnkeeper,offer,3,아주머니는 마을 북쪽 주황 버섯집 앞에 계셔. 맛을 꼭 봐 주실 거야.,npc
+111,cook,progress,1,어머 수프는 아직이니? 당근 두 개면 한 그릇이란다.,npc
+111,cook,complete,1,어머나 이게 네가 키운 당근으로 끓인 수프니?,npc
+111,cook,complete,2,음… 달큰하고 따뜻하구나. 첫 수확 맛은 이래서 좋단다.,npc
+111,cook,complete,3,이건 내가 끓인 거야. 들판에 나갈 때 꼭 챙겨 가렴.,npc
+111,cook,complete,4,참 촌장님이 광장에서 널 찾으시더라.,npc
+112,elder,offer,1,자네 수프 냄새가 광장까지 퍼졌더군.,npc
+112,elder,offer,2,분수대 옆 게시판에는 매일 주민들 부탁이 세 장씩 붙는다네.,npc
+112,elder,offer,3,하나만 골라 납품해 보게. 그게 이웃이 되는 첫걸음이지.,npc
+112,elder,progress,1,게시판에서 F 키로 의뢰를 살펴보게. 첫 장은 늘 손쉬운 일일세.,npc
+112,elder,complete,1,하하 벌써 소문이 났더군. 다들 고마워하네.,npc
+112,elder,complete,2,세 장을 다 해결하는 날엔 내가 따로 보답도 하지.,npc
+112,elder,complete,3,자… 배도 든든하니 이제 마을 밖 이야기를 해 볼까.,npc
+401,guard,offer,1,모험가님! 경비대장 카인입니다.,npc
+401,guard,offer,2,요즘 벌판 슬라임이 마을 쪽까지 내려옵니다.,npc
+401,guard,offer,3,다섯 마리만 퇴치해 주시겠습니까? 순찰조가 한숨 돌릴 겁니다.,npc
+401,guard,progress,1,흙 벌판 입구 쪽에 많이 보였습니다. 무리하지 마십시오.,npc
+401,guard,complete,1,감사합니다! 순찰 보고서에 모험가님 이름을 올리겠습니다.,npc
+401,guard,complete,2,수고비입니다. 사양 마십시오.,npc
+402,guard,offer,1,초소 방패 손잡이가 다 닳아 버렸습니다.,npc
+402,guard,offer,2,멧돼지 가죽 세 장이면 새로 감을 수 있습니다.,npc
+402,guard,offer,3,구해 주시면 제 예비 방패를 드리겠습니다.,npc
+402,guard,progress,1,멧돼지는 흙 벌판 2구역부터 나옵니다. 돌진을 조심하십시오.,npc
+402,guard,complete,1,손에 착 붙습니다! 약속대로 이 방패를 받으십시오.,npc
+402,guard,complete,2,모험가님이라면 저보다 잘 쓰실 겁니다.,npc
+411,carpenter,offer,1,어이 새 이웃! 목수 잭이야!,npc
+411,carpenter,offer,2,마을 구석에 공사장 봤지? 마을을 넓히는 중이거든!,npc
+411,carpenter,offer,3,기둥 세울 나무 열다섯 개만 구해다 줄래?,npc
+411,carpenter,progress,1,나무는 영지에서 도끼로 패면 금방이야! 열다섯 개!,npc
+411,carpenter,complete,1,치수 딱 좋다! 이걸로 첫 기둥 박는다고!,npc
+411,carpenter,complete,2,수고비 받아! 그리고 너도 집 한번 지어 볼래?,npc
+412,carpenter,offer,1,영지에 건축 테이블 하나만 놓아 봐!,npc
+412,carpenter,offer,2,그게 있어야 벽이며 바닥이며 뚝딱 만들 수 있거든!,npc
+412,carpenter,offer,3,제작창에서 만들 수 있어. 나무 열다섯이랑 돌 다섯!,npc
+412,carpenter,progress,1,건축 테이블은 제작창 가구 칸에 있어! 영지에 놓고 와!,npc
+412,carpenter,complete,1,오 놓았구나! 이제 너도 어엿한 건축가라고!,npc
+412,carpenter,complete,2,나무 좀 챙겨 줄게. 첫 집은 오두막부터 추천!,npc
+421,granddaughter,offer,1,모험가님! 루루는 마을 고양이랑 제일 친해요!,npc
+421,granddaughter,offer,2,근데 고양이가 요즘 배고프대요.,npc
+421,granddaughter,offer,3,연못에서 잉어 두 마리만 낚아 주실래요?,npc
+421,granddaughter,progress,1,낚싯대로 연못에서 낚으면 돼요! 루루가 기다릴게요!,npc
+421,granddaughter,complete,1,와아 고양이가 냠냠 먹어요!,npc
+421,granddaughter,complete,2,고마워요! 루루가 아끼는 딸기 씨앗 줄게요!,npc
+422,granddaughter,offer,1,있잖아요… 할아버지는 옛날에 엄청 셌대요!,npc
+422,granddaughter,offer,2,벽에 걸린 빨간 장갑 같은 거 루루는 그게 뭔지 몰라요.,npc
+422,granddaughter,offer,3,모험가님이 할아버지한테 살짝 물어봐 줄래요?,npc
+422,elder,complete,1,허허 루루 녀석이 또 그 얘기를 했나.,npc
+422,elder,complete,2,젊을 적 얘기일 뿐일세. 벽의 그 너클도 이젠 장식이지.,npc
+422,elder,complete,3,…허나 자네 빈손을 보니 그 시절 생각이 나는군.,npc
+431,cook,offer,1,어서 오렴! 네가 요즘 영지를 일군다는 그 모험가구나.,npc
+431,cook,offer,2,밭일 하려면 배가 든든해야지. 내가 조리 냄비 만드는 법을 알려 주마.,npc
+431,cook,offer,3,냄비를 놓고 풀 세 줌으로 구운 풀 하나만 만들어 오렴. 그게 첫 수업이란다.,npc
+431,cook,progress,1,냄비는 제작창에서 만들 수 있단다. 영지에 놓고 F로 불을 올리렴.,npc
+431,cook,complete,1,"오, 제법 바삭하게 구웠구나! 손맛이 있는걸.",npc
+431,cook,complete,2,이제 당근이 자라면 수프도 끓여 보렴. 씨앗 몇 알 챙겨 주마.,npc
+413,carpenter,offer,1,건축 테이블 놨으면 이제 진짜 시작이지!,npc
+413,carpenter,offer,2,집은 바닥부터야! 바닥이 삐뚤면 벽도 삐뚤어진다고!,npc
+413,carpenter,offer,3,오두막 바닥 네 칸만 깔아 봐. 나무 하나면 두 장 나와!,npc
+413,carpenter,progress,1,건축 테이블 앞에서 F! 바닥 만들어서 들고 Ctrl로 깔면 돼!,npc
+413,carpenter,complete,1,"오, 반듯하게 깔았네! 손이 야무진걸?",npc
+413,carpenter,complete,2,이 정도면 설계도도 다룰 수 있겠다! 나무 더 챙겨 줄게!,npc
+414,carpenter,offer,1,이번엔 통째로 가 보자! 설계도 한 장이면 오두막이 쫙 선다고!,npc
+414,carpenter,offer,2,건축 테이블에서 기본형 오두막 설계도를 만들어. 나무 오십에 돌 열!,npc
+414,carpenter,offer,3,넓은 빈 땅에 펼치면 벽이랑 문이랑 한 번에 올라가!,npc
+414,carpenter,progress,1,설계도 들고 넓은 땅을 봐! 미리보기가 초록이면 그 자리 괜찮은 거야!,npc
+414,carpenter,complete,1,"와, 진짜 집이 섰잖아! 이제 너도 어엿한 집주인이야!",npc
+414,carpenter,complete,2,"집들이 선물이야! 내가 짠 벤치, 문 앞에 하나 놔 둬!",npc

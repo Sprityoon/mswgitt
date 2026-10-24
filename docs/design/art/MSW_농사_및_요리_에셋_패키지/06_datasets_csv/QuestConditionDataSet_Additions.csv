@@ -1,0 +1,7 @@
+QuestId,CondIndex,CondEnum,TargetName,RequiredCount,Description
+108,1,StateChange,Talk_Tory,1,헛간지기 토리와 대화하기
+109,1,Craft,Hoe,1,작업대에서 호미(Hoe) 제작하기
+109,2,Place,Carrot Seed,3,일군 밭에 당근 씨앗(Carrot Seed) 심기
+110,1,Gather,Carrot,3,다 자란 당근(Carrot) 수확하기
+110,2,Craft,Carrot Soup,1,따뜻한 당근 수프(Carrot Soup) 요리하기
+111,1,StateChange,DeliverRequest,1,마을 중앙 의뢰 게시판에 물품 납품하기
